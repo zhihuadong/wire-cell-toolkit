@@ -1,6 +1,6 @@
-[submodule "nav"]
-	path = nav
-	url = git@github.com:BNLIF/wire-cell-nav.git
+[submodule "gen"]
+	path = gen
+	url = git@github.com:BNLIF/wire-cell-gen.git
 [submodule "waf-tools"]
 	path = waf-tools
 	url = git@github.com:BNLIF/waf-tools.git
