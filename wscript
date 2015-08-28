@@ -22,7 +22,7 @@ def build(bld):
     bld.load('smplpkgs')
 
     #subdirs = [str(sd.parent) for sd in bld.path.ant_glob('*/wscript_build')]
-    subdirs = 'util iface gen rio riodata'.split()
+    subdirs = 'util iface gen rio riodata rootdict'.split()
     print subdirs
 
     bld.recurse(subdirs)
