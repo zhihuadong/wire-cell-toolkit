@@ -1,11 +1,21 @@
 Wire Cell
 =========
 
-This is the main "aggregation package" for Wire Cell packages.  It
-brings together all the Wire Cell "core" packages as git submodules
-and provides the top-level build system.
+This is the main "aggregation package" for building the "production"
+Wire Cell software packages.
 
-For installation instructions and other information see the Docs:
+Wire Cell's home page is at
 
-http://bnlif.github.io/wire-cell-docs/
+http://www.phy.bnl.gov/wire-cell/
+
+The "production" packages are targeted for long-term, sustainable
+development and use but are not yet ready.  Until then there is a 
+working prototype version.  See above link for more information.
+
+For installation instructions and other information about the
+production version of the Wire Cell software see:
+
+http://wirecell.github.io/wire-cell-docs/
+
+
 
