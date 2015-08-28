@@ -19,3 +19,6 @@
 [submodule "util"]
 	path = util
 	url = git@github.com:WireCell/wire-cell-util.git
+[submodule "docs"]
+	path = docs
+	url = git@github.com:WireCell/wire-cell-docs.git
