@@ -4,8 +4,8 @@ TOP = '.'
 APPNAME = 'WireCell'
 
 def options(opt):
-    opt.load('doxygen', tooldir='waf-tools')
-    opt.load('find_package', tooldir='waf-tools')
+    opt.load('doxygen')
+    opt.load('smplpkgs')
     opt.add_option('--build-debug', default='-O2',
                    help="Build with debug symbols")
     opt.add_option('--doxygen-tarball', default=None,
@@ -14,15 +14,15 @@ def options(opt):
                    help="Build Doxygen documentation to a tarball")
 
 def configure(cfg):
-    cfg.load('doxygen', tooldir='waf-tools')
-    cfg.load('find_package', tooldir='waf-tools')
+    cfg.load('doxygen')
+    cfg.load('smplpkgs')
     cfg.env.CXXFLAGS += [cfg.options.build_debug]
 
 def build(bld):
-    bld.load('find_package', tooldir='waf-tools')
+    bld.load('smplpkgs')
 
     #subdirs = [str(sd.parent) for sd in bld.path.ant_glob('*/wscript_build')]
-    subdirs = 'util iface nav rio riodata'.split()
+    subdirs = 'util iface gen rio riodata'.split()
     print subdirs
 
     bld.recurse(subdirs)

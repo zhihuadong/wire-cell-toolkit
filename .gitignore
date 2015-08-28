@@ -21,3 +21,4 @@ test_*.pdf
 venv
 *.local
 install
+.waf-*
