@@ -22,3 +22,6 @@
 [submodule "docs"]
 	path = docs
 	url = git@github.com:WireCell/wire-cell-docs.git
+[submodule "dfp"]
+	path = dfp
+	url = git@github.com:WireCell/wire-cell-dfp.git

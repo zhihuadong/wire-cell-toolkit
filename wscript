@@ -16,14 +16,22 @@ def options(opt):
 def configure(cfg):
     cfg.load('doxygen')
     cfg.load('smplpkgs')
+
+    cfg.check_cxx(header_name="boost/pipeline.hpp", use='BOOST',
+                  define_name='BOOST_PIPELINE', mandatory=False)
+
+
     cfg.env.CXXFLAGS += [cfg.options.build_debug]
+    cfg.env.SUBDIRS = 'util iface gen rio riodata rootdict'.split()
+    if 'BOOST_PIPELINE=1' in cfg.env.DEFINES:
+        cfg.env.SUBDIRS += ['dfp']
+
 
 def build(bld):
     bld.load('smplpkgs')
 
-    #subdirs = [str(sd.parent) for sd in bld.path.ant_glob('*/wscript_build')]
-    subdirs = 'util iface gen rio riodata rootdict'.split()
-    print subdirs
+    subdirs = bld.env.SUBDIRS
+    print 'Building: %s' % (', '.join(subdirs), )
 
     bld.recurse(subdirs)
     if bld.env.DOXYGEN and bld.options.doxygen_tarball:
