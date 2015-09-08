@@ -25,3 +25,6 @@
 [submodule "dfp"]
 	path = dfp
 	url = git@github.com:WireCell/wire-cell-dfp.git
+[submodule "alg"]
+	path = alg
+	url = git@github.com:WireCell/wire-cell-alg.git

@@ -23,7 +23,7 @@ def configure(cfg):
 
     cfg.env.CXXFLAGS += [cfg.options.build_debug]
     #cfg.env.SUBDIRS = 'util iface gen rio riodata rootdict'.split()
-    cfg.env.SUBDIRS = 'util iface gen'.split()
+    cfg.env.SUBDIRS = 'util iface gen alg'.split()
     if 'BOOST_PIPELINE=1' in cfg.env.DEFINES:
         cfg.env.SUBDIRS += ['dfp']
 
