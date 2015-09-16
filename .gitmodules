@@ -28,3 +28,6 @@
 [submodule "alg"]
 	path = alg
 	url = git@github.com:WireCell/wire-cell-alg.git
+[submodule "rootvis"]
+	path = rootvis
+	url = git@github.com:WireCell/wire-cell-rootvis.git

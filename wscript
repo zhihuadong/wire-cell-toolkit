@@ -20,10 +20,12 @@ def configure(cfg):
     cfg.check_cxx(header_name="boost/pipeline.hpp", use='BOOST',
                   define_name='BOOST_PIPELINE', mandatory=False)
 
+    cfg.check_cxx(header_name="Rtypes.h", use='ROOTSYS',
+                  mandatory=True)
 
     cfg.env.CXXFLAGS += [cfg.options.build_debug]
     #cfg.env.SUBDIRS = 'util iface gen rio riodata rootdict'.split()
-    cfg.env.SUBDIRS = 'util iface gen alg'.split()
+    cfg.env.SUBDIRS = 'util iface gen alg rootvis'.split()
     if 'BOOST_PIPELINE=1' in cfg.env.DEFINES:
         cfg.env.SUBDIRS += ['dfp']
 
