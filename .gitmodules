@@ -31,3 +31,6 @@
 [submodule "rootvis"]
 	path = rootvis
 	url = git@github.com:WireCell/wire-cell-rootvis.git
+[submodule "bio"]
+	path = bio
+	url = git@github.com:WireCell/wire-cell-bio.git

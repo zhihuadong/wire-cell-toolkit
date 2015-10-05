@@ -23,11 +23,18 @@ def configure(cfg):
     cfg.check_cxx(header_name="Rtypes.h", use='ROOTSYS',
                   mandatory=True)
 
+    # JSONCPP
+    # cfg.check_cfg(package='jsoncpp',  uselib_store='JSONCPP', args='--cflags --libs',
+    #               mandatory=False)
+    # cfg.check(header_name="json/json.h", use='JSONCPP', mandatory=False)
+
     cfg.env.CXXFLAGS += [cfg.options.build_debug]
     #cfg.env.SUBDIRS = 'util iface gen rio riodata rootdict'.split()
-    cfg.env.SUBDIRS = 'util iface gen alg sst rootvis'.split()
+    cfg.env.SUBDIRS = 'util iface gen alg sst bio rootvis'.split()
     if 'BOOST_PIPELINE=1' in cfg.env.DEFINES:
         cfg.env.SUBDIRS += ['dfp']
+    # if 'HAVE_JSON_JSON_H=1' in cfg.env.DEFINES:
+    #     cfg.env.SUBDIRS += ['bio']    
 
 
 def build(bld):
