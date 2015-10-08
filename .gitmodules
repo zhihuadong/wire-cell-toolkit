@@ -34,3 +34,6 @@
 [submodule "bio"]
 	path = bio
 	url = git@github.com:WireCell/wire-cell-bio.git
+[submodule "apps"]
+	path = apps
+	url = git@github.com:WireCell/wire-cell-apps.git
