@@ -22,6 +22,8 @@ def configure(cfg):
 
     cfg.check_cxx(header_name="Rtypes.h", use='ROOTSYS',
                   mandatory=True)
+    cfg.check(header_name="dlfcn.h", uselib_store='DYNAMO',
+              lib=['dl'], mandatory=True)
 
     # JSONCPP
     # cfg.check_cfg(package='jsoncpp',  uselib_store='JSONCPP', args='--cflags --libs',
@@ -30,11 +32,14 @@ def configure(cfg):
 
     cfg.env.CXXFLAGS += [cfg.options.build_debug]
     #cfg.env.SUBDIRS = 'util iface gen rio riodata rootdict'.split()
-    cfg.env.SUBDIRS = 'util iface gen alg sst bio rootvis'.split()
+    cfg.env.SUBDIRS = 'util iface gen alg sst bio rootvis apps'.split()
     if 'BOOST_PIPELINE=1' in cfg.env.DEFINES:
         cfg.env.SUBDIRS += ['dfp']
     # if 'HAVE_JSON_JSON_H=1' in cfg.env.DEFINES:
     #     cfg.env.SUBDIRS += ['bio']    
+
+    print cfg.env
+
 
 
 def build(bld):
