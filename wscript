@@ -25,18 +25,17 @@ def configure(cfg):
     cfg.check(header_name="dlfcn.h", uselib_store='DYNAMO',
               lib=['dl'], mandatory=True)
 
+
     # JSONCPP
-    # cfg.check_cfg(package='jsoncpp',  uselib_store='JSONCPP', args='--cflags --libs',
-    #               mandatory=False)
-    # cfg.check(header_name="json/json.h", use='JSONCPP', mandatory=False)
+    cfg.check_cfg(package='jsoncpp', uselib_store='JSONCPP',
+                  args='--cflags --libs', mandatory=True)
+    cfg.check(header_name="json/json.h", use='JSONCPP', mandatory=True)
 
     cfg.env.CXXFLAGS += [cfg.options.build_debug]
-    #cfg.env.SUBDIRS = 'util iface gen rio riodata rootdict'.split()
     cfg.env.SUBDIRS = 'util iface gen alg sst bio rootvis apps'.split()
+
     if 'BOOST_PIPELINE=1' in cfg.env.DEFINES:
-        cfg.env.SUBDIRS += ['dfp']
-    # if 'HAVE_JSON_JSON_H=1' in cfg.env.DEFINES:
-    #     cfg.env.SUBDIRS += ['bio']    
+        cfg.env.SUBDIRS += ['dfp'] # fixme: rename, make B.P specific
 
     print cfg.env
 
