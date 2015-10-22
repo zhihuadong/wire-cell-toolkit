@@ -31,13 +31,23 @@ def configure(cfg):
                   args='--cflags --libs', mandatory=True)
     cfg.check(header_name="json/json.h", use='JSONCPP', mandatory=True)
 
+    # TBB
+    cfg.check_cfg(package='tbb', uselib_store='TBB',
+                  args='--cflags --libs', mandatory=False)
+    cfg.check(header_name="tbb/tbb.h", use='TBB', mandatory=False)
+
+
+
     cfg.env.CXXFLAGS += [cfg.options.build_debug]
     cfg.env.SUBDIRS = 'util iface gen alg sst bio rootvis apps'.split()
 
     if 'BOOST_PIPELINE=1' in cfg.env.DEFINES:
         cfg.env.SUBDIRS += ['dfp'] # fixme: rename, make B.P specific
 
-    print cfg.env
+    if 'HAVE_TBB_TBB_H=1' in cfg.env.DEFINES:
+        cfg.env.SUBDIRS += ['tbb'] 
+
+    #print cfg.env
 
 
 
