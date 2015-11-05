@@ -37,3 +37,9 @@
 [submodule "apps"]
 	path = apps
 	url = git@github.com:WireCell/wire-cell-apps.git
+[submodule "wire-cell-tbb"]
+	path = wire-cell-tbb
+	url = git@github.com:WireCell/wire-cell-tbb.git
+[submodule "tbb"]
+	path = tbb
+	url = git@github.com:WireCell/wire-cell-tbb.git
