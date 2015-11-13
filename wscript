@@ -26,6 +26,8 @@ def configure(cfg):
               lib=['dl'], mandatory=True)
 
 
+    cfg.check(features='cxx cxxprogram', lib=['pthread'], uselib_store='PTHREAD')
+
     # JSONCPP
     cfg.check_cfg(package='jsoncpp', uselib_store='JSONCPP',
                   args='--cflags --libs', mandatory=True)
