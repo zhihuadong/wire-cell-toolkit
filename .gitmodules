@@ -43,3 +43,6 @@
 [submodule "tbb"]
 	path = tbb
 	url = git@github.com:WireCell/wire-cell-tbb.git
+[submodule "python"]
+	path = python
+	url = git@github.com:WireCell/wire-cell-python.git
