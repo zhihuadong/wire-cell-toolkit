@@ -46,3 +46,6 @@
 [submodule "python"]
 	path = python
 	url = git@github.com:WireCell/wire-cell-python.git
+[submodule "cfg"]
+	path = cfg
+	url = git@github.com:WireCell/wire-cell-cfg.git
