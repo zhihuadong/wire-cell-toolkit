@@ -6,6 +6,10 @@ APPNAME = 'WireCell'
 def options(opt):
     opt.load('doxygen')
     opt.load('smplpkgs')
+    opt.load('rootsys')
+    opt.load('eigen3')
+    opt.load('boost')
+
     opt.add_option('--build-debug', default='-O2',
                    help="Build with debug symbols")
     opt.add_option('--doxygen-tarball', default=None,
@@ -16,6 +20,12 @@ def options(opt):
 def configure(cfg):
     cfg.load('doxygen')
     cfg.load('smplpkgs')
+    cfg.load('rootsys')
+    cfg.load('eigen3')
+    cfg.load('boost')
+
+
+    cfg.check_boost(lib='system filesystem graph thread program_options')
 
     cfg.check_cxx(header_name="boost/pipeline.hpp", use='BOOST',
                   define_name='BOOST_PIPELINE', mandatory=False)
