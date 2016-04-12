@@ -49,7 +49,6 @@ def configure(cfg):
     cfg.check(header_name="tbb/tbb.h", use='TBB', mandatory=False)
 
 
-
     cfg.env.CXXFLAGS += [cfg.options.build_debug]
     cfg.env.SUBDIRS = 'util iface gen alg sst bio rootvis apps'.split()
 
