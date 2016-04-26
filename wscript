@@ -41,7 +41,7 @@ def configure(cfg):
     # JSONCPP
     cfg.check_cfg(package='jsoncpp', uselib_store='JSONCPP',
                   args='--cflags --libs', mandatory=True)
-    cfg.check(header_name="json/json.h", use='JSONCPP', mandatory=True)
+    cfg.check_cxx(header_name="json/json.h", use='JSONCPP', mandatory=True)
 
     # TBB
     cfg.check_cfg(package='tbb', uselib_store='TBB',
