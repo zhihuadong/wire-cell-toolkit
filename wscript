@@ -7,7 +7,7 @@ def options(opt):
     opt.load('doxygen')
     opt.load('smplpkgs')
     opt.load('rootsys')
-    opt.load('eigen3')
+    opt.load('eigen')
     opt.load('boost')
 
     opt.add_option('--build-debug', default='-O2',
@@ -21,7 +21,7 @@ def configure(cfg):
     cfg.load('doxygen')
     cfg.load('smplpkgs')
     cfg.load('rootsys')
-    cfg.load('eigen3')
+    cfg.load('eigen')
     cfg.load('boost')
 
 
