@@ -49,3 +49,6 @@
 [submodule "cfg"]
 	path = cfg
 	url = git@github.com:WireCell/wire-cell-cfg.git
+[submodule "sigproc"]
+	path = sigproc
+	url = git@github.com:WireCell/wire-cell-sigproc.git

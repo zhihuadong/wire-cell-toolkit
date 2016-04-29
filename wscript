@@ -50,7 +50,7 @@ def configure(cfg):
 
 
     cfg.env.CXXFLAGS += [cfg.options.build_debug]
-    cfg.env.SUBDIRS = 'util iface gen alg sst bio rootvis apps'.split()
+    cfg.env.SUBDIRS = 'util iface gen alg sst bio rootvis apps sigproc'.split()
 
     if 'BOOST_PIPELINE=1' in cfg.env.DEFINES:
         cfg.env.SUBDIRS += ['dfp'] # fixme: rename, make B.P specific

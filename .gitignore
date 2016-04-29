@@ -24,3 +24,7 @@ install
 .waf-*
 test_*.png
 old
+test_*
+blah*
+foo*
+bar*
