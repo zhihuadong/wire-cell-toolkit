@@ -47,6 +47,7 @@ wcb-runtime-setup () {
 	echo usage: "wcb-runtime-setup /path/to/prefix [...]"
 	return 1
     fi
+    prefix=$(readlink -f $prefix)
     PATH=$prefix/bin:$PATH
     # fixme, what about lib64?
     export LD_LIBRARY_PATH=$prefix/lib:${PKG_CONFIG_PATH:+:}$PKG_CONFIG_PATH
