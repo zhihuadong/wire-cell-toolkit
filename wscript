@@ -8,6 +8,7 @@ def options(opt):
     opt.load('smplpkgs')
     opt.load('rootsys')
     opt.load('eigen')
+    opt.load('tbb')
     opt.load('boost')
 
     opt.add_option('--build-debug', default='-O2',
@@ -22,8 +23,10 @@ def configure(cfg):
     cfg.load('smplpkgs')
     cfg.load('rootsys')
     cfg.load('eigen')
+    cfg.load('tbb')
     cfg.load('boost')
 
+    cfg.check_tbb()
 
     cfg.check_boost(lib='system filesystem graph thread program_options')
 
@@ -42,11 +45,6 @@ def configure(cfg):
     cfg.check_cfg(package='jsoncpp', uselib_store='JSONCPP',
                   args='--cflags --libs', mandatory=True)
     cfg.check_cxx(header_name="json/json.h", use='JSONCPP', mandatory=True)
-
-    # TBB
-    cfg.check_cfg(package='tbb', uselib_store='TBB',
-                  args='--cflags --libs', mandatory=False)
-    cfg.check(header_name="tbb/tbb.h", use='TBB', mandatory=False)
 
 
     cfg.env.CXXFLAGS += [cfg.options.build_debug]
