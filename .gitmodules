@@ -1,54 +1,54 @@
 [submodule "gen"]
 	path = gen
-	url = https://github.com/WireCell/wire-cell-gen.git
+	url = git@github.com:WireCell/wire-cell-gen.git
 [submodule "sst"]
 	path = sst
-	url = https://github.com/WireCell/wire-cell-sst.git
+	url = git@github.com:WireCell/wire-cell-sst.git
 [submodule "iface"]
 	path = iface
-	url = https://github.com/WireCell/wire-cell-iface.git
+	url = git@github.com:WireCell/wire-cell-iface.git
 [submodule "rio"]
 	path = rio
-	url = https://github.com/WireCell/wire-cell-rio.git
+	url = git@github.com:WireCell/wire-cell-rio.git
 [submodule "riodata"]
 	path = riodata
-	url = https://github.com/WireCell/wire-cell-riodata.git
+	url = git@github.com:WireCell/wire-cell-riodata.git
 [submodule "rootdict"]
 	path = rootdict
-	url = https://github.com/WireCell/wire-cell-rootdict.git
+	url = git@github.com:WireCell/wire-cell-rootdict.git
 [submodule "util"]
 	path = util
-	url = https://github.com/WireCell/wire-cell-util.git
+	url = git@github.com:WireCell/wire-cell-util.git
 [submodule "docs"]
 	path = docs
-	url = https://github.com/WireCell/wire-cell-docs.git
+	url = git@github.com:WireCell/wire-cell-docs.git
 [submodule "dfp"]
 	path = dfp
-	url = https://github.com/WireCell/wire-cell-dfp.git
+	url = git@github.com:WireCell/wire-cell-dfp.git
 [submodule "alg"]
 	path = alg
-	url = https://github.com/WireCell/wire-cell-alg.git
+	url = git@github.com:WireCell/wire-cell-alg.git
 [submodule "rootvis"]
 	path = rootvis
-	url = https://github.com/WireCell/wire-cell-rootvis.git
+	url = git@github.com:WireCell/wire-cell-rootvis.git
 [submodule "bio"]
 	path = bio
-	url = https://github.com/WireCell/wire-cell-bio.git
+	url = git@github.com:WireCell/wire-cell-bio.git
 [submodule "apps"]
 	path = apps
-	url = https://github.com/WireCell/wire-cell-apps.git
+	url = git@github.com:WireCell/wire-cell-apps.git
 [submodule "wire-cell-tbb"]
 	path = wire-cell-tbb
-	url = https://github.com/WireCell/wire-cell-tbb.git
+	url = git@github.com:WireCell/wire-cell-tbb.git
 [submodule "tbb"]
 	path = tbb
-	url = https://github.com/WireCell/wire-cell-tbb.git
+	url = git@github.com:WireCell/wire-cell-tbb.git
 [submodule "python"]
 	path = python
-	url = https://github.com/WireCell/wire-cell-python.git
+	url = git@github.com:WireCell/wire-cell-python.git
 [submodule "cfg"]
 	path = cfg
-	url = https://github.com/WireCell/wire-cell-cfg.git
+	url = git@github.com:WireCell/wire-cell-cfg.git
 [submodule "sigproc"]
 	path = sigproc
-	url = https://github.com/WireCell/wire-cell-sigproc.git
+	url = git@github.com:WireCell/wire-cell-sigproc.git
