@@ -8,6 +8,7 @@ def options(opt):
     opt.load('smplpkgs')
     opt.load('rootsys')
     opt.load('eigen')
+    opt.load('jsoncpp')
     opt.load('tbb')
     opt.load('boost')
 
@@ -23,29 +24,19 @@ def configure(cfg):
     cfg.load('smplpkgs')
     cfg.load('rootsys')
     cfg.load('eigen')
+    cfg.load('jsoncpp')
     cfg.load('tbb')
     cfg.load('boost')
 
-    cfg.check_tbb()
-
-    cfg.check_boost(lib='system filesystem graph thread program_options iostreams')
+    cfg.check_boost(lib='system filesystem graph thread program_options')
 
     cfg.check_cxx(header_name="boost/pipeline.hpp", use='BOOST',
                   define_name='BOOST_PIPELINE', mandatory=False)
-
-    cfg.check_cxx(header_name="Rtypes.h", use='ROOTSYS',
-                  mandatory=True)
     cfg.check(header_name="dlfcn.h", uselib_store='DYNAMO',
               lib=['dl'], mandatory=True)
 
 
     cfg.check(features='cxx cxxprogram', lib=['pthread'], uselib_store='PTHREAD')
-
-    # JSONCPP
-    cfg.check_cfg(package='jsoncpp', uselib_store='JSONCPP',
-                  args='--cflags --libs', mandatory=True)
-    cfg.check_cxx(header_name="json/json.h", use='JSONCPP', mandatory=True)
-
 
     cfg.env.CXXFLAGS += [cfg.options.build_debug]
     cfg.env.SUBDIRS = 'util iface gen alg sst bio rootvis apps sigproc'.split()
