@@ -28,7 +28,7 @@ def configure(cfg):
     cfg.load('tbb')
     cfg.load('boost')
 
-    cfg.check_boost(lib='system filesystem graph thread program_options')
+    cfg.check_boost(lib='system filesystem graph thread program_options iostreams')
 
     cfg.check_cxx(header_name="boost/pipeline.hpp", use='BOOST',
                   define_name='BOOST_PIPELINE', mandatory=False)
@@ -45,7 +45,7 @@ def configure(cfg):
         cfg.env.SUBDIRS += ['dfp'] # fixme: rename, make B.P specific
 
     if 'HAVE_TBB_TBB_H=1' in cfg.env.DEFINES:
-        cfg.env.SUBDIRS += ['tbb'] 
+        cfg.env.SUBDIRS += ['tbb']
 
     #print cfg.env
 
