@@ -7,13 +7,14 @@ APPNAME = 'WireCell'
 
 def options(opt):
     opt.load('doxygen')
+    opt.load('boost')
+
     opt.load('smplpkgs')
     opt.load('rootsys')
     opt.load('fftw')
     opt.load('eigen')
     opt.load('jsoncpp')
     opt.load('tbb')
-    opt.load('boost')
 
     opt.add_option('--build-debug', default='-O2 -ggdb3',
                    help="Build with debug symbols")
@@ -26,12 +27,13 @@ def configure(cfg):
     print 'Compile options: %s' % cfg.options.build_debug
 
     cfg.load('doxygen')
+    cfg.load('boost')
+
     cfg.load('smplpkgs')
     cfg.load('rootsys')
     cfg.load('eigen')
     cfg.load('jsoncpp')
     cfg.load('tbb')
-    cfg.load('boost')
     cfg.load('fftw')
 
 
