@@ -48,7 +48,7 @@ def configure(cfg):
     cfg.check(features='cxx cxxprogram', lib=['pthread'], uselib_store='PTHREAD')
 
     cfg.env.CXXFLAGS += to_list(cfg.options.build_debug)
-    #cfg.env.CXXFLAGS += ['-DEIGEN_FFTW_DEFAULT=1']
+    cfg.env.CXXFLAGS += ['-DEIGEN_FFTW_DEFAULT=1']
 
     cfg.env.SUBDIRS = 'util iface gen alg sst bio rootvis apps sigproc'.split()
 
