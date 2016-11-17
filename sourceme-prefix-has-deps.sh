@@ -4,11 +4,12 @@
 # this script simplifies configuration.
 
 
-if [ "$(lsb_release -s -c)" = "xenial" ] ; then
-    echo "Setting compilers to GCC 4.9 on xenial"
-    export CC=/usr/bin/gcc-4.9
-    export CXX=/usr/bin/g++-4.9
-fi
+### latest ROOT no longer needs this workaround
+# if [ "$(lsb_release -s -c)" = "xenial" ] ; then
+#     echo "Setting compilers to GCC 4.9 on xenial"
+#     export CC=/usr/bin/gcc-4.9
+#     export CXX=/usr/bin/g++-4.9
+# fi
 
 wcb-configure () {
     local prefix="$1" ; shift
@@ -33,11 +34,15 @@ wcb-configure () {
     cd $mydir
     ./wcb configure \
 	  --prefix=$prefix \
+	  --with-eigen=$prefix \
+	  --with-jsoncpp=$prefix \
+	  --with-tbb=$prefix \
 	  --boost-includes=$prefix/include \
 	  --boost-libs=$prefix/lib \
 	  --boost-mt \
 	  --with-root=$prefix \
-	  $@
+	  --with-fftw=$prefix \
+	  "$@"
 }
 
 # setup run time environment

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from waflib.Utils import to_list
+
 TOP = '.'
 APPNAME = 'WireCell'
 
@@ -7,12 +9,13 @@ def options(opt):
     opt.load('doxygen')
     opt.load('smplpkgs')
     opt.load('rootsys')
+    opt.load('fftw')
     opt.load('eigen')
     opt.load('jsoncpp')
     opt.load('tbb')
     opt.load('boost')
 
-    opt.add_option('--build-debug', default='-O2',
+    opt.add_option('--build-debug', default='-O2 -ggdb3',
                    help="Build with debug symbols")
     opt.add_option('--doxygen-tarball', default=None,
                    help="Build Doxygen documentation to a tarball")
@@ -20,6 +23,8 @@ def options(opt):
                    help="Build Doxygen documentation to a tarball")
 
 def configure(cfg):
+    print 'Compile options: %s' % cfg.options.build_debug
+
     cfg.load('doxygen')
     cfg.load('smplpkgs')
     cfg.load('rootsys')
@@ -27,6 +32,8 @@ def configure(cfg):
     cfg.load('jsoncpp')
     cfg.load('tbb')
     cfg.load('boost')
+    cfg.load('fftw')
+
 
     cfg.check_boost(lib='system filesystem graph thread program_options iostreams')
 
@@ -38,7 +45,9 @@ def configure(cfg):
 
     cfg.check(features='cxx cxxprogram', lib=['pthread'], uselib_store='PTHREAD')
 
-    cfg.env.CXXFLAGS += [cfg.options.build_debug]
+    cfg.env.CXXFLAGS += to_list(cfg.options.build_debug)
+    cfg.env.CXXFLAGS += ['-DEIGEN_FFTW_DEFAULT=1']
+
     cfg.env.SUBDIRS = 'util iface gen alg sst bio rootvis apps sigproc'.split()
 
     if 'BOOST_PIPELINE=1' in cfg.env.DEFINES:
