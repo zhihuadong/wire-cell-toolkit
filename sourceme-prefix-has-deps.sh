@@ -55,5 +55,9 @@ wcb-runtime-setup () {
     prefix=$(readlink -f $prefix)
     PATH=$prefix/bin:$PATH
     # fixme, what about lib64?
-    export LD_LIBRARY_PATH=$prefix/lib:${PKG_CONFIG_PATH:+:}$PKG_CONFIG_PATH
+    export LD_LIBRARY_PATH=$prefix/lib:${LD_LIBRARY_PATH:+:}$LD_LIBRARY_PATH
+    #export PKG_CONFIG_PATH=$prefix/lib:${PKG_CONFIG_PATH:+:}$PKG_CONFIG_PATH
 }
+
+#wcb-run-test () {
+#    for exe in $(find . -name $testprog

@@ -47,6 +47,9 @@ def configure(cfg):
 
     cfg.check(features='cxx cxxprogram', lib=['pthread'], uselib_store='PTHREAD')
 
+    # boost 1.59 uses auto_ptr and GCC 5 deprecates it vociferously.
+    cfg.env.CXXFLAGS += ['-Wno-deprecated-declarations']
+
     cfg.env.CXXFLAGS += to_list(cfg.options.build_debug)
     cfg.env.CXXFLAGS += ['-DEIGEN_FFTW_DEFAULT=1']
 
