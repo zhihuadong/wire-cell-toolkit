@@ -62,3 +62,21 @@ wct-test () {
     $mydir/build/*/test_$name
     LD_LIBRARY_PATH=$old_ld_library_path
 }
+
+wct-run () {
+    local mydir=$(dirname $(readlink -f $BASH_SOURCE))
+    local old_ld_library_path="$LD_LIBRARY_PATH"
+    local old_path="$PATH"
+    addpath $WCT_EXTERNALS/lib LD_LIBRARY_PATH
+    addpath $WCT_EXTERNALS/bin PATH
+    for maybe in $mydir/build/* ;
+    do
+	maybe="$(readlink -f $maybe)"
+	if [ -d "$maybe" ] ; then
+	    addpath $maybe LD_LIBRARY_PATH
+	fi
+    done
+    $@
+    LD_LIBRARY_PATH=$old_ld_library_path
+    PATH=$old_path
+}
