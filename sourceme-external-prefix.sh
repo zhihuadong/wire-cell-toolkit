@@ -27,8 +27,8 @@ addpath ()
 
 wct-configure () {
     
-    addpath "$WCT_EXTERNALS/lib" PKG_CONFIG_PATH
-    addpath "$WCT_EXTERNALS/share" PKG_CONFIG_PATH
+    addpath "$WCT_EXTERNALS/lib/pkgconfig" PKG_CONFIG_PATH
+    addpath "$WCT_EXTERNALS/share/pkgconfig" PKG_CONFIG_PATH
 
     local mydir=$(dirname $(readlink -f $BASH_SOURCE))
     cd $mydir
@@ -42,7 +42,6 @@ wct-configure () {
 	  --with-jsoncpp=$WCT_EXTERNALS \
 	  --with-tbb=$WCT_EXTERNALS \
 	  --with-root=$WCT_EXTERNALS \
-	  --with-fftw=$WCT_EXTERNALS \
 	  "$@"
 }
 
@@ -59,7 +58,7 @@ wct-test () {
 	    addpath $maybe LD_LIBRARY_PATH
 	fi
     done
-    $mydir/build/*/test_$name
+    $mydir/build/*/test_$name $@
     LD_LIBRARY_PATH=$old_ld_library_path
 }
 
