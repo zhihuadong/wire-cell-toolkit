@@ -52,3 +52,6 @@
 [submodule "sigproc"]
 	path = sigproc
 	url = git@github.com:WireCell/wire-cell-sigproc.git
+[submodule "waftools"]
+	path = waftools
+	url = git@github.com:WireCell/waf-tools.git

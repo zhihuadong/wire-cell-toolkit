@@ -13,14 +13,21 @@ The core of WCT depends on a few packages.  ROOT is needed for unit tests and so
 You may provide the necessary externals as you wish and various methods are outlined:
 
 - [[https://github.com/WireCell/wire-cell-spack][Spack-based install]] automatically builds all (non-OS) externals and WCT itself
-- WCT is built at FNAL as a UPS product named =wirecell=.
+- Some WCT releases are built at FNAL as a UPS product named =wirecell=.
 
 * Documentation
 
 For now, the documentation is not keeping up with the code but it is in
 [[./docs]] and at http://wirecell.github.io/wire-cell-docs/.
 
+* Meta
 
+A new =wcb= build script is made from [[https://github.com/waf-project/waf][waf source]] via:
+
+#+BEGIN_EXAMPLE
+  $ ./waf-light --tools=compat15,doxygen,boost,bjam
+  $ cp waf /path/to/wire-cell/source/wcb
+#+END_EXAMPLE
 
 
 
