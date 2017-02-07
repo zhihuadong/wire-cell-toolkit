@@ -6,6 +6,9 @@ The home page for Wire Cell is http://www.phy.bnl.gov/wire-cell/.
 
 * Installation
 
+Note: no particular environment variable settings are needed for
+installation of the Wire Cell Toolkit and in fact are discouraged.
+
 ** Externals
 
 The core of WCT depends on a few packages.  ROOT is needed for unit tests and some I/O related WCT packages.  
@@ -14,6 +17,77 @@ You may provide the necessary externals as you wish and various methods are outl
 
 - [[https://github.com/WireCell/wire-cell-spack][Spack-based install]] automatically builds all (non-OS) externals and WCT itself
 - Some WCT releases are built at FNAL as a UPS product named =wirecell=.
+
+** Developer Source
+
+Developers check out =master= branch via SSH.
+
+#+BEGIN_EXAMPLE
+  $ git clone --recursive git@github.com:WireCell/wire-cell-build.git wct
+#+END_EXAMPLE
+
+** User Source
+
+Users typically should build releases.  You can download tarballs from the [[https://github.com/WireCell/wire-cell-build/releases][Wire Cell release area]] on GitHub or you can check out a release branch.
+
+#+BEGIN_EXAMPLE
+  $ git clone --recursive --branch X.Y.Z https://github.com/WireCell/wire-cell-build.git
+#+END_EXAMPLE
+
+Anonymous users can clone the master branch but will need to fiddle with the submodule urls
+
+#+BEGIN_EXAMPLE
+  $ git clone git@github.com:WireCell/wire-cell-build.git 
+  $ ./swith-git-urls
+  $ git submodule init
+  $ git submodule update
+#+END_EXAMPLE
+
+** Configuring the source
+
+On well-behaved systems you can do:
+
+#+BEGIN_EXAMPLE
+  $ ./wcb configure --prefix=/path/to/install
+#+END_EXAMPLE
+
+If you system is not well-behaved you can exhaustively specify where externals are found.  In this contrived example, they are installed all into one directory named by the =WCT_EXTERNALS= variable (such as when making a Spack "view")
+
+#+BEGIN_EXAMPLE
+  $ ./wcb --help
+  $ ./wcb configure --prefix=/path/to/install \
+     --boost-includes=$WCT_EXTERNALS/include --boost-libs=$WCT_EXTERNALS/lib --boost-mt \
+     --with-eigen=$WCT_EXTERNALS --with-jsoncpp=$WCT_EXTERNALS --with-tbb=$WCT_EXTERNALS \
+     --with-root=$WCT_EXTERNALS --with-fftw=$WCT_EXTERNALS --with-root=$WCT_EXTERNALS
+#+END_EXAMPLE
+
+** Building
+
+To build the code but not run the tests do
+
+#+BEGIN_EXAMPLE
+  $ ./wcb --notests
+#+END_EXAMPLE
+
+** Installing
+
+To install the code but not run the tests do:
+
+#+BEGIN_EXAMPLE
+  $ ./wcb --notests install
+#+END_EXAMPLE
+
+** Testing
+
+To run the tests:
+
+#+BEGIN_EXAMPLE
+  $ ./wcb --alltests --testcmd="env LD_LIBRARY_PATH=$WCT_EXTERNALS/lib:`pwd`/install/lib %s"
+#+END_EXAMPLE
+
+In principle, no tests should fail but lazy developers being as they are, some may.  Typically more than 10% indicate something more wrong than just laziness.  Feel free to gripe at the developers.
+
+
 
 * Documentation
 
