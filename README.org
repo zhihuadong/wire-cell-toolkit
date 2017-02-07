@@ -28,16 +28,23 @@ Developers check out =master= branch via SSH.
 
 ** User Source
 
-Users typically should build releases.  You can download tarballs from the [[https://github.com/WireCell/wire-cell-build/releases][Wire Cell release area]] on GitHub or you can check out a release branch.
+Users typically should build a release branch, either the tip or a
+tagged release on that branch.  Tagged releases are shown on the [[https://github.com/WireCell/wire-cell-build/releases][this
+GitHub release page]].  To get the source, for example for release 0.5.0
+on branch 0.5.x do:
 
 #+BEGIN_EXAMPLE
-  $ git clone --recursive --branch X.Y.Z https://github.com/WireCell/wire-cell-build.git
+  $ git clone --recursive --branch 0.5.x https://github.com/WireCell/wire-cell-build.git
+  $ git checkout -b 0.5.0 0.5.0
+  $ git submodule init
+  $ git submodule update
+  $ git submodule foreach git checkout -b 0.5.0 0.5.0
 #+END_EXAMPLE
 
-Anonymous users can clone the master branch but will need to fiddle with the submodule urls
+Anonymous users can clone the =master= branch but will need to swith the submodule urls to use HTTPS.  A script is provided to make that easier:
 
 #+BEGIN_EXAMPLE
-  $ git clone git@github.com:WireCell/wire-cell-build.git 
+  $ git clone https://github.com/WireCell/wire-cell-build.git
   $ ./swith-git-urls
   $ git submodule init
   $ git submodule update
@@ -51,7 +58,7 @@ On well-behaved systems you can do:
   $ ./wcb configure --prefix=/path/to/install
 #+END_EXAMPLE
 
-If you system is not well-behaved you can exhaustively specify where externals are found.  In this contrived example, they are installed all into one directory named by the =WCT_EXTERNALS= variable (such as when making a Spack "view")
+If your system is not well-behaved you can exhaustively specify where externals are found.  In this contrived example, they are installed all into one directory named by the =WCT_EXTERNALS= variable (such as when making a Spack "view")
 
 #+BEGIN_EXAMPLE
   $ ./wcb --help
@@ -87,6 +94,9 @@ To run the tests:
 
 In principle, no tests should fail but lazy developers being as they are, some may.  Typically more than 10% indicate something more wrong than just laziness.  Feel free to gripe at the developers.
 
+* Release management
+
+To make releases, the above details are baked into two test scripts [[https://github.com/WireCell/waf-tools/blob/master/make-release.sh][make-release.sh]] and [[https://github.com/WireCell/waf-tools/blob/master/test-release.sh][test-release.sh]].  See comments at the top of each for how to run them.  These scripts can be used by others but are meant for developers to make official releases.  
 
 
 * Documentation
