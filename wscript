@@ -27,7 +27,7 @@ def configure(cfg):
 
     # application specific requirements 
 
-    cfg.check_boost(lib='system filesystem graph thread program_options iostreams')
+    cfg.check_boost(lib='system filesystem graph thread program_options iostreams regex')
 
     cfg.check_cxx(header_name="boost/pipeline.hpp", use='BOOST',
                   define_name='BOOST_PIPELINE', mandatory=False)
