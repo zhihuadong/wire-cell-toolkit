@@ -68,6 +68,8 @@ wct-run () {
     local old_path="$PATH"
     addpath $WCT_EXTERNALS/lib LD_LIBRARY_PATH
     addpath $WCT_EXTERNALS/bin PATH
+    addpath $WCT_PREFIX/lib LD_LIBRARY_PATH
+    addpath $WCT_PREFIX/bin PATH
     for maybe in $mydir/build/* ;
     do
 	maybe="$(readlink -f $maybe)"
