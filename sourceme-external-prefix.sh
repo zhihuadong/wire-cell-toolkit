@@ -42,6 +42,8 @@ wct-configure () {
 	  --with-jsoncpp=$WCT_EXTERNALS \
 	  --with-tbb=$WCT_EXTERNALS \
 	  --with-root=$WCT_EXTERNALS \
+	  --with-fftw=$WCT_EXTERNALS \
+	  --with-jsonnet=$WCT_EXTERNALS \
 	  "$@"
 }
 
