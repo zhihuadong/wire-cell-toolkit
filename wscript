@@ -43,7 +43,7 @@ def configure(cfg):
     cfg.env.CXXFLAGS += to_list(cfg.options.build_debug)
     cfg.env.CXXFLAGS += ['-DEIGEN_FFTW_DEFAULT=1']
 
-    known_sm = 'util iface gen alg sst bio rootvis apps sigproc dfp tbb'.split()
+    known_sm = 'util iface gen alg sst sio rootvis apps sigproc dfp tbb'.split()
     known_sm.sort()
     existing_sm = [sm for sm in known_sm if osp.isdir(sm)]
 
