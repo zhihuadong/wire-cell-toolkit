@@ -72,6 +72,11 @@ wct-run () {
     addpath $WCT_EXTERNALS/bin PATH
     addpath $WCT_PREFIX/lib LD_LIBRARY_PATH
     addpath $WCT_PREFIX/bin PATH
+
+    # configuration and field/wire data files
+    addpath $WCT_PREFIX/share/wirecell/data WIRECELL_PATH
+    addpath $WCT_PREFIX/share/wirecell/config WIRECELL_PATH
+
     for maybe in $mydir/build/* ;
     do
 	maybe="$(readlink -f $maybe)"
