@@ -74,8 +74,9 @@ wct-run () {
     addpath $WCT_PREFIX/bin PATH
 
     # configuration and field/wire data files
-    addpath $WCT_PREFIX/share/wirecell/data WIRECELL_PATH
+    addpath $WCT_PREFIX/share/wirecell/data   WIRECELL_PATH
     addpath $WCT_PREFIX/share/wirecell/config WIRECELL_PATH
+    addpath $WCT_PREFIX/data                  WIRECELL_PATH
 
     for maybe in $mydir/build/* ;
     do
