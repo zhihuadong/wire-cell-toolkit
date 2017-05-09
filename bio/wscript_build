@@ -1,0 +1,1 @@
+bld.smplpkg('WireCellBio', use='WireCellIface JSONCPP')
