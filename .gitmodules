@@ -76,4 +76,4 @@
         update = merge
 [submodule "sio"]
 	path = sio
-	url = git@github.com:WireCell/wire-cell-sio.git
+	url = https://github.com/WireCell/wire-cell-sio.git
