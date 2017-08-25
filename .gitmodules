@@ -10,10 +10,6 @@
 	path = iface
 	url = git@github.com:WireCell/wire-cell-iface.git
         update = merge
-[submodule "rio"]
-	path = rio
-	url = git@github.com:WireCell/wire-cell-rio.git
-        update = merge
 [submodule "riodata"]
 	path = riodata
 	url = git@github.com:WireCell/wire-cell-riodata.git
