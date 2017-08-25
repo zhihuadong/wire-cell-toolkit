@@ -12,6 +12,7 @@ def options(opt):
     opt.load("wcb",tooldir="waftools")
 
 def configure(cfg):
+
     cfg.load('boost')
     cfg.load("wcb", tooldir="waftools")
 
