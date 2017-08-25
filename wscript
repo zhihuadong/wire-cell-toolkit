@@ -8,32 +8,21 @@ TOP = '.'
 APPNAME = 'WireCell'
 
 def options(opt):
-    opt.load('doxygen')                   # from waf
     opt.load('boost')
-
     opt.load("wcb",tooldir="waftools")
-    opt.add_option('--doxygen-tarball', default=None,
-                   help="Build Doxygen documentation to a tarball")
-    opt.add_option('--doxygen-install-path', default="",
-                   help="Build Doxygen documentation to a tarball")
-
 
 def configure(cfg):
-    cfg.load('doxygen')
     cfg.load('boost')
-
     cfg.load("wcb", tooldir="waftools")
-
 
     # application specific requirements 
 
     cfg.check_boost(lib='system filesystem graph thread program_options iostreams regex')
 
-    cfg.check_cxx(header_name="boost/pipeline.hpp", use='BOOST',
-                  define_name='BOOST_PIPELINE', mandatory=False)
+    #cfg.check_cxx(header_name="boost/pipeline.hpp", use='BOOST',
+    #              define_name='BOOST_PIPELINE', mandatory=False)
     cfg.check(header_name="dlfcn.h", uselib_store='DYNAMO',
               lib=['dl'], mandatory=True)
-
 
     cfg.check(features='cxx cxxprogram', lib=['pthread'], uselib_store='PTHREAD')
 
@@ -58,7 +47,6 @@ def configure(cfg):
     cfg.env.SUBDIRS = existing_sm
     print 'Configured for: %s' % (', '.join(existing_sm), )
 
-
 def build(bld):
     bld.load('smplpkgs')
 
@@ -66,10 +54,4 @@ def build(bld):
     print 'Building: %s' % (', '.join(subdirs), )
 
     bld.recurse(subdirs)
-    if bld.env.DOXYGEN and bld.options.doxygen_tarball:
-        bld(features="doxygen",
-            doxyfile=bld.path.find_resource('Doxyfile'),
-            install_path=bld.options.doxygen_install_path or bld.env.PREFIX + "/doc",
-            doxy_tar = bld.options.doxygen_tarball)
-
 
