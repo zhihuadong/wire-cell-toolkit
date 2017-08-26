@@ -32,3 +32,9 @@ waf
 dist
 *.bz2
 cut.*
+
+GPATH
+GRTAGS
+GTAGS
+HTML
+docs
