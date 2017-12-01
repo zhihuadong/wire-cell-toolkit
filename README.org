@@ -73,7 +73,7 @@ If your system is not well-behaved you can exhaustively specify where externals 
 To build the code but not run the tests do
 
 #+BEGIN_EXAMPLE
-  $ ./wcb --notests
+  $ ./wcb -p --notests
 #+END_EXAMPLE
 
 ** Installing
@@ -81,7 +81,7 @@ To build the code but not run the tests do
 To install the code but not run the tests do:
 
 #+BEGIN_EXAMPLE
-  $ ./wcb --notests install
+  $ ./wcb -p --notests install
 #+END_EXAMPLE
 
 ** Testing
@@ -89,7 +89,7 @@ To install the code but not run the tests do:
 To run the tests:
 
 #+BEGIN_EXAMPLE
-  $ ./wcb --alltests --testcmd="env LD_LIBRARY_PATH=$WCT_EXTERNALS/lib:`pwd`/install/lib %s"
+  $ ./wcb -p --alltests --testcmd="env LD_LIBRARY_PATH=$WCT_EXTERNALS/lib:`pwd`/install/lib %s"
 #+END_EXAMPLE
 
 In principle, no tests should fail but lazy developers being as they are, some may.  Typically more than 10% indicate something more wrong than just laziness.  Feel free to gripe at the developers.
