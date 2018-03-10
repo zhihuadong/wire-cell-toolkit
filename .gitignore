@@ -38,3 +38,5 @@ GRTAGS
 GTAGS
 HTML
 docs
+*.npz
+log
