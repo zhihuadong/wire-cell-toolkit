@@ -45,7 +45,7 @@ def configure(cfg):
     if 'BOOST_PIPELINE=1' not in cfg.env.DEFINES and 'dfp' in existing_sm:
         existing_sm.remove('dfp')
 
-    if 'HAVE_TBB_TBB_H=1' not in cfg.env.DEFINES and 'tbb' in existing_sm:
+    if 'HAVE_TBB' not in cfg.env and 'tbb' in existing_sm:
         existing_sm.remove('tbb')
 
     cfg.env.SUBDIRS = existing_sm
