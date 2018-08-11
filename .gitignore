@@ -40,3 +40,4 @@ HTML
 docs
 *.npz
 log
+.waf3*
