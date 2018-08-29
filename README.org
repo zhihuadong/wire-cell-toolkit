@@ -101,8 +101,7 @@ To make releases, the above details are baked into two test scripts [[https://gi
 
 * Documentation
 
-For now, the documentation is not keeping up with the code but it is in
-[[./docs]] and at http://wirecell.github.io/wire-cell-docs/.
+See http://wirecell.github.io/ for manual and news "blog".
 
 * Meta
 
