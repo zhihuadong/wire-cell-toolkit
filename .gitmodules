@@ -75,3 +75,6 @@
 [submodule "ress"]
 	path = ress
 	url = git@github.com:WireCell/wire-cell-ress.git
+[submodule "img"]
+	path = img
+	url = git@github.com:WireCell/wire-cell-img.git

@@ -41,3 +41,4 @@ docs
 *.npz
 log
 .waf3*
+install*

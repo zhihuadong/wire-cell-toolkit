@@ -39,7 +39,7 @@ def configure(cfg):
     # fixme: needed by cnpy in WireCellUtil.  should make this an explicit dependency
     cfg.env.LIB += ['z']
 
-    known_sm = 'util iface gen pgraph sio apps sigproc dfp tbb ress cfg'.split()
+    known_sm = 'util iface gen sigproc img pgraph apps sio dfp tbb ress cfg'.split()
     known_sm.sort()
     existing_sm = [sm for sm in known_sm if osp.isdir(sm)]
 
