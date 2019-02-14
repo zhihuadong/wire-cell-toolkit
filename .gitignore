@@ -42,3 +42,7 @@ docs
 log
 .waf3*
 install*
+cut
+calgrind.*
+*.patch
+venv*
