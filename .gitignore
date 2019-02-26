@@ -46,3 +46,4 @@ cut
 calgrind.*
 *.patch
 venv*
+test-*.json
