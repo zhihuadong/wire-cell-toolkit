@@ -1,80 +1,80 @@
 [submodule "gen"]
 	path = gen
-	url = https://github.com/WireCell/wire-cell-gen.git
+	url = git@github.com:WireCell/wire-cell-gen.git
         update = merge
 [submodule "sst"]
 	path = sst
-	url = https://github.com/WireCell/wire-cell-sst.git
+	url = git@github.com:WireCell/wire-cell-sst.git
         update = merge
 [submodule "iface"]
 	path = iface
-	url = https://github.com/WireCell/wire-cell-iface.git
+	url = git@github.com:WireCell/wire-cell-iface.git
         update = merge
 [submodule "riodata"]
 	path = riodata
-	url = https://github.com/WireCell/wire-cell-riodata.git
+	url = git@github.com:WireCell/wire-cell-riodata.git
         update = merge
 [submodule "rootdict"]
 	path = rootdict
-	url = https://github.com/WireCell/wire-cell-rootdict.git
+	url = git@github.com:WireCell/wire-cell-rootdict.git
         update = merge
 [submodule "util"]
 	path = util
-	url = https://github.com/WireCell/wire-cell-util.git
+	url = git@github.com:WireCell/wire-cell-util.git
         update = merge
 [submodule "dfp"]
 	path = dfp
-	url = https://github.com/WireCell/wire-cell-dfp.git
+	url = git@github.com:WireCell/wire-cell-dfp.git
         update = merge
 [submodule "alg"]
 	path = alg
-	url = https://github.com/WireCell/wire-cell-alg.git
+	url = git@github.com:WireCell/wire-cell-alg.git
         update = merge
 [submodule "rootvis"]
 	path = rootvis
-	url = https://github.com/WireCell/wire-cell-rootvis.git
+	url = git@github.com:WireCell/wire-cell-rootvis.git
         update = merge
 [submodule "bio"]
 	path = bio
-	url = https://github.com/WireCell/wire-cell-bio.git
+	url = git@github.com:WireCell/wire-cell-bio.git
         update = merge
 [submodule "apps"]
 	path = apps
-	url = https://github.com/WireCell/wire-cell-apps.git
+	url = git@github.com:WireCell/wire-cell-apps.git
         update = merge
 [submodule "wire-cell-tbb"]
 	path = wire-cell-tbb
-	url = https://github.com/WireCell/wire-cell-tbb.git
+	url = git@github.com:WireCell/wire-cell-tbb.git
         update = merge
 [submodule "tbb"]
 	path = tbb
-	url = https://github.com/WireCell/wire-cell-tbb.git
+	url = git@github.com:WireCell/wire-cell-tbb.git
         update = merge
 [submodule "python"]
 	path = python
-	url = https://github.com/WireCell/wire-cell-python.git
+	url = git@github.com:WireCell/wire-cell-python.git
         update = merge
 [submodule "cfg"]
 	path = cfg
-	url = https://github.com/WireCell/wire-cell-cfg.git
+	url = git@github.com:WireCell/wire-cell-cfg.git
         update = merge
 [submodule "sigproc"]
 	path = sigproc
-	url = https://github.com/WireCell/wire-cell-sigproc.git
+	url = git@github.com:WireCell/wire-cell-sigproc.git
         update = merge
 [submodule "waftools"]
 	path = waftools
-	url = https://github.com/WireCell/waf-tools.git
+	url = git@github.com:WireCell/waf-tools.git
         update = merge
 [submodule "sio"]
 	path = sio
-	url = https://github.com/WireCell/wire-cell-sio.git
+	url = git@github.com:WireCell/wire-cell-sio.git
 [submodule "pgraph"]
 	path = pgraph
-	url = https://github.com/WireCell/wire-cell-pgraph.git
+	url = git@github.com:WireCell/wire-cell-pgraph.git
 [submodule "ress"]
 	path = ress
-	url = https://github.com/WireCell/wire-cell-ress.git
+	url = git@github.com:WireCell/wire-cell-ress.git
 [submodule "img"]
 	path = img
-	url = https://github.com/WireCell/wire-cell-img.git
+	url = git@github.com:WireCell/wire-cell-img.git
