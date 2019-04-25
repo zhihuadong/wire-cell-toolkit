@@ -2,7 +2,9 @@
 
 This package provides a "build aggregation" package for various Wire Cell Toolkit (WCT) packages.  
 
-The home page for Wire Cell is http://www.phy.bnl.gov/wire-cell/.
+The home page for the general Wire Cell effort is http://www.phy.bnl.gov/wire-cell/.
+
+See http://wirecell.github.io/ for manual and news "blog".
 
 * Installation
 
@@ -99,9 +101,6 @@ In principle, no tests should fail but lazy developers being as they are, some m
 To make releases, the above details are baked into two test scripts [[https://github.com/WireCell/waf-tools/blob/master/make-release.sh][make-release.sh]] and [[https://github.com/WireCell/waf-tools/blob/master/test-release.sh][test-release.sh]].  See comments at the top of each for how to run them.  These scripts can be used by others but are meant for developers to make official releases.  
 
 
-* Documentation
-
-See http://wirecell.github.io/ for manual and news "blog".
 
 * Meta
 

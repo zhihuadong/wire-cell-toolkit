@@ -39,18 +39,29 @@ def configure(cfg):
     # fixme: needed by cnpy in WireCellUtil.  should make this an explicit dependency
     cfg.env.LIB += ['z']
 
-    known_sm = 'util iface gen sigproc img pgraph apps sio dfp tbb ress cfg'.split()
-    known_sm.sort()
-    existing_sm = [sm for sm in known_sm if osp.isdir(sm)]
+    submodules = 'util iface gen sigproc img pgraph apps sio dfp tbb ress cfg root'.split()
+    submodules.sort()
+    submodules = [sm for sm in submodules if osp.isdir(sm)]
 
-    if 'BOOST_PIPELINE=1' not in cfg.env.DEFINES and 'dfp' in existing_sm:
-        existing_sm.remove('dfp')
 
-    if 'HAVE_TBB' not in cfg.env and 'tbb' in existing_sm:
-        existing_sm.remove('tbb')
+    if 'BOOST_PIPELINE=1' not in cfg.env.DEFINES and 'dfp' in submodules:
+        submodules.remove('dfp')
 
-    cfg.env.SUBDIRS = existing_sm
-    print 'Configured for: %s' % (', '.join(existing_sm), )
+    if 'HAVE_TBB' not in cfg.env and 'tbb' in submodules:
+        submodules.remove('tbb')
+
+
+    if 'HAVE_ROOTSYS' not in cfg.env:
+        # eventually, make this list hold only "root"
+        needsroot = 'sio root'.split()
+        for sm in needsroot:
+            if sm in submodules:
+                submodules.remove(sm)
+                print ("build is sans ROOT, removed module: %s" % sm)
+        
+
+    cfg.env.SUBDIRS = submodules
+    print 'Configured for: %s' % (', '.join(submodules), )
 
 def build(bld):
     bld.load('smplpkgs')
