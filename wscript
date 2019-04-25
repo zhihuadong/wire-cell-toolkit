@@ -53,7 +53,7 @@ def configure(cfg):
 
     if 'HAVE_ROOTSYS' not in cfg.env:
         # eventually, make this list hold only "root"
-        needsroot = 'sio root'.split()
+        needsroot = 'root'.split()
         for sm in needsroot:
             if sm in submodules:
                 submodules.remove(sm)
