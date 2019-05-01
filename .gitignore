@@ -47,3 +47,7 @@ calgrind.*
 *.patch
 venv*
 test-*.json
+clusters-*.dot
+clusters-*.json
+*.zip
+data
