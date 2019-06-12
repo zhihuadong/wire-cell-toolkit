@@ -61,13 +61,13 @@ def configure(cfg):
         
 
     cfg.env.SUBDIRS = submodules
-    print 'Configured for: %s' % (', '.join(submodules), )
+    print ('Configured for: %s' % (', '.join(submodules), ))
 
 def build(bld):
     bld.load('smplpkgs')
 
     subdirs = bld.env.SUBDIRS
-    print 'Building: %s' % (', '.join(subdirs), )
+    print ('Building: %s' % (', '.join(subdirs), ))
 
     bld.recurse(subdirs)
 
