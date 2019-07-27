@@ -7,6 +7,7 @@ See http://wirecell.github.io/ for WCT manual and news "blog".
 
 The home page for the general Wire Cell effort is http://lar.bnl.gov/wire-cell/.
 
+https://api.travis-ci.org/WireCell/wire-cell-build.svg?branch=master
 
 * Installation
 
