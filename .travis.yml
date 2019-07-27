@@ -1,4 +1,10 @@
+os: bionic
+
 language: cpp
+
+git:
+  clone: false
+  submodules: false
 
 services:
   - docker
