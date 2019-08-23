@@ -81,3 +81,6 @@
 [submodule "root"]
 	path = root
 	url = git@github.com:WireCell/wire-cell-root.git
+[submodule "cuda"]
+	path = cuda
+	url = git@github.com:WireCell/wire-cell-cuda
