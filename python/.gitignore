@@ -1,0 +1,14 @@
+*~
+*.pyc
+cut.*
+*.egg-info
+*.pdf
+*.bz2
+venv
+*.gz
+.cache
+venv*
+test_*.png
+test_*.pdf
+build
+dist
