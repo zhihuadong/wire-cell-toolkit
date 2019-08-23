@@ -1,0 +1,4 @@
+# -*- python -*-
+bld.smplpkg('WireCellDfp', use='WireCellIface WireCellUtil')
+
+

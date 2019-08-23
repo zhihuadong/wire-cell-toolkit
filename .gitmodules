@@ -22,10 +22,6 @@
 	path = util
 	url = git@github.com:WireCell/wire-cell-util.git
         update = merge
-[submodule "dfp"]
-	path = dfp
-	url = git@github.com:WireCell/wire-cell-dfp.git
-        update = merge
 [submodule "alg"]
 	path = alg
 	url = git@github.com:WireCell/wire-cell-alg.git
