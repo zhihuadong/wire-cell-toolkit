@@ -1,0 +1,1 @@
+bld.smplpkg('WireCellIface', use='WireCellUtil', test_use='BOOST')
