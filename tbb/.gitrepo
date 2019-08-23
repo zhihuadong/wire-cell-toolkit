@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = git@github.com:wirecell/wire-cell-tbb
+	branch = master
+	commit = f1d91e740ab822838d2f2185ef323b581806226e
+	parent = e37d1a0ceea77f03627b7ea0ca3e3ee09fa39c88
+	method = merge
+	cmdver = 0.4.0

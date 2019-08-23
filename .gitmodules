@@ -30,10 +30,6 @@
 	path = wire-cell-tbb
 	url = git@github.com:WireCell/wire-cell-tbb.git
         update = merge
-[submodule "tbb"]
-	path = tbb
-	url = git@github.com:WireCell/wire-cell-tbb.git
-        update = merge
 [submodule "waftools"]
 	path = waftools
 	url = git@github.com:WireCell/waf-tools.git
