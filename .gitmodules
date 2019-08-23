@@ -50,10 +50,6 @@
 	path = python
 	url = git@github.com:WireCell/wire-cell-python.git
         update = merge
-[submodule "cfg"]
-	path = cfg
-	url = git@github.com:WireCell/wire-cell-cfg.git
-        update = merge
 [submodule "sigproc"]
 	path = sigproc
 	url = git@github.com:WireCell/wire-cell-sigproc.git
