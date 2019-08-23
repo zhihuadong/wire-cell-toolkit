@@ -38,10 +38,6 @@
 	path = bio
 	url = git@github.com:WireCell/wire-cell-bio.git
         update = merge
-[submodule "apps"]
-	path = apps
-	url = git@github.com:WireCell/wire-cell-apps.git
-        update = merge
 [submodule "wire-cell-tbb"]
 	path = wire-cell-tbb
 	url = git@github.com:WireCell/wire-cell-tbb.git

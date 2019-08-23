@@ -1,0 +1,2 @@
+bld.smplpkg('WireCellApps', use='WireCellIface', app_use='DYNAMO BOOST JSONCPP JSONNET',
+            test_use='WireCellUtil DYNAMO BOOST JSONCPP JSONNET')
