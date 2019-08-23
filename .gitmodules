@@ -1,7 +1,3 @@
-[submodule "gen"]
-	path = gen
-	url = git@github.com:WireCell/wire-cell-gen.git
-        update = merge
 [submodule "sst"]
 	path = sst
 	url = git@github.com:WireCell/wire-cell-sst.git
