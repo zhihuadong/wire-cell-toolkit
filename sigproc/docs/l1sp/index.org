@@ -1,0 +1,44 @@
+* L1SP 
+
+** Intro
+
+Wire-Cell has a special signal processing method based on fitting a
+measured waveform to a model that assumes two very different response
+functions were applied to the signal waveform.  An exact fitting
+procedure would be prohibitively expensive but can be greatly sped up
+by using a technique taken from compressed sensing which uses an L1
+norm in the function to be minimized.  This is implemented in the
+~L1SPFilter~ component.
+
+** Test harness
+
+A simple test harness of L1SP is provided which makes use of data in
+so called "Magnify" format and which provides a three sets of
+waveforms for one detector readout:
+
+- raw :: ADC level waveforms, possibly after software noise filtering
+- gauss :: the Gaussian filtered signals from the WCT 2D signal processing
+- wiener :: the Wiener(-inspired) filtered signals from the WCT 2D signal processing
+
+To run the test:
+
+#+BEGIN_EXAMPLE
+  $ wire-cell -c 
+  $ wire-cell -V input=mag.root -V output=l1sp.root -c l1sp/mag-l1sp-mag.jsonnet
+#+END_EXAMPLE
+
+Where =mag.root= is the input Magnify file and =l1sp.root= names the output Magnify file.
+
+** Configuration
+
+The configuration file [[https://github.com/WireCell/wire-cell-cfg/blob/master/l1sp/mag-l1sp-mag.jsonnet][mag-l1sp-mag.jsonnet]] referred to in the example sets up a WCT graph of components as shown:
+
+[[./l1sp.svg]]
+
+The split branch is made so that the "raw" and "gauss" waveforms from just the known problematic channels can be selected and sent into the ~L1SPFilter~.  The result are merged back into the original frame by the ~FrameMerger~ component.  It merges the L1SP results into both the original "gauss" and the "wiener" waveforms.  The merged results are then saved back to a new file in ~MagnifySink~.  The final ~DumpFrames~ is just to provide an actual end-node sink as ~MagnifySink~ is really a filter, despite its name.
+
+Inside the Jsonnet configuration file is one local variable set to a configuration data structure for each component.  The ~L1SPFilter~ component takes a filter waveform as well as the name of input ADC and conventional 2D deconvolved signal trace tags as well as a tag to apply to the output.  These tags are used also when configuring ~ChannelSelectro~ and ~FrameMerger~.  The former also requires a list of channels to select.
+
+** Code
+
+The ~L1SPFilter~ [[https://github.com/WireCell/wire-cell-sigproc/blob/master/src/L1SPFilter.cxx][implementation code]] entry point is its ~operator()~ method.  This method receives a shared pointer to an input frame.  From that frame the two input trace tags are used to get the traces.  The L1SP code itself then operates on these traces to produce a new set of traces.  These get bundled together into a new frame and tagged and that frame pointer is set to the output shared pointer.

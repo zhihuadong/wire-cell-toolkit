@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = git@github.com:wirecell/wire-cell-sigproc
+	branch = master
+	commit = 014c273ec5151419c48f0043df4c1f8bfe21d116
+	parent = e9da36e6de474adeb63bf3710a1281a76115990d
+	method = merge
+	cmdver = 0.4.0

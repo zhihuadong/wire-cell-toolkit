@@ -1,0 +1,11 @@
+*~
+*.root
+*.pyc
+*.bz2
+.#*
+#*
+*.gz
+\#*
+*.html
+*.egg-info
+venv

@@ -1,0 +1,112 @@
+This file just contains some notes.  For Wire Cell Toolkit documentation see:
+
+https://wirecell.github.io/
+
+More information about using Wire Cell Toolkit's Python interface is at
+
+https://wirecell.github.io/manual.html#pkg-python
+
+* Generating Field Response Data File.
+
+** Garfield 2D input
+
+Get the output of Garfield 2D which should be a collection of files like:
+
+#+BEGIN_EXAMPLE
+  <impact>_<letter>.dat
+#+END_EXAMPLE
+
+Where 
+- =<impact>= :: gives the impact position in mm (eg =0.9=)
+- =<letter>= :: indicates the plane (eg, =U=, =V= or =Y=)
+
+Contents of the file should be like:
+
+#+BEGIN_EXAMPLE
+  ,*----.----1----.----2----.----3----.----4----.----5----.----6----.----7----.----8----.----9----.---10----.---11----.---12----.---13--
+  % Created 31/07/16 At 19.52.20 < none > SIGNAL   "Direct signal, group   1     "
+
+    Group 1 consists of:
+       Wire 243 with label X at (x,y)=(-3,0.6) and at -110 V
+   Number of signal records:  1000
+   Units used: time in micro second, current in micro Ampere.
+   .STIMULUS signal PWL
+   + TIME_SCALE_FACTOR =  0.100E-05
+   + VALUE_SCALE_FACTOR =  0.100E-05
+   + (  0.00000000E+00   0.00000000E+00
+   +     0.10000000E+00   0.00000000E+00
+   +     0.20000000E+00   0.00000000E+00
+  ...
+   +     0.99599998E+02   0.00000000E+00
+   +     0.99700005E+02   0.00000000E+00
+   +     0.99800003E+02   0.00000000E+00
+   +     0.99900002E+02   0.00000000E+00 )
+  % Created 31/07/16 At 19.52.20 < none > SIGNAL   "Cross-talk, group   1        "
+
+    Group 1 consists of:
+       Wire 243 with label X at (x,y)=(-3,0.6) and at -110 V
+   Number of signal records:  1000
+   Units used: time in micro second, current in micro Ampere.
+   .STIMULUS signal PWL
+   + TIME_SCALE_FACTOR =  0.100E-05
+   + VALUE_SCALE_FACTOR =  0.100E-05
+   + (  0.00000000E+00  -0.15888787E-10
+   +     0.10000000E+00  -0.31810016E-10
+   +     0.20000000E+00  -0.31853374E-10
+   +     0.99800003E+02  -0.58125088E-16
+   +     0.99900002E+02  -0.58125088E-16 )
+  ...
+    Group 21 consists of:
+       Wire 263 with label X at (x,y)=(3,0.6) and at -110 V
+   Number of signal records:  1000
+   Units used: time in micro second, current in micro Ampere.
+   .STIMULUS signal PWL
+   + TIME_SCALE_FACTOR =  0.100E-05
+   + VALUE_SCALE_FACTOR =  0.100E-05
+   + (  0.00000000E+00  -0.15898597E-10
+   +     0.10000000E+00  -0.31829737E-10
+   +     0.20000000E+00  -0.31873192E-10
+  ...
+   +     0.99700005E+02  -0.58160981E-16
+   +     0.99800003E+02  -0.58160981E-16
+   +     0.99900002E+02  -0.58160981E-16 )
+#+END_EXAMPLE
+
+** WCT JSON
+
+Wire Cell Toolkit works with JSON data.  Python code in =wire-cell-python= package is provided to convert Garfield 2D files into properly structure JSON.
+
+
+#+BEGIN_EXAMPLE
+  $ cd wire-cell-python/
+  $ virtualenv --system-site-packages venv
+  $ source venv/bin/activate
+  $ python setup.py develop
+  $ wirecell-sigproc convert-garfield --help
+  Usage: wirecell-sigproc convert-garfield [OPTIONS] GARFIELD_FILESET
+                                           WIRECELL_FIELD_RESPONSE_FILE
+
+    Convert an archive of a Garfield fileset (zip, tar, tgz) into a Wire Cell
+    field response file (.json with optional .gz or .bz2 compression).
+
+  Options:
+    -o, --origin TEXT          Set drift origin (give units, eg '10*cm').
+    -s, --speed TEXT           Set nominal drift speed (give untis, eg
+                               '1.114*mm/us').
+    -n, --normalization FLOAT  Set normalization: 0:none, <0:electrons,
+                               >0:multiplicative scale.  def=0
+    --help                     Show this message and exit.
+  $ wirecell-sigproc convert-garfield ub_10.tar.gz ub-10.json.bz2 
+  $ wirecell-sigproc plot-garfield-track-response ub_10.tar.gz tr.pdf
+#+END_EXAMPLE
+
+Notes:
+
+- Using =--system-site-packages= may be useful as Numpy is required and if it's installed as a system package it will save you some time.  O.w., it can be installed into the virtualenv.
+- Once you generate the =.json.bz2= file, you no longer require this code so deactivate and clean up
+- The plotting command is optional.  It remakes a plot for the MB noise paper and is reproduced below
+- *Warning* the plot below is not final nor official.
+
+[[./tr.png]]
+[[./tr.pdf]]
+

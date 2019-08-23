@@ -1,0 +1,18 @@
+digraph pgraph {
+rankdir=LR;
+	node[shape=record];
+	ChannelSelector[label="{{<in0>0}|{ChannelSelector\n}|{<out0>0}}"];
+	DumpFrames[label="{{<in0>0}|{DumpFrames\n}}"];
+	FrameMerger[label="{{<in0>0|<in1>1}|{FrameMerger\n}|{<out0>0}}"];
+	FrameSplitter[label="{{<in0>0}|{FrameSplitter\n}|{<out0>0|<out1>1}}"];
+	L1SPFilter[label="{{<in0>0}|{L1SPFilter\n}|{<out0>0}}"];
+	MagnifySink[label="{{<in0>0}|{MagnifySink\n}|{<out0>0}}"];
+	MagnifySource[label="{{MagnifySource\n}|{<out0>0}}"];
+	MagnifySource:out0 -> FrameSplitter:in0;
+	FrameSplitter:out1 -> FrameMerger:in1;
+	FrameSplitter:out0 -> ChannelSelector:in0;
+	ChannelSelector:out0 -> L1SPFilter:in0;
+	L1SPFilter:out0 -> FrameMerger:in0;
+	FrameMerger:out0 -> MagnifySink:in0;
+	MagnifySink:out0 -> DumpFrames:in0;
+}
