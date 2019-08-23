@@ -1,0 +1,135 @@
+* Overview
+
+This repository holds some simple Waf tools which help build code with =waf=.  
+The Python modules it contains must be available to a Waf context =load()=. 
+It's recommended that any build package relying on this one include it via git submodule or similar.
+
+As a note, waf includes useful tools of its own which may not be included by default.  
+To include them into a custom =waf= command do something like:
+
+#+BEGIN_EXAMPLE
+  $ git clone https://github.com/waf-project/waf.git
+  $ cd waf/
+  $ ./waf-light --tools=doxygen,boost,bjam
+  $ cp waf /path/to/wire-cell-build/wcb
+#+END_EXAMPLE
+
+*Warning* you must do the above outside of an otherwise Waf-controlled directory.
+
+* Using the tools
+
+The tools are introduced into your =wscript= in the usual way via the =load()= command.
+
+* Using the ~wcb~ tool
+
+
+The Waf tools used to build the WCT packages and to find the externals
+are all bundled up in the ~wcb~ tool (by which is meant [[./wcb.py]] and
+not the main ~wcb~ command line program discussed above).  It provides
+a mostly uniform interface to locating externals.  You may see this
+with:
+
+#+BEGIN_EXAMPLE
+  $ ./wcb --help
+#+END_EXAMPLE
+
+Packages can be included, excluded and located with the various
+~--with-NAME*~ flags.  The rules work as follows:
+
+1) If package is optional:
+
+  - omitting all ~--with-NAME*~ options will omit use the package
+
+  - explicitly using ~--with-NAME=false~ (or "~no~" or "~off~") will omit
+    use of the package.
+
+2) If package is mandatory:
+
+  - omitting all ~--with-NAME*~ options will use ~pkg-config~ to find the
+    package.
+
+  - explicitly using ~--with-NAME=false~ (or "~no~" or "~off~") will
+      assert.
+
+3) In either case:
+
+  - explicitly using ~--with-NAME=true~ (or "~yes~" or "~on~") will use
+    pkg-config to find the package.
+
+  - using ~--with-NAME*! with a path will attempt to locate the package
+    without using ~pkg-config~.
+
+
+Note: depending on how you have installed the external packages,
+~pkg-config~ may fail to find packages.  Using explicit ~--with-NAME*~
+flags is universally more likely to succeed.
+
+
+
+* Using the =smplpkgs= tool to build suites of packages
+
+The =smplpkgs= tool included in =waf-tools= provides a simple way to
+build a suite of software packages that have interdependencies without
+you, the developer, having to care much about the build system.
+
+** Package organization 
+
+To achieve this simplicity, some file and directory naminging
+conventions and organization must be followed, as illustrated:
+
+#+BEGIN_EXAMPLE
+  pkg1/
+  ├── wscript_build
+  ├── inc/
+  │   └── ProjectNamePkg1/*.h
+  ├── src/*.{cxx,h}
+  └── test/*.{cxx,h}
+  pkg2/
+  ├── wscript_build
+  ├── inc/
+  │   └── ProjectNamePkg2/*.h
+  ├── src/*.{cxx,h}
+  ├── app/*.{cxx,h}
+  └── test/*.{cxx,h}
+#+END_EXAMPLE
+
+Notes on the structure:
+
+- All packages placed in a top-level directory (not required, but aggregating them via =git submodule= is useful).
+- Public header files for the package must be placed under =<pkgdirname>/inc/<PackageName>/=
+- Library source (implementation and private headers) under =<pkgdirname>/src/=
+- Application source (implementation and private headers) under =<pkgdirname>/app/= with only main application files and one application per =*.cxx= file.
+- Test source (implementation and private headers) under =<pkgdirname>/test/= with main test programs named like =test_*.cxx=
+- A short `wscript_build` file in each package.
+
+The =<pkgdirname>= only matters in the top-level =wscript= file which you must provide.  The =<PackageName>= matters for inter-package dependencies.
+
+** The per-package =wscript_build= file
+
+Each package needs a brief (generally single line) file called =wscript_build= to exist at in its top-level directory.  It is responsible for declaring:
+
+- The package name
+- Library dependencies
+- Any additional application dependencies
+- Any additional test dependencies
+
+Example:
+
+#+BEGIN_SRC python
+  bld.smplpkg('MyPackage', use='YourPackage YourOtherPackage')
+#+END_SRC
+
+Test and application programs are allowed to have additional dependencies declared.  For example:
+
+#+BEGIN_SRC python
+  bld.smplpkg('MyPackage', use='YourPackage YourOtherPackage', test_use='ROOTSYS')
+#+END_SRC
+
+** The top-level =wscript= file
+
+Driving the build of all packages is a main =wscript= file.  It is responsible for:
+
+- loading any tools in =waf= =options/configure/build= contexts
+- recursing down into the package directories
+- handling any special build instructions not supported by =smplpkgs=.
+

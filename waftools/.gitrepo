@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = git@github.com:wirecell/waf-tools
+	branch = master
+	commit = 249dcc409e27e9f75b9a0c2f392740b9d6949bed
+	parent = d4f05c54ffbb4058b3abeea8022cd32721dece4a
+	method = merge
+	cmdver = 0.4.0

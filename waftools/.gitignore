@@ -1,0 +1,7 @@
+*~
+*.pyc
+.waf*
+README.html
+wcb
+waf
+waf-tools
