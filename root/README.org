@@ -1,0 +1,38 @@
+#+title: wire-cell-root
+
+This packages houses dependencies on ROOT.
+
+The policy on ROOT for the Wire-Cell Toolkit is as follows:
+
+- dependency on ROOT *shall* be a compile time option for building WCT.
+
+- the core Wire-Cell Toolkit libraries *shall* have no dependencies on ROOT.
+
+- the core packages *shall* have no dependencies on ROOT.
+
+- tests of core libraries *may* depend on root (but *shall* exist outside core packages).
+
+- non-core WCT components *may* depend on root (but *shall* exist outside core libraries).
+
+- the ~wire-cell-root~ *should* not be used as a compile time package by other (non core) WCT packages. 
+
+Core packages are currently defined as: apps, cfg, dfp, gen, iface,
+img, pgraph, ress, sigproc, sio, tbb, util.
+
+
+Initially, WCT had a more relaxed policy.  Specifically this held true:
+
+- ROOT dependencies were allowed for tests in any package (a separate
+  lib, app and test dependency tree is supported by WCT's build
+  system).
+
+- The ~sio~ package was not considered core and had a mix of ROOT and non-ROOT.
+
+A refactoring campaign has started with the creation of this package
+to reach the desired policy.  It consists of the following actions:
+
+- Creation of ~wire-cell-root.~
+- Move of any test depending on root to this package.
+- Move of any library component to this package or another.
+- Move of components include a change of C++ namespace and header locations.
+

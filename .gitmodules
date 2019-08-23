@@ -45,6 +45,3 @@
 [submodule "sio"]
 	path = sio
 	url = git@github.com:WireCell/wire-cell-sio.git
-[submodule "root"]
-	path = root
-	url = git@github.com:WireCell/wire-cell-root.git
