@@ -49,9 +49,6 @@
 [submodule "sio"]
 	path = sio
 	url = git@github.com:WireCell/wire-cell-sio.git
-[submodule "pgraph"]
-	path = pgraph
-	url = git@github.com:WireCell/wire-cell-pgraph.git
 [submodule "ress"]
 	path = ress
 	url = git@github.com:WireCell/wire-cell-ress.git
