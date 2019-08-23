@@ -18,6 +18,9 @@ def check_root(cfg, mandatory=False):
     instdir = cfg.options.with_root
 
     if instdir and instdir.lower() in ['no','off','false']:
+        if mandatory:
+            raise RuntimeError("ROOT is mandatory but disabled via command line")
+        print ("optional ROOT dependency disabled by command line")
         return
 
     cfg.env.CXXFLAGS += ['-fPIC']
@@ -29,11 +32,10 @@ def check_root(cfg, mandatory=False):
         
     kwargs = dict(path_list=path_list)
 
-
     cfg.find_program('root-config', var='ROOT-CONFIG', mandatory=mandatory, **kwargs)
     if not 'ROOT-CONFIG' in cfg.env:
         if mandatory:
-            raise RuntimeError("root-config not found but required")
+            raise RuntimeError("root-config not found but ROOT required")
         print ("skipping non mandatory ROOT, use --with-root to force")
         return
 
