@@ -1,0 +1,8 @@
+#ifndef WIRECELLCUDE_SIMPLECUDATEST
+#define WIRECELLCUDE_SIMPLECUDATEST
+
+int testcuda();
+
+#endif
+
+
