@@ -1,0 +1,2 @@
+bld.smplpkg('WireCellImg', use='WireCellIface WireCellUtil')
+

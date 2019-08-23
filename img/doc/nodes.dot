@@ -1,0 +1,53 @@
+digraph nodes {
+        rankdir=LR
+
+        // data
+        node[shape=ellipse]
+        IFrame
+        ISlice[label="ISlice\n(in frame)"]
+        IStrip[label="IStrip\n(in slice)"]
+        IStripSet[label="IStripSet\n(one slice)"]
+        IBlob[label="IBlob\n(in slice)"]
+        IBlobSet[label="IBlobSet\n(one slice)"]
+        IBlobSet2[label="IBlobSet\n(whole frame)"]
+        ICluster
+
+        // processes
+        node[shape=box]
+        IFrameSlices[label="IFrameSlices\n(queued out)"]
+        ISliceStripper
+        ITiler
+        IBlobCollector[label="IBlobCollector\n(queued in)"]
+        IBlobFilter[label="IBlobFilter\n(one slice)"]
+        IBlobFilter2[label="IBlobFilter\n(whole frame)"]
+        IBlobClustering
+
+        edge[]
+        IFrameSlices->IFrame[dir=back]
+        IFrameSlices->ISlice[label=N]
+
+        ISlice->ISliceStripper[]
+        
+        ISliceStripper->IStrip[label=N, dir=both, style=dotted]
+
+
+        ISliceStripper->IStripSet[label=1]
+        ITiler->IStripSet[dir=back,label=1]
+        ITiler->IBlob[label=N, dir=both, style=dotted]
+        ITiler->IBlobSet[label=1]
+        IBlobSet->IBlobFilter[dir=both]
+
+        IBlobFilter2->IBlobSet2[dir=both]
+
+
+        IBlobCollector->IBlobSet[dir=back, label=N]
+        IBlobCollector->IBlobSet2[label=1]
+        IBlobSet2->IBlobClustering[label=1]
+        ICluster->IBlobClustering[dir=back,label=1]
+
+        edge[constraint=false,style=dashed,color=gray,fontcolor=gray]
+        ISlice->IFrame[taillabel=1]
+        IStrip->ISlice[taillabel=1]
+        IBlob->IStrip[taillabel=N]
+        ICluster->IBlob[taillabel=N]
+}

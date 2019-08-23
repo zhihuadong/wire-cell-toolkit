@@ -1,0 +1,8 @@
+*~
+.~lock*
+README.pdf
+README.tex
+auto
+*.pptx
+latexmk
+ltximg
