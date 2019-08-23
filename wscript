@@ -7,6 +7,13 @@ from waflib.Utils import to_list
 TOP = '.'
 APPNAME = 'WireCell'
 
+def find_submodules(ctx):
+    sms = list()
+    for wb in ctx.path.ant_glob("**/wscript_build"):
+        sms.append(wb.parent.name)
+    sms.sort()
+    return sms
+
 def options(opt):
     opt.load('boost')
     opt.load("wcb",tooldir="waftools")
@@ -39,29 +46,26 @@ def configure(cfg):
     # fixme: needed by cnpy in WireCellUtil.  should make this an explicit dependency
     cfg.env.LIB += ['z']
 
-    submodules = 'util iface gen sigproc img pgraph apps sio dfp tbb ress cfg root'.split()
-    submodules.sort()
-    submodules = [sm for sm in submodules if osp.isdir(sm)]
+    submodules = find_submodules(cfg)
+
+    # submodules = 'util iface gen sigproc img pgraph apps sio dfp tbb ress cfg root'.split()
+    # submodules.sort()
+    # submodules = [sm for sm in submodules if osp.isdir(sm)]
 
 
     if 'BOOST_PIPELINE=1' not in cfg.env.DEFINES and 'dfp' in submodules:
+        print ('Removing submodule "dfp" due to lack of external')
         submodules.remove('dfp')
 
-    if 'HAVE_TBB' not in cfg.env and 'tbb' in submodules:
-        submodules.remove('tbb')
-
-
-    if 'HAVE_ROOTSYS' not in cfg.env:
-        # eventually, make this list hold only "root"
-        needsroot = 'root'.split()
-        for sm in needsroot:
-            if sm in submodules:
-                submodules.remove(sm)
-                print ("build is sans ROOT, removed module: %s" % sm)
-        
+    # Remove WCT packages that happen to have same name as external name
+    for maybe in "root tbb cuda".split():
+        have='have_%s'%maybe
+        if have.upper() not in cfg.env and maybe in submodules:
+            print ('Removing submodule "%s" due to lack of external dependency'%maybe)
+            submodules.remove(maybe)
 
     cfg.env.SUBDIRS = submodules
-    print ('Configured for: %s' % (', '.join(submodules), ))
+    print ('Configured for submodules: %s' % (', '.join(submodules), ))
 
 def build(bld):
     bld.load('smplpkgs')
