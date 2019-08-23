@@ -10,10 +10,6 @@
 	path = rootdict
 	url = git@github.com:WireCell/wire-cell-rootdict.git
         update = merge
-[submodule "util"]
-	path = util
-	url = git@github.com:WireCell/wire-cell-util.git
-        update = merge
 [submodule "alg"]
 	path = alg
 	url = git@github.com:WireCell/wire-cell-alg.git
