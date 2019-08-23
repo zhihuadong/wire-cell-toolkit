@@ -38,6 +38,3 @@
 	path = waftools
 	url = git@github.com:WireCell/waf-tools.git
         update = merge
-[submodule "sio"]
-	path = sio
-	url = git@github.com:WireCell/wire-cell-sio.git
