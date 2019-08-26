@@ -95,7 +95,7 @@ local chndb = [{
 local nf_maker = import 'pgrapher/experiment/pdsp/nf.jsonnet';
 local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in anode_iota];
 
-local sp = sp_maker(params, tools, { sparse: true} );
+local sp = sp_maker(params, tools, { sparse: true, use_roi_debug_mode: false,} );
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
 local fansel = g.pnode({
@@ -111,10 +111,21 @@ local fansel = g.pnode({
     },
 }, nin=1, nout=nanodes, uses=tools.anodes);
 
+local magoutput = 'protodune-data-check.root';
+local magnify = import 'pgrapher/experiment/pdsp/magnify-sinks.jsonnet';
+local sinks = magnify(tools, magoutput);
+
 local pipelines = [
     g.pipeline([
+        sinks.orig_pipe[n],
+
         nf_pipes[n],
+        sinks.raw_pipe[n],
+
         sp_pipes[n],
+        sinks.decon_pipe[n],
+        sinks.threshold_pipe[n],
+        sinks.debug_pipe[n], // use_roi_debug_mode=true in sp.jsonnet
     ],
                'nfsp_pipe_%d' % n)
     for n in anode_iota

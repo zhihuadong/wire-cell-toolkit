@@ -66,7 +66,7 @@ function(params, anode, chndbobj, n, name='')
         anode: wc.tn(anode),
         stky_sig_like_val: 15.0,
         stky_sig_like_rms: 2.0,
-        stky_max_len: 5,
+        stky_max_len: 10,
       },
     },
     local gaincalib = {

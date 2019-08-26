@@ -40,7 +40,7 @@ physics :{
             loglevels: ["debug", "pgraph:info"]
 
             // Libraries in which to look for WCT components
-            plugins: ["WireCellGen", "WireCellSigProc", "WireCellPgraph", "WireCellLarsoft"]
+            plugins: ["WireCellGen", "WireCellSigProc", "WireCellPgraph", "WireCellLarsoft", "WireCellRoot"]
 
             // The tool marshals the art::Event to these visitors before.
             // See notes below in params.
