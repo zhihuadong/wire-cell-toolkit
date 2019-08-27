@@ -1820,6 +1820,13 @@ void ROI_refinement::BreakROI(SignalROI *roi, float rms){
       //std::cout << roi->get_plane() << " " << roi->get_chid() << " " << npeaks << " " << npeaks1 << " " ;
       //std::cout << start_bin << " " << end_bin << std::endl;
 
+      // sometimes NO individual peaks identified due to low_peak_sep_threshold
+      // but still want to keep the entire ROI as good
+      if (npeaks1==0) {
+        npeaks1 =1;
+        valley_pos1[0] = valley_pos[0];
+        valley_pos1[1] = valley_pos[npeaks];
+      }
 
       // if (roi->get_chid() == 1240 && roi->get_plane() == 0){
       // 	for (int j=0;j!=npeaks1;j++){
