@@ -197,8 +197,8 @@ namespace WireCell {
 
       // Per-plane temporary working arrays.  Each column is one tick,
       // each row is indexec by an "OSP wire" number
-      Array::array_xxf m_r_data;
-      Array::array_xxc m_c_data;
+      Array::array_xxf m_r_data[3];
+      Array::array_xxc m_c_data[3];
       
       //average overall responses
       std::vector<Waveform::realseq_t> overall_resp[3];

@@ -4,8 +4,10 @@
 #include "SignalROI.h"
 #include "ROI_formation.h"
 #include "WireCellUtil/Array.h"
+#include "WireCellUtil/RayGrid.h"
 #include "WireCellUtil/Waveform.h"
 #include "WireCellUtil/Logging.h"
+#include "WireCellIface/IAnodePlane.h"
 
 #include <vector>
 #include <map>
@@ -26,6 +28,8 @@ namespace WireCell{
       void load_data(int plane, const Array::array_xxf& r_data, ROI_formation& roi_form);
       void refine_data(int plane, ROI_formation& roi_form);
       void refine_data_debug_mode(int plane, ROI_formation& roi_form, const std::string& cmd);
+
+      void multi_plane_protection(const int plane, const IAnodePlane::pointer  anode);
 
       void apply_roi(int plane, Array::array_xxf& r_data);
       
@@ -83,6 +87,8 @@ namespace WireCell{
     
       SignalROIChList rois_u_loose;
       SignalROIChList rois_v_loose;
+
+      std::set<SignalROI*> proteced_rois;
    
     
       SignalROIMap front_rois;
