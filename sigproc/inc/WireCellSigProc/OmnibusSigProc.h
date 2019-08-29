@@ -183,6 +183,9 @@ namespace WireCell {
       // except that it is nonnegative.  
       int m_nwires[3];
 
+      // ROI->chid() -> wct ch ident
+      std::map<int, int> m_roi_ch_ch_ident;
+
       // Need to go from WCT channel ident to {OSP channel, wire and plane}
       std::map<int,OspChan> m_channel_map;
 

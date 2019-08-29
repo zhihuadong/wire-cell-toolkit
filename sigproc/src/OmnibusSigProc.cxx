@@ -248,6 +248,7 @@ void OmnibusSigProc::configure(const WireCell::Configuration& config)
     for (auto ichan : plane_channels[iplane]) {
       const int wct_chan_ident = ichan->ident();
       OspChan och(osp_channel_number, osp_wire_number, iplane, wct_chan_ident);
+      m_roi_ch_ch_ident[osp_channel_number] = wct_chan_ident;
       m_channel_map[wct_chan_ident] = och; // we could save some space by storing
       m_channel_range[iplane].push_back(och);// wct ident here instead of a whole och.
       ++osp_wire_number;
@@ -1278,7 +1279,7 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
       save_roi(*itraces, cleanup_roi_traces, iplane, roi_refine.get_rois_by_plane(iplane));
 
       if(iplane==0)
-        roi_refine.multi_plane_protection(iplane, m_anode);
+        roi_refine.multi_plane_protection(iplane, m_anode, m_roi_ch_ch_ident);
 
       std::cout << "[wgu] BreakROIs ..." << std::endl;
       roi_refine.refine_data_debug_mode(iplane, roi_form, "BreakROIs");
