@@ -29,7 +29,30 @@ namespace WireCell{
       void refine_data(int plane, ROI_formation& roi_form);
       void refine_data_debug_mode(int plane, ROI_formation& roi_form, const std::string& cmd);
 
-      void multi_plane_protection(const int plane, const IAnodePlane::pointer anode, const std::map<int, int> & map_ch);
+      void MultiPlaneProtection(const int plane,
+                                const IAnodePlane::pointer anode,
+                                const std::map<int, int> &map_ch,
+                                const int faceid = 1,
+                                const int tick_resolution = 10,
+                                const int wire_resolution = 2,
+                                const int nbounds_layers = 2);
+
+      void CleanUpROIs(int plane);
+      void generate_merge_ROIs(int plane);
+      void CheckROIs(int plane, ROI_formation& roi_form);
+
+      void CleanUpCollectionROIs();
+      void CleanUpInductionROIs(int plane);
+      void ShrinkROIs(int plane, ROI_formation& roi_form);
+      void ShrinkROI(SignalROI *roi, ROI_formation& roi_form);
+
+      void BreakROIs(int plane, ROI_formation& roi_form);
+      void BreakROI(SignalROI *roi, float rms);
+      void BreakROI1(SignalROI *roi);
+      
+      void ExtendROIs();
+
+      void TestROIs();
 
       void apply_roi(int plane, Array::array_xxf& r_data);
       
@@ -61,22 +84,6 @@ namespace WireCell{
       
       void unlink(SignalROI *prev_roi, SignalROI *next_roi);
       void link(SignalROI *prev_roi, SignalROI *next_roi);
-      void CleanUpROIs(int plane);
-      void generate_merge_ROIs(int plane);
-      void CheckROIs(int plane, ROI_formation& roi_form);
-
-      void CleanUpCollectionROIs();
-      void CleanUpInductionROIs(int plane);
-      void ShrinkROIs(int plane, ROI_formation& roi_form);
-      void ShrinkROI(SignalROI *roi, ROI_formation& roi_form);
-
-      void BreakROIs(int plane, ROI_formation& roi_form);
-      void BreakROI(SignalROI *roi, float rms);
-      void BreakROI1(SignalROI *roi);
-      
-      void ExtendROIs();
-
-      void TestROIs();
       
       std::map<int,std::vector<std::pair<int,int>>> bad_ch_map;
       

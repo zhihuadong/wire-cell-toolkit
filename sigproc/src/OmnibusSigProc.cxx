@@ -117,6 +117,7 @@ OmnibusSigProc::OmnibusSigProc(const std::string& anode_tn,
   , m_break_roi_loop2_tag(break_roi_loop2_tag)
   , m_shrink_roi_tag(shrink_roi_tag)
   , m_extend_roi_tag(extend_roi_tag)
+  , m_use_multi_plane_protection(false)
   , m_sparse(false)
   , log(Log::logger("sigproc"))
 {
@@ -206,6 +207,8 @@ void OmnibusSigProc::configure(const WireCell::Configuration& config)
   m_break_roi_loop2_tag = get(config,"break_roi_loop2_tag",m_break_roi_loop2_tag);
   m_shrink_roi_tag = get(config,"shrink_roi_tag",m_shrink_roi_tag);
   m_extend_roi_tag = get(config,"extend_roi_tag",m_extend_roi_tag);
+
+  m_use_multi_plane_protection =  get<bool>(config, "use_multi_plane_protection", m_use_multi_plane_protection);
 
   // this throws if not found
   m_anode = Factory::find_tn<IAnodePlane>(m_anode_tn);
@@ -318,6 +321,8 @@ WireCell::Configuration OmnibusSigProc::default_configuration() const
   cfg["break_roi_loop2_tag"] = m_break_roi_loop2_tag;
   cfg["shrink_roi_tag"] = m_shrink_roi_tag;
   cfg["extend_roi_tag"] = m_extend_roi_tag;
+
+  cfg["use_multi_plane_protection"] = m_use_multi_plane_protection; // default false
   
   cfg["sparse"] = false;
 
@@ -1270,34 +1275,53 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
     const std::vector<float>& perwire_rmses = *perplane_thresholds[iplane];
     
     // roi_refine.refine_data(iplane, roi_form);
-    if (not m_use_roi_debug_mode) // default: use_roi_debug_mode=false
-      roi_refine.refine_data(iplane, roi_form);
-    else { // CAVEAT: ONLY USE ME FOR DEBUGGING
 
-      std::cout << "[wgu] CleanUpROIs ..." << std::endl;
-      roi_refine.refine_data_debug_mode(iplane, roi_form, "CleanUpROIs");
-      save_roi(*itraces, cleanup_roi_traces, iplane, roi_refine.get_rois_by_plane(iplane));
+    roi_refine.CleanUpROIs(iplane);
+    roi_refine.generate_merge_ROIs(iplane);
 
-      if(iplane==0)
-        roi_refine.multi_plane_protection(iplane, m_anode, m_roi_ch_ch_ident);
-
-      std::cout << "[wgu] BreakROIs ..." << std::endl;
-      roi_refine.refine_data_debug_mode(iplane, roi_form, "BreakROIs");
-      save_roi(*itraces, break_roi_loop1_traces, iplane, roi_refine.get_rois_by_plane(iplane));
-
-      std::cout << "[wgu] BreakROIs_2 ..." << std::endl;
-      roi_refine.refine_data_debug_mode(iplane, roi_form, "BreakROIs");
-      save_roi(*itraces, break_roi_loop2_traces, iplane, roi_refine.get_rois_by_plane(iplane));
-
-      std::cout << "[wgu] ShrinkROIs ..." << std::endl;
-      roi_refine.refine_data_debug_mode(iplane, roi_form, "ShrinkROIs");
-      save_roi(*itraces, shrink_roi_traces, iplane, roi_refine.get_rois_by_plane(iplane));
-
-      std::cout << "[wgu] ExtendROIs ..." << std::endl;
-      roi_refine.refine_data_debug_mode(iplane, roi_form, "ExtendROIs");
-      save_roi(*itraces, extend_roi_traces, iplane, roi_refine.get_rois_by_plane(iplane));
+    if (m_use_roi_debug_mode) {
+      save_roi(*itraces, cleanup_roi_traces, iplane,
+               roi_refine.get_rois_by_plane(iplane));
     }
 
+    if (m_use_multi_plane_protection) {
+      roi_refine.MultiPlaneProtection(iplane, m_anode, m_roi_ch_ch_ident,
+                                      m_anode->ident() % 2);
+    }
+
+    for (int qx = 0; qx != m_r_break_roi_loop; qx++) {
+      roi_refine.BreakROIs(iplane, roi_form);
+      roi_refine.CheckROIs(iplane, roi_form);
+      roi_refine.CleanUpROIs(iplane);
+      if (m_use_roi_debug_mode) {
+        if (qx == 0)
+          save_roi(*itraces, break_roi_loop1_traces, iplane,
+                   roi_refine.get_rois_by_plane(iplane));
+        if (qx == 1)
+          save_roi(*itraces, break_roi_loop2_traces, iplane,
+                   roi_refine.get_rois_by_plane(iplane));
+      }
+    }
+
+    roi_refine.ShrinkROIs(iplane, roi_form);
+    roi_refine.CheckROIs(iplane, roi_form);
+    roi_refine.CleanUpROIs(iplane);
+    if (m_use_roi_debug_mode) {
+      save_roi(*itraces, shrink_roi_traces, iplane,
+               roi_refine.get_rois_by_plane(iplane));
+    }
+
+    if (iplane == 2) {
+      roi_refine.CleanUpCollectionROIs();
+    } else {
+      roi_refine.CleanUpInductionROIs(iplane);
+    }
+    roi_refine.ExtendROIs();
+
+    if (m_use_roi_debug_mode) {
+      save_roi(*itraces, extend_roi_traces, iplane,
+               roi_refine.get_rois_by_plane(iplane));
+    }
 
     // merge results ...
     decon_2D_hits(iplane);

@@ -221,6 +221,8 @@ namespace WireCell {
       std::string m_shrink_roi_tag;
       std::string m_extend_roi_tag;
 
+      bool m_use_multi_plane_protection;
+
       // If true, safe output as a sparse frame.  Traces will only
       // cover segments of waveforms which have non-zero signal
       // samples.
