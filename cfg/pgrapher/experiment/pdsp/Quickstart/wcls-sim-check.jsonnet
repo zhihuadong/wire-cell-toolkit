@@ -86,7 +86,7 @@ local wcls_output = {
         // anode: wc.tn(tools.anode),
         anode: wc.tn(mega_anode),
         digitize: true,  // true means save as RawDigit, else recob::Wire
-        frame_tags: ['orig'],
+        frame_tags: ['daq'],
         // nticks: params.daq.nticks,
         // chanmaskmaps: ['bad'],
       },
@@ -192,7 +192,7 @@ local retagger = g.pnode({
         '.*': 'orig',
       },
       merge: {
-        'orig\\d': 'orig',
+        'orig\\d': 'daq',
       },
     }],
   },

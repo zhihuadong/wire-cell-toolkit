@@ -64,6 +64,7 @@ physics :{
             params : {
                // This locates the input raw::RawDigit collection in the art::Event 
                raw_input_label: "tpcrawdecoder:daq"
+               // raw_input_label: "simmer:orig"
                //raw_input_label: "caldata"
 
                // Set "data" vs. "sim".

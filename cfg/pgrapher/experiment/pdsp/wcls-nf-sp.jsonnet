@@ -160,7 +160,7 @@ local nfsp_pipes = [
                sp_pipes[n],
                sinks.decon_pipe[n],
                sinks.threshold_pipe[n],
-               sinks.debug_pipe[n], // use_roi_debug_mode=true in sp.jsonnet
+               // sinks.debug_pipe[n], // use_roi_debug_mode=true in sp.jsonnet
              ],
              'nfsp_pipe_%d' % n)
   for n in std.range(0, std.length(tools.anodes) - 1)
