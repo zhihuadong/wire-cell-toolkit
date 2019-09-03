@@ -183,6 +183,9 @@ namespace WireCell {
       // except that it is nonnegative.  
       int m_nwires[3];
 
+      // ROI->chid() -> wct ch ident
+      std::map<int, int> m_roi_ch_ch_ident;
+
       // Need to go from WCT channel ident to {OSP channel, wire and plane}
       std::map<int,OspChan> m_channel_map;
 
@@ -197,8 +200,8 @@ namespace WireCell {
 
       // Per-plane temporary working arrays.  Each column is one tick,
       // each row is indexec by an "OSP wire" number
-      Array::array_xxf m_r_data;
-      Array::array_xxc m_c_data;
+      Array::array_xxf m_r_data[3];
+      Array::array_xxc m_c_data[3];
       
       //average overall responses
       std::vector<Waveform::realseq_t> overall_resp[3];
@@ -217,6 +220,8 @@ namespace WireCell {
       std::string m_break_roi_loop2_tag;
       std::string m_shrink_roi_tag;
       std::string m_extend_roi_tag;
+
+      bool m_use_multi_plane_protection;
 
       // If true, safe output as a sparse frame.  Traces will only
       // cover segments of waveforms which have non-zero signal

@@ -1379,6 +1379,9 @@ void ROI_refinement::CleanUpInductionROIs(int plane){
 }
 
 void ROI_refinement::ShrinkROI(SignalROI *roi, ROI_formation& roi_form){
+  if(proteced_rois.find({roi->get_chid(),roi->get_start_bin()})!=proteced_rois.end()) {
+    return;
+  }
   // get tight ROI as a inner boundary
   // get the nearby ROIs with threshold as some sort of boundary 
   int start_bin = roi->get_start_bin();
@@ -1629,9 +1632,16 @@ void ROI_refinement::ShrinkROIs(int plane, ROI_formation& roi_form){
   }
 }
 
-void ROI_refinement::BreakROI(SignalROI *roi, float rms){
+void ROI_refinement::BreakROI(SignalROI *roi, float rms) {
 
-  //  std::cout << "haha " << std::endl;
+  if (proteced_rois.find({roi->get_chid(),roi->get_start_bin()})!=proteced_rois.end()) {
+    return;
+  }
+  // else if (roi->get_plane() == 0) {
+  //   std::cout << "Not protected ROI: " << roi->get_chid() << ", "
+  //             << roi->get_start_bin() << ", " << roi->get_end_bin()
+  //             << std::endl;
+  // }
   
   // main algorithm 
   int start_bin = roi->get_start_bin();
@@ -2248,26 +2258,138 @@ void ROI_refinement::refine_data_debug_mode(int plane, ROI_formation& roi_form, 
 
  }
 
-void ROI_refinement::TestROIs(){
-  
-  for (int chid = 0; chid != nwire_u; chid ++){
-    for (auto it = rois_u_loose.at(chid).begin(); it!= rois_u_loose.at(chid).end();it++){
-      SignalROI *roi =  *it;
-      //loop through front
-      for (auto it1 = front_rois[roi].begin(); it1!=front_rois[roi].end(); it1++){
-	SignalROI *roi1 = *it1;
-	if (find(rois_u_loose.at(chid+1).begin(), rois_u_loose.at(chid+1).end(), roi1) == rois_u_loose.at(chid+1).end())
-	  std::cout << chid << " u " << +1 << " " << roi << " " << roi1 << std::endl;
-      }
-	
-      // loop through back 
-      for (auto it1 = back_rois[roi].begin(); it1!=back_rois[roi].end(); it1++){
-	SignalROI *roi1 = *it1;
-	if (find(rois_u_loose.at(chid-1).begin(), rois_u_loose.at(chid-1).end(), roi1) == rois_u_loose.at(chid-1).end())
-	  std::cout << chid << " u " << -1 << " " << roi << " " << roi1 << std::endl;
-      }
-    }
-  }
+ void ROI_refinement::MultiPlaneProtection(const int plane,
+                                           const IAnodePlane::pointer anode,
+                                           const std::map<int, int> &map_ch,
+                                           const int faceid,
+                                           const int tick_resolution,
+                                           const int wire_resolution,
+                                           const int nbounds_layers) {
+   log->info("ROI_refinement::MultiPlaneProtection:");
+
+   if (plane == 2)
+     return;
+   int ref_planes[2] = {0, 2};
+   if (plane == 0) ref_planes[0] = 1;
+
+   std::map<int, std::vector<WireCell::RayGrid::coordinate_t>> map_tick_coord[3];
+   std::map<int, std::map<int, SignalROI *>> map_tick_pitch_roi[3];
+
+   for (int iplane = 0; iplane < 3; ++iplane) {
+     auto rois_chan = get_rois_by_plane(iplane);
+     for (auto rois : rois_chan) {
+       for (auto roi : rois) {
+         auto chid = map_ch.at(roi->get_chid());
+         WireCell::RayGrid::coordinate_t coord;
+         auto ch = anode->channel(chid);
+         auto wires = ch->wires();
+         for (auto wire : wires) {
+           if(faceid != wire->planeid().face()) continue;
+           auto pit_id = wire->index();
+           coord.grid = pit_id;
+           coord.layer = iplane + nbounds_layers;
+           for (int tick = roi->get_start_bin() / tick_resolution;
+                tick < roi->get_end_bin() / tick_resolution; ++tick) {
+             if (map_tick_coord[iplane].find(tick) ==
+                 map_tick_coord[iplane].end()) {
+               std::vector<WireCell::RayGrid::coordinate_t> vtmp;
+               vtmp.push_back(coord);
+               map_tick_coord[iplane][tick] = vtmp;
+             } else {
+               map_tick_coord[iplane][tick].push_back(coord);
+             }
+
+             if (map_tick_pitch_roi[iplane].find(tick) ==
+                 map_tick_pitch_roi[iplane].end()) {
+               std::map<int, SignalROI *> mtmp;
+               mtmp[pit_id] = roi;
+               map_tick_pitch_roi[iplane][tick] = mtmp;
+             } else {
+               map_tick_pitch_roi[iplane][tick][pit_id] = roi;
+             }
+           }
+         }
+       }
+     }
+
+    //  std::cout << " map_tick_coord:     " << map_tick_coord[iplane].size()
+    //            << " map_tick_pitch_roi: " << map_tick_pitch_roi[iplane].size()
+    //            << std::endl;
+   }
+
+   auto face = anode->face(faceid);
+   WireCell::RayGrid::layer_index_t layer = plane+nbounds_layers;
+   for (auto tc1 : map_tick_coord[ref_planes[0]]) {
+     for (auto tc2 : map_tick_coord[ref_planes[1]]) {
+       if (tc2.first != tc1.first)
+         continue;
+       auto tick = tc1.first;
+       for (auto c1 : tc1.second) {
+         for (auto c2 : tc2.second) {
+           auto pitch = face->raygrid().pitch_location(c1, c2, layer);
+           auto index = face->raygrid().pitch_index(pitch, layer);
+           if(map_tick_pitch_roi[plane].find(tick) == map_tick_pitch_roi[plane].end()) continue;
+           for (auto pitch_roi : map_tick_pitch_roi[plane][tick]) {
+             auto pitch = pitch_roi.first;
+             if (abs(pitch - index) < wire_resolution) {
+               proteced_rois.insert({pitch_roi.second->get_chid(), pitch_roi.second->get_start_bin()});
+              //  std::cout
+              //  << tick * tick_resolution
+              //  << " { " << map_ch.at(map_tick_pitch_roi[0][tick][pitch]->get_chid()) << " } "
+              //  << " { " << map_ch.at(pitch_roi.second->get_chid()) << " } "
+              //  << " { " << map_ch.at(map_tick_pitch_roi[1][tick][c1.grid]->get_chid()) << " } "
+              //  << " { " << map_ch.at(map_tick_pitch_roi[2][tick][c2.grid]->get_chid()) << " } "
+              //  << std::endl;
+             }
+           }
+         }
+       }
+     }
+   }
+
+  //  {
+  //    std::cout << " total rois:          " << get_rois_by_plane(plane).size()
+  //              << " protected_rois:      " << proteced_rois.size() << std::endl;
+  //    std::map<int, std::pair<int, int>> tmp;
+  //    for (auto roi : proteced_rois) {
+  //      tmp[map_ch.at(roi.first)] = roi;
+  //    }
+  //    for (auto ch : tmp) {
+  //      std::cout << ch.first << ", " << ch.second.first << ", "
+  //                << ch.second.second << ", " << std::endl;
+  //    }
+  //  }
+ }
+
+ void ROI_refinement::TestROIs() {
+
+   for (int chid = 0; chid != nwire_u; chid++) {
+     for (auto it = rois_u_loose.at(chid).begin();
+          it != rois_u_loose.at(chid).end(); it++) {
+       SignalROI *roi = *it;
+       // loop through front
+       for (auto it1 = front_rois[roi].begin(); it1 != front_rois[roi].end();
+            it1++) {
+         SignalROI *roi1 = *it1;
+         if (find(rois_u_loose.at(chid + 1).begin(),
+                  rois_u_loose.at(chid + 1).end(),
+                  roi1) == rois_u_loose.at(chid + 1).end())
+           std::cout << chid << " u " << +1 << " " << roi << " " << roi1
+                     << std::endl;
+       }
+
+       // loop through back
+       for (auto it1 = back_rois[roi].begin(); it1 != back_rois[roi].end();
+            it1++) {
+         SignalROI *roi1 = *it1;
+         if (find(rois_u_loose.at(chid - 1).begin(),
+                  rois_u_loose.at(chid - 1).end(),
+                  roi1) == rois_u_loose.at(chid - 1).end())
+           std::cout << chid << " u " << -1 << " " << roi << " " << roi1
+                     << std::endl;
+       }
+     }
+   }
 
 
    for (int chid = 0; chid != nwire_v; chid ++){
