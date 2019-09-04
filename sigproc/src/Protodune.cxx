@@ -381,6 +381,9 @@ bool Protodune::LinearInterpSticky(WireCell::Waveform::realseq_t& signal,
                                    float stky_sig_like_val,
                                    float stky_sig_like_rms){
 
+    WireCell::Waveform::BinRangeList trivial_range_list;// some ranges will be removed
+                                                        // from sticky ranges (rng_list)
+
 	const int nsiglen = signal.size();
     std::pair<double,double> temp = WireCell::Waveform::mean_rms(signal);
     for(auto const& rng: rng_list){
@@ -424,6 +427,7 @@ bool Protodune::LinearInterpSticky(WireCell::Waveform::realseq_t& signal,
                 double content = start_content + (end_content - start_content) /(end-start) *(i-start);
                 signal.at(i) = content;
             }
+            trivial_range_list.push_back(rng);
         }
       }
       else if(start<0 && end <nsiglen){// sticky at the first tick
@@ -437,6 +441,11 @@ bool Protodune::LinearInterpSticky(WireCell::Waveform::realseq_t& signal,
             signal.at(i) = signal.at(start);
         }
       }
+    }
+
+    for (auto& elem: trivial_range_list){
+        // use the remove/erase idiom
+        rng_list.erase(std::remove(rng_list.begin(), rng_list.end(), elem), rng_list.end());
     }
     return true;
 }
@@ -712,12 +721,6 @@ WireCell::Waveform::ChannelMaskMap Protodune::StickyCodeMitig::apply(int ch, sig
       }
     }
 
-
-    // auto signal_lc = signal; // copy, need to keep original signal
-    LinearInterpSticky(signal, sticky_rng_list, m_stky_sig_like_val, m_stky_sig_like_rms);
-    FftInterpSticky(signal, sticky_rng_list);
-    // FftShiftSticky(signal_lc, 0.5, st_ranges); // alternative approach, shift by 0.5 tick
-    // signal = signal_lc;
     int ent_stkylen =0; 
     for(auto rng: sticky_rng_list){
         int stkylen= rng.second-rng.first;
@@ -727,6 +730,12 @@ WireCell::Waveform::ChannelMaskMap Protodune::StickyCodeMitig::apply(int ch, sig
         }
     }
     // std::cerr << "[wgu] ch: " << ch << " long_stkylen: " << long_stkylen << std::endl;
+
+    // auto signal_lc = signal; // copy, need to keep original signal
+    LinearInterpSticky(signal, sticky_rng_list, m_stky_sig_like_val, m_stky_sig_like_rms);
+    FftInterpSticky(signal, sticky_rng_list);
+    // FftShiftSticky(signal_lc, 0.5, st_ranges); // alternative approach, shift by 0.5 tick
+    // signal = signal_lc;
 
     //Now calculate the baseline ...
     std::pair<double,double> temp = WireCell::Waveform::mean_rms(signal);
