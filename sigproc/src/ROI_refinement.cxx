@@ -1379,9 +1379,9 @@ void ROI_refinement::CleanUpInductionROIs(int plane){
 }
 
 void ROI_refinement::ShrinkROI(SignalROI *roi, ROI_formation& roi_form){
-  if(proteced_rois.find({roi->get_chid(),roi->get_start_bin()})!=proteced_rois.end()) {
-    return;
-  }
+  // if(proteced_rois.find({roi->get_chid(),roi->get_start_bin()})!=proteced_rois.end()) {
+  //   return;
+  // }
   // get tight ROI as a inner boundary
   // get the nearby ROIs with threshold as some sort of boundary 
   int start_bin = roi->get_start_bin();
