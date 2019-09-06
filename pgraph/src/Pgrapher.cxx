@@ -62,6 +62,8 @@ void Pgrapher::configure(const WireCell::Configuration& cfg)
 void Pgrapher::execute()
 {
     m_graph.execute();
+
+    m_graph.print_timers();
 }
 
 
