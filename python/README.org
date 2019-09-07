@@ -11,10 +11,12 @@ Some of the main functionality is provides is converters and generators of major
 
 * Installation
 
-This package is somewhat experts only but does install in the "usual Python way".  For example, most developers will want to do something like:
+This package is somewhat experts only.  It mostly installs in the
+"usual Python way", but some packages are more easily provided as system packages rather than via pip.
 
 #+BEGIN_EXAMPLE
-  $ virtualenv venv
+  $ sudo apt install python3-vtk7 python3-numpy python3-matplotlib
+  $ python3 -m venv --system-site-packages venv
   $ source venv/bin/activate
   $ python setup.py develop
 #+END_EXAMPLE
