@@ -15,6 +15,17 @@ def cli(ctx):
     Wire Cell Signal Processing Features
     '''
 
+@cli.command("fr2npz")
+@click.argument("json-file")
+@click.argument("npz-file")
+def fr2npz(json_file, npz_file):
+    '''
+    Convert field response file to numpy (.json or .json.bz2 to .npz)
+    '''
+    import wirecell.sigproc.response.persist as per
+    import wirecell.sigproc.response.arrays as arrs
+    fr = per.load(json_file)
+    arrs.savez(fr, npz_file)
 
 @cli.command("response-info")
 @click.argument("json-file")
@@ -23,7 +34,7 @@ def response_info(ctx, json_file):
     '''
     Show some info about a field response file (.json or .json.bz2).
     '''
-    import response.persist as per
+    import wirecell.sigproc.response.persist as per
     fr = per.load(json_file)
     print ("origin:%.2f cm, period:%.2f us, tstart:%.2f us, speed:%.2f mm/us, axis:(%.2f,%.2f,%.2f)" % \
            (fr.origin/units.cm, fr.period/units.us, fr.tstart/units.us, fr.speed/(units.mm/units.us), fr.axis[0],fr.axis[1],fr.axis[2]))
@@ -192,8 +203,8 @@ def plot_garfield_track_response(ctx, gain, shaping, tick, tick_padding, electro
 @click.argument("pdffile")
 @click.pass_context
 def plot_response(ctx, responsefile, pdffile):
-    import response.persist as per
-    import response.plots as plots
+    import wirecell.sigproc.response.persist as per
+    import wirecell.sigproc.response.plots as plots
 
     fr = per.load(responsefile)
     plots.plot_planes(fr, pdffile)
