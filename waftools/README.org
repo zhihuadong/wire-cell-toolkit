@@ -11,7 +11,7 @@ To include them into a custom =waf= command do something like:
   $ git clone https://github.com/waf-project/waf.git
   $ cd waf/
   $ ./waf-light --tools=doxygen,boost,bjam
-  $ cp waf /path/to/wire-cell-build/wcb
+  $ cp waf /path/to/wire-cell-toolkit/wcb
 #+END_EXAMPLE
 
 *Warning* you must do the above outside of an otherwise Waf-controlled directory.

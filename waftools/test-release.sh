@@ -1,5 +1,12 @@
 #!/bin/bash
 
+cat <<EOF
+This script needs to be refreshed to match change from 
+wire-cell-build to wire-cell-toolkit.
+EOF
+exit -1
+
+
 # Test a release.  To make a release see make-release.sh
 #
 # 1) Get source code for a tagged release
