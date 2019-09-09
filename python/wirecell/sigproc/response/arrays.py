@@ -48,7 +48,8 @@ def savez(fr, npz_filename):
     nplanes = len(fr.planes)
     planeid = numpy.zeros(nplanes)
 
-    dat = dict(locations=numpy.zeros(nplanes),
+    dat = dict(otps=numpy.array([fr.origin,fr.tstart,fr.period,fr.speed]),
+               locations=numpy.zeros(nplanes),
                pitches=numpy.zeros(nplanes))
 
     for iplane, pr in enumerate(fr.planes):

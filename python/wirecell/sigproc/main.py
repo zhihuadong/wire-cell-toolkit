@@ -21,6 +21,33 @@ def cli(ctx):
 def fr2npz(json_file, npz_file):
     '''
     Convert field response file to numpy (.json or .json.bz2 to .npz)
+
+    Result holds a number of arrays.
+
+        - resp[012] :: one 2D array for each plane.  A wire region is
+          10 pixels wide.  Each row of pixels represents the average
+          field response between the two original drift paths bounding
+          the row.  The 2D array also makes explicit the
+          flipped-symmetry that the original field response file
+          leaves implicit.  The columns mark time.  Note, to make a
+          per-wire sub-array of all impact rows #3 (counting from 0)
+          you can use Numpy indexing like: dat['resp2'][3::10,:]
+
+        - bincenters[012] :: the pitch location in mm of the row
+          centers
+
+        - pitches :: the nominal wire pitch for each plane as used in
+          the Garfield simulation.
+
+        - locations :: the locations along the drift direction of each
+          of the planes.
+
+        - otps :: four values: ORIGIN in mm of where the drifts start
+          in the same axis as the locations, TSTART time when drift
+          starts, PERIOD the sampling period in ns of the field
+          response (ie, width of resp columns) and SPEED in mm/ns of
+          the nominal electron drift speed used in the Garfield
+          calculation.
     '''
     import wirecell.sigproc.response.persist as per
     import wirecell.sigproc.response.arrays as arrs
