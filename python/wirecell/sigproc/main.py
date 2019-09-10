@@ -16,13 +16,22 @@ def cli(ctx):
     '''
 
 @cli.command("fr2npz")
+@click.option("-g", "--gain", default=0.0, type=float,
+                  help="Set gain in mV/fC.")
+@click.option("-s", "--shaping", default=0.0, type=float,
+                  help="Set shaping time in us.")
 @click.argument("json-file")
 @click.argument("npz-file")
-def fr2npz(json_file, npz_file):
+def fr2npz(gain, shaping, json_file, npz_file):
     '''
     Convert field response file to numpy (.json or .json.bz2 to .npz)
 
-    Result holds a number of arrays.
+    If gain and shaping are non zero then convolve each field response
+    function with the corresponding electronics response function.
+
+    Result holds a number of arrays and scalar values.
+
+    Arrays:
 
         - resp[012] :: one 2D array for each plane.  A wire region is
           10 pixels wide.  Each row of pixels represents the average
@@ -42,17 +51,37 @@ def fr2npz(json_file, npz_file):
         - locations :: the locations along the drift direction of each
           of the planes.
 
-        - otps :: four values: ORIGIN in mm of where the drifts start
-          in the same axis as the locations, TSTART time when drift
-          starts, PERIOD the sampling period in ns of the field
-          response (ie, width of resp columns) and SPEED in mm/ns of
-          the nominal electron drift speed used in the Garfield
-          calculation.
+        - eresp :: electronics response function, if gain/shaping given
+
+        - espec :: the FFT of this, if gain/shaping given
+
+    Scalar values:
+
+        - origin :: in mm of where the drifts start in the same axis
+          as the locations
+
+        - tstart :: time when drift starts
+
+        - period :: the sampling period in ns of the field response
+          (ie, width of resp columns)
+
+        - speed :: in mm/ns of the nominal electron drift speed used
+          in the Garfield calculation.
+    
+        - gain : the passed in gain
+
+        - shaping :: the passed in shaping time
+
     '''
     import wirecell.sigproc.response.persist as per
     import wirecell.sigproc.response.arrays as arrs
+    import numpy
     fr = per.load(json_file)
-    arrs.savez(fr, npz_file)
+    gain *= units.mV/units.fC
+    shaping *= units.us
+    dat = arrs.fr2arrays(fr, gain, shaping)
+    numpy.savez(npz_file, **dat)
+
 
 @cli.command("response-info")
 @click.argument("json-file")
