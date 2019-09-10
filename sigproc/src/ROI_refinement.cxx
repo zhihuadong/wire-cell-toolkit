@@ -2006,26 +2006,47 @@ void ROI_refinement::BreakROI(SignalROI *roi, float rms) {
     }
 
     {
+      // multi-plane protection
+      std::vector<bool> section_protected;
+      section_protected.resize(saved_b.size(), false);
+      for (unsigned int j = 0; j < saved_b.size()-1; ++j) {
+        section_protected[j] = false;
+        for (auto pzone_iter = protected_zones.first;
+             pzone_iter != protected_zones.second; ++pzone_iter) {
+          auto pzone_sta = pzone_iter->second.first;
+          auto pzone_end = pzone_iter->second.second;
+          auto section_sta = saved_b[j];
+          auto section_end = saved_b[j + 1];
+          if (section_sta > pzone_sta and section_sta < pzone_end) {
+            section_protected[j] = true;
+            break;
+          }
+          if (section_end > pzone_sta and section_end < pzone_end) {
+            section_protected[j] = true;
+            break;
+          }
+        }
+      }
+
       Waveform::realseq_t temp1_signal = temp_signal;
       temp_signal.clear();
-      temp_signal.resize(temp1_signal.size(),0);
-      //      htemp->Reset();
-      // std::cout << saved_b.size() << " " << bins.size() << " " << htemp->GetNbinsX() << std::endl;
-      for (int j=0;j<int(saved_b.size())-1;j++){
-	// if (irow==1240)
-	//   std::cout << saved_b.size() << " " << j << " " << saved<< std::endl;
+      temp_signal.resize(temp1_signal.size(), 0);
+   
+      for (int j = 0; j < int(saved_b.size()) - 1; j++) {
+        int start_pos = saved_b.at(j);
+        float start_content =
+            temp1_signal.at(start_pos);
+        int end_pos = saved_b.at(j + 1);
+        float end_content =
+            temp1_signal.at(end_pos);
 
-	
-  	//int flag = 0;
-  	int start_pos = saved_b.at(j);
-  	float start_content = temp1_signal.at(start_pos);//htemp1->GetBinContent(start_pos+1);
-  	int end_pos = saved_b.at(j+1);
-  	float end_content = temp1_signal.at(end_pos);//htemp1->GetBinContent(end_pos+1);
-	
-  	for (int k = start_pos; k!=end_pos+1;k++){
-  	  double temp_content = temp1_signal.at(k) - (start_content + (end_content-start_content) * (k-start_pos) / (end_pos - start_pos));
-	  temp_signal.at(k) = temp_content;
-  	}
+        for (int k = start_pos; k != end_pos + 1; k++) {
+          double temp_content =
+              temp1_signal.at(k) -
+              (start_content + (end_content - start_content) * (k - start_pos) /
+                                   (end_pos - start_pos));
+          temp_signal.at(k) = temp_content;
+        }
       }
     }
   }
