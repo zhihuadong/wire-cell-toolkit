@@ -1285,7 +1285,7 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
     }
 
     if (m_use_multi_plane_protection) {
-      roi_refine.MultiPlaneProtection(iplane, m_anode, m_roi_ch_ch_ident,
+      roi_refine.MultiPlaneProtection(iplane, m_anode, m_roi_ch_ch_ident, roi_form, 1000,
                                       m_anode->ident() % 2);
     }
 

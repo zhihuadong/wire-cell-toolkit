@@ -53,6 +53,12 @@ namespace WireCell{
       std::vector <float>& get_uplane_rms(){return uplane_rms;};
       std::vector <float>& get_vplane_rms(){return vplane_rms;};
       std::vector <float>& get_wplane_rms(){return wplane_rms;};
+      std::vector <float>& get_rms_by_plane(const int plane) {
+        if(plane==0) return uplane_rms;
+        if(plane==1) return vplane_rms;
+        if(plane==2) return wplane_rms;
+        return wplane_rms;
+      };
       
       
     private:
