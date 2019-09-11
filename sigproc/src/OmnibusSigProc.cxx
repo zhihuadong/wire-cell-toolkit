@@ -1272,7 +1272,6 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
   }
   
   for (int iplane = 0; iplane != 3; ++iplane){
-    const std::vector<float>& perwire_rmses = *perplane_thresholds[iplane];
     
     // roi_refine.refine_data(iplane, roi_form);
 
@@ -1288,6 +1287,10 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
       roi_refine.MultiPlaneProtection(iplane, m_anode, m_roi_ch_ch_ident, roi_form, 1000,
                                       m_anode->ident() % 2);
     }
+  }
+
+  for (int iplane = 0; iplane != 3; ++iplane){
+    const std::vector<float>& perwire_rmses = *perplane_thresholds[iplane];
 
     for (int qx = 0; qx != m_r_break_roi_loop; qx++) {
       roi_refine.BreakROIs(iplane, roi_form);

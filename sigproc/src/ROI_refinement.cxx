@@ -2015,8 +2015,8 @@ void ROI_refinement::BreakROI(SignalROI *roi, float rms) {
              pzone_iter != protected_zones.second; ++pzone_iter) {
           auto pzone_sta = pzone_iter->second.first;
           auto pzone_end = pzone_iter->second.second;
-          auto section_sta = saved_b[j];
-          auto section_end = saved_b[j + 1];
+          auto section_sta = saved_b[j]+start_bin;
+          auto section_end = saved_b[j + 1]+start_bin;
           if (section_sta > pzone_sta and section_sta < pzone_end) {
             section_protected[j] = true;
             break;
@@ -2037,15 +2037,20 @@ void ROI_refinement::BreakROI(SignalROI *roi, float rms) {
         float start_content =
             temp1_signal.at(start_pos);
         int end_pos = saved_b.at(j + 1);
-        float end_content =
-            temp1_signal.at(end_pos);
+        float end_content = temp1_signal.at(end_pos);
 
-        for (int k = start_pos; k != end_pos + 1; k++) {
-          double temp_content =
-              temp1_signal.at(k) -
-              (start_content + (end_content - start_content) * (k - start_pos) /
-                                   (end_pos - start_pos));
-          temp_signal.at(k) = temp_content;
+        if (section_protected[j]) {
+          for (int k = start_pos; k != end_pos + 1; k++) {
+            temp_signal.at(k) = temp1_signal.at(k);
+          }
+        } else {
+          for (int k = start_pos; k != end_pos + 1; k++) {
+            double temp_content =
+                temp1_signal.at(k) -
+                (start_content + (end_content - start_content) *
+                                     (k - start_pos) / (end_pos - start_pos));
+            temp_signal.at(k) = temp_content;
+          }
         }
       }
     }
@@ -2313,8 +2318,9 @@ void ROI_refinement::refine_data_debug_mode(int plane, ROI_formation& roi_form, 
                                            const int wire_resolution,
                                            const int nbounds_layers) {
    log->info("ROI_refinement::MultiPlaneProtection:");
-   LogDebug(threshold);
-   std::set<int> print_chids = {1441, 908};
+   const double th2 = 500;
+   LogDebug("th1: " << threshold << ", th2: " << th2);
+   std::set<int> print_chids = {1441, 875};
 
    if (plane == 2)
      return;
@@ -2345,26 +2351,14 @@ void ROI_refinement::refine_data_debug_mode(int plane, ROI_formation& roi_form, 
              if (content_id >= (int)roi->get_contents().size())
                content_id = roi->get_contents().size() - 1;
 
-             if (print_chids.find(chid)!=print_chids.end())
-               LogDebug(chid << " : {" << roi->get_chid() << ", "
-                             << roi->get_start_bin() << "}, {"
-                             << tick * tick_resolution << ", "
-                             << roi->get_start_bin() << ", " << content_id
-                             << " } : " << roi->get_contents().at(content_id));
+             //  if (print_chids.find(chid)!=print_chids.end())
+             LogDebug(tick * tick_resolution
+                      << ", " << chid << " : {" << roi->get_chid() << ", "
+                      << roi->get_start_bin()
+                      << " } : " << roi->get_contents().at(content_id));
 
-             if (roi->get_contents().at(content_id) <
-                //  threshold * roi_form.get_rms_by_plane(iplane).at(roi->get_chid())
-                threshold
-                )
+             if (roi->get_contents().at(content_id) < th2)
                continue;
-             if (map_tick_coord[iplane].find(tick) ==
-                 map_tick_coord[iplane].end()) {
-               std::vector<WireCell::RayGrid::coordinate_t> vtmp;
-               vtmp.push_back(coord);
-               map_tick_coord[iplane][tick] = vtmp;
-             } else {
-               map_tick_coord[iplane][tick].push_back(coord);
-             }
 
              if (map_tick_pitch_roi[iplane].find(tick) ==
                  map_tick_pitch_roi[iplane].end()) {
@@ -2374,6 +2368,26 @@ void ROI_refinement::refine_data_debug_mode(int plane, ROI_formation& roi_form, 
              } else {
                map_tick_pitch_roi[iplane][tick][pit_id] = roi;
              }
+
+            //  LogDebug(iplane << ", " << tick*tick_resolution << ", " << pit_id);
+             
+             if (roi->get_contents().at(content_id) <
+                //  threshold * roi_form.get_rms_by_plane(iplane).at(roi->get_chid())
+                threshold
+                )
+               continue;
+             
+            //  LogDebug(iplane << ", " << tick*tick_resolution << ", " << coord.grid);
+
+             if (map_tick_coord[iplane].find(tick) ==
+                 map_tick_coord[iplane].end()) {
+               std::vector<WireCell::RayGrid::coordinate_t> vtmp;
+               vtmp.push_back(coord);
+               map_tick_coord[iplane][tick] = vtmp;
+             } else {
+               map_tick_coord[iplane][tick].push_back(coord);
+             }
+
            }
          }
        }
@@ -2395,6 +2409,7 @@ void ROI_refinement::refine_data_debug_mode(int plane, ROI_formation& roi_form, 
          for (auto c2 : tc2.second) {
            auto pitch = face->raygrid().pitch_location(c1, c2, layer);
            auto index = face->raygrid().pitch_index(pitch, layer);
+          //  LogDebug(tick*tick_resolution << ", " << c1.grid << ", " << c2.grid);
            if(map_tick_pitch_roi[plane].find(tick) == map_tick_pitch_roi[plane].end()) continue;
            for (auto pitch_roi : map_tick_pitch_roi[plane][tick]) {
              auto pitch = pitch_roi.first;
