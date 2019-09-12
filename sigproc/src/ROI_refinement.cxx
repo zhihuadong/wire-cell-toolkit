@@ -1839,28 +1839,39 @@ void ROI_refinement::BreakROI(SignalROI *roi, float rms) {
       }
 
       // multi-plane protection
-      bool section_protected[205];
+      std::vector<bool> section_protected;
+      section_protected.resize(npeaks1, false);
       for (int j = 0; j < npeaks1; ++j) {
-        section_protected[j] = false;
+        auto section_sta = valley_pos1[j];
+        auto section_end = valley_pos1[j + 1];
+        auto section_mid = 0.5*(section_sta+section_end);
         for (auto pzone_iter = protected_zones.first;
              pzone_iter != protected_zones.second; ++pzone_iter) {
-               auto pzone_sta = pzone_iter->second.first;
-               auto pzone_end = pzone_iter->second.second;
-               auto section_sta = valley_pos1[j];
-               auto section_end = valley_pos1[j+1];
-          if (section_sta > pzone_sta and
-              section_sta < pzone_end) {
-            section_protected[j] = true;
-            break;
-          }
-          if (section_end > pzone_sta and
-              section_end < pzone_end) {
+          auto pzone_sta = pzone_iter->second.first;
+          auto pzone_end = pzone_iter->second.second;
+          // if (section_sta < pzone_sta and  pzone_end < section_end) {
+          //   section_protected[j] = true;
+          //   break;
+          // }
+          // if (section_sta < pzone_end and  pzone_end < section_end) {
+          //   section_protected[j] = true;
+          //   break;
+          // }
+          // if (pzone_sta < section_sta and section_sta < pzone_end) {
+          //   section_protected[j] = true;
+          //   break;
+          // }
+          // if (pzone_sta < section_end and section_end < pzone_end) {
+          //   section_protected[j] = true;
+          //   break;
+          // }
+          if (pzone_sta < section_mid and section_mid < pzone_end) {
             section_protected[j] = true;
             break;
           }
         }
       }
-      
+
       // const int print_chid = 1524;
 
       // if (roi->get_chid() == print_chid){
@@ -2009,19 +2020,31 @@ void ROI_refinement::BreakROI(SignalROI *roi, float rms) {
       // multi-plane protection
       std::vector<bool> section_protected;
       section_protected.resize(saved_b.size(), false);
-      for (unsigned int j = 0; j < saved_b.size()-1; ++j) {
-        section_protected[j] = false;
+      for (unsigned int j = 0; j < saved_b.size() - 1; ++j) {
+        auto section_sta = saved_b[j] + start_bin;
+        auto section_end = saved_b[j + 1] + start_bin;
+        auto section_mid = 0.5*(section_sta+section_end);
         for (auto pzone_iter = protected_zones.first;
              pzone_iter != protected_zones.second; ++pzone_iter) {
           auto pzone_sta = pzone_iter->second.first;
           auto pzone_end = pzone_iter->second.second;
-          auto section_sta = saved_b[j]+start_bin;
-          auto section_end = saved_b[j + 1]+start_bin;
-          if (section_sta > pzone_sta and section_sta < pzone_end) {
-            section_protected[j] = true;
-            break;
-          }
-          if (section_end > pzone_sta and section_end < pzone_end) {
+          // if (section_sta < pzone_sta and pzone_end < section_end) {
+          //   section_protected[j] = true;
+          //   break;
+          // }
+          // if (section_sta < pzone_end and pzone_end < section_end) {
+          //   section_protected[j] = true;
+          //   break;
+          // }
+          // if (pzone_sta < section_sta and section_sta < pzone_end) {
+          //   section_protected[j] = true;
+          //   break;
+          // }
+          // if (pzone_sta < section_end and section_end < pzone_end) {
+          //   section_protected[j] = true;
+          //   break;
+          // }
+          if (pzone_sta < section_mid and section_mid < pzone_end) {
             section_protected[j] = true;
             break;
           }
