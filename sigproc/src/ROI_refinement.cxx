@@ -6,9 +6,12 @@
 using namespace WireCell;
 using namespace WireCell::SigProc;
 
+// #define __DEBUG__
+#ifdef __DEBUG__
 #define LogDebug(x) std::cerr << "[yuhw]: " << __LINE__ << " : " << x << std::endl
-// #define LogDebug(x)
-
+#else
+#define LogDebug(x)
+#endif
 ROI_refinement::ROI_refinement(Waveform::ChannelMaskMap& cmm,int nwire_u, int nwire_v, int nwire_w, float th_factor, float fake_signal_low_th, float fake_signal_high_th, float fake_signal_low_th_ind_factor, float fake_signal_high_th_ind_factor, int pad, int break_roi_loop, float th_peak, float sep_peak, float low_peak_sep_threshold_pre, int max_npeaks, float sigma, float th_percent)
   : nwire_u(nwire_u)
   , nwire_v(nwire_v)
@@ -2449,11 +2452,15 @@ void ROI_refinement::refine_data_debug_mode(int plane, ROI_formation& roi_form, 
               } else {
                 auto last_iter = --proteced_rois.upper_bound(key);
                 auto last_end = last_iter->second.second;
-                if (print_chids.find(map_ch.at(key.first))!=print_chids.end())
+#ifdef __DEBUG__
+                if (print_chids.find(map_ch.at(key.first)) !=
+                    print_chids.end()) {
                   LogDebug("{" << key.first << ", " << key.second << "} : {"
                                << last_iter->second.first << ", "
                                << last_iter->second.second << "} -> {" << sta
                                << ", " << end << "}");
+                }
+#endif
                 if (sta - last_end <= tick_resolution) {
                   last_iter->second.second = end;
                 } else {
@@ -2463,18 +2470,24 @@ void ROI_refinement::refine_data_debug_mode(int plane, ROI_formation& roi_form, 
                             << "} ");
                 }
               }
-              if (print_chids.find(map_ch.at(key.first))!=print_chids.end())
+#ifdef __DEBUG__
+              if (print_chids.find(map_ch.at(key.first)) != print_chids.end()) {
                 LogDebug(
                     tick * tick_resolution
                     << " { "
-                    << map_ch.at(map_tick_pitch_roi[plane][tick][pitch]->get_chid())
+                    << map_ch.at(
+                           map_tick_pitch_roi[plane][tick][pitch]->get_chid())
                     << ", " << map_ch.at(pitch_roi.second->get_chid()) << ", "
                     << map_ch.at(
-                           map_tick_pitch_roi[ref_planes[0]][tick][c1.grid]->get_chid())
+                           map_tick_pitch_roi[ref_planes[0]][tick][c1.grid]
+                               ->get_chid())
                     << ", "
                     << map_ch.at(
-                           map_tick_pitch_roi[ref_planes[1]][tick][c2.grid]->get_chid())
+                           map_tick_pitch_roi[ref_planes[1]][tick][c2.grid]
+                               ->get_chid())
                     << " } ");
+              }
+#endif
              }
            }
          }
@@ -2490,11 +2503,14 @@ void ROI_refinement::refine_data_debug_mode(int plane, ROI_formation& roi_form, 
     for (auto roi : proteced_rois) {
       tmp.insert({map_ch.at(roi.first.first), roi});
     }
+#ifdef __DEBUG__
     for (auto ch : tmp) {
-      LogDebug( ch.first << " : {" << ch.second.first.first << ", "
-                << ch.second.first.second << "} : {" << ch.second.second.first
-                << ", " << ch.second.second.second << "}, ");
+      LogDebug(ch.first << " : {" << ch.second.first.first << ", "
+                        << ch.second.first.second << "} : {"
+                        << ch.second.second.first << ", "
+                        << ch.second.second.second << "}, ");
     }
+#endif
   }
  }
 
