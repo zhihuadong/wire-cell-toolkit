@@ -32,6 +32,8 @@ namespace WireCell{
       void MultiPlaneProtection(const int plane,
                                 const IAnodePlane::pointer anode,
                                 const std::map<int, int> &map_ch,
+                                ROI_formation& roi_form,
+                                const double threshold = 0.,
                                 const int faceid = 1,
                                 const int tick_resolution = 10,
                                 const int wire_resolution = 2,
@@ -95,7 +97,7 @@ namespace WireCell{
       SignalROIChList rois_u_loose;
       SignalROIChList rois_v_loose;
 
-      std::set<std::pair<int, int>> proteced_rois; //using chid and start_bin as id
+      std::multimap<std::pair<int, int>, std::pair<int, int> > proteced_rois; //using chid and start_bin as id
    
     
       SignalROIMap front_rois;
