@@ -1,5 +1,9 @@
 #include "WireCellUtil/DfpGraph.h"
 
+#include <tuple>
+#include <iostream>
+#define LogDebug(x) std::cerr << "[yuhw]: " << __LINE__ << " : " << x << std::endl
+
 using namespace WireCell;
     
 DfpGraph::Vertex DfpGraph::get_add_vertex(const VertexProperty& tn)
@@ -52,14 +56,37 @@ std::vector<DfpGraph::Connection> DfpGraph::connections()
     return ret;
 }
 
-void DfpGraph::configure(const Configuration& cfg)
-{
-    for (auto conn : cfg) {
-	auto tail = conn["tail"];
-	auto head = conn["head"];
+static std::tuple<std::string, std::string, int>
+get_node(WireCell::Configuration jone) {
+  using namespace WireCell;
+  auto node = jone["node"].asString();
+  auto tn = String::split(node, ":");
+  std::string type = "";
+  std::string name = "";
+  if (tn.size() == 2) {
+    type = tn[0];
+    name = tn[1];
+  } else if (tn.size() == 1) {
+    type = tn[0];
+  }
 
-	connect(get<std::string>(tail, "type"), get<std::string>(tail, "name"), get<int>(tail, "port"), 
-		get<std::string>(head, "type"), get<std::string>(head, "name"), get<int>(head, "port"));
-    }
+  int port = get(jone, "port", 0);
+
+  return {type, name, port};
 }
 
+void DfpGraph::configure(const Configuration &cfg) {
+  for (auto conn : cfg) {
+    // auto tail = conn["tail"];
+    // auto head = conn["head"];
+    // LogDebug(head["node"] << ", " << head["port"]);
+    // LogDebug(tail["node"] << ", " << tail["port"]);
+
+    auto head = get_node(conn["head"]);
+    auto tail = get_node(conn["tail"]);
+    LogDebug(std::get<0>(tail) << ", " << std::get<1>(tail) << ", " << std::get<2>(tail));
+
+    connect(std::get<0>(tail), std::get<1>(tail), std::get<2>(tail),
+            std::get<0>(head), std::get<1>(head), std::get<2>(head));
+  }
+}

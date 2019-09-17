@@ -6,6 +6,7 @@
 
 #include <string>
 #include <iostream>
+#define LogDebug(x) std::cerr << "[yuhw]: " << __LINE__ << " : " << x << std::endl
 
 WIRECELL_FACTORY(TbbFlow, WireCellTbb::TbbFlow, WireCell::IApplication, WireCell::IConfigurable);
 
@@ -22,13 +23,10 @@ TbbFlow::~TbbFlow()
 
 Configuration TbbFlow::default_configuration() const
 {
-    std::string json = R"(
-{
-"dfp": "TbbDataFlowGraph",
-"graph":[]
-}
-)";
-    return Persist::loads(json);
+    Configuration cfg;
+
+    cfg["edges"] = Json::arrayValue;
+    return cfg;
 }
 
 void TbbFlow::configure(const Configuration& cfg)
@@ -37,7 +35,7 @@ void TbbFlow::configure(const Configuration& cfg)
     std::tie(type,name) = String::parse_pair(desc);
     m_dfp = Factory::lookup<IDataFlowGraph>(type, name);
 
-    m_dfpgraph.configure(cfg["graph"]);
+    m_dfpgraph.configure(cfg["edges"]);
     
 }
 
