@@ -61,6 +61,17 @@ namespace WireCellTbb {
     receiver_port_vector receiver_ports(tbb::flow::join_node<Tuple>& jn) {
 	return receiver_ports(jn, std::make_index_sequence<std::tuple_size<Tuple>::value>{});
     }
+
+
+    template<typename Tuple, std::size_t... Is>
+    sender_port_vector sender_ports(tbb::flow::split_node<Tuple>& sp, std::index_sequence<Is...>) {
+	return { dynamic_cast<sender_type*>(&tbb::flow::output_port<Is>(sp))... };
+    }
+    /// Return receiver ports of a join node as a vector.
+    template<typename Tuple>
+    sender_port_vector sender_ports(tbb::flow::split_node<Tuple>& sp) {
+	return sender_ports(sp, std::make_index_sequence<std::tuple_size<Tuple>::value>{});
+    }
     
 }
 
