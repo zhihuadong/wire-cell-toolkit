@@ -145,8 +145,6 @@ def smplpkg(bld, name, use='', app_use='', test_use=''):
             interp = "${BASH}"
             if test_script.abspath().endswith(".py"):
                 interp = "${PYTHON}"
-            if test_script.abspath().endswith(".jsonnet"):
-                interp = "${JSONNET}"
             #print 'Building %s test %s script: %s using %s' % (name, interp, test_script, test_use)
             bld(features="test_scripts",
                 ut_cwd   = bld.path, 
