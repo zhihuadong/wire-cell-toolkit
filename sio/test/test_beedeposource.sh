@@ -14,7 +14,7 @@ fi
 depofiles=$(for n in  $datadir/?/?-truthDepo.json; do echo -n '"'$n'"',; done)
 
 
-wire-cell -L debug -l stdout -C "depofiles=["$depofiles"]" -c $testdir/test_beedeposource.jsonnet || exit 1
+wire-cell -L debug -l stdout -C "depofiles=["$depofiles"]" -c $testdir/beedeposource.jsonnet || exit 1
 if [ -n "$tmpdir" ] ; then
     rm -rf $tmpdir
 fi
