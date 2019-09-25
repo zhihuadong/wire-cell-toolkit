@@ -7,7 +7,8 @@
 #include <string>
 #include <iostream>
 
-WIRECELL_FACTORY(TbbFlow, WireCellTbb::TbbFlow, WireCell::IApplication, WireCell::IConfigurable);
+WIRECELL_FACTORY(TbbFlow, WireCellTbb::TbbFlow,
+                 WireCell::IApplication, WireCell::IConfigurable)
 
 using namespace WireCell;
 using namespace WireCellTbb;

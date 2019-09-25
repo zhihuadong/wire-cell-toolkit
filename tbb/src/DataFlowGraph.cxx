@@ -7,7 +7,8 @@
 
 #include <iostream>
 
-WIRECELL_FACTORY(TbbDataFlowGraph, WireCellTbb::DataFlowGraph, WireCell::IDataFlowGraph, WireCell::IConfigurable);
+WIRECELL_FACTORY(TbbDataFlowGraph, WireCellTbb::DataFlowGraph,
+                 WireCell::IDataFlowGraph, WireCell::IConfigurable)
 
 using namespace std;
 using namespace WireCell;
