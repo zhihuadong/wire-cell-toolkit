@@ -18,7 +18,7 @@
 # 
 # $ ./img/test/test-pdsp-6apas-bee.sh data/0/0-truthDepo.json
 
-cfgfile="${BASH_SOURCE/.sh/.jsonnet}"
+cfgfile="in.${BASH_SOURCE/.sh/.jsonnet}"
 if [ ! -f "$cfgfile" ] ; then
     echo "expect to find $cfgfile"
     exit 1

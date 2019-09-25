@@ -58,7 +58,7 @@ def smplpkg(bld, name, use='', app_use='', test_use=''):
 
     testsrc = bld.path.ant_glob('test/test_*.cxx')
     test_scripts = bld.path.ant_glob('test/test_*.sh') + bld.path.ant_glob('test/test_*.py')
-    test_jsonnets = bld.path.ant_glob('test/test_*.jsonnet')
+    test_jsonnets = bld.path.ant_glob('test/test*.jsonnet')
 
     appsdir = bld.path.find_dir('apps')
 
@@ -154,7 +154,7 @@ def smplpkg(bld, name, use='', app_use='', test_use=''):
                 test_scripts_template = "pwd && " + interp + " ${SCRIPT}")
 
     if test_jsonnets and not bld.options.no_tests:
-        #print ("testing %d jsonnets in %s" % (len(test_jsonnets), bld.path ))
+        # print ("testing %d jsonnets in %s" % (len(test_jsonnets), bld.path ))
         for test_jsonnet in test_jsonnets:
             bld(features="test_scripts",
                 ut_cwd   = bld.path, 
