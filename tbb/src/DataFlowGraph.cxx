@@ -5,14 +5,10 @@
 #include "WireCellUtil/Type.h"
 #include "WireCellUtil/NamedFactory.h"
 
-<<<<<<< HEAD
-WIRECELL_FACTORY(TbbDataFlowGraph, WireCellTbb::DataFlowGraph, WireCell::IDataFlowGraph, WireCell::IConfigurable)
-=======
 #include <iostream>
 
 WIRECELL_FACTORY(TbbDataFlowGraph, WireCellTbb::DataFlowGraph,
                  WireCell::IDataFlowGraph, WireCell::IConfigurable)
->>>>>>> 4e01cf770602cf83886437e4773b2c722643c5d0
 
 using namespace std;
 using namespace WireCell;
