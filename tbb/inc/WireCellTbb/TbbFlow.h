@@ -5,6 +5,7 @@
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/IDataFlowGraph.h"
 #include "WireCellUtil/DfpGraph.h"
+#include "WireCellUtil/Logging.h"
 
 namespace WireCellTbb {
 
@@ -19,6 +20,9 @@ namespace WireCellTbb {
 	virtual WireCell::Configuration default_configuration() const;
 
 	virtual void execute();
+    
+    private:
+    WireCell::Log::logptr_t l;
     };
 }
 
