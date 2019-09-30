@@ -105,13 +105,6 @@ def _configure(ctx, name, incs=(), libs=(), bins=(), pcname=None, mandatory=True
     
     # now check, this does some extra work in the caseof pkg-config
 
-    if incs:
-        ctx.start_msg("Location for %s headers" % name)
-        for tryh in incs:
-            ctx.check_cxx(header_name=tryh,
-                          use=UPPER, uselib_store=UPPER, mandatory=mandatory)
-        ctx.end_msg(str(getattr(ctx.env, 'INCLUDES_' + UPPER, None)))
-
     if libs:
         ctx.start_msg("Location for %s libs" % name)
         for tryl in libs:
@@ -121,6 +114,13 @@ def _configure(ctx, name, incs=(), libs=(), bins=(), pcname=None, mandatory=True
 
         ctx.start_msg("Libs for %s" % name)
         ctx.end_msg(str(getattr(ctx.env, 'LIB_' + UPPER)))
+
+    if incs:
+        ctx.start_msg("Location for %s headers" % name)
+        for tryh in incs:
+            ctx.check_cxx(header_name=tryh,
+                          use=UPPER, uselib_store=UPPER, mandatory=mandatory)
+        ctx.end_msg(str(getattr(ctx.env, 'INCLUDES_' + UPPER, None)))
 
     if bins:
         ctx.start_msg("Bins for %s" % name)
