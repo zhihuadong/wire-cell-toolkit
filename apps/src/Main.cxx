@@ -18,6 +18,11 @@
 #include <vector>
 #include <iostream>
 
+#include "config.h"
+#if HAVE_FFTWTHREADS
+// include any extra fftw files
+#endif
+
 using namespace WireCell;
 using namespace std;
 namespace po = boost::program_options;
@@ -27,6 +32,9 @@ using namespace boost::property_tree;
 Main::Main()
     : l(Log::logger("main"))
 {
+#if HAVE_FFTWTHREADS
+// call fftw thread init here.
+#endif
 }
 
 Main::~Main()

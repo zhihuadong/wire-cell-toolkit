@@ -68,6 +68,7 @@ def configure(cfg):
 
     cfg.env.SUBDIRS = submodules
     print ('Configured for submodules: %s' % (', '.join(submodules), ))
+    cfg.write_config_header('config.h')
 
 def build(bld):
     bld.load('smplpkgs')
