@@ -51,3 +51,4 @@ clusters-*.dot
 clusters-*.json
 *.zip
 data
+calgrind.*

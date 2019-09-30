@@ -1,5 +1,11 @@
 #!/bin/bash
 
+cat <<EOF
+This script needs to be refreshed to match change from 
+wire-cell-build to wire-cell-toolkit.
+EOF
+exit -1
+
 # Release management script for Wire Cell Toolkit.
 
 # Note, this is meant to create and operate on a throw-away source

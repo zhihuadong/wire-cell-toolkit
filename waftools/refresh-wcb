@@ -17,7 +17,7 @@ usage () {
     echo "refresh-wcb [options] [tools]"
     echo "Default tools: $tools"
     echo "Likely call:"
-    echo "./refresh-wcb -o /path/to/wire-cell-build/wcb"
+    echo "./refresh-wcb -o /path/to/wire-cell-toolkit/wcb"
     exit 1;
 }
 

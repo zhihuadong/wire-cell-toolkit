@@ -6,7 +6,12 @@
 
 #include <string>
 
+<<<<<<< HEAD
 WIRECELL_FACTORY(TbbFlow, WireCellTbb::TbbFlow, WireCell::IApplication, WireCell::IConfigurable)
+=======
+WIRECELL_FACTORY(TbbFlow, WireCellTbb::TbbFlow,
+                 WireCell::IApplication, WireCell::IConfigurable)
+>>>>>>> 4e01cf770602cf83886437e4773b2c722643c5d0
 
 using namespace WireCell;
 using namespace WireCellTbb;

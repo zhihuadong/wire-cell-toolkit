@@ -35,7 +35,6 @@ def configure(cfg):
 
     cfg.find_program('python', var='PYTHON', mandatory=True)
     cfg.find_program('bash', var='BASH', mandatory=True)
-
     pass
 
 def build(bld):
@@ -59,6 +58,8 @@ def smplpkg(bld, name, use='', app_use='', test_use=''):
 
     testsrc = bld.path.ant_glob('test/test_*.cxx')
     test_scripts = bld.path.ant_glob('test/test_*.sh') + bld.path.ant_glob('test/test_*.py')
+    test_jsonnets = bld.path.ant_glob('test/test*.jsonnet')
+
     appsdir = bld.path.find_dir('apps')
 
     if incdir:
@@ -112,10 +113,20 @@ def smplpkg(bld, name, use='', app_use='', test_use=''):
             name = name,
             source = source,
             target = name,
-            #rpath = get_rpath(use),
+            rpath = get_rpath(use),
             includes = 'inc',
             export_includes = 'inc',
             use = use)            
+
+    if appsdir:
+        for app in appsdir.ant_glob('*.cxx'):
+            #print 'Building %s app: %s using %s' % (name, app, app_use)
+            bld.program(source = [app], 
+                        target = app.name.replace('.cxx',''),
+                        includes = 'inc',
+                        rpath = get_rpath(app_use + [name], local=False),
+                        use = app_use + [name])
+
 
     if (testsrc or test_scripts) and not bld.options.no_tests:
         for test_main in testsrc:
@@ -140,12 +151,10 @@ def smplpkg(bld, name, use='', app_use='', test_use=''):
                 test_scripts_source = test_script,
                 test_scripts_template = "pwd && " + interp + " ${SCRIPT}")
 
-    if appsdir:
-        for app in appsdir.ant_glob('*.cxx'):
-            #print 'Building %s app: %s using %s' % (name, app, app_use)
-            bld.program(source = [app], 
-                        target = app.name.replace('.cxx',''),
-                        includes = 'inc',
-                        rpath = get_rpath(app_use + [name], local=False),
-                        use = app_use + [name])
-
+    if test_jsonnets and not bld.options.no_tests:
+        # print ("testing %d jsonnets in %s" % (len(test_jsonnets), bld.path ))
+        for test_jsonnet in test_jsonnets:
+            bld(features="test_scripts",
+                ut_cwd   = bld.path, 
+                test_scripts_source = test_jsonnet,
+                test_scripts_template = "pwd && wcsonnet ${SCRIPT}")

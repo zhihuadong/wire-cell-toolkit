@@ -7,7 +7,7 @@ See http://wirecell.github.io/ for WCT manual and news "blog".
 
 The home page for the general Wire Cell effort is http://lar.bnl.gov/wire-cell/.
 
-[[https://travis-ci.org/WireCell/wire-cell-build][https://api.travis-ci.org/WireCell/wire-cell-build.svg?branch=master]]
+[[https://travis-ci.org/WireCell/wire-cell-toolkit][https://api.travis-ci.org/WireCell/wire-cell-toolkit.svg?branch=master]]
 
 
 * Installation
@@ -47,37 +47,20 @@ wish.  Some options include:
 Developers check out =master= branch via SSH.
 
 #+BEGIN_EXAMPLE
-  $ git clone --recursive git@github.com:WireCell/wire-cell-build.git wct
+  $ git clone git@github.com:WireCell/wire-cell-toolkit.git wct
 #+END_EXAMPLE
 
 ** User Source
 
 Users typically should build a release branch, either the tip or a
-tagged release on that branch.  Tagged releases are shown on the [[https://github.com/WireCell/wire-cell-build/releases][this
-GitHub release page]].  To get the source, for example for release 0.5.0
-on branch 0.5.x do:
+tagged release on that branch.  Tagged releases are shown on the [[https://github.com/WireCell/wire-cell-toolkit/releases][this
+GitHub release page]].  
+
+Users may also anonymously clone in the usual way:
 
 #+BEGIN_EXAMPLE
-  $ git clone --recursive --branch 0.5.x https://github.com/WireCell/wire-cell-build.git
-  $ git checkout -b 0.5.0 0.5.0
-  $ git submodule init
-  $ git submodule update
-  $ git submodule foreach git checkout -b 0.5.0 0.5.0
+  $ git clone https://github.com/WireCell/wire-cell-toolkit.git
 #+END_EXAMPLE
-
-Anonymous users can clone the =master= branch but will need to switch
-the submodule urls to use HTTPS.  A script is provided to make that
-easier:
-
-#+BEGIN_EXAMPLE
-  $ git clone https://github.com/WireCell/wire-cell-build.git
-  $ ./swith-git-urls
-  $ git submodule init
-  $ git submodule update
-#+END_EXAMPLE
-
-Except when mistakes are made, the release branches default to
-anonymous HTTPS URLs.
 
 ** Configuring the source
 
@@ -87,21 +70,34 @@ On well-behaved systems you can do:
   $ ./wcb configure --prefix=/path/to/install
 #+END_EXAMPLE
 
-If your system is not well-behaved you can exhaustively specify where externals are found.  In this contrived example, they are installed all into one directory named by the =WCT_EXTERNALS= variable (such as when making a Spack "view")
+Software dependencies which can not automatically be located can be
+manually specified.  For a list of options run:
 
 #+BEGIN_EXAMPLE
   $ ./wcb --help
-  $ ./wcb configure --prefix=/path/to/install \
-     --boost-includes=$WCT_EXTERNALS/include --boost-libs=$WCT_EXTERNALS/lib --boost-mt \
-     --with-eigen=$WCT_EXTERNALS --with-jsoncpp=$WCT_EXTERNALS --with-tbb=$WCT_EXTERNALS \
-     --with-root=$WCT_EXTERNALS --with-fftw=$WCT_EXTERNALS --with-root=$WCT_EXTERNALS
 #+END_EXAMPLE
 
-To force no use of ROOT, even if it is found, use ~--with-root=false~.
+Here is an example where some packages are found automatically and
+some need help and others are explicitly turned off:
+
+#+begin_example
+  $ ./wcb configure \
+          --prefix=$HOME/dev/wct/install \
+          --with-jsonnet=$HOME/opt/jsonnet \
+          --with-eigen-include=/usr/include/eigen3 \
+          --with-root=no
+  ...
+  Removing submodule "dfp" due to lack of external
+  Removing package "tbb" due to lack of external dependency
+  Removing package "root" due to lack of external dependency
+  Removing package "cuda" due to lack of external dependency
+  Configured for submodules: apps, cfg, gen, iface, img, pgraph, ress, sigproc, sio, util
+  'configure' finished successfully (5.683s)
+#+end_example
 
 ** Building
 
-To build the code but not run the tests do
+It is suggested to first build the code before running tests.
 
 #+BEGIN_EXAMPLE
   $ ./wcb -p --notests
@@ -109,7 +105,7 @@ To build the code but not run the tests do
 
 ** Installing
 
-To install the code but not run the tests do:
+To install the code while still avoiding the tests do:
 
 #+BEGIN_EXAMPLE
   $ ./wcb -p --notests install
@@ -117,22 +113,25 @@ To install the code but not run the tests do:
 
 ** Testing
 
-To run the tests, depending on your installation environment you may
-need to set ~LD_LIBRARY_PATH~ and will need to set ~WIRECELL_PATH~ to find
-both ~data~ and ~cfg~ directories.
+Running the tests can take a while but should be run on new
+installations and after any significant development.  The developers
+try not to leave broken tests so any failure should be treated as
+important.  However, some tests require proper environment to run
+successfully.  In particular, tests need to find Wire-Cell
+configuration and the shared libraries of the external software
+dependencies need to be located.  Below shows an example:
 
 #+BEGIN_EXAMPLE
-  $ export LD_LIBRARY_PATH=/path/to/install/lib:$LD_LIBRARY_PATH
-  $ export WIRECELL_PATH=/path/to/data:/path/to/cfg
-#+END_EXAMPLE
-
-Then,
-
-#+BEGIN_EXAMPLE
+  $ export WIRECELL_PATH=$HOME/dev/wct/wire-cell-data:$HOME/dev/wct/wire-cell-toolkit/cfg
+  $ export LD_LIBRARY_PATH=$HOME/dev/wct/install/lib:$HOME/opt/jsonnet/lib
   $ ./wcb -p --alltests
+  ...
+  execution summary 
+    tests that pass 83/83
+      ... 
+    tests that fail 0/83 
+  'build' finished successfully (15.192s)
 #+END_EXAMPLE
-
-In principle, no tests should fail.
 
 * Release management
 
