@@ -1,8 +1,6 @@
 #include "WireCellUtil/DfpGraph.h"
 
 #include <tuple>
-#include <iostream>
-#define LogDebug(x) std::cerr << "[yuhw]: " << __LINE__ << " : " << x << std::endl
 
 using namespace WireCell;
     
@@ -77,14 +75,8 @@ get_node(WireCell::Configuration jone) {
 
 void DfpGraph::configure(const Configuration &cfg) {
   for (auto conn : cfg) {
-    // auto tail = conn["tail"];
-    // auto head = conn["head"];
-    // LogDebug(head["node"] << ", " << head["port"]);
-    // LogDebug(tail["node"] << ", " << tail["port"]);
-
     auto head = get_node(conn["head"]);
     auto tail = get_node(conn["tail"]);
-    LogDebug(std::get<0>(tail) << ", " << std::get<1>(tail) << ", " << std::get<2>(tail));
 
     connect(std::get<0>(tail), std::get<1>(tail), std::get<2>(tail),
             std::get<0>(head), std::get<1>(head), std::get<2>(head));
