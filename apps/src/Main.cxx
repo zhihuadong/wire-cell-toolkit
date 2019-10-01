@@ -21,7 +21,7 @@
 #include "config.h"
 
 #if HAVE_FFTWTHREADS_LIB
-// include any extra fftw files
+#include <fftw3.h>
 #endif
 
 using namespace WireCell;
@@ -34,7 +34,8 @@ Main::Main()
     : l(Log::logger("main"))
 {
 #if HAVE_FFTWTHREADS_LIB
-// call fftw thread init here.
+    fftwf_init_threads();
+    fftwf_make_planner_thread_safe();
 #endif
 }
 
