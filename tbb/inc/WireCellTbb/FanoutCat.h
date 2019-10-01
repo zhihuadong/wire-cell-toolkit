@@ -7,8 +7,6 @@
 #include "WireCellTbb/NodeWrapper.h"
 
 #include <iostream>
-// #define LogDebug(x) std::cout << "[yuhw]: " << __FILE__ << ":" <<__FUNCTION__ << ":" << __LINE__ << " : " << x << std::endl
-#define LogDebug(x)
 
 namespace WireCellTbb {
 
@@ -72,7 +70,6 @@ namespace WireCellTbb {
 	FanoutWrapper(tbb::flow::graph& graph, WireCell::INode::pointer wcnode)
 	    : m_spliter(0), m_caller(0)
 	{
-        LogDebug("");
 	    int nout = wcnode->output_types().size();
 	    // an exhaustive switch to convert from run-time to compile-time types and enumerations.
 	    Assert (nout > 0 && nout <= 6); // fixme: exception instead?
@@ -82,7 +79,6 @@ namespace WireCellTbb {
 	    if (4 == nout) m_sender_ports = build_fanouter<4>(graph, wcnode, m_spliter, m_caller);
 	    if (5 == nout) m_sender_ports = build_fanouter<5>(graph, wcnode, m_spliter, m_caller);
 	    if (6 == nout) m_sender_ports = build_fanouter<6>(graph, wcnode, m_spliter, m_caller);
-        LogDebug("");
 	}
 	
 	virtual sender_port_vector sender_ports() {
@@ -90,9 +86,7 @@ namespace WireCellTbb {
 	}
 
 	virtual receiver_port_vector  receiver_ports() {
-        LogDebug("");
 	    auto ptr = dynamic_cast< receiver_type* >(m_caller);
-        LogDebug("");
 	    return receiver_port_vector{ptr};
 	}
 
