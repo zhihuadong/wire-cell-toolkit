@@ -3,6 +3,7 @@
 
 #include "WireCellIface/IDataFlowGraph.h"
 #include "WireCellIface/IConfigurable.h"
+#include "WireCellUtil/Logging.h"
 #include "WireCellTbb/NodeWrapper.h"
 #include "WireCellTbb/WrapperFactory.h"
 
@@ -34,6 +35,7 @@ namespace WireCellTbb {
 	tbb::task_scheduler_init m_sched; // pass in number of threads
 	tbb::flow::graph m_graph;	  // here lives the TBB graph
 	WrapperFactory m_factory;
+    WireCell::Log::logptr_t l;
     };
 
 }

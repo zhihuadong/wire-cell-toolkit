@@ -3,6 +3,7 @@
 #include "WireCellTbb/SinkCat.h"
 #include "WireCellTbb/JoinCat.h"
 #include "WireCellTbb/FaninCat.h"
+#include "WireCellTbb/FanoutCat.h"
 #include "WireCellTbb/QueuedoutCat.h"
 #include "WireCellTbb/FunctionCat.h"
 
@@ -19,6 +20,7 @@ WrapperFactory::WrapperFactory(tbb::flow::graph& graph)
     bind_maker<QueuedoutWrapper>(INode::queuedoutNode);
     bind_maker<JoinWrapper>(INode::joinNode);
     bind_maker<FaninWrapper>(INode::faninNode);
+    bind_maker<FanoutWrapper>(INode::fanoutNode);
     bind_maker<FunctionWrapper>(INode::functionNode);
 //    bind_maker<HydraWrapper>(INode::hydraNode);
     // fixme: add more ...

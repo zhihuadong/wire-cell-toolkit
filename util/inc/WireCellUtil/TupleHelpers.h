@@ -20,6 +20,7 @@
 #include <type_traits> 
 #include <utility>
 #include <memory>
+#include <cassert>
 
 // much inspiration from:
 // https://www.preney.ca/paul/archives/486
@@ -120,6 +121,17 @@ namespace WireCell {
 
     };                          // tuple_helpers
 
+    template <typename T, std::size_t... Indices>
+    auto vectorToTupleHelper(const std::vector<T> &v,
+                             std::index_sequence<Indices...>) {
+      return std::make_tuple(v[Indices]...);
+    }
+
+    template <std::size_t N, typename T>
+    auto vectorToTuple(const std::vector<T> &v) {
+      assert(v.size() >= N);
+      return vectorToTupleHelper(v, std::make_index_sequence<N>());
+    }
 
     /** This convert a tuple of types to vector of deque shared_ptr's
      * of those types.

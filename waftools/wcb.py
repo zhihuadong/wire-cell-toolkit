@@ -10,6 +10,7 @@ package_descriptions = dict(
     ## These typically CAN be found by pkg-config
     ZLib    = dict(incs=['zlib.h'], libs=['z']),
     FFTW    = dict(incs=['fftw3.h'], libs=['fftw3f'], pcname='fftw3f'),
+    FFTWThreads = dict(libs=['fftw3f_threads'], pcname='fftw3f', mandatory=False),
     JsonCpp = dict(incs=["json/json.h"], libs=['jsoncpp']),
     ## These can't always be found by pkg-config:
     Eigen   = dict(incs=["Eigen/Dense"]),
