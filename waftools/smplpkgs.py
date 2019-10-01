@@ -48,7 +48,7 @@ def smplpkg(bld, name, use='', app_use='', test_use=''):
     app_use = list(set(use + to_list(app_use)))
     test_use = list(set(use + to_list(test_use)))
 
-    includes = []
+    includes = [bld.out_dir]
     headers = []
     source = []
 
@@ -114,7 +114,7 @@ def smplpkg(bld, name, use='', app_use='', test_use=''):
             source = source,
             target = name,
             rpath = get_rpath(use),
-            includes = 'inc',
+            includes = includes, # 'inc',
             export_includes = 'inc',
             use = use)            
 
@@ -123,7 +123,7 @@ def smplpkg(bld, name, use='', app_use='', test_use=''):
             #print 'Building %s app: %s using %s' % (name, app, app_use)
             bld.program(source = [app], 
                         target = app.name.replace('.cxx',''),
-                        includes = 'inc',
+                        includes =  includes, # 'inc',
                         rpath = get_rpath(app_use + [name], local=False),
                         use = app_use + [name])
 

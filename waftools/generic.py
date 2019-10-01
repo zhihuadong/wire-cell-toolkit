@@ -63,9 +63,9 @@ def _configure(ctx, name, incs=(), libs=(), bins=(), pcname=None, mandatory=True
         if instdir:
             assert (instdir.lower() not in ['no','off','false'])
     else:                       # optional
-        if not any([instdir, incdir, libdir]):
-            print ("skipping non mandatory %s, use --with-%s=[yes|<dir>] to force" % (name, lower))
-            return
+        # if not any([instdir, incdir, libdir]):
+        #     print ("skipping non mandatory %s, use --with-%s=[yes|<dir>] to force" % (name, lower))
+        #     return
         if instdir and instdir.lower() in ['no','off','false']:
             return
 
@@ -106,7 +106,7 @@ def _configure(ctx, name, incs=(), libs=(), bins=(), pcname=None, mandatory=True
     # now check, this does some extra work in the caseof pkg-config
 
     if libs:
-        ctx.start_msg("Location for %s libs" % name)
+        ctx.start_msg("Location for %s libs" % (name,))
         for tryl in libs:
             ctx.check_cxx(lib=tryl,
                           use=UPPER, uselib_store=UPPER, mandatory=mandatory)
@@ -114,6 +114,7 @@ def _configure(ctx, name, incs=(), libs=(), bins=(), pcname=None, mandatory=True
 
         ctx.start_msg("Libs for %s" % name)
         ctx.end_msg(str(getattr(ctx.env, 'LIB_' + UPPER)))
+        ctx.define('HAVE_' + UPPER + '_LIB', 1)
 
     if incs:
         ctx.start_msg("Location for %s headers" % name)

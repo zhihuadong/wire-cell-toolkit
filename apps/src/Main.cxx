@@ -19,7 +19,8 @@
 #include <iostream>
 
 #include "config.h"
-#if HAVE_FFTWTHREADS
+
+#if HAVE_FFTWTHREADS_LIB
 // include any extra fftw files
 #endif
 
@@ -32,7 +33,7 @@ using namespace boost::property_tree;
 Main::Main()
     : l(Log::logger("main"))
 {
-#if HAVE_FFTWTHREADS
+#if HAVE_FFTWTHREADS_LIB
 // call fftw thread init here.
 #endif
 }
