@@ -58,17 +58,18 @@ def configure(cfg):
         submodules.remove('dfp')
 
     # Remove WCT packages that happen to have same name as external name
-    for pkg,ext in dict(root="ROOTSYS", tbb="TBB", cuda="CUDA").items():
+    for pkg,ext in [("root","ROOTSYS"), ("tbb","TBB"), ("tbb","FFTWTHREADS_LIB"), ("cuda","CUDA")]:
         have='HAVE_'+ext
-        if have in cfg.env:
+        if have in cfg.env or have in cfg.env.define_key:
             continue
         if pkg in submodules:
-            print ('Removing package "%s" due to lack of external dependency'%pkg)
+            print ('Removing package "%s" due to lack of external dependency "%s"'%(pkg,ext))
             submodules.remove(pkg)
 
     cfg.env.SUBDIRS = submodules
     print ('Configured for submodules: %s' % (', '.join(submodules), ))
     cfg.write_config_header('config.h')
+
 
 def build(bld):
     bld.load('smplpkgs')

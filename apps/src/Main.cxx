@@ -19,8 +19,9 @@
 #include <iostream>
 
 #include "config.h"
-#if HAVE_FFTWTHREADS
-// include any extra fftw files
+
+#if HAVE_FFTWTHREADS_LIB
+#include <fftw3.h>
 #endif
 
 using namespace WireCell;
@@ -32,8 +33,9 @@ using namespace boost::property_tree;
 Main::Main()
     : l(Log::logger("main"))
 {
-#if HAVE_FFTWTHREADS
-// call fftw thread init here.
+#if HAVE_FFTWTHREADS_LIB
+    fftwf_init_threads();
+    fftwf_make_planner_thread_safe();
 #endif
 }
 
