@@ -114,7 +114,12 @@ def _configure(ctx, name, incs=(), libs=(), bins=(), pcname=None, mandatory=True
 
         ctx.start_msg("Libs for %s" % name)
         ctx.end_msg(str(getattr(ctx.env, 'LIB_' + UPPER)))
-        ctx.define('HAVE_' + UPPER + '_LIB', 1)
+        all_lib_exist = True
+        for tryl in libs:
+            if not tryl in getattr(ctx.env, 'LIB_' + UPPER):
+                all_lib_exist = False
+        if all_lib_exist:
+            ctx.define('HAVE_' + UPPER + '_LIB', 1)
 
     if incs:
         ctx.start_msg("Location for %s headers" % name)
