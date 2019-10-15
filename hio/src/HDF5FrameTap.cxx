@@ -1,4 +1,4 @@
-#include "WireCellHdf5/HDF5FrameTap.h"
+#include "WireCellHio/HDF5FrameTap.h"
 #include "WireCellIface/ITrace.h"
 #include "WireCellIface/SimpleFrame.h"
 #include "WireCellIface/SimpleTrace.h"

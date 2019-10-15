@@ -1,1 +1,0 @@
-bld.smplpkg('WireCellHdf5', use='WireCellUtil WireCellIface HDF5 H5CPP')
