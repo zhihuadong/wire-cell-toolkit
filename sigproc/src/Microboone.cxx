@@ -124,19 +124,19 @@ bool Microboone::Subtract_WScaling(WireCell::IChannelFilter::channel_signals_t& 
 
 	if (respec.size() > 0 && (respec.at(0).real()!=1 || respec.at(0).imag()!=0) && res_offset!=0){
 	    int nbin = signal.size();
-	    // WireCell::Waveform::realseq_t signal_roi(nbin,0);
-	 //    for (auto roi: rois){
-		// const int bin0 = std::max(roi.front()-1, 0);
-		// const int binf = std::min(roi.back()+1, nbin-1);
-		// const double m0 = signal[bin0];
-		// const double mf = signal[binf];
-		// const double roi_run = binf - bin0;
-		// const double roi_rise = mf - m0;
-		// for (auto bin : roi) {
-		//     const double m = m0 + (bin - bin0)/roi_run*roi_rise;
-		//     signal_roi.at(bin) = signal.at(bin) - m;
-		// }
-	 //    }
+	    WireCell::Waveform::realseq_t signal_roi(nbin,0);
+	    for (auto roi: rois){
+		const int bin0 = std::max(roi.front()-1, 0);
+		const int binf = std::min(roi.back()+1, nbin-1);
+		const double m0 = signal[bin0];
+		const double mf = signal[binf];
+		const double roi_run = binf - bin0;
+		const double roi_rise = mf - m0;
+		for (auto bin : roi) {
+		    const double m = m0 + (bin - bin0)/roi_run*roi_rise;
+		    signal_roi.at(bin) = signal.at(bin) - m;
+		}
+	    }
 
 	    // do the deconvolution with a very loose low-frequency filter
 	    // WireCell::Waveform::compseq_t signal_roi_freq = WireCell::Waveform::dft(signal_roi);
@@ -213,7 +213,7 @@ bool Microboone::Subtract_WScaling(WireCell::IChannelFilter::channel_signals_t& 
 		}
 	    }
 	    
-	    if (ch==93) {
+	    if (ch==8331) {
 		std::cout << "[Jujube] dbg_info_ch" << ch << " mean    " << mean << std::endl;
 		std::cout << "[Jujube] dbg_info_ch" << ch << " rms     " << rms << std::endl;
 		std::cout << "[Jujube] dbg_info_ch" << ch << " scaling " << scaling << std::endl;
