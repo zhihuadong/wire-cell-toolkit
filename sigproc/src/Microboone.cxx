@@ -124,22 +124,23 @@ bool Microboone::Subtract_WScaling(WireCell::IChannelFilter::channel_signals_t& 
 
 	if (respec.size() > 0 && (respec.at(0).real()!=1 || respec.at(0).imag()!=0) && res_offset!=0){
 	    int nbin = signal.size();
-	    WireCell::Waveform::realseq_t signal_roi(nbin,0);
-	    for (auto roi: rois){
-		const int bin0 = std::max(roi.front()-1, 0);
-		const int binf = std::min(roi.back()+1, nbin-1);
-		const double m0 = signal[bin0];
-		const double mf = signal[binf];
-		const double roi_run = binf - bin0;
-		const double roi_rise = mf - m0;
-		for (auto bin : roi) {
-		    const double m = m0 + (bin - bin0)/roi_run*roi_rise;
-		    signal_roi.at(bin) = signal.at(bin) - m;
-		}
-	    }
+	    // WireCell::Waveform::realseq_t signal_roi(nbin,0);
+	 //    for (auto roi: rois){
+		// const int bin0 = std::max(roi.front()-1, 0);
+		// const int binf = std::min(roi.back()+1, nbin-1);
+		// const double m0 = signal[bin0];
+		// const double mf = signal[binf];
+		// const double roi_run = binf - bin0;
+		// const double roi_rise = mf - m0;
+		// for (auto bin : roi) {
+		//     const double m = m0 + (bin - bin0)/roi_run*roi_rise;
+		//     signal_roi.at(bin) = signal.at(bin) - m;
+		// }
+	 //    }
 
 	    // do the deconvolution with a very loose low-frequency filter
-	    WireCell::Waveform::compseq_t signal_roi_freq = WireCell::Waveform::dft(signal_roi);
+	    // WireCell::Waveform::compseq_t signal_roi_freq = WireCell::Waveform::dft(signal_roi);
+	    WireCell::Waveform::compseq_t signal_roi_freq = WireCell::Waveform::dft(signal);
 	    WireCell::Waveform::shrink(signal_roi_freq,respec);
 	    for (size_t i=0;i!=signal_roi_freq.size();i++){
 		double freq;
@@ -153,6 +154,15 @@ bool Microboone::Subtract_WScaling(WireCell::IChannelFilter::channel_signals_t& 
 		signal_roi_freq.at(i) = signal_roi_freq.at(i) * factor;
 	    }
 	    WireCell::Waveform::realseq_t signal_roi_decon = WireCell::Waveform::idft(signal_roi_freq);
+
+	    std::pair<double,double> temp = Derivations::CalcRMS(signal_roi_decon);
+	    double mean = temp.first;
+	    double rms = temp.second;
+
+	    for (size_t i=0;i!=signal_roi_freq.size();i++){
+		signal_roi_decon.at(i) -= mean;
+	    }
+	    decon_limit1 = 3.*rms;
 	    
 	    std::map<int, bool> flag_replace;
 	    for (auto roi: rois){
@@ -203,6 +213,27 @@ bool Microboone::Subtract_WScaling(WireCell::IChannelFilter::channel_signals_t& 
 		}
 	    }
 	    
+	    if (ch==93) {
+		std::cout << "[Jujube] dbg_info_ch" << ch << " mean    " << mean << std::endl;
+		std::cout << "[Jujube] dbg_info_ch" << ch << " rms     " << rms << std::endl;
+		std::cout << "[Jujube] dbg_info_ch" << ch << " scaling " << scaling << std::endl;
+		for (auto roi : rois) {
+		    std::cout << "[Jujube] dbg_info_ch" << ch << " roi     " 
+		              << roi.front() << " " << roi.back() << " " << flag_replace[roi.front()] << std::endl;
+		}
+		for (int j=0;j!=nbin;j++){
+	 	    int time_bin = j-res_offset;
+	 	    if (time_bin <0) time_bin += nbin;
+		    if (time_bin >=nbin) time_bin -= nbin;
+		    std::cout << "[Jujube] dbg_spec_ch" << ch << "\t"
+		              << signal.at(j) << "\t"
+		              << medians.at(j) << "\t"
+		              << signal_roi_decon.at(time_bin) << "\t"
+		              << temp_medians.at(j) << "\t"
+		              << std::endl;
+		}
+	    }
+
 	    // collection plane, directly subtracti ... 
 	    for (int i=0;i!=nbin;i++){
 		if (fabs(signal.at(i)) > 0.001) {
