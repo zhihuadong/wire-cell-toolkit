@@ -41,7 +41,7 @@ def configure(cfg):
     cfg.env.CXXFLAGS += ['-DEIGEN_FFTW_DEFAULT=1']
 
     cfg.env.CXXFLAGS += ['-Wall', '-Wno-unused-local-typedefs', '-Wno-unused-function']
-    cfg.env.CXXFLAGS += ['-Wpedantic', '-Werror']
+    # cfg.env.CXXFLAGS += ['-Wpedantic', '-Werror']
 
     # fixme: needed by cnpy in WireCellUtil.  should make this an explicit dependency
     cfg.env.LIB += ['z']
