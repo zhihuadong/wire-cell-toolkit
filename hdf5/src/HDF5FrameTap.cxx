@@ -69,7 +69,10 @@ WireCell::Configuration Hdf5::HDF5FrameTap::default_configuration() const {
     // files are supported.  Writing is always in "append" mode.  It's
     // up to the user to delete a previous instance of the file if
     // it's old contents are not wanted.
-    cfg["filename"] = "wct-frame.npz";
+    cfg["filename"] = "wct-frame.hdf5";
+
+    cfg["chunk"] = Json::arrayValue;
+    cfg["gzpi"] = 9;
 
   return cfg;
 }
@@ -118,6 +121,19 @@ bool Hdf5::HDF5FrameTap::operator()(const IFrame::pointer &inframe,
         m_cfg["frame_tags"][0] = "";
     }
 
+    if (m_cfg["chunk"].isNull() or m_cfg["chunk"].size()!=2) {
+        m_cfg["chunk"].resize(2);
+        m_cfg["chunk"][0] = 0;
+        m_cfg["chunk"][1] = 0;
+    }
+
+    size_t chunk_ncols = m_cfg["chunk"][0].asInt();
+    size_t chunk_nrows = m_cfg["chunk"][1].asInt();
+    l->debug("HDF5FrameTap: chunking ncols={} nrows={}", chunk_ncols, chunk_nrows);
+
+    int gzip_level = m_cfg["gzip"].asInt();
+    if (gzip_level<0 or gzip_level>9) gzip_level = 9;
+    l->debug("HDF5FrameTap: gzip_level {}", gzip_level);
 
     std::stringstream ss;
     ss << "HDF5FrameTap: see frame #" << inframe->ident()
@@ -157,6 +173,10 @@ bool Hdf5::HDF5FrameTap::operator()(const IFrame::pointer &inframe,
         const size_t nrows = std::distance(chbeg, chend);
         l->debug("HDF5FrameTap: saving ncols={} nrows={}", ncols, nrows);
 
+        if(chunk_ncols<1 or chunk_ncols>ncols) chunk_ncols = ncols;
+        if(chunk_nrows<1 or chunk_nrows>nrows) chunk_nrows = nrows;
+        l->debug("HDF5FrameTap: chunking ncols={} nrows={}", chunk_ncols, chunk_nrows);
+
         Array::array_xxf arr = Array::array_xxf::Zero(nrows, ncols) + baseline;
         FrameTools::fill(arr, traces, channels.begin(), chend, tbinmm.first);
         arr = arr * scale + offset;
@@ -167,11 +187,11 @@ bool Hdf5::HDF5FrameTap::operator()(const IFrame::pointer &inframe,
                 Array::array_xxs sarr = arr.cast<short>();
                 const short* sdata = sarr.data();
                 // cnpy::npz_save(fname, aname, sdata, {ncols, nrows}, mode);
-                h5::write<short>(fd, aname, sdata, h5::count{ncols, nrows}, h5::chunk{1000, 10} | h5::gzip{9});
+                h5::write<short>(fd, aname, sdata, h5::count{ncols, nrows}, h5::chunk{chunk_ncols, chunk_nrows} | h5::gzip{gzip_level}, h5::high_throughput);
             }
             else {
                 // cnpy::npz_save(fname, aname, arr.data(), {ncols, nrows}, mode);
-                h5::write<float>(fd, aname, arr.data(), h5::count{ncols, nrows}, h5::chunk{1000, 10} | h5::gzip{9});
+                h5::write<float>(fd, aname, arr.data(), h5::count{ncols, nrows}, h5::chunk{chunk_ncols, chunk_nrows} | h5::gzip{gzip_level}, h5::high_throughput);
             }
             l->debug("HDF5FrameTap: saved {} with {} channels {} ticks @t={} ms qtot={}",
                      aname, nrows, ncols, inframe->time() / units::ms, arr.sum());
