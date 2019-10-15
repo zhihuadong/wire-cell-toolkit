@@ -213,26 +213,26 @@ bool Microboone::Subtract_WScaling(WireCell::IChannelFilter::channel_signals_t& 
 		}
 	    }
 	    
-	 //    if (ch==8331) {
-		// std::cout << "[Jujube] dbg_info_ch" << ch << " mean    " << mean << std::endl;
-		// std::cout << "[Jujube] dbg_info_ch" << ch << " rms     " << rms << std::endl;
-		// std::cout << "[Jujube] dbg_info_ch" << ch << " scaling " << scaling << std::endl;
-		// for (auto roi : rois) {
-		//     std::cout << "[Jujube] dbg_info_ch" << ch << " roi     " 
-		//               << roi.front() << " " << roi.back() << " " << flag_replace[roi.front()] << std::endl;
-		// }
-		// for (int j=0;j!=nbin;j++){
-	 // 	    int time_bin = j-res_offset;
-	 // 	    if (time_bin <0) time_bin += nbin;
-		//     if (time_bin >=nbin) time_bin -= nbin;
-		//     std::cout << "[Jujube] dbg_spec_ch" << ch << "\t"
-		//               << signal.at(j) << "\t"
-		//               << medians.at(j) << "\t"
-		//               << signal_roi_decon.at(time_bin) << "\t"
-		//               << temp_medians.at(j) << "\t"
-		//               << std::endl;
-		// }
-	 //    }
+	    if (ch==460) {
+		std::cout << "[Jujube] dbg_info_ch" << ch << " mean    " << mean << std::endl;
+		std::cout << "[Jujube] dbg_info_ch" << ch << " rms     " << rms << std::endl;
+		std::cout << "[Jujube] dbg_info_ch" << ch << " scaling " << scaling << std::endl;
+		for (auto roi : rois) {
+		    std::cout << "[Jujube] dbg_info_ch" << ch << " roi     " 
+		              << roi.front() << " " << roi.back() << " " << flag_replace[roi.front()] << std::endl;
+		}
+		for (int j=0;j!=nbin;j++){
+	 	    int time_bin = j-res_offset;
+	 	    if (time_bin <0) time_bin += nbin;
+		    if (time_bin >=nbin) time_bin -= nbin;
+		    std::cout << "[Jujube] dbg_spec_ch" << ch << "\t"
+		              << signal.at(j) << "\t"
+		              << medians.at(j) << "\t"
+		              << signal_roi_decon.at(time_bin) << "\t"
+		              << temp_medians.at(j) << "\t"
+		              << std::endl;
+		}
+	    }
 
 	    // collection plane, directly subtracti ... 
 	    for (int i=0;i!=nbin;i++){
