@@ -17,6 +17,8 @@ package_descriptions = dict(
     ## These likely can NOT be found by pkg-config:
     Jsonnet = dict(incs=["libjsonnet++.h"], libs=['jsonnet++','jsonnet']),
     TBB     = dict(incs=["tbb/parallel_for.h"], libs=['tbb'], mandatory=False),
+    HDF5    = dict(incs=["hdf5.h"], libs=['hdf5'], mandatory=False),
+    H5CPP   = dict(incs=["h5cpp/all"], mandatory=False),
 
     # note, actually, pgk-config fails often.  best to always use
     # explicit --with-NAME.
