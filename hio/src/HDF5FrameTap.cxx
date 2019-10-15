@@ -164,8 +164,12 @@ bool Hdf5::HDF5FrameTap::operator()(const IFrame::pointer &inframe,
         }
         auto channels = FrameTools::channels(traces);
         std::sort(channels.begin(), channels.end());
+        auto chmin = channels.front();
+        auto chmax = channels.back();
+        channels.resize(chmax-chmin+1);
+        std::iota(std::begin(channels), std::end(channels), chmin);
         auto chbeg = channels.begin();
-        auto chend = std::unique(chbeg, channels.end());
+        auto chend = channels.end(); //std::unique(chbeg, channels.end());
         auto tbinmm = FrameTools::tbin_range(traces);
 
         // fixme: may want to give user some config over tbin range to save.
