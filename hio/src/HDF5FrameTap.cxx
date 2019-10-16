@@ -73,6 +73,7 @@ WireCell::Configuration Hdf5::HDF5FrameTap::default_configuration() const {
 
     cfg["chunk"] = Json::arrayValue;
     cfg["gzpi"] = 9;
+    cfg["high_throughput"] = true;
 
   return cfg;
 }
@@ -135,6 +136,8 @@ bool Hdf5::HDF5FrameTap::operator()(const IFrame::pointer &inframe,
     if (gzip_level<0 or gzip_level>9) gzip_level = 9;
     l->debug("HDF5FrameTap: gzip_level {}", gzip_level);
 
+    const bool high_throughput = m_cfg["high_throughput"].asBool();
+
     std::stringstream ss;
     ss << "HDF5FrameTap: see frame #" << inframe->ident()
        << " with " << inframe->traces()->size() << " traces with frame tags:";
@@ -191,11 +194,19 @@ bool Hdf5::HDF5FrameTap::operator()(const IFrame::pointer &inframe,
                 Array::array_xxs sarr = arr.cast<short>();
                 const short* sdata = sarr.data();
                 // cnpy::npz_save(fname, aname, sdata, {ncols, nrows}, mode);
-                h5::write<short>(fd, aname, sdata, h5::count{ncols, nrows}, h5::chunk{chunk_ncols, chunk_nrows} | h5::gzip{gzip_level}, h5::high_throughput);
+                if(high_throughput) {
+                  h5::write<short>(fd, aname, sdata, h5::count{ncols, nrows}, h5::chunk{chunk_ncols, chunk_nrows} | h5::gzip{gzip_level}, h5::high_throughput);
+                } else {
+                  h5::write<short>(fd, aname, sdata, h5::count{ncols, nrows}, h5::chunk{chunk_ncols, chunk_nrows} | h5::gzip{gzip_level});
+                }
             }
             else {
                 // cnpy::npz_save(fname, aname, arr.data(), {ncols, nrows}, mode);
-                h5::write<float>(fd, aname, arr.data(), h5::count{ncols, nrows}, h5::chunk{chunk_ncols, chunk_nrows} | h5::gzip{gzip_level}, h5::high_throughput);
+                if(high_throughput) {
+                  h5::write<float>(fd, aname, arr.data(), h5::count{ncols, nrows}, h5::chunk{chunk_ncols, chunk_nrows} | h5::gzip{gzip_level}, h5::high_throughput);
+                } else {
+                  h5::write<float>(fd, aname, arr.data(), h5::count{ncols, nrows}, h5::chunk{chunk_ncols, chunk_nrows} | h5::gzip{gzip_level});
+                }
             }
             l->debug("HDF5FrameTap: saved {} with {} channels {} ticks @t={} ms qtot={}",
                      aname, nrows, ncols, inframe->time() / units::ms, arr.sum());
