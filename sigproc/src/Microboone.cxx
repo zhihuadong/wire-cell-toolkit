@@ -213,7 +213,7 @@ bool Microboone::Subtract_WScaling(WireCell::IChannelFilter::channel_signals_t& 
 		}
 	    }
 	    
-	    if (ch==460) {
+	    if (ch==26) {
 		std::cout << "[Jujube] dbg_info_ch" << ch << " mean    " << mean << std::endl;
 		std::cout << "[Jujube] dbg_info_ch" << ch << " rms     " << rms << std::endl;
 		std::cout << "[Jujube] dbg_info_ch" << ch << " scaling " << scaling << std::endl;
