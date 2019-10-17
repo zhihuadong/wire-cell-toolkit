@@ -139,8 +139,8 @@ bool Microboone::Subtract_WScaling(WireCell::IChannelFilter::channel_signals_t& 
 	    }
 
 	    // do the deconvolution with a very loose low-frequency filter
-	    // WireCell::Waveform::compseq_t signal_roi_freq = WireCell::Waveform::dft(signal_roi);
-	    WireCell::Waveform::compseq_t signal_roi_freq = WireCell::Waveform::dft(signal);
+	    WireCell::Waveform::compseq_t signal_roi_freq = WireCell::Waveform::dft(signal_roi);
+	    // WireCell::Waveform::compseq_t signal_roi_freq = WireCell::Waveform::dft(signal);
 	    WireCell::Waveform::shrink(signal_roi_freq,respec);
 	    for (size_t i=0;i!=signal_roi_freq.size();i++){
 		double freq;
@@ -155,14 +155,14 @@ bool Microboone::Subtract_WScaling(WireCell::IChannelFilter::channel_signals_t& 
 	    }
 	    WireCell::Waveform::realseq_t signal_roi_decon = WireCell::Waveform::idft(signal_roi_freq);
 
-	    std::pair<double,double> temp = Derivations::CalcRMS(signal_roi_decon);
-	    double mean = temp.first;
-	    double rms = temp.second;
-	    // std::cout << "[Jujube] dfg_rms_ch" << ch << "\t" << rms << std::endl;
-	    for (size_t i=0;i!=signal_roi_freq.size();i++){
-		signal_roi_decon.at(i) -= mean;
-	    }
-	    decon_limit1 = 3.*rms;
+	 //    std::pair<double,double> temp = Derivations::CalcRMS(signal_roi_decon);
+	 //    double mean = temp.first;
+	 //    double rms = temp.second;
+	 //    // std::cout << "[Jujube] dfg_rms_ch" << ch << "\t" << rms << std::endl;
+	 //    for (size_t i=0;i!=signal_roi_freq.size();i++){
+		// signal_roi_decon.at(i) -= mean;
+	 //    }
+	 //    decon_limit1 = 3.*rms;
 	    
 	    std::map<int, bool> flag_replace;
 	    for (auto roi: rois){
@@ -213,9 +213,9 @@ bool Microboone::Subtract_WScaling(WireCell::IChannelFilter::channel_signals_t& 
 		}
 	    }
 	    
-	    if (ch==500) {
-		std::cout << "[Jujube] dbg_info_ch" << ch << " mean    " << mean << std::endl;
-		std::cout << "[Jujube] dbg_info_ch" << ch << " rms     " << rms << std::endl;
+	    if (ch==580) {
+		// std::cout << "[Jujube] dbg_info_ch" << ch << " mean    " << mean << std::endl;
+		// std::cout << "[Jujube] dbg_info_ch" << ch << " rms     " << rms << std::endl;
 		std::cout << "[Jujube] dbg_info_ch" << ch << " scaling " << scaling << std::endl;
 		for (auto roi : rois) {
 		    std::cout << "[Jujube] dbg_info_ch" << ch << " roi     " 
