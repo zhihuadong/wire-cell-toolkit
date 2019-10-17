@@ -158,7 +158,7 @@ bool Microboone::Subtract_WScaling(WireCell::IChannelFilter::channel_signals_t& 
 	    std::pair<double,double> temp = Derivations::CalcRMS(signal_roi_decon);
 	    double mean = temp.first;
 	    double rms = temp.second;
-
+	    // std::cout << "[Jujube] dfg_rms_ch" << ch << "\t" << rms << std::endl;
 	    for (size_t i=0;i!=signal_roi_freq.size();i++){
 		signal_roi_decon.at(i) -= mean;
 	    }
@@ -213,7 +213,7 @@ bool Microboone::Subtract_WScaling(WireCell::IChannelFilter::channel_signals_t& 
 		}
 	    }
 	    
-	    if (ch==26) {
+	    if (ch==500) {
 		std::cout << "[Jujube] dbg_info_ch" << ch << " mean    " << mean << std::endl;
 		std::cout << "[Jujube] dbg_info_ch" << ch << " rms     " << rms << std::endl;
 		std::cout << "[Jujube] dbg_info_ch" << ch << " scaling " << scaling << std::endl;
