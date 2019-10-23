@@ -122,6 +122,7 @@ bool Microboone::Subtract_WScaling(WireCell::IChannelFilter::channel_signals_t& 
 	//     std::cout << ch << " " << scaling << " "  << std::endl;
 	//scaling = 1.0;
 
+
 	if (respec.size() > 0 && (respec.at(0).real()!=1 || respec.at(0).imag()!=0) && res_offset!=0){
 	    int nbin = signal.size();
 	    WireCell::Waveform::realseq_t signal_roi(nbin,0);
@@ -947,7 +948,7 @@ Microboone::CoherentNoiseSub::apply(channel_signals_t& chansig) const
 
     const float protection_factor = m_noisedb->coherent_nf_protection_factor(achannel);
     const float min_adc_limit = m_noisedb->coherent_nf_min_adc_limit(achannel);
-
+    
     // std::cout << decon_limit << " " << adc_limit << " " << protection_factor << " " << min_adc_limit << std::endl;
     
     // if (respec.size()) {
