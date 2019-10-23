@@ -48,6 +48,7 @@ function(params, anode, field, n, rms_cuts=[])
         pad_window_back: 10,  // ticks?
         decon_limit: 0.02,
         decon_limit1: 0.09,
+        rms_threshold: 0.0,
         adc_limit: 15,
         roi_min_max_ratio: 0.8, // default 0.8
         min_rms_cut: 1.0,  // units???

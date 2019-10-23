@@ -26,6 +26,7 @@ SimpleChannelNoiseDB::SimpleChannelNoiseDB(double tick, int nsamples)
     , m_default_decon_lf_cutoff(0.08)
     , m_default_adc_limit(15.0)
     , m_default_decon_limit1(0.08)
+    , m_default_rms_threshold(0.0)
     , m_default_protection_factor(5.0)
     , m_default_min_adc_limit(50)
     , m_default_roi_min_max_ratio(0.8)
@@ -131,6 +132,15 @@ float SimpleChannelNoiseDB::coherent_nf_decon_limit1(int channel) const
 	return m_decon_limit1[ind];
     }
     return m_default_decon_limit1;
+}
+
+float SimpleChannelNoiseDB::coherent_nf_rms_threshold(int channel) const
+{
+    const int ind = chind(channel);
+    if (0 <= ind && ind < (int)m_rms_threshold.size()) {
+    return m_rms_threshold[ind];
+    }
+    return m_default_rms_threshold;
 }
 
 float SimpleChannelNoiseDB::coherent_nf_adc_limit(int channel) const
@@ -427,6 +437,15 @@ void SimpleChannelNoiseDB::set_coherent_nf_decon_limit1(const std::vector<int>& 
     for (auto ch : channels) {
 	int ind = chind(ch);
 	set_one(ind, decon_limit1, m_decon_limit1, m_default_decon_limit1);
+    }
+}
+
+void SimpleChannelNoiseDB::set_coherent_nf_rms_threshold(const std::vector<int>& channels, float rms_threshold)
+{
+    //std::cerr << "SimpleChannelNoiseDB: set pad window back on " << channels.size() << " channels: " << pad_b << std::endl;
+    for (auto ch : channels) {
+    int ind = chind(ch);
+    set_one(ind, rms_threshold, m_rms_threshold, m_default_rms_threshold);
     }
 }
 

@@ -50,6 +50,7 @@ namespace WireCell {
 	    virtual float coherent_nf_decon_limit(int channel) const;
 	    virtual float coherent_nf_decon_lf_cutoff(int channel) const;
 	    virtual float coherent_nf_decon_limit1(int channel) const;
+	    virtual float coherent_nf_rms_threshold(int channel) const;
 	    virtual float coherent_nf_adc_limit(int channel) const;
 	    virtual float coherent_nf_protection_factor(int channel) const;
 	    virtual float coherent_nf_min_adc_limit(int channel) const;
@@ -119,6 +120,7 @@ namespace WireCell {
 		float decon_lf_cutoff;
 		float adc_limit;
 		float decon_limit1;
+		float rms_threshold;
 		float protection_factor;
 		float min_adc_limit;
 		float roi_min_max_ratio;
