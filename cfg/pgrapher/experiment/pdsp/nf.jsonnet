@@ -47,6 +47,7 @@ function(params, anode, chndbobj, n, name='')
       data: {
         noisedb: wc.tn(chndbobj),
         anode: wc.tn(anode),
+        rms_threshold: 0.0,
       },
     },
     local sticky = {

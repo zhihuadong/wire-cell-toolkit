@@ -913,8 +913,8 @@ WireCell::Configuration Microboone::ConfigFilterBase::default_configuration() co
 
 
 
-Microboone::CoherentNoiseSub::CoherentNoiseSub(const std::string& anode, const std::string& noisedb)
-    : ConfigFilterBase(anode, noisedb) {}
+Microboone::CoherentNoiseSub::CoherentNoiseSub(const std::string& anode, const std::string& noisedb, float rms_threshold)
+    : ConfigFilterBase(anode, noisedb), m_rms_threshold(rms_threshold){}
 Microboone::CoherentNoiseSub::~CoherentNoiseSub() {}
 
 WireCell::Waveform::ChannelMaskMap
@@ -947,9 +947,6 @@ Microboone::CoherentNoiseSub::apply(channel_signals_t& chansig) const
 
     const float protection_factor = m_noisedb->coherent_nf_protection_factor(achannel);
     const float min_adc_limit = m_noisedb->coherent_nf_min_adc_limit(achannel);
-    
-    const float rms_threshold = m_noisedb->coherent_nf_rms_threshold(achannel);
-    // std::cout << "[Jujube] input_rms_threshold: " << rms_threshold << std::endl;
 
     // std::cout << decon_limit << " " << adc_limit << " " << protection_factor << " " << min_adc_limit << std::endl;
     
@@ -974,7 +971,7 @@ Microboone::CoherentNoiseSub::apply(channel_signals_t& chansig) const
     //std::cerr <<"\tSigprotection done: " << chansig.size() << " " << medians.size() << " " << medians.at(100) << " " << medians.at(101) << std::endl;
 
     // calculate the scaling coefficient and subtract
-    Microboone::Subtract_WScaling(chansig, medians, respec, res_offset, rois, decon_limit1, roi_min_max_ratio, rms_threshold);
+    Microboone::Subtract_WScaling(chansig, medians, respec, res_offset, rois, decon_limit1, roi_min_max_ratio, m_rms_threshold);
 
     
     // WireCell::IChannelFilter::signal_t& signal = chansig.begin()->second;
@@ -997,7 +994,20 @@ Microboone::CoherentNoiseSub::apply(int channel, signal_t& sig) const
     return WireCell::Waveform::ChannelMaskMap();		// not implemented
 }
 
+void Microboone::CoherentNoiseSub::configure(const WireCell::Configuration& cfg)
+{
+	ConfigFilterBase::configure(cfg);
 
+    m_rms_threshold = get<float>(cfg, "rms_threshold", m_rms_threshold);
+}
+WireCell::Configuration Microboone::CoherentNoiseSub::default_configuration() const
+{
+    Configuration cfg = ConfigFilterBase::default_configuration();
+
+    cfg["rms_threshold"] = m_rms_threshold;
+
+    return cfg;
+}
 
 
 

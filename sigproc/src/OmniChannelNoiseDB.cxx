@@ -40,7 +40,6 @@ OmniChannelNoiseDB::ChannelInfo::ChannelInfo()
     , decon_lf_cutoff(0.08)
     , adc_limit(0.0)
     , decon_limit1(0.08)
-    , rms_threshold(0.0)
     , protection_factor(5.0)
     , min_adc_limit(50)
     , roi_min_max_ratio(0.8)
@@ -494,14 +493,6 @@ void OmniChannelNoiseDB::update_channels(Json::Value cfg)
             //dbget(ch).decon_limit1 = val;
             get_ci(ch).decon_limit1 = val;
         }
-    }    if (cfg.isMember("rms_threshold")) {
-        float val = cfg["rms_threshold"].asDouble();
-        dump_cfg("rmsthreshold", chans, val);
-        for (int ch : chans) {
-            //m_db.at(ch).rms_threshold = val;
-            //dbget(ch).rms_threshold = val;
-            get_ci(ch).rms_threshold = val;
-        }
     }
     if (cfg.isMember("adc_limit")) {
         float val = cfg["adc_limit"].asDouble();
@@ -705,11 +696,6 @@ float OmniChannelNoiseDB::coherent_nf_decon_lf_cutoff(int channel) const
 float OmniChannelNoiseDB::coherent_nf_decon_limit1(int channel) const
 {
     return dbget(channel).decon_limit1;
-}
-
-float OmniChannelNoiseDB::coherent_nf_rms_threshold(int channel) const
-{
-    return dbget(channel).rms_threshold;
 }
 
 float OmniChannelNoiseDB::coherent_nf_adc_limit(int channel) const

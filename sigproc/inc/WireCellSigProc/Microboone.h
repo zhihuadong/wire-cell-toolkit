@@ -68,8 +68,12 @@ namespace WireCell {
 	    public:
 
 		CoherentNoiseSub(const std::string& anode = "AnodePlane",
-                                 const std::string& noisedb = "OmniChannelNoiseDB");
+                                 const std::string& noisedb = "OmniChannelNoiseDB",
+                                 float rms_threshold=0.);
 		virtual ~CoherentNoiseSub();
+
+		virtual void configure(const WireCell::Configuration& config);
+		virtual WireCell::Configuration default_configuration() const;
 
 		//// IChannelFilter interface
 
@@ -81,6 +85,7 @@ namespace WireCell {
 
 
             private:
+        	float m_rms_threshold;
 	    };
 
 
