@@ -58,7 +58,8 @@ bool Microboone::Subtract_WScaling(WireCell::IChannelFilter::channel_signals_t& 
 				   int res_offset,
 				   std::vector< std::vector<int> >& rois,
 				   float decon_limit1,
-                   float roi_min_max_ratio)
+                   float roi_min_max_ratio,
+                   float rms_threshold)
 {
     double ave_coef = 0;
     double_t ave_coef1 = 0;
@@ -125,16 +126,20 @@ bool Microboone::Subtract_WScaling(WireCell::IChannelFilter::channel_signals_t& 
 	if (respec.size() > 0 && (respec.at(0).real()!=1 || respec.at(0).imag()!=0) && res_offset!=0){
 	    int nbin = signal.size();
 	    WireCell::Waveform::realseq_t signal_roi(nbin,0);
-	    for (auto roi: rois){
-		const int bin0 = std::max(roi.front()-1, 0);
-		const int binf = std::min(roi.back()+1, nbin-1);
-		const double m0 = signal[bin0];
-		const double mf = signal[binf];
-		const double roi_run = binf - bin0;
-		const double roi_rise = mf - m0;
-		for (auto bin : roi) {
-		    const double m = m0 + (bin - bin0)/roi_run*roi_rise;
-		    signal_roi.at(bin) = signal.at(bin) - m;
+	    if (rms_threshold) {
+		signal_roi = signal;
+	    } else {
+		for (auto roi: rois){
+		    const int bin0 = std::max(roi.front()-1, 0);
+		    const int binf = std::min(roi.back()+1, nbin-1);
+		    const double m0 = signal[bin0];
+		    const double mf = signal[binf];
+		    const double roi_run = binf - bin0;
+		    const double roi_rise = mf - m0;
+		    for (auto bin : roi) {
+			const double m = m0 + (bin - bin0)/roi_run*roi_rise;
+			signal_roi.at(bin) = signal.at(bin) - m;
+		    }
 		}
 	    }
 
@@ -153,7 +158,25 @@ bool Microboone::Subtract_WScaling(WireCell::IChannelFilter::channel_signals_t& 
 		signal_roi_freq.at(i) = signal_roi_freq.at(i) * factor;
 	    }
 	    WireCell::Waveform::realseq_t signal_roi_decon = WireCell::Waveform::idft(signal_roi_freq);
-	    
+
+	    if (rms_threshold) {
+		std::pair<double,double> temp = Derivations::CalcRMS(signal_roi_decon);
+		double mean = temp.first;
+		double rms = temp.second;
+		// if (ch==580) {
+		//     std::cout << "[Jujube] dbg_info_ch" << ch << " mean    " << mean << std::endl;
+		//     std::cout << "[Jujube] dbg_info_ch" << ch << " rms     " << rms << std::endl;
+		// }
+		// std::cout << "[Jujube] dfg_rms_ch" << ch << "\t" << rms << std::endl;
+		for (size_t i=0;i!=signal_roi_freq.size();i++){
+		    signal_roi_decon.at(i) -= mean;
+		}
+		double rms_limit = rms_threshold*rms;
+		if (rms_limit<0.02 && rms_limit>0) rms_limit = 0.02;
+		if (rms_limit>decon_limit1) rms_limit = decon_limit1;
+		decon_limit1 = rms_limit;
+	    }
+
 	    std::map<int, bool> flag_replace;
 	    for (auto roi: rois){
 		flag_replace[roi.front()] = false;
@@ -184,6 +207,10 @@ bool Microboone::Subtract_WScaling(WireCell::IChannelFilter::channel_signals_t& 
 		if ( max_val > decon_limit1 && fabs(min_val) < max_val * roi_min_max_ratio)
 		    flag_replace[roi.front()] = true;
 	    }
+
+	 //    for (auto roi: rois){
+		// flag_replace[roi.front()] = true;
+	 //    }
 	    
 	    WireCell::Waveform::realseq_t  temp_medians = medians;
 
@@ -203,6 +230,25 @@ bool Microboone::Subtract_WScaling(WireCell::IChannelFilter::channel_signals_t& 
 		}
 	    }
 	    
+	 //    if (ch==580) {
+		// std::cout << "[Jujube] dbg_info_ch" << ch << " scaling " << scaling << std::endl;
+		// for (auto roi : rois) {
+		//     std::cout << "[Jujube] dbg_info_ch" << ch << " roi     " 
+		//               << roi.front() << " " << roi.back() << " " << flag_replace[roi.front()] << std::endl;
+		// }
+		// for (int j=0;j!=nbin;j++){
+	 // 	    int time_bin = j-res_offset;
+	 // 	    if (time_bin <0) time_bin += nbin;
+		//     if (time_bin >=nbin) time_bin -= nbin;
+		//     std::cout << "[Jujube] dbg_spec_ch" << ch << "\t"
+		//               << signal.at(j) << "\t"
+		//               << medians.at(j) << "\t"
+		//               << signal_roi_decon.at(time_bin) << "\t"
+		//               << temp_medians.at(j) << "\t"
+		//               << std::endl;
+		// }
+	 //    }
+
 	    // collection plane, directly subtracti ... 
 	    for (int i=0;i!=nbin;i++){
 		if (fabs(signal.at(i)) > 0.001) {
@@ -868,8 +914,8 @@ WireCell::Configuration Microboone::ConfigFilterBase::default_configuration() co
 
 
 
-Microboone::CoherentNoiseSub::CoherentNoiseSub(const std::string& anode, const std::string& noisedb)
-    : ConfigFilterBase(anode, noisedb) {}
+Microboone::CoherentNoiseSub::CoherentNoiseSub(const std::string& anode, const std::string& noisedb, float rms_threshold)
+    : ConfigFilterBase(anode, noisedb), m_rms_threshold(rms_threshold){}
 Microboone::CoherentNoiseSub::~CoherentNoiseSub() {}
 
 WireCell::Waveform::ChannelMaskMap
@@ -926,7 +972,7 @@ Microboone::CoherentNoiseSub::apply(channel_signals_t& chansig) const
     //std::cerr <<"\tSigprotection done: " << chansig.size() << " " << medians.size() << " " << medians.at(100) << " " << medians.at(101) << std::endl;
 
     // calculate the scaling coefficient and subtract
-    Microboone::Subtract_WScaling(chansig, medians, respec, res_offset, rois, decon_limit1, roi_min_max_ratio);
+    Microboone::Subtract_WScaling(chansig, medians, respec, res_offset, rois, decon_limit1, roi_min_max_ratio, m_rms_threshold);
 
     
     // WireCell::IChannelFilter::signal_t& signal = chansig.begin()->second;
@@ -949,7 +995,20 @@ Microboone::CoherentNoiseSub::apply(int channel, signal_t& sig) const
     return WireCell::Waveform::ChannelMaskMap();		// not implemented
 }
 
+void Microboone::CoherentNoiseSub::configure(const WireCell::Configuration& cfg)
+{
+	ConfigFilterBase::configure(cfg);
 
+    m_rms_threshold = get<float>(cfg, "rms_threshold", m_rms_threshold);
+}
+WireCell::Configuration Microboone::CoherentNoiseSub::default_configuration() const
+{
+    Configuration cfg = ConfigFilterBase::default_configuration();
+
+    cfg["rms_threshold"] = m_rms_threshold;
+
+    return cfg;
+}
 
 
 
