@@ -109,5 +109,38 @@ local wc = import 'wirecell.jsonnet';
                       name="clusterdump-"+aname)
     }.ret,
 
+    // A function that reverts blobs to frames
+    reframing :: function(anode, aname) {
+        ret : g.pnode({
+            type: "BlobReframer",
+            name: "blobreframing-" + aname,
+            data: {
+                frame_tag: "reframe%d" %anode.data.ident,
+            }
+        }, nin=1, nout=1),
+    }.ret,
+
+    // fill ROOT histograms with frames
+    magnify :: function(anode, aname, frame_tag="orig") {
+        ret: g.pnode({
+          type: 'MagnifySink',
+          name: 'magnify-'+aname,
+          data: {
+            output_filename: "magnify-img.root",
+            root_file_mode: 'UPDATE',
+            frames: [frame_tag + anode.data.ident],
+            trace_has_tag: true,
+            anode: wc.tn(anode),
+          },
+        }, nin=1, nout=1),
+    }.ret,
+
+    // the end
+    dumpframes :: function(anode, aname) {
+        ret: g.pnode({
+            type: "DumpFrames",
+            name: "dumpframes-"+aname,
+        }, nin=1, nout=0),
+    }.ret,
 
 }

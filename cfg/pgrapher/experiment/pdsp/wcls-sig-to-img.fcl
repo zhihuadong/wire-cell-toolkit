@@ -21,7 +21,7 @@ physics :{
             logsinks: ["stderr:info", "wcls-sig-to-img.log:trace"]
             loglevels: ["trace", "raygrid:trace", "pgraph:info"]
 
-            plugins: ["WireCellGen", "WireCellImg", "WireCellPgraph", "WireCellSio", "WireCellLarsoft"]
+            plugins: ["WireCellGen", "WireCellImg", "WireCellPgraph", "WireCellSio", "WireCellRoot", "WireCellLarsoft"]
 
             inputers: ["wclsCookedFrameSource:sigs" ]
 
@@ -32,6 +32,9 @@ physics :{
             params : {
                // This locates the input raw::RawDigit collection in the art::Event 
                sig_input_label: "raw2sig:gauss"
+
+               // do the BlobReframer
+               use_blob_reframer: "false"
             }
          }
       }

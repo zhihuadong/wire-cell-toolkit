@@ -1,4 +1,5 @@
 local sig_input_label = std.extVar("sig_input_label");
+local use_blob_reframer = std.extVar("use_blob_reframer");
 
 local wc = import 'wirecell.jsonnet';
 local g = import 'pgraph.jsonnet';
@@ -56,8 +57,16 @@ local perapa_pipelines = [
         img.tiling(anode, anode.name),
         //img.solving(anode, anode.name),
         img.clustering(anode, anode.name),
+      ]
+
+      + if use_blob_reframer=="true" then [
+        img.reframing(anode, anode.name),
+        img.magnify(anode, anode.name, "reframe"),
+        img.dumpframes(anode, anode.name),
+      ] else [
         img.dump(anode, anode.name, params.lar.drift_speed),
-    ], "img-" + anode.name) for anode in tools.anodes];
+      ], 
+      "img-" + anode.name) for anode in tools.anodes];
 
 local graph = g.intern(innodes=[input],
                        centernodes = [fansel] + perapa_pipelines,
