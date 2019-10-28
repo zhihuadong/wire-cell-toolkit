@@ -58,7 +58,7 @@ def configure(cfg):
         submodules.remove('dfp')
 
     # Remove WCT packages that happen to have same name as external name
-    for pkg,ext in [("root","ROOTSYS"), ("tbb","TBB"), ("tbb","FFTWTHREADS_LIB"), ("cuda","CUDA")]:
+    for pkg,ext in [("root","ROOTSYS"), ("tbb","TBB"), ("tbb","FFTWTHREADS_LIB"), ("cuda","CUDA"), ("hio", "H5CPP_ALL")]:
         have='HAVE_'+ext
         if have in cfg.env or have in cfg.env.define_key:
             continue

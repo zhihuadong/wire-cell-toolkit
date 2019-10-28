@@ -36,17 +36,8 @@ void TbbFlow::configure(const Configuration& cfg)
     m_dfp = Factory::lookup<IDataFlowGraph>(type, name);
 
     m_dfpgraph.configure(cfg["edges"]);
-    
-}
 
-void TbbFlow::execute()
-{
-    if (!m_dfp) {
-    l->critical("TbbFlow: not configured");
-	return;
-    }
-
-    l->info("TbbFlow::Execute");
+    l->info("TbbFlow::connect");
 
     for (auto thc : m_dfpgraph.connections()) {
 	auto tail_tn = get<0>(thc);
@@ -64,7 +55,15 @@ void TbbFlow::execute()
 
 	m_dfp->connect(tail_node, head_node, conn.tail, conn.head);
     }
+    
+}
 
+void TbbFlow::execute()
+{
+    if (!m_dfp) {
+    l->critical("TbbFlow: not configured");
+	return;
+    }
 
     l->info("TbbFlow: run: ");
     m_dfp->run();
