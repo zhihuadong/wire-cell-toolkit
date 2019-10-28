@@ -12,6 +12,7 @@
 
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/IClusterFramer.h"
+#include "WireCellUtil/Logging.h"
 
 namespace WireCell {
 
@@ -20,7 +21,7 @@ namespace WireCell {
         class BlobReframer : public IClusterFramer, public IConfigurable {
         public:
 
-            BlobReframer();
+            BlobReframer(const std::string& frame_tag="reframe");
             virtual ~BlobReframer();
 
             virtual void configure(const WireCell::Configuration& cfg);
@@ -28,6 +29,12 @@ namespace WireCell {
 
             virtual bool operator()(const input_pointer& in, output_pointer& out);
 
+        private:
+            int m_nticks;
+            double m_period;
+            std::string m_frame_tag;
+
+            Log::logptr_t log;
         };
     }
 }
