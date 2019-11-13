@@ -25,11 +25,13 @@ Hdf5::HDF5FrameTap::HDF5FrameTap() : m_save_count(0), l(Log::logger("io")) {}
 Hdf5::HDF5FrameTap::~HDF5FrameTap() {}
 
 void Hdf5::HDF5FrameTap::configure(const WireCell::Configuration &cfg) {
-  std::string fn;
+
+  auto anode_tn = cfg["anode"].asString();
+  m_anode = Factory::find_tn<IAnodePlane>(anode_tn);
 
   m_cfg = cfg;
-
-  fn = cfg["filename"].asString();
+  
+  std::string fn = cfg["filename"].asString();
   if (fn.empty()) {
     THROW(ValueError() << errmsg{
               "Must provide output filename to HDF5FrameTap"});
@@ -58,8 +60,12 @@ WireCell::Configuration Hdf5::HDF5FrameTap::default_configuration() const {
     // casting to dtype.
     cfg["offset"] = 0.0;
 
+    cfg["anode"] = "AnodePlane";
+    cfg["nticks"] = 6000;
+    cfg["tick0"]  = 0;
+
     // The frame tags to consider for saving.  If null or empty then all traces are used.
-    cfg["frame_tags"] = Json::arrayValue;
+    cfg["trace_tags"] = Json::arrayValue;
     // The summary tags to consider for saving
     //cfg["summary_tags"] = Json::arrayValue;    
     // The channel mask maps to consider for saving
@@ -78,21 +84,6 @@ WireCell::Configuration Hdf5::HDF5FrameTap::default_configuration() const {
   return cfg;
 }
 
-void Hdf5::HDF5FrameTap::peak_frame(const IFrame::pointer &frame) const {
-
-  std::string frame_tags = "";
-  for (auto tag : frame->frame_tags()) {
-    frame_tags += " ";
-    frame_tags += tag;
-  }
-
-  for (auto tag : frame->trace_tags()) {
-    l->info(
-        "HDF5FrameTap: trace tag: \"{}\" in frame: tags \"{}\" - ident: {}",
-        tag, frame_tags, frame->ident());
-  }
-}
-
 bool Hdf5::HDF5FrameTap::operator()(const IFrame::pointer &inframe,
                                       IFrame::pointer &outframe) {
 
@@ -101,7 +92,18 @@ bool Hdf5::HDF5FrameTap::operator()(const IFrame::pointer &inframe,
         outframe = nullptr;
         return true;
     }
-    
+
+    const int tick0 = m_cfg["tick0"].asInt();
+    const int nticks = m_cfg["nticks"].asInt();
+    const int tbeg = tick0;
+    const int tend = tick0+nticks-1;
+    auto channels = m_anode->channels();
+    const int cbeg = channels.front();
+    const int cend = channels.back();
+    l->debug("{}: t: {} - {}; c: {} - {}",
+             m_cfg["anode"].asString(),
+             tbeg, tend, cbeg, cend);
+
     outframe = inframe;         // pass through actual frame
 
     const std::string mode = "a";
@@ -118,8 +120,8 @@ bool Hdf5::HDF5FrameTap::operator()(const IFrame::pointer &inframe,
     // Numpy saves reversed dimensions: {ncols, nrows} aka {ntick, nchan} dimensions.
 
 
-    if (m_cfg["frame_tags"].isNull() or m_cfg["frame_tags"].empty()) {
-        m_cfg["frame_tags"][0] = "";
+    if (m_cfg["trace_tags"].isNull() or m_cfg["trace_tags"].empty()) {
+        m_cfg["trace_tags"][0] = "";
     }
 
     if (m_cfg["chunk"].isNull() or m_cfg["chunk"].size()!=2) {
@@ -149,7 +151,7 @@ bool Hdf5::HDF5FrameTap::operator()(const IFrame::pointer &inframe,
         ss << " \"" << t << "\"";
     }
     ss << " looking for tags:";
-    for (auto jt: m_cfg["frame_tags"]) {
+    for (auto jt: m_cfg["trace_tags"]) {
         ss << " \"" << jt.asString() << "\"";
     }
     l->debug(ss.str());
@@ -157,7 +159,7 @@ bool Hdf5::HDF5FrameTap::operator()(const IFrame::pointer &inframe,
     h5::fd_t fd = h5::open(m_cfg["filename"].asString(), H5F_ACC_RDWR);
     // TODO some protection
 
-    for (auto jtag : m_cfg["frame_tags"]) {
+    for (auto jtag : m_cfg["trace_tags"]) {
         const std::string tag = jtag.asString();
         auto traces = FrameTools::tagged_traces(inframe, tag);
         l->debug("HDF5FrameTap: save {} tagged as {}", traces.size(), tag);
@@ -165,19 +167,25 @@ bool Hdf5::HDF5FrameTap::operator()(const IFrame::pointer &inframe,
             l->warn("HDF5FrameTap: no traces for tag: \"{}\"", tag);
             continue;
         }
-        auto channels = FrameTools::channels(traces);
-        std::sort(channels.begin(), channels.end());
-        auto chmin = channels.front();
-        auto chmax = channels.back();
-        channels.resize(chmax-chmin+1);
-        std::iota(std::begin(channels), std::end(channels), chmin);
-        auto chbeg = channels.begin();
-        auto chend = channels.end(); //std::unique(chbeg, channels.end());
-        auto tbinmm = FrameTools::tbin_range(traces);
 
-        // fixme: may want to give user some config over tbin range to save.
-        const size_t ncols = tbinmm.second-tbinmm.first;
-        const size_t nrows = std::distance(chbeg, chend);
+
+        // auto channels = FrameTools::channels(traces);
+        // std::sort(channels.begin(), channels.end());
+        // auto chmin = channels.front();
+        // auto chmax = channels.back();
+        // channels.resize(chmax-chmin+1);
+        // std::iota(std::begin(channels), std::end(channels), chmin);
+        // auto chbeg = channels.begin();
+        // auto chend = channels.end(); //std::unique(chbeg, channels.end());
+        // auto tbinmm = FrameTools::tbin_range(traces);
+
+        // // fixme: may want to give user some config over tbin range to save.
+        // const size_t ncols = tbinmm.second-tbinmm.first;
+        // const size_t nrows = std::distance(chbeg, chend);
+
+        const size_t ncols = nticks;
+        const size_t nrows = cend-cbeg+1;
+
         l->debug("HDF5FrameTap: saving ncols={} nrows={}", ncols, nrows);
 
         if(chunk_ncols<1 or chunk_ncols>ncols) chunk_ncols = ncols;
@@ -185,11 +193,12 @@ bool Hdf5::HDF5FrameTap::operator()(const IFrame::pointer &inframe,
         l->debug("HDF5FrameTap: chunking ncols={} nrows={}", chunk_ncols, chunk_nrows);
 
         Array::array_xxf arr = Array::array_xxf::Zero(nrows, ncols) + baseline;
-        FrameTools::fill(arr, traces, channels.begin(), chend, tbinmm.first);
+        // FrameTools::fill(arr, traces, channels.begin(), chend, tbinmm.first);
+        FrameTools::fill(arr, traces, channels.begin(), channels.end(), tick0);
         arr = arr * scale + offset;
 
         {                   // the 2D frame array
-            const std::string aname = String::format("frame_%s_%d", tag.c_str(), m_save_count);
+            const std::string aname = String::format("/%d/frame_%s", m_save_count, tag.c_str());
             if (digitize) {
                 Array::array_xxs sarr = arr.cast<short>();
                 const short* sdata = sarr.data();
@@ -213,14 +222,15 @@ bool Hdf5::HDF5FrameTap::operator()(const IFrame::pointer &inframe,
         }
 
         {                   // the channel array
-            const std::string aname = String::format("channels_%s_%d", tag.c_str(), m_save_count);
+            const std::string aname = String::format("/%d/channels_%s", m_save_count, tag.c_str());
             // cnpy::npz_save(fname, aname, channels.data(), {nrows}, mode);
             h5::write<int>(fd, aname, channels.data(), h5::count{nrows});
         }
 
         {                   // the tick array
-            const std::string aname = String::format("tickinfo_%s_%d", tag.c_str(), m_save_count);
-            const std::vector<double> tickinfo{inframe->time(), inframe->tick(), (double)tbinmm.first};
+            const std::string aname = String::format("/%d/tickinfo_%s", m_save_count, tag.c_str());
+            // const std::vector<double> tickinfo{inframe->time(), inframe->tick(), (double)tbinmm.first};
+            const std::vector<double> tickinfo{inframe->time(), inframe->tick(), (double)tick0};
             // cnpy::npz_save(fname, aname, tickinfo.data(), {3}, mode);
             h5::write<double>(fd, aname, tickinfo.data(), h5::count{3});
         }
