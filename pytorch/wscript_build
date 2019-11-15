@@ -1,0 +1,1 @@
+bld.smplpkg('WireCellPytorch', use='WireCellUtil WireCellIface LibTorch HDF5 H5CPP')
