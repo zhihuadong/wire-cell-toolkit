@@ -19,6 +19,7 @@ package_descriptions = dict(
     TBB     = dict(incs=["tbb/parallel_for.h"], libs=['tbb'], mandatory=False),
     HDF5    = dict(incs=["hdf5.h"], libs=['hdf5'], mandatory=False),
     H5CPP   = dict(incs=["h5cpp/all"], mandatory=False),
+    LibTorch= dict(incs=["torch/script.h"], libs=['torch', 'caffe2','c10'], mandatory=False),
 
     # note, actually, pgk-config fails often.  best to always use
     # explicit --with-NAME.
