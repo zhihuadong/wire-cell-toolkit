@@ -20,9 +20,9 @@ namespace WireCell {
 	namespace Protodune {
 
 		bool LinearInterpSticky(WireCell::Waveform::realseq_t& signal, std::vector<std::pair<int,int> >& st_ranges, float stky_sig_like_val, float stky_sig_like_rms);
-		bool FftInterpSticky(WireCell::Waveform::realseq_t& signal, std::vector<std::pair<int,int> >& st_ranges);
+		bool FftInterpSticky(WireCell::Waveform::realseq_t& signal, std::vector<std::pair<int,int> >& st_ranges, WireCell::Waveform::FFT & fft);
 		bool FftShiftSticky(WireCell::Waveform::realseq_t& signal, double toffset, std::vector<std::pair<int,int> >& st_ranges);
-		bool FftScaling(WireCell::Waveform::realseq_t& signal, int nsamples);
+		bool FftScaling(WireCell::Waveform::realseq_t& signal, int nsamples, WireCell::Waveform::FFT & fft);
 
         // hold common config stuff
         class ConfigFilterBase : public WireCell::IConfigurable {
@@ -89,6 +89,8 @@ namespace WireCell {
 	    float m_stky_sig_like_val;
 	    float m_stky_sig_like_rms;
 	    int m_stky_max_len;
+
+        WireCell::Waveform::FFT fft;
                 
 	    };
 
@@ -113,6 +115,7 @@ namespace WireCell {
 		private:
 		Diagnostics::Partial m_check_partial; // at least need to expose them to configuration
 		std::map<int, int> m_resmp; // ch => orignal smp input
+        WireCell::Waveform::FFT fft;
 
 	    };
 
