@@ -52,7 +52,7 @@ double filter_low_loose(double freq){
 }
 
 
-bool Microboone::Subtract_WScaling(WireCell::IChannelFilter::channel_signals_t& chansig,
+bool Microboone::Subtract_WScaling(WireCell::Waveform::FFT & fft, WireCell::IChannelFilter::channel_signals_t& chansig,
 				   const WireCell::Waveform::realseq_t& medians,
 				   const WireCell::Waveform::compseq_t& respec,
 				   int res_offset,
@@ -144,7 +144,7 @@ bool Microboone::Subtract_WScaling(WireCell::IChannelFilter::channel_signals_t& 
 	    }
 
 	    // do the deconvolution with a very loose low-frequency filter
-	    WireCell::Waveform::compseq_t signal_roi_freq = WireCell::Waveform::dft(signal_roi);
+	    WireCell::Waveform::compseq_t signal_roi_freq = fft.dft(signal_roi);
 	    WireCell::Waveform::shrink(signal_roi_freq,respec);
 	    for (size_t i=0;i!=signal_roi_freq.size();i++){
 		double freq;
@@ -157,7 +157,7 @@ bool Microboone::Subtract_WScaling(WireCell::IChannelFilter::channel_signals_t& 
 		std::complex<float> factor = filter_time(freq)*filter_low_loose(freq);
 		signal_roi_freq.at(i) = signal_roi_freq.at(i) * factor;
 	    }
-	    WireCell::Waveform::realseq_t signal_roi_decon = WireCell::Waveform::idft(signal_roi_freq);
+	    WireCell::Waveform::realseq_t signal_roi_decon = fft.idft(signal_roi_freq);
 
 	    if (rms_threshold) {
 		std::pair<double,double> temp = Derivations::CalcRMS(signal_roi_decon);
@@ -275,7 +275,7 @@ bool Microboone::Subtract_WScaling(WireCell::IChannelFilter::channel_signals_t& 
     return true;
 }
 
-std::vector< std::vector<int> > Microboone::SignalProtection(WireCell::Waveform::realseq_t& medians, const WireCell::Waveform::compseq_t& respec, int res_offset, int pad_f, int pad_b, float upper_decon_limit, float decon_lf_cutoff, float upper_adc_limit, float protection_factor, float min_adc_limit)
+std::vector< std::vector<int> > Microboone::SignalProtection(WireCell::Waveform::FFT & fft, WireCell::Waveform::realseq_t& medians, const WireCell::Waveform::compseq_t& respec, int res_offset, int pad_f, int pad_b, float upper_decon_limit, float decon_lf_cutoff, float upper_adc_limit, float protection_factor, float min_adc_limit)
 {
    
   
@@ -349,7 +349,7 @@ std::vector< std::vector<int> > Microboone::SignalProtection(WireCell::Waveform:
     if (respec.size() > 0 && (respec.at(0).real()!=1 || respec.at(0).imag()!=0) && res_offset!=0){
 	//std::cout << nbin << std::endl;
 
-     	WireCell::Waveform::compseq_t medians_freq = WireCell::Waveform::dft(medians);
+     	WireCell::Waveform::compseq_t medians_freq =fft.dft(medians);
      	WireCell::Waveform::shrink(medians_freq,respec);
 	
     	for (size_t i=0;i!=medians_freq.size();i++){
@@ -363,7 +363,7 @@ std::vector< std::vector<int> > Microboone::SignalProtection(WireCell::Waveform:
     	    std::complex<float> factor = filter_time(freq)*filter_low(freq, decon_lf_cutoff);
     	    medians_freq.at(i) = medians_freq.at(i) * factor;
     	}
-    	WireCell::Waveform::realseq_t medians_decon = WireCell::Waveform::idft(medians_freq);
+    	WireCell::Waveform::realseq_t medians_decon = fft.idft(medians_freq);
 	
     	temp = Derivations::CalcRMS(medians_decon);
     	mean = temp.first;
@@ -960,7 +960,7 @@ Microboone::CoherentNoiseSub::apply(channel_signals_t& chansig) const
     //std::cout << achannel << std::endl;
 
     // do the signal protection and adaptive baseline
-    std::vector< std::vector<int> > rois = Microboone::SignalProtection(medians,respec,res_offset,pad_f,pad_b,decon_limit, decon_lf_cutoff, adc_limit, protection_factor, min_adc_limit);
+    std::vector< std::vector<int> > rois = Microboone::SignalProtection(const_cast<WireCell::Waveform::FFT&>(fft),medians,respec,res_offset,pad_f,pad_b,decon_limit, decon_lf_cutoff, adc_limit, protection_factor, min_adc_limit);
 
     // if (achannel == 3840){
     // 	std::cout << "Xin1: " << rois.size() << std::endl;
@@ -972,7 +972,7 @@ Microboone::CoherentNoiseSub::apply(channel_signals_t& chansig) const
     //std::cerr <<"\tSigprotection done: " << chansig.size() << " " << medians.size() << " " << medians.at(100) << " " << medians.at(101) << std::endl;
 
     // calculate the scaling coefficient and subtract
-    Microboone::Subtract_WScaling(chansig, medians, respec, res_offset, rois, decon_limit1, roi_min_max_ratio, m_rms_threshold);
+    Microboone::Subtract_WScaling(const_cast<WireCell::Waveform::FFT&>(fft),chansig, medians, respec, res_offset, rois, decon_limit1, roi_min_max_ratio, m_rms_threshold);
 
     
     // WireCell::IChannelFilter::signal_t& signal = chansig.begin()->second;
