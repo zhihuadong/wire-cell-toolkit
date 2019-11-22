@@ -9,6 +9,10 @@
 #include <algorithm>
 #include <string>
 
+// for FFT
+#include <Eigen/Core>
+#include <unsupported/Eigen/FFT>
+
 namespace WireCell {
 
 
@@ -231,6 +235,24 @@ namespace WireCell {
 
 	/// Return the smallest, most frequent value to appear in vector.
 	short most_frequent(const std::vector<short>& vals);
+
+    class FFT {
+        public:
+        FFT(){}
+        inline compseq_t dft(realseq_t wave) {
+            auto v = Eigen::Map<Eigen::VectorXf>(wave.data(), wave.size());
+            Eigen::VectorXcf ret = trans.fwd(v);
+            return compseq_t(ret.data(), ret.data()+ret.size());
+        }
+        inline realseq_t idft(compseq_t spec) {
+            auto v = Eigen::Map<Eigen::VectorXcf>(spec.data(), spec.size());
+            Eigen::VectorXf ret;
+            trans.inv(ret, v);
+            return realseq_t(ret.data(), ret.data()+ret.size());
+        }
+        private:
+        Eigen::FFT<Waveform::real_t> trans;
+    };
 
     }
 }
