@@ -112,7 +112,7 @@ struct blob_jsoner {
         ISlice::pointer islice = iblob->slice();
         // set X based on time with knowledge of local drift
         // direction as given by the face.
-        double x0 = xplane + xsign * islice->start()*drift_speed; 
+        double x0 = xplane + xsign * (islice->start() - 250.0*units::us) *drift_speed; // FIXME: -250us hardcoded
 
         const auto& coords = iface->raygrid();
 

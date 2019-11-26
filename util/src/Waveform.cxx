@@ -138,20 +138,20 @@ std::pair<int, int> WireCell::Waveform::edge(const realseq_t& wave)
 }
 
 
+thread_local static Eigen::FFT<Waveform::real_t> gEigenFFT;
+
 Waveform::compseq_t WireCell::Waveform::dft(realseq_t wave)
 {
     auto v = Eigen::Map<Eigen::VectorXf>(wave.data(), wave.size());
-    Eigen::FFT<Waveform::real_t> trans;
-    Eigen::VectorXcf ret = trans.fwd(v);
+    Eigen::VectorXcf ret = gEigenFFT.fwd(v);
     return compseq_t(ret.data(), ret.data()+ret.size());
 }
 
 Waveform::realseq_t WireCell::Waveform::idft(compseq_t spec)
 {
-    Eigen::FFT<Waveform::real_t> trans;
     auto v = Eigen::Map<Eigen::VectorXcf>(spec.data(), spec.size());
     Eigen::VectorXf ret;
-    trans.inv(ret, v);
+    gEigenFFT.inv(ret, v);
     return realseq_t(ret.data(), ret.data()+ret.size());
 }
 

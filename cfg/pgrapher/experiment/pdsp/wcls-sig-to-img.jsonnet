@@ -55,8 +55,8 @@ local perapa_pipelines = [
     g.pipeline([
         img.slicing(anode, anode.name),
         img.tiling(anode, anode.name),
-        //img.solving(anode, anode.name),
-        img.clustering(anode, anode.name),
+        img.solving(anode, anode.name),
+        // img.clustering(anode, anode.name),
       ]
 
       + if use_blob_reframer=="true" then [

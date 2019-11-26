@@ -451,8 +451,7 @@ bool Protodune::LinearInterpSticky(WireCell::Waveform::realseq_t& signal,
 }
 
 bool Protodune::FftInterpSticky(WireCell::Waveform::realseq_t& signal,
-	                 WireCell::Waveform::BinRangeList& rng_list,
-                     WireCell::Waveform::FFT & fft){;                     
+	                 WireCell::Waveform::BinRangeList& rng_list){;                     
 	const int nsiglen = signal.size();
     // group into two subsamples ("even" & "odd")
     int nsublen = nsiglen/2;
@@ -465,7 +464,7 @@ bool Protodune::FftInterpSticky(WireCell::Waveform::realseq_t& signal,
     }
 
     // dft resampling for "even", see example in test_zero_padding.cxx
-    auto tran_even = fft.dft(signal_even);
+    auto tran_even = WireCell::Waveform::dft(signal_even);
     tran_even.resize(nsublen*2);
     if(nsublen%2==0){
     	std::rotate(tran_even.begin()+nsublen/2, tran_even.begin()+nsublen, tran_even.end());
@@ -474,12 +473,12 @@ bool Protodune::FftInterpSticky(WireCell::Waveform::realseq_t& signal,
     	std::rotate(tran_even.begin()+(nsublen+1)/2, tran_even.begin()+nsublen, tran_even.end());
     }
     // inverse FFT
-    auto signal_even_fc = fft.idft(tran_even);
+    auto signal_even_fc = WireCell::Waveform::idft(tran_even);
     float scale = tran_even.size() / nsublen;
     WireCell::Waveform::scale(signal_even_fc, scale);
 
     // similar for "odd"
-    auto tran_odd = fft.dft(signal_odd);
+    auto tran_odd = WireCell::Waveform::dft(signal_odd);
     tran_odd.resize(nsublen2*2);
     if(nsublen2%2==0){
     	std::rotate(tran_odd.begin()+nsublen2/2, tran_odd.begin()+nsublen2, tran_odd.end());
@@ -487,7 +486,7 @@ bool Protodune::FftInterpSticky(WireCell::Waveform::realseq_t& signal,
     else{
     	std::rotate(tran_odd.begin()+(nsublen2+1)/2, tran_odd.begin()+nsublen2, tran_odd.end());
     }
-    auto signal_odd_fc = fft.idft(tran_odd);
+    auto signal_odd_fc = WireCell::Waveform::idft(tran_odd);
     float scale2 = tran_odd.size() / nsublen2;
 	WireCell::Waveform::scale(signal_odd_fc, scale2);
 
@@ -569,6 +568,7 @@ bool Protodune::FftShiftSticky(WireCell::Waveform::realseq_t& signal,
         		if(ind>=0 && ind<nsublen2) signal.at(i) = signal_odd_fc.at(ind);
         		// std::cerr << "lc:fc= " << signal_lc.at(i) << " " << signel_even_fc.at() << std::endl;
         	}
+
         	else{
         		int ind = i/2. - toffset;
         		if(ind>=0 && ind<nsublen) signal.at(i) = signal_even_fc.at(ind);
@@ -580,9 +580,9 @@ bool Protodune::FftShiftSticky(WireCell::Waveform::realseq_t& signal,
 	return true;
 }
 
-bool Protodune::FftScaling(WireCell::Waveform::realseq_t& signal, int nsamples, WireCell::Waveform::FFT & fft){
+bool Protodune::FftScaling(WireCell::Waveform::realseq_t& signal, int nsamples){
 	const int nsiglen = signal.size();
-	auto tran = fft.dft(signal);
+	auto tran = WireCell::Waveform::dft(signal);
 	tran.resize(nsamples);
     if(nsiglen%2==0){ // ref test_zero_padding.cxx
     	std::rotate(tran.begin()+nsiglen/2, tran.begin()+nsiglen, tran.end());
@@ -591,7 +591,7 @@ bool Protodune::FftScaling(WireCell::Waveform::realseq_t& signal, int nsamples, 
     	std::rotate(tran.begin()+(nsiglen+1)/2, tran.begin()+nsiglen, tran.end());
     }
     // inverse FFT
-    auto signal_fc = fft.idft(tran);
+    auto signal_fc = WireCell::Waveform::idft(tran);
     WireCell::Waveform::scale(signal_fc, nsamples / nsiglen);
     signal = signal_fc;
 
@@ -734,7 +734,7 @@ WireCell::Waveform::ChannelMaskMap Protodune::StickyCodeMitig::apply(int ch, sig
 
     // auto signal_lc = signal; // copy, need to keep original signal
     LinearInterpSticky(signal, sticky_rng_list, m_stky_sig_like_val, m_stky_sig_like_rms);
-    FftInterpSticky(signal, sticky_rng_list, const_cast<WireCell::Waveform::FFT&>(fft));
+    FftInterpSticky(signal, sticky_rng_list);
     // FftShiftSticky(signal_lc, 0.5, st_ranges); // alternative approach, shift by 0.5 tick
     // signal = signal_lc;
 
@@ -838,7 +838,7 @@ WireCell::Waveform::ChannelMaskMap Protodune::OneChannelNoise::apply(int ch, sig
         int smpin = m_resmp.at(ch);
         int smpout = signal.size();
         signal.resize(smpin);
-        FftScaling(signal, smpout, const_cast<WireCell::Waveform::FFT&>(fft));
+        FftScaling(signal, smpout);
         // std::cerr << "[wgu] ch: " << ch << " smpin: " << smpin << " smpout: " << smpout << std::endl;
     }
     // if( (ch>=2128 && ch<=2175) // W plane
@@ -850,7 +850,7 @@ WireCell::Waveform::ChannelMaskMap Protodune::OneChannelNoise::apply(int ch, sig
     // }
 
     // correct rc undershoot
-    auto spectrum = const_cast<WireCell::Waveform::FFT&>(fft).dft(signal);
+    auto spectrum = WireCell::Waveform::dft(signal);
     bool is_partial = m_check_partial(spectrum); // Xin's "IS_RC()"
 
     if(!is_partial){
@@ -977,7 +977,7 @@ WireCell::Waveform::ChannelMaskMap Protodune::OneChannelNoise::apply(int ch, sig
 
     // remove the DC component 
     spectrum.front() = 0;
-    signal = const_cast<WireCell::Waveform::FFT&>(fft).idft(spectrum);    
+    signal = WireCell::Waveform::idft(spectrum);    
 
     //Now calculate the baseline ...
     std::pair<double,double> temp = WireCell::Waveform::mean_rms(signal);
