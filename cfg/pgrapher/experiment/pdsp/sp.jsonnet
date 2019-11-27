@@ -60,6 +60,8 @@ function(params, tools, override = {}) {
       shrink_roi_tag: 'shrink_roi%d' % anode.data.ident,
       extend_roi_tag: 'extend_roi%d' % anode.data.ident,
 
+      isWarped: false,
+
     } + override,
   }, nin=1, nout=1, uses=[anode, tools.field] + pc.uses + spfilt),
 

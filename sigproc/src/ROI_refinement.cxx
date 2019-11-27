@@ -12,7 +12,7 @@ using namespace WireCell::SigProc;
 #else
 #define LogDebug(x)
 #endif
-ROI_refinement::ROI_refinement(Waveform::ChannelMaskMap& cmm,int nwire_u, int nwire_v, int nwire_w, float th_factor, float fake_signal_low_th, float fake_signal_high_th, float fake_signal_low_th_ind_factor, float fake_signal_high_th_ind_factor, int pad, int break_roi_loop, float th_peak, float sep_peak, float low_peak_sep_threshold_pre, int max_npeaks, float sigma, float th_percent)
+ROI_refinement::ROI_refinement(Waveform::ChannelMaskMap& cmm,int nwire_u, int nwire_v, int nwire_w, float th_factor, float fake_signal_low_th, float fake_signal_high_th, float fake_signal_low_th_ind_factor, float fake_signal_high_th_ind_factor, int pad, int break_roi_loop, float th_peak, float sep_peak, float low_peak_sep_threshold_pre, int max_npeaks, float sigma, float th_percent, bool isWraped)
   : nwire_u(nwire_u)
   , nwire_v(nwire_v)
   , nwire_w(nwire_w)
@@ -30,6 +30,7 @@ ROI_refinement::ROI_refinement(Waveform::ChannelMaskMap& cmm,int nwire_u, int nw
   , sigma(sigma)
   , th_percent(th_percent)
   , log(Log::logger("sigproc"))
+  , isWraped(isWraped)
 {
   rois_u_tight.resize(nwire_u);
   rois_u_loose.resize(nwire_u);
@@ -304,98 +305,100 @@ void ROI_refinement::load_data(int plane, const Array::array_xxf& r_data, ROI_fo
       
       if (plane==0){
 	rois_u_tight[chid].push_back(tight_roi);
-       	if (chid>0){
-       	  //form connectivity map
-       	  for (auto it = rois_u_tight[chid-1].begin();it!=rois_u_tight[chid-1].end();it++){
-       	    SignalROI *prev_roi = *it;
-      	    if (tight_roi->overlap(prev_roi)){
-      	      if (front_rois.find(prev_roi) == front_rois.end()){
-      		SignalROISelection temp_rois;
-      		temp_rois.push_back(tight_roi);
-      		front_rois[prev_roi] = temp_rois;
-      	      }else{
-      		front_rois[prev_roi].push_back(tight_roi);
-      	      }
-      	      if (back_rois.find(tight_roi) == back_rois.end()){
-      		SignalROISelection temp_rois;
-      		temp_rois.push_back(prev_roi);
-      		back_rois[tight_roi] = temp_rois;
-      	      }else{
-      		back_rois[tight_roi].push_back(prev_roi);
-      	      }
-      	    }
-       	  }
-     	}
-	if (chid < nwire_u-1){
-	  // add the code for the next one to be completed
-	  for (auto it = rois_u_tight[chid+1].begin();it!=rois_u_tight[chid+1].end();it++){
-	    SignalROI *next_roi = *it;
-	    if (tight_roi->overlap(next_roi)){
-	      if (back_rois.find(next_roi) == back_rois.end()){
-		SignalROISelection temp_rois;
-		temp_rois.push_back(tight_roi);
-		back_rois[next_roi] = temp_rois;
-	      }else{
-		back_rois[next_roi].push_back(tight_roi);
-	      }
+	// [Hongzhao] connectivity map for Induction Planes' tight ROIs was NEVER used after initialization
+	// CHANGE(S): Hongzhao commented out the initialization of connectivity map for Induction Planes' tight ROIs
+ //       	if (chid>0){
+ //       	  //form connectivity map
+ //       	  for (auto it = rois_u_tight[chid-1].begin();it!=rois_u_tight[chid-1].end();it++){
+ //       	    SignalROI *prev_roi = *it;
+ //      	    if (tight_roi->overlap(prev_roi)){
+ //      	      if (front_rois.find(prev_roi) == front_rois.end()){
+ //      		SignalROISelection temp_rois;
+ //      		temp_rois.push_back(tight_roi);
+ //      		front_rois[prev_roi] = temp_rois;
+ //      	      }else{
+ //      		front_rois[prev_roi].push_back(tight_roi);
+ //      	      }
+ //      	      if (back_rois.find(tight_roi) == back_rois.end()){
+ //      		SignalROISelection temp_rois;
+ //      		temp_rois.push_back(prev_roi);
+ //      		back_rois[tight_roi] = temp_rois;
+ //      	      }else{
+ //      		back_rois[tight_roi].push_back(prev_roi);
+ //      	      }
+ //      	    }
+ //       	  }
+ //     	}
+	// if (chid < nwire_u-1){
+	//   // add the code for the next one to be completed
+	//   for (auto it = rois_u_tight[chid+1].begin();it!=rois_u_tight[chid+1].end();it++){
+	//     SignalROI *next_roi = *it;
+	//     if (tight_roi->overlap(next_roi)){
+	//       if (back_rois.find(next_roi) == back_rois.end()){
+	// 	SignalROISelection temp_rois;
+	// 	temp_rois.push_back(tight_roi);
+	// 	back_rois[next_roi] = temp_rois;
+	//       }else{
+	// 	back_rois[next_roi].push_back(tight_roi);
+	//       }
 	      
-	      if (front_rois.find(tight_roi) == front_rois.end()){
-		SignalROISelection temp_rois;
-		temp_rois.push_back(next_roi);
-		front_rois[tight_roi] = temp_rois;
-	      }else{
-		front_rois[tight_roi].push_back(next_roi);
-	      }
-	    }
-	  }
-	}
+	//       if (front_rois.find(tight_roi) == front_rois.end()){
+	// 	SignalROISelection temp_rois;
+	// 	temp_rois.push_back(next_roi);
+	// 	front_rois[tight_roi] = temp_rois;
+	//       }else{
+	// 	front_rois[tight_roi].push_back(next_roi);
+	//       }
+	//     }
+	//   }
+	// }
       }else if (plane==1){
 	rois_v_tight[chid-nwire_u].push_back(tight_roi);
-      	if (chid>nwire_u){
-      	  //form connectivity map
-      	  for (auto it = rois_v_tight[chid - nwire_u-1].begin();it!=rois_v_tight[chid-nwire_u-1].end();it++){
-      	    SignalROI *prev_roi = *it;
-      	    if (tight_roi->overlap(prev_roi)){
-      	      if (front_rois.find(prev_roi) == front_rois.end()){
-      		SignalROISelection temp_rois;
-      		temp_rois.push_back(tight_roi);
-      		front_rois[prev_roi] = temp_rois;
-      	      }else{
-      		front_rois[prev_roi].push_back(tight_roi);
-      	      }
-      	      if (back_rois.find(tight_roi) == back_rois.end()){
-      		SignalROISelection temp_rois;
-      		temp_rois.push_back(prev_roi);
-      		back_rois[tight_roi] = temp_rois;
-      	      }else{
-      		back_rois[tight_roi].push_back(prev_roi);
-      	      }
-      	    }
-      	  }
-      	}
+ //      	if (chid>nwire_u){
+ //      	  //form connectivity map
+ //      	  for (auto it = rois_v_tight[chid - nwire_u-1].begin();it!=rois_v_tight[chid-nwire_u-1].end();it++){
+ //      	    SignalROI *prev_roi = *it;
+ //      	    if (tight_roi->overlap(prev_roi)){
+ //      	      if (front_rois.find(prev_roi) == front_rois.end()){
+ //      		SignalROISelection temp_rois;
+ //      		temp_rois.push_back(tight_roi);
+ //      		front_rois[prev_roi] = temp_rois;
+ //      	      }else{
+ //      		front_rois[prev_roi].push_back(tight_roi);
+ //      	      }
+ //      	      if (back_rois.find(tight_roi) == back_rois.end()){
+ //      		SignalROISelection temp_rois;
+ //      		temp_rois.push_back(prev_roi);
+ //      		back_rois[tight_roi] = temp_rois;
+ //      	      }else{
+ //      		back_rois[tight_roi].push_back(prev_roi);
+ //      	      }
+ //      	    }
+ //      	  }
+ //      	}
 	
-	if (chid<nwire_u+nwire_v-1){
-      	  //form connectivity map
-      	  for (auto it = rois_v_tight[chid - nwire_u+1].begin();it!=rois_v_tight[chid-nwire_u+1].end();it++){
-      	    SignalROI *next_roi = *it;
-      	    if (tight_roi->overlap(next_roi)){
-      	      if (back_rois.find(next_roi) == back_rois.end()){
-      		SignalROISelection temp_rois;
-      		temp_rois.push_back(tight_roi);
-      		back_rois[next_roi] = temp_rois;
-      	      }else{
-      		back_rois[next_roi].push_back(tight_roi);
-      	      }
-      	      if (front_rois.find(tight_roi) == front_rois.end()){
-      		SignalROISelection temp_rois;
-      		temp_rois.push_back(next_roi);
-      		front_rois[tight_roi] = temp_rois;
-      	      }else{
-      		front_rois[tight_roi].push_back(next_roi);
-      	      }
-      	    }
-      	  }
-      	}
+	// if (chid<nwire_u+nwire_v-1){
+ //      	  //form connectivity map
+ //      	  for (auto it = rois_v_tight[chid - nwire_u+1].begin();it!=rois_v_tight[chid-nwire_u+1].end();it++){
+ //      	    SignalROI *next_roi = *it;
+ //      	    if (tight_roi->overlap(next_roi)){
+ //      	      if (back_rois.find(next_roi) == back_rois.end()){
+ //      		SignalROISelection temp_rois;
+ //      		temp_rois.push_back(tight_roi);
+ //      		back_rois[next_roi] = temp_rois;
+ //      	      }else{
+ //      		back_rois[next_roi].push_back(tight_roi);
+ //      	      }
+ //      	      if (front_rois.find(tight_roi) == front_rois.end()){
+ //      		SignalROISelection temp_rois;
+ //      		temp_rois.push_back(next_roi);
+ //      		front_rois[tight_roi] = temp_rois;
+ //      	      }else{
+ //      		front_rois[tight_roi].push_back(next_roi);
+ //      	      }
+ //      	    }
+ //      	  }
+ //      	}
       }else {
 	rois_w_tight[chid-nwire_u-nwire_v].push_back(tight_roi);
 	
@@ -422,10 +425,41 @@ void ROI_refinement::load_data(int plane, const Array::array_xxf& r_data, ROI_fo
       	  }
       	}
 
+  // [Hongzhao] description_tag0
+  // In principle, we don't need to explicitly create the connectivity map for channel N & N+1 WHEN we already
+  // LOOP OVER all ROIs in channel N to create the connectivity map with channel N-1 (think about the case if N became N+1)
+  // BUT, if we only update one ROI, we need to consider both sides (see generate_merge_ROIs())
+  // In practical, channel N+1 here is empty.
+  // CHANGE(S): Hongzhao commented out the creation of the connectivity map for channel N & N+1
+	// if (chid<nwire_u+nwire_v+nwire_w-1){
+ //      	  //form connectivity map
+ //      	  for (auto it = rois_w_tight[chid-nwire_u-nwire_v+1].begin();it!=rois_w_tight[chid-nwire_u-nwire_v+1].end();it++){
+ //      	    SignalROI *next_roi = *it;
+ //      	    if (tight_roi->overlap(next_roi)){
+ //      	      if (back_rois.find(next_roi) == back_rois.end()){
+ //      		SignalROISelection temp_rois;
+ //      		temp_rois.push_back(tight_roi);
+ //      		back_rois[next_roi] = temp_rois;
+ //      	      }else{
+ //      		back_rois[next_roi].push_back(tight_roi);
+ //      	      }
+ //      	      if (front_rois.find(tight_roi) == front_rois.end()){
+ //      		SignalROISelection temp_rois;
+ //      		temp_rois.push_back(next_roi);
+ //      		front_rois[tight_roi] = temp_rois;
+ //      	      }else{
+ //      		front_rois[tight_roi].push_back(next_roi);
+ //      	      }
+ //      	    }
+ //      	  }
+ //      	}
+ //      }
 
-	if (chid<nwire_u+nwire_v+nwire_w-1){
+  // CHANGE(S): Hongzhao added the code to include warp-up adjacency
+  // CHANGE(S): "create the connectivity map for channel N & N+1" will be called once for the LAST & FIRST channel in a plane
+	if (chid==nwire_u+nwire_v+nwire_w-1  && isWraped){
       	  //form connectivity map
-      	  for (auto it = rois_w_tight[chid-nwire_u-nwire_v+1].begin();it!=rois_w_tight[chid-nwire_u-nwire_v+1].end();it++){
+      	  for (auto it = rois_w_tight[0].begin();it!=rois_w_tight[0].end();it++){
       	    SignalROI *next_roi = *it;
       	    if (tight_roi->overlap(next_roi)){
       	      if (back_rois.find(next_roi) == back_rois.end()){
@@ -486,9 +520,36 @@ void ROI_refinement::load_data(int plane, const Array::array_xxf& r_data, ROI_fo
 	    }
 	  }
 	  
-	  if (chid<nwire_u-1){
+	  // see [hyu1] description_tag0
+	  // CHANGE(S): Hongzhao commented out the creation of the connectivity map for channel N & N+1
+	 //  if (chid<nwire_u-1){
+	 //    //form connectivity map
+	 //    for (auto it=rois_u_loose[chid+1].begin();it!=rois_u_loose[chid+1].end();it++){
+	 //      SignalROI *next_roi = *it;
+	 //      if (loose_roi->overlap(next_roi)){
+		// if (back_rois.find(next_roi) == back_rois.end()){
+		//   SignalROISelection temp_rois;
+		//   temp_rois.push_back(loose_roi);
+		//   back_rois[next_roi] = temp_rois;
+		// }else{
+		//   back_rois[next_roi].push_back(loose_roi);
+		// }
+		// if (front_rois.find(loose_roi) == front_rois.end()){
+		//   SignalROISelection temp_rois;
+		//   temp_rois.push_back(next_roi);
+		//   front_rois[loose_roi] = temp_rois;
+		// }else{
+		//   front_rois[loose_roi].push_back(next_roi);
+		// }
+	 //      }
+	 //    }
+	 //  }
+	  
+	  // CHANGE(S): Hongzhao added the code to include warp-up adjacency
+	  // CHANGE(S): "create the connectivity map for channel N & N+1" will be called once for the LAST & FIRST channel in a plane
+	  if (chid==nwire_u-1 && isWraped){
 	    //form connectivity map
-	    for (auto it=rois_u_loose[chid+1].begin();it!=rois_u_loose[chid+1].end();it++){
+	    for (auto it=rois_u_loose[0].begin();it!=rois_u_loose[0].end();it++){
 	      SignalROI *next_roi = *it;
 	      if (loose_roi->overlap(next_roi)){
 		if (back_rois.find(next_roi) == back_rois.end()){
@@ -552,9 +613,36 @@ void ROI_refinement::load_data(int plane, const Array::array_xxf& r_data, ROI_fo
 	    }
 	  }
 	  
-	  if (chid<nwire_u+nwire_v-1){
+	  // see [hyu1] description_tag0
+	  // CHANGE(S): Hongzhao commented out the creation of the connectivity map for channel N & N+1	  
+	 //  if (chid<nwire_u+nwire_v-1){
+	 //    //form connectivity map
+	 //    for (auto it = rois_v_loose[chid-nwire_u+1].begin();it!=rois_v_loose[chid-nwire_u+1].end();it++){
+	 //      SignalROI *next_roi = *it;
+	 //      if (loose_roi->overlap(next_roi)){
+		// if (back_rois.find(next_roi) == back_rois.end()){
+		//   SignalROISelection temp_rois;
+		//   temp_rois.push_back(loose_roi);
+		//   back_rois[next_roi] = temp_rois;
+		// }else{
+		//   back_rois[next_roi].push_back(loose_roi);
+		// }
+		// if (front_rois.find(loose_roi) == front_rois.end()){
+		//   SignalROISelection temp_rois;
+		//   temp_rois.push_back(next_roi);
+		//   front_rois[loose_roi] = temp_rois;
+		// }else{
+		//   front_rois[loose_roi].push_back(next_roi);
+		// }
+	 //      }
+	 //    }
+	 //  }
+	  
+	  // CHANGE(S): Hongzhao added the code to include warp-up adjacency
+	  // CHANGE(S): "create the connectivity map for channel N & N+1" will be called once for the LAST & FIRST channel in a plane
+	  if (chid==nwire_u+nwire_v-1 && isWraped){
 	    //form connectivity map
-	    for (auto it = rois_v_loose[chid-nwire_u+1].begin();it!=rois_v_loose[chid-nwire_u+1].end();it++){
+	    for (auto it = rois_v_loose[0].begin();it!=rois_v_loose[0].end();it++){
 	      SignalROI *next_roi = *it;
 	      if (loose_roi->overlap(next_roi)){
 		if (back_rois.find(next_roi) == back_rois.end()){
@@ -832,9 +920,56 @@ void ROI_refinement::generate_merge_ROIs(int plane){
 	    
 	  }
 	}
+	// CHANGE(S): Hongzhao added the code to include warp-up adjacency
+	if (i == nwire_u-1 && isWraped){
+	  for (auto it1 = rois_u_loose.at(0).begin(); it1!=rois_u_loose.at(0).end(); it1++){
+	    SignalROI *next_roi = *it1;
+	    
+	    if (loose_roi->overlap(next_roi)){
+	      if (back_rois.find(next_roi) == back_rois.end()){
+		SignalROISelection temp_rois;
+		temp_rois.push_back(loose_roi);
+		back_rois[next_roi] = temp_rois;
+	      }else{
+		back_rois[next_roi].push_back(loose_roi);
+	      }
+	      
+	      if (front_rois.find(loose_roi) == front_rois.end()){
+		SignalROISelection temp_rois;
+		temp_rois.push_back(next_roi);
+		front_rois[loose_roi] = temp_rois;
+	      }else{
+		front_rois[loose_roi].push_back(next_roi);
+	      }
+	    }
+	    
+	  }
+	}
 	// back map loose ROI
 	if (i > 0){
 	  for (auto it1 = rois_u_loose.at(i-1).begin(); it1!=rois_u_loose.at(i-1).end(); it1++){
+	    SignalROI *prev_roi = *it1;
+	    if (loose_roi->overlap(prev_roi)){
+	      if (front_rois.find(prev_roi) == front_rois.end()){
+		SignalROISelection temp_rois;
+		temp_rois.push_back(loose_roi);
+		front_rois[prev_roi] = temp_rois;
+	      }else{
+		front_rois[prev_roi].push_back(loose_roi);
+	      }
+	      if (back_rois.find(loose_roi) == back_rois.end()){
+		SignalROISelection temp_rois;
+		temp_rois.push_back(prev_roi);
+		back_rois[loose_roi] = temp_rois;
+	      }else{
+		back_rois[loose_roi].push_back(prev_roi);
+	      }
+	    }
+	  }
+	}
+	// CHANGE(S): Hongzhao added the code to include warp-up adjacency
+	if (i == 0 && isWraped){
+	  for (auto it1 = rois_u_loose.at(nwire_u-1).begin(); it1!=rois_u_loose.at(nwire_u-1).end(); it1++){
 	    SignalROI *prev_roi = *it1;
 	    if (loose_roi->overlap(prev_roi)){
 	      if (front_rois.find(prev_roi) == front_rois.end()){
@@ -917,9 +1052,56 @@ void ROI_refinement::generate_merge_ROIs(int plane){
 	    
 	  }
 	}
+	// CHANGE(S): Hongzhao added the code to include warp-up adjacency
+	if (i == nwire_v-1 && isWraped){
+	  for (auto it1 = rois_v_loose.at(0).begin(); it1!=rois_v_loose.at(0).end(); it1++){
+	    SignalROI *next_roi = *it1;
+	    
+	    if (loose_roi->overlap(next_roi)){
+	      if (back_rois.find(next_roi) == back_rois.end()){
+		SignalROISelection temp_rois;
+		temp_rois.push_back(loose_roi);
+		back_rois[next_roi] = temp_rois;
+	      }else{
+		back_rois[next_roi].push_back(loose_roi);
+	      }
+	      
+	      if (front_rois.find(loose_roi) == front_rois.end()){
+		SignalROISelection temp_rois;
+		temp_rois.push_back(next_roi);
+		front_rois[loose_roi] = temp_rois;
+	      }else{
+		front_rois[loose_roi].push_back(next_roi);
+	      }
+	    }
+	    
+	  }
+	}
 	// back map loose ROI
 	if (i > 0){
 	  for (auto it1 = rois_v_loose.at(i-1).begin(); it1!=rois_v_loose.at(i-1).end(); it1++){
+	    SignalROI *prev_roi = *it1;
+	    if (loose_roi->overlap(prev_roi)){
+	      if (front_rois.find(prev_roi) == front_rois.end()){
+		SignalROISelection temp_rois;
+		temp_rois.push_back(loose_roi);
+		front_rois[prev_roi] = temp_rois;
+	      }else{
+		front_rois[prev_roi].push_back(loose_roi);
+	      }
+	      if (back_rois.find(loose_roi) == back_rois.end()){
+		SignalROISelection temp_rois;
+		temp_rois.push_back(prev_roi);
+		back_rois[loose_roi] = temp_rois;
+	      }else{
+		back_rois[loose_roi].push_back(prev_roi);
+	      }
+	    }
+	  }
+	}
+	// CHANGE(S): Hongzhao added the code to include warp-up adjacency
+	if (i == 0 && isWraped){
+	  for (auto it1 = rois_v_loose.at(nwire_v-1).begin(); it1!=rois_v_loose.at(nwire_v-1).end(); it1++){
 	    SignalROI *prev_roi = *it1;
 	    if (loose_roi->overlap(prev_roi)){
 	      if (front_rois.find(prev_roi) == front_rois.end()){
