@@ -404,6 +404,9 @@ void ROI_refinement::load_data(int plane, const Array::array_xxf& r_data, ROI_fo
 	
       	if (chid>nwire_u+nwire_v){
       	  //form connectivity map
+      	  // [Hongzhao] should avoid fake adjacency in Collection Plane for warped-up configuration
+      	  // CHANGE(S): Hongzhao added protection to skip fake adjacency
+      	  if (chid!=nwire_u+nwire_v+nwire_w/2. || !isWraped) { // additional judgement to skip fake adjacency
       	  for (auto it = rois_w_tight[chid-nwire_u-nwire_v-1].begin();it!=rois_w_tight[chid-nwire_u-nwire_v-1].end();it++){
       	    SignalROI *prev_roi = *it;
       	    if (tight_roi->overlap(prev_roi)){
@@ -422,6 +425,7 @@ void ROI_refinement::load_data(int plane, const Array::array_xxf& r_data, ROI_fo
       		back_rois[tight_roi].push_back(prev_roi);
       	      }
       	    }
+      	  }
       	  }
       	}
 
@@ -453,32 +457,6 @@ void ROI_refinement::load_data(int plane, const Array::array_xxf& r_data, ROI_fo
  //      	    }
  //      	  }
  //      	}
- //      }
-
-  // CHANGE(S): Hongzhao added the code to include warp-up adjacency
-  // CHANGE(S): "create the connectivity map for channel N & N+1" will be called once for the LAST & FIRST channel in a plane
-	if (chid==nwire_u+nwire_v+nwire_w-1  && isWraped){
-      	  //form connectivity map
-      	  for (auto it = rois_w_tight[0].begin();it!=rois_w_tight[0].end();it++){
-      	    SignalROI *next_roi = *it;
-      	    if (tight_roi->overlap(next_roi)){
-      	      if (back_rois.find(next_roi) == back_rois.end()){
-      		SignalROISelection temp_rois;
-      		temp_rois.push_back(tight_roi);
-      		back_rois[next_roi] = temp_rois;
-      	      }else{
-      		back_rois[next_roi].push_back(tight_roi);
-      	      }
-      	      if (front_rois.find(tight_roi) == front_rois.end()){
-      		SignalROISelection temp_rois;
-      		temp_rois.push_back(next_roi);
-      		front_rois[tight_roi] = temp_rois;
-      	      }else{
-      		front_rois[tight_roi].push_back(next_roi);
-      	      }
-      	    }
-      	  }
-      	}
       }
 
       
