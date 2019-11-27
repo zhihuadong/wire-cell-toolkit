@@ -253,7 +253,7 @@ void OmnibusSigProc::configure(const WireCell::Configuration& config)
     for (auto ichan : plane_channels[iplane]) {
       const int wct_chan_ident = ichan->ident();
       OspChan och(osp_channel_number, osp_wire_number, iplane, wct_chan_ident);
-      std::cout << "[hyu1]chmap: " << wct_chan_ident << " " << iplane << " " << osp_channel_number << " " << osp_wire_number << std::endl;
+      // std::cout << "[hyu1]chmap: " << wct_chan_ident << " " << iplane << " " << osp_channel_number << " " << osp_wire_number << std::endl;
       m_roi_ch_ch_ident[osp_channel_number] = wct_chan_ident;
       m_channel_map[wct_chan_ident] = och; // we could save some space by storing
       m_channel_range[iplane].push_back(och);// wct ident here instead of a whole och.
