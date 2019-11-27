@@ -16,7 +16,7 @@
 /// @parame CONCRETE - C++ concrete type
 /// @parame ... - interfaces
 WIRECELL_FACTORY(HDF5FrameTap, WireCell::Hdf5::HDF5FrameTap,
-                 WireCell::IFrameSink, WireCell::IConfigurable)
+                 WireCell::IFrameFilter, WireCell::IConfigurable)
 
 using namespace WireCell;
 
