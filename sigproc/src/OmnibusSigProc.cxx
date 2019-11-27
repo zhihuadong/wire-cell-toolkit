@@ -210,7 +210,7 @@ void OmnibusSigProc::configure(const WireCell::Configuration& config)
   m_extend_roi_tag = get(config,"extend_roi_tag",m_extend_roi_tag);
 
   m_use_multi_plane_protection =  get<bool>(config, "use_multi_plane_protection", m_use_multi_plane_protection);
-  m_isWraped =  get<bool>(config, "use_multi_plane_protection", m_isWraped);
+  m_isWraped =  get<bool>(config, "isWraped", m_isWraped);
 
   // this throws if not found
   m_anode = Factory::find_tn<IAnodePlane>(m_anode_tn);
@@ -253,6 +253,7 @@ void OmnibusSigProc::configure(const WireCell::Configuration& config)
     for (auto ichan : plane_channels[iplane]) {
       const int wct_chan_ident = ichan->ident();
       OspChan och(osp_channel_number, osp_wire_number, iplane, wct_chan_ident);
+      std::cout << "[hyu1]chmap: " << wct_chan_ident << " " << iplane << " " << osp_channel_number << " " << osp_wire_number << std::endl;
       m_roi_ch_ch_ident[osp_channel_number] = wct_chan_ident;
       m_channel_map[wct_chan_ident] = och; // we could save some space by storing
       m_channel_range[iplane].push_back(och);// wct ident here instead of a whole och.
