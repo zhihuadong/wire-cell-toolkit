@@ -118,7 +118,7 @@ OmnibusSigProc::OmnibusSigProc(const std::string& anode_tn,
   , m_shrink_roi_tag(shrink_roi_tag)
   , m_extend_roi_tag(extend_roi_tag)
   , m_use_multi_plane_protection(false)
-  , m_isWraped(false)
+  , m_isWrapped(false)
   , m_sparse(false)
   , log(Log::logger("sigproc"))
 {
@@ -210,7 +210,7 @@ void OmnibusSigProc::configure(const WireCell::Configuration& config)
   m_extend_roi_tag = get(config,"extend_roi_tag",m_extend_roi_tag);
 
   m_use_multi_plane_protection =  get<bool>(config, "use_multi_plane_protection", m_use_multi_plane_protection);
-  m_isWraped =  get<bool>(config, "isWraped", m_isWraped);
+  m_isWrapped =  get<bool>(config, "isWrapped", m_isWrapped);
 
   // this throws if not found
   m_anode = Factory::find_tn<IAnodePlane>(m_anode_tn);
@@ -326,7 +326,7 @@ WireCell::Configuration OmnibusSigProc::default_configuration() const
   cfg["extend_roi_tag"] = m_extend_roi_tag;
 
   cfg["use_multi_plane_protection"] = m_use_multi_plane_protection; // default false
-  cfg["isWarped"] = m_isWraped; // default false
+  cfg["isWarped"] = m_isWrapped; // default false
   
   cfg["sparse"] = false;
 
@@ -1220,7 +1220,7 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
 
   // create a class for ROIs ... 
   ROI_formation roi_form(m_cmm, m_nwires[0], m_nwires[1], m_nwires[2], m_nticks, m_th_factor_ind, m_th_factor_col, m_pad, m_asy, m_rebin, m_l_factor, m_l_max_th, m_l_factor1, m_l_short_length, m_l_jump_one_bin);
-  ROI_refinement roi_refine(m_cmm, m_nwires[0], m_nwires[1], m_nwires[2],m_r_th_factor,m_r_fake_signal_low_th,m_r_fake_signal_high_th,m_r_fake_signal_low_th_ind_factor,m_r_fake_signal_high_th_ind_factor,m_r_pad,m_r_break_roi_loop,m_r_th_peak,m_r_sep_peak,m_r_low_peak_sep_threshold_pre,m_r_max_npeaks,m_r_sigma,m_r_th_percent,m_isWraped);//
+  ROI_refinement roi_refine(m_cmm, m_nwires[0], m_nwires[1], m_nwires[2],m_r_th_factor,m_r_fake_signal_low_th,m_r_fake_signal_high_th,m_r_fake_signal_low_th_ind_factor,m_r_fake_signal_high_th_ind_factor,m_r_pad,m_r_break_roi_loop,m_r_th_peak,m_r_sep_peak,m_r_low_peak_sep_threshold_pre,m_r_max_npeaks,m_r_sigma,m_r_th_percent,m_isWrapped);//
 
   
   const std::vector<float>* perplane_thresholds[3] = {
