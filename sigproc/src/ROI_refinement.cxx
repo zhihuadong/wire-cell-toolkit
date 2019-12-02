@@ -404,7 +404,7 @@ void ROI_refinement::load_data(int plane, const Array::array_xxf& r_data, ROI_fo
 	
       	if (chid>nwire_u+nwire_v){
       	  //form connectivity map
-      	  // [Hongzhao] should avoid fake adjacency in Collection Plane for warped-up configuration
+      	  // [Hongzhao] should avoid fake adjacency in Collection Plane for wrapped configuration
       	  // CHANGE(S): Hongzhao added protection to skip fake adjacency
       	  if (chid!=nwire_u+nwire_v+nwire_w/2. || !isWrapped) { // additional judgement to skip fake adjacency
       	  for (auto it = rois_w_tight[chid-nwire_u-nwire_v-1].begin();it!=rois_w_tight[chid-nwire_u-nwire_v-1].end();it++){
