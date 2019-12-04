@@ -524,7 +524,7 @@ void ROI_refinement::load_data(int plane, const Array::array_xxf& r_data, ROI_fo
 	 //  }
 	  
 	  // CHANGE(S): Hongzhao added the code to include wrapped adjacency
-	  // CHANGE(S): "create the connectivity map for channel N & N+1" will be called once for the LAST & FIRST channel in a plane
+	  // CHANGE(S): connect the LAST & FIRST osp_wire_number in an Induction plane
 	  if (chid==nwire_u-1 && isWrapped){
 	    //form connectivity map
 	    for (auto it=rois_u_loose[0].begin();it!=rois_u_loose[0].end();it++){
@@ -617,7 +617,7 @@ void ROI_refinement::load_data(int plane, const Array::array_xxf& r_data, ROI_fo
 	 //  }
 	  
 	  // CHANGE(S): Hongzhao added the code to include wrapped adjacency
-	  // CHANGE(S): "create the connectivity map for channel N & N+1" will be called once for the LAST & FIRST channel in a plane
+	  // CHANGE(S): connect the LAST & FIRST osp_wire_number in an Induction plane
 	  if (chid==nwire_u+nwire_v-1 && isWrapped){
 	    //form connectivity map
 	    for (auto it = rois_v_loose[0].begin();it!=rois_v_loose[0].end();it++){
