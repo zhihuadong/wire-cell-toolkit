@@ -523,7 +523,7 @@ void ROI_refinement::load_data(int plane, const Array::array_xxf& r_data, ROI_fo
 	 //    }
 	 //  }
 	  
-	  // CHANGE(S): Hongzhao added the code to include warp-up adjacency
+	  // CHANGE(S): Hongzhao added the code to include wrapped adjacency
 	  // CHANGE(S): "create the connectivity map for channel N & N+1" will be called once for the LAST & FIRST channel in a plane
 	  if (chid==nwire_u-1 && isWrapped){
 	    //form connectivity map
@@ -616,7 +616,7 @@ void ROI_refinement::load_data(int plane, const Array::array_xxf& r_data, ROI_fo
 	 //    }
 	 //  }
 	  
-	  // CHANGE(S): Hongzhao added the code to include warp-up adjacency
+	  // CHANGE(S): Hongzhao added the code to include wrapped adjacency
 	  // CHANGE(S): "create the connectivity map for channel N & N+1" will be called once for the LAST & FIRST channel in a plane
 	  if (chid==nwire_u+nwire_v-1 && isWrapped){
 	    //form connectivity map
@@ -898,7 +898,7 @@ void ROI_refinement::generate_merge_ROIs(int plane){
 	    
 	  }
 	}
-	// CHANGE(S): Hongzhao added the code to include warp-up adjacency
+	// CHANGE(S): Hongzhao added the code to include wrapped adjacency
 	if (i == nwire_u-1 && isWrapped){
 	  for (auto it1 = rois_u_loose.at(0).begin(); it1!=rois_u_loose.at(0).end(); it1++){
 	    SignalROI *next_roi = *it1;
@@ -945,7 +945,7 @@ void ROI_refinement::generate_merge_ROIs(int plane){
 	    }
 	  }
 	}
-	// CHANGE(S): Hongzhao added the code to include warp-up adjacency
+	// CHANGE(S): Hongzhao added the code to include wrapped adjacency
 	if (i == 0 && isWrapped){
 	  for (auto it1 = rois_u_loose.at(nwire_u-1).begin(); it1!=rois_u_loose.at(nwire_u-1).end(); it1++){
 	    SignalROI *prev_roi = *it1;
@@ -1030,7 +1030,7 @@ void ROI_refinement::generate_merge_ROIs(int plane){
 	    
 	  }
 	}
-	// CHANGE(S): Hongzhao added the code to include warp-up adjacency
+	// CHANGE(S): Hongzhao added the code to include wrapped adjacency
 	if (i == nwire_v-1 && isWrapped){
 	  for (auto it1 = rois_v_loose.at(0).begin(); it1!=rois_v_loose.at(0).end(); it1++){
 	    SignalROI *next_roi = *it1;
@@ -1077,7 +1077,7 @@ void ROI_refinement::generate_merge_ROIs(int plane){
 	    }
 	  }
 	}
-	// CHANGE(S): Hongzhao added the code to include warp-up adjacency
+	// CHANGE(S): Hongzhao added the code to include wrapped adjacency
 	if (i == 0 && isWrapped){
 	  for (auto it1 = rois_v_loose.at(nwire_v-1).begin(); it1!=rois_v_loose.at(nwire_v-1).end(); it1++){
 	    SignalROI *prev_roi = *it1;
