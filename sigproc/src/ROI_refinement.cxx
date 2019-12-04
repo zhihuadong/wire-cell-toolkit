@@ -2447,7 +2447,7 @@ void ROI_refinement::refine_data(int plane, ROI_formation& roi_form){
     CleanUpInductionROIs(plane);
   }
 
-  ExtendROIs();
+  ExtendROIs(plane);
   //TestROIs();
   //if (plane==2)  std::cout << "Xin: " << rois_w_tight.at(69).size() << " " << std::endl;
 }
@@ -2488,7 +2488,7 @@ void ROI_refinement::refine_data_debug_mode(int plane, ROI_formation& roi_form, 
       CleanUpInductionROIs(plane);
     }
 
-    ExtendROIs();
+    ExtendROIs(plane);
     //TestROIs();
   }
 
@@ -2745,10 +2745,10 @@ void ROI_refinement::refine_data_debug_mode(int plane, ROI_formation& roi_form, 
 }
 
 
-void ROI_refinement::ExtendROIs(){
+void ROI_refinement::ExtendROIs(int plane){
 
   bool flag = true;
-  
+  if (plane==0) {
   // U plane ... 
   for (int chid = 0; chid != nwire_u; chid ++){
     rois_u_loose.at(chid).sort(CompareRois());
@@ -2804,6 +2804,7 @@ void ROI_refinement::ExtendROIs(){
     //   std::cout << chid << " " << roi->get_ext_start_bin() << " " << roi->get_ext_end_bin() << std::endl;
     // }
   }
+  } else if (plane==1) { 
   // V plane
   for (int chid = 0; chid != nwire_v; chid ++){
     rois_v_loose.at(chid).sort(CompareRois());
@@ -2859,7 +2860,7 @@ void ROI_refinement::ExtendROIs(){
     //   std::cout << chid << " " << roi->get_ext_start_bin() << " " << roi->get_ext_end_bin() << std::endl;
     // }
   }
-
+  } else {
   // W plane
   for (int chid = 0; chid != nwire_w; chid ++){
     rois_w_tight.at(chid).sort(CompareRois());
@@ -2914,6 +2915,7 @@ void ROI_refinement::ExtendROIs(){
       //   SignalROI *roi =  *it;
       //   std::cout << chid << " " << roi->get_ext_start_bin() << " " << roi->get_ext_end_bin() << std::endl;
       // }
+  }
   }
 }
 

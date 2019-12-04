@@ -52,7 +52,7 @@ namespace WireCell{
       void BreakROI(SignalROI *roi, float rms);
       void BreakROI1(SignalROI *roi);
       
-      void ExtendROIs();
+      void ExtendROIs(int plane);
 
       void TestROIs();
 

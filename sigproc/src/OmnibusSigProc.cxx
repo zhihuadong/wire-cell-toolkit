@@ -1323,7 +1323,7 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
     } else {
       roi_refine.CleanUpInductionROIs(iplane);
     }
-    roi_refine.ExtendROIs();
+    roi_refine.ExtendROIs(iplane);
 
     if (m_use_roi_debug_mode) {
       save_roi(*itraces, extend_roi_traces, iplane,
