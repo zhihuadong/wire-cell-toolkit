@@ -1420,7 +1420,7 @@ void ROI_refinement::CleanUpInductionROIs(int plane){
 	    SignalROI* roi1 = next_rois.at(i);
 	    if (Good_ROIs.find(roi1)!=Good_ROIs.end()) {
 	      flag_qx = 1;
-	      continue;
+	      break; // continue;
 	    }
 	  }
 	  if (flag_qx == 1) continue;
@@ -1433,7 +1433,7 @@ void ROI_refinement::CleanUpInductionROIs(int plane){
 	    SignalROI* roi1 = next_rois.at(i);
 	    if (Good_ROIs.find(roi1)!=Good_ROIs.end()) {
 	      flag_qx = 1;
-	      continue;
+	      break; // continue;
 	    }
 	  }
 	  if (flag_qx == 1) continue;
@@ -1492,7 +1492,7 @@ void ROI_refinement::CleanUpInductionROIs(int plane){
 	    SignalROI* roi1 = next_rois.at(i);
 	    if (Good_ROIs.find(roi1)!=Good_ROIs.end()) {
 	      flag_qx = 1;
-	      continue;
+	      break; // continue;
 	    }
 	  }
 	  if (flag_qx == 1) continue;
@@ -1505,7 +1505,7 @@ void ROI_refinement::CleanUpInductionROIs(int plane){
 	    SignalROI* roi1 = next_rois.at(i);
 	    if (Good_ROIs.find(roi1)!=Good_ROIs.end()) {
 	      flag_qx = 1;
-	      continue;
+	      break; // continue;
 	    }
 	  }
 	  if (flag_qx == 1) continue;

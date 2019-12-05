@@ -91,6 +91,8 @@ namespace WireCell {
       // save ROI into the out frame (set use_roi_debug_mode=true)
       void save_roi(ITrace::vector& itraces, IFrame::trace_list_t& indices, int plane,
                     std::vector<std::list<SignalROI*> >& roi_channel_list);
+      void save_ext_roi(ITrace::vector& itraces, IFrame::trace_list_t& indices, int plane,
+                        std::vector<std::list<SignalROI*> >& roi_channel_list);
 
       // initialize the overall response function ...
       void init_overall_response(IFrame::pointer frame);

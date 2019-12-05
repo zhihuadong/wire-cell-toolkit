@@ -543,6 +543,84 @@ void OmnibusSigProc::save_roi(ITrace::vector& itraces, IFrame::trace_list_t& ind
   }
 }
 
+void OmnibusSigProc::save_ext_roi(ITrace::vector& itraces, IFrame::trace_list_t& indices,
+                                  int plane, std::vector<std::list<SignalROI*> >& roi_channel_list)
+{
+  // reuse this temporary vector to hold charge for a channel.
+  ITrace::ChargeSequence charge(m_nticks, 0.0);
+
+   for (auto och : m_channel_range[plane]) { // ordered by osp channel
+
+     // std::cout << "[wgu] wire: " << och.wire << " roi_channel_list.size(): " << roi_channel_list.size() << std::endl;
+
+     std::fill(charge.begin(), charge.end(), 0);
+
+     // for (auto it = roi_channel_list.at(och.wire).begin(); it!= roi_channel_list.at(och.wire).end(); it++){
+     //   SignalROI *roi =  *it;
+     //   int start = roi->get_start_bin();
+     //   int end = roi->get_end_bin();
+     //   std::cout << "[wgu] wire: " << och.wire << " ROI: " << start << " " << end << " channel: " << roi->get_chid() << " plane: " << roi->get_plane() << std::endl;      
+     // }
+
+     int prev_roi_end = -1;
+     for (auto signal_roi: roi_channel_list.at(och.wire) ) {
+         int start = signal_roi->get_ext_start_bin();
+         int end = signal_roi->get_ext_end_bin();
+         // if (och.wire==732) 
+        //   std::cout << "[wgu] OmnibusSigProc::save_roi() wire: " << och.wire << " channel: " << och.channel << " ROI: " << start << " " << end << " channel: " << signal_roi->get_chid() << " plane: " << signal_roi->get_plane() << " max height: " << signal_roi->get_max_height() <<  std::endl;
+         if (start<0 or end<0) continue;
+         for (int i=start; i<=end; i++) {
+           if (i-prev_roi_end<2) continue; // skip one bin for visibility of two adjacent ROIs
+           charge.at(i) = 10.; // arbitary constant number for ROI display
+         }
+         prev_roi_end = end;
+     }
+
+     {
+      auto& bad = m_cmm["bad"];
+      auto badit = bad.find(och.channel);
+      if (badit != bad.end()) {
+        for (auto bad : badit->second) {
+          for (int itick=bad.first; itick < bad.second; ++itick) {
+            charge.at(itick) = 0.0;
+          }
+        }
+      }
+     }
+
+
+     // actually save out
+    if (m_sparse) {
+      // Save waveform sparsely by finding contiguous, positive samples.
+      std::vector<float>::const_iterator beg=charge.begin(), end=charge.end();
+      auto i1 = std::find_if(beg, end, ispositive); // first start
+      while (i1 != end) {
+        // stop at next zero or end and make little temp vector
+        auto i2 = std::find_if(i1, end, isZero);
+        const std::vector<float> q(i1,i2);
+
+         // save out
+        const int tbin = i1 - beg;
+        SimpleTrace *trace = new SimpleTrace(och.ident, tbin, q);
+        const size_t trace_index = itraces.size();
+        indices.push_back(trace_index);
+        itraces.push_back(ITrace::pointer(trace));
+        // if (och.wire==67) std::cout << "[wgu] och channel: " << och.channel << " wire: " << och.wire << " plane: " << och.plane << " ident: " << och.ident << " tbin: " << tbin << " len: " << i2-i1 << std::endl;
+
+         // find start for next loop
+        i1 = std::find_if(i2, end, ispositive);
+      }
+    }
+    else {
+      // Save the waveform densely, including zeros.
+      SimpleTrace *trace = new SimpleTrace(och.ident, 0, charge);
+      const size_t trace_index = itraces.size();
+      indices.push_back(trace_index);
+      itraces.push_back(ITrace::pointer(trace));
+    }
+  }
+}
+
 void OmnibusSigProc::init_overall_response(IFrame::pointer frame)
 {
   m_period = frame->tick();
@@ -1326,8 +1404,8 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
     roi_refine.ExtendROIs(iplane);
 
     if (m_use_roi_debug_mode) {
-      save_roi(*itraces, extend_roi_traces, iplane,
-               roi_refine.get_rois_by_plane(iplane));
+      save_ext_roi(*itraces, extend_roi_traces, iplane,
+                   roi_refine.get_rois_by_plane(iplane));
     }
 
     // merge results ...
