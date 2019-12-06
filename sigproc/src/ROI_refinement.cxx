@@ -1252,7 +1252,7 @@ void ROI_refinement::CleanUpCollectionROIs(){
 	  SignalROI* roi1 = next_rois.at(i);
 	  if (Good_ROIs.find(roi1)!=Good_ROIs.end()) {
 	    flag_qx = 1;
-	    continue;
+	    break; // continue;
 	  }
 	}
 	if (flag_qx == 1) continue;
@@ -1265,7 +1265,7 @@ void ROI_refinement::CleanUpCollectionROIs(){
 	  SignalROI* roi1 = next_rois.at(i);
 	  if (Good_ROIs.find(roi1)!=Good_ROIs.end()) {
 	    flag_qx = 1;
-	    continue;
+	    break; // continue;
 	  }
 	}
 	if (flag_qx == 1) continue;
@@ -1316,85 +1316,87 @@ void ROI_refinement::CleanUpInductionROIs(int plane){
   threshold *= fake_signal_high_th_ind_factor;
   
   std::list<SignalROI*> Bad_ROIs;
-  if (plane==0){
-    for (int i=0;i!=nwire_u;i++){
-      for (auto it = rois_u_loose.at(i).begin();it!=rois_u_loose.at(i).end();it++){
-	SignalROI* roi = *it;
-	//std::cout << "Xin: " << roi->get_max_height() << " " << roi->get_average_heights() << std::endl;
-	if (front_rois.find(roi)==front_rois.end() && back_rois.find(roi)==back_rois.end()){
-	  if (roi->get_above_threshold(threshold).size()==0 && roi->get_average_heights() < mean_threshold)
-	    Bad_ROIs.push_back(roi);
-	}
-      }
-    }
-    for (auto it = Bad_ROIs.begin(); it!=Bad_ROIs.end(); it ++){
-      SignalROI* roi = *it;
-      int chid = roi->get_chid();
-      auto it1 = find(rois_u_loose.at(chid).begin(), rois_u_loose.at(chid).end(),roi);
-      if (it1 != rois_u_loose.at(chid).end())
-	rois_u_loose.at(chid).erase(it1);
 
-      if (front_rois.find(roi)!=front_rois.end()){
-	SignalROISelection next_rois = front_rois[roi];
-	for (size_t i=0;i!=next_rois.size();i++){
-	  //unlink the current roi
-	  unlink(roi,next_rois.at(i));
-	}
-	front_rois.erase(roi);
-      }
-      
-      if (back_rois.find(roi)!=back_rois.end()){
-	SignalROISelection prev_rois = back_rois[roi];
-	for (size_t i=0;i!=prev_rois.size();i++){
-	  //unlink the current roi
-	  unlink(prev_rois.at(i),roi);
-	}
-	back_rois.erase(roi);
-      }
-      
-      delete roi;
-    }
-    Bad_ROIs.clear();
-  }else if (plane==1){
-    for (int i=0;i!=nwire_v;i++){
-      for (auto it = rois_v_loose.at(i).begin();it!=rois_v_loose.at(i).end();it++){
-	SignalROI* roi = *it;
-	//	std::cout << "Xin: " << roi->get_max_height() << " " << roi->get_average_heights() << std::endl;
-	if (front_rois.find(roi)==front_rois.end() && back_rois.find(roi)==back_rois.end()){
-	  if (roi->get_above_threshold(threshold).size()==0 && roi->get_average_heights() < mean_threshold)
-	    Bad_ROIs.push_back(roi);
-	}
-      }
-    }
-    for (auto it = Bad_ROIs.begin(); it!=Bad_ROIs.end(); it ++){
-      SignalROI* roi = *it;
-      int chid = roi->get_chid()-nwire_u;
-      auto it1 = find(rois_v_loose.at(chid).begin(), rois_v_loose.at(chid).end(),roi);
-      if (it1 != rois_v_loose.at(chid).end())
-	rois_v_loose.at(chid).erase(it1);
+  // Hongzhao: bad ROIs without good neighbors will be removed by next step
+ //  if (plane==0){
+ //    for (int i=0;i!=nwire_u;i++){
+ //      for (auto it = rois_u_loose.at(i).begin();it!=rois_u_loose.at(i).end();it++){
+	// SignalROI* roi = *it;
+	// //std::cout << "Xin: " << roi->get_max_height() << " " << roi->get_average_heights() << std::endl;
+	// if (front_rois.find(roi)==front_rois.end() && back_rois.find(roi)==back_rois.end()){
+	//   if (roi->get_above_threshold(threshold).size()==0 && roi->get_average_heights() < mean_threshold)
+	//     Bad_ROIs.push_back(roi);
+	// }
+ //      }
+ //    }
+ //    for (auto it = Bad_ROIs.begin(); it!=Bad_ROIs.end(); it ++){
+ //      SignalROI* roi = *it;
+ //      int chid = roi->get_chid();
+ //      auto it1 = find(rois_u_loose.at(chid).begin(), rois_u_loose.at(chid).end(),roi);
+ //      if (it1 != rois_u_loose.at(chid).end())
+	// rois_u_loose.at(chid).erase(it1);
 
-      if (front_rois.find(roi)!=front_rois.end()){
-	SignalROISelection next_rois = front_rois[roi];
-	for (size_t i=0;i!=next_rois.size();i++){
-	  //unlink the current roi
-	  unlink(roi,next_rois.at(i));
-	}
-	front_rois.erase(roi);
-      }
+ //      if (front_rois.find(roi)!=front_rois.end()){
+	// SignalROISelection next_rois = front_rois[roi];
+	// for (size_t i=0;i!=next_rois.size();i++){
+	//   //unlink the current roi
+	//   unlink(roi,next_rois.at(i));
+	// }
+	// front_rois.erase(roi);
+ //      }
       
-      if (back_rois.find(roi)!=back_rois.end()){
-	SignalROISelection prev_rois = back_rois[roi];
-	for (size_t i=0;i!=prev_rois.size();i++){
-	  //unlink the current roi
-	  unlink(prev_rois.at(i),roi);
-	}
-	back_rois.erase(roi);
-      }
+ //      if (back_rois.find(roi)!=back_rois.end()){
+	// SignalROISelection prev_rois = back_rois[roi];
+	// for (size_t i=0;i!=prev_rois.size();i++){
+	//   //unlink the current roi
+	//   unlink(prev_rois.at(i),roi);
+	// }
+	// back_rois.erase(roi);
+ //      }
+      
+ //      delete roi;
+ //    }
+ //    Bad_ROIs.clear();
+ //  }else if (plane==1){
+ //    for (int i=0;i!=nwire_v;i++){
+ //      for (auto it = rois_v_loose.at(i).begin();it!=rois_v_loose.at(i).end();it++){
+	// SignalROI* roi = *it;
+	// //	std::cout << "Xin: " << roi->get_max_height() << " " << roi->get_average_heights() << std::endl;
+	// if (front_rois.find(roi)==front_rois.end() && back_rois.find(roi)==back_rois.end()){
+	//   if (roi->get_above_threshold(threshold).size()==0 && roi->get_average_heights() < mean_threshold)
+	//     Bad_ROIs.push_back(roi);
+	// }
+ //      }
+ //    }
+ //    for (auto it = Bad_ROIs.begin(); it!=Bad_ROIs.end(); it ++){
+ //      SignalROI* roi = *it;
+ //      int chid = roi->get_chid()-nwire_u;
+ //      auto it1 = find(rois_v_loose.at(chid).begin(), rois_v_loose.at(chid).end(),roi);
+ //      if (it1 != rois_v_loose.at(chid).end())
+	// rois_v_loose.at(chid).erase(it1);
+
+ //      if (front_rois.find(roi)!=front_rois.end()){
+	// SignalROISelection next_rois = front_rois[roi];
+	// for (size_t i=0;i!=next_rois.size();i++){
+	//   //unlink the current roi
+	//   unlink(roi,next_rois.at(i));
+	// }
+	// front_rois.erase(roi);
+ //      }
+      
+ //      if (back_rois.find(roi)!=back_rois.end()){
+	// SignalROISelection prev_rois = back_rois[roi];
+	// for (size_t i=0;i!=prev_rois.size();i++){
+	//   //unlink the current roi
+	//   unlink(prev_rois.at(i),roi);
+	// }
+	// back_rois.erase(roi);
+ //      }
       
       
-      delete roi;
-    }
-  }
+ //      delete roi;
+ //    }
+ //  }
 
 
   // threshold = fake_signal_low_th;
