@@ -451,7 +451,7 @@ bool Protodune::LinearInterpSticky(WireCell::Waveform::realseq_t& signal,
 }
 
 bool Protodune::FftInterpSticky(WireCell::Waveform::realseq_t& signal,
-	                 WireCell::Waveform::BinRangeList& rng_list){
+	                 WireCell::Waveform::BinRangeList& rng_list){;                     
 	const int nsiglen = signal.size();
     // group into two subsamples ("even" & "odd")
     int nsublen = nsiglen/2;
@@ -568,6 +568,7 @@ bool Protodune::FftShiftSticky(WireCell::Waveform::realseq_t& signal,
         		if(ind>=0 && ind<nsublen2) signal.at(i) = signal_odd_fc.at(ind);
         		// std::cerr << "lc:fc= " << signal_lc.at(i) << " " << signel_even_fc.at() << std::endl;
         	}
+
         	else{
         		int ind = i/2. - toffset;
         		if(ind>=0 && ind<nsublen) signal.at(i) = signal_even_fc.at(ind);

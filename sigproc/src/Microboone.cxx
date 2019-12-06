@@ -349,7 +349,7 @@ std::vector< std::vector<int> > Microboone::SignalProtection(WireCell::Waveform:
     if (respec.size() > 0 && (respec.at(0).real()!=1 || respec.at(0).imag()!=0) && res_offset!=0){
 	//std::cout << nbin << std::endl;
 
-     	WireCell::Waveform::compseq_t medians_freq = WireCell::Waveform::dft(medians);
+     	WireCell::Waveform::compseq_t medians_freq =WireCell::Waveform::dft(medians);
      	WireCell::Waveform::shrink(medians_freq,respec);
 	
     	for (size_t i=0;i!=medians_freq.size();i++){

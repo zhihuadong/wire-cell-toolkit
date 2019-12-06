@@ -221,6 +221,13 @@ void Gen::Ductor::process(output_queue& frames)
     }
 
     auto frame = make_shared<SimpleFrame>(m_frame_count, m_start_time, traces, m_tick);
+    IFrame::trace_list_t indices(traces.size());
+    for (size_t ind=0; ind<traces.size(); ++ind) {
+        indices[ind] = ind;
+    }
+    std::string trace_tag("ductor");
+    frame->tag_traces(string("ductor")+std::to_string(m_anode->ident()),indices);
+    frame->tag_frame("ductor");
     frames.push_back(frame);
     l->debug("made frame: {} with {} traces @ {}ms",
              m_frame_count, traces.size(), m_start_time/units::ms);

@@ -22,6 +22,8 @@ namespace WireCell {
             virtual ITrace::vector process_face(IAnodeFace::pointer face,
                                                 const IDepo::vector& depos);
 
+            /// SPD logger
+            Log::logptr_t l;
 
         };
     }

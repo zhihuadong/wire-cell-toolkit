@@ -42,9 +42,6 @@ private:
   Configuration m_cfg; /// copy of configuration
   IAnodePlane::pointer m_anode; /// pointer to some APA, needed to associate chnnel ID to planes
 
-  /// print trace tags and frame tags
-  void peak_frame(const IFrame::pointer &frame) const;
-
   int m_save_count;   // count frames saved
   
   /// SPD logger
