@@ -60,6 +60,9 @@ function(params, tools, override = {}) {
       shrink_roi_tag: 'shrink_roi%d' % anode.data.ident,
       extend_roi_tag: 'extend_roi%d' % anode.data.ident,
 
+      use_multi_plane_protection: false,
+      mp_roi_tag: 'mp_roi%d' % anode.data.ident,
+
     } + override,
   }, nin=1, nout=1, uses=[anode, tools.field] + pc.uses + spfilt),
 
