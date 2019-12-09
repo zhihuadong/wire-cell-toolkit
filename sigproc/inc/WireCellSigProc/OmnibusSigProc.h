@@ -91,6 +91,8 @@ namespace WireCell {
       // save ROI into the out frame (set use_roi_debug_mode=true)
       void save_roi(ITrace::vector& itraces, IFrame::trace_list_t& indices, int plane,
                     std::vector<std::list<SignalROI*> >& roi_channel_list);
+      void save_ext_roi(ITrace::vector& itraces, IFrame::trace_list_t& indices, int plane,
+                        std::vector<std::list<SignalROI*> >& roi_channel_list);
 
       // initialize the overall response function ...
       void init_overall_response(IFrame::pointer frame);
@@ -222,6 +224,7 @@ namespace WireCell {
       std::string m_extend_roi_tag;
 
       bool m_use_multi_plane_protection;
+      bool m_isWrapped;
 
       // If true, safe output as a sparse frame.  Traces will only
       // cover segments of waveforms which have non-zero signal
