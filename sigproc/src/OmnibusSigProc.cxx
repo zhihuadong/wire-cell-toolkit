@@ -68,7 +68,8 @@ OmnibusSigProc::OmnibusSigProc(const std::string& anode_tn,
                                const std::string& break_roi_loop1_tag,
                                const std::string& break_roi_loop2_tag,
                                const std::string& shrink_roi_tag,
-                               const std::string& extend_roi_tag )
+                               const std::string& extend_roi_tag,
+                               const std::string& mp_roi_tag )
   : m_anode_tn (anode_tn)
   , m_per_chan_resp(per_chan_resp_tn)
   , m_field_response(field_response)
@@ -118,6 +119,7 @@ OmnibusSigProc::OmnibusSigProc(const std::string& anode_tn,
   , m_shrink_roi_tag(shrink_roi_tag)
   , m_extend_roi_tag(extend_roi_tag)
   , m_use_multi_plane_protection(false)
+  , m_mp_roi_tag(mp_roi_tag)
   , m_sparse(false)
   , log(Log::logger("sigproc"))
 {
@@ -209,6 +211,7 @@ void OmnibusSigProc::configure(const WireCell::Configuration& config)
   m_extend_roi_tag = get(config,"extend_roi_tag",m_extend_roi_tag);
 
   m_use_multi_plane_protection =  get<bool>(config, "use_multi_plane_protection", m_use_multi_plane_protection);
+  m_mp_roi_tag = get(config,"mp_roi_tag",m_mp_roi_tag);
 
   // this throws if not found
   m_anode = Factory::find_tn<IAnodePlane>(m_anode_tn);
@@ -323,6 +326,7 @@ WireCell::Configuration OmnibusSigProc::default_configuration() const
   cfg["extend_roi_tag"] = m_extend_roi_tag;
 
   cfg["use_multi_plane_protection"] = m_use_multi_plane_protection; // default false
+  cfg["mp_roi_tag"] = m_mp_roi_tag;
   
   cfg["sparse"] = false;
 
@@ -530,6 +534,73 @@ void OmnibusSigProc::save_roi(ITrace::vector& itraces, IFrame::trace_list_t& ind
       }
     }
     else {
+      // Save the waveform densely, including zeros.
+      SimpleTrace *trace = new SimpleTrace(och.ident, 0, charge);
+      const size_t trace_index = itraces.size();
+      indices.push_back(trace_index);
+      itraces.push_back(ITrace::pointer(trace));
+    }
+  }
+}
+
+// save Multi-Plane ROI into the out frame (set use_roi_debug_mode=true)
+// mp_rois: osp-chid, start -> start, end
+void OmnibusSigProc::save_mproi(
+    ITrace::vector &itraces, IFrame::trace_list_t &indices, int plane,
+    std::multimap<std::pair<int, int>, std::pair<int, int>> mp_rois) {
+
+  log->debug("[yuhw] mp_roi.size(): {}", mp_rois.size());
+  // reuse this temporary vector to hold charge for a channel.
+  ITrace::ChargeSequence charge(m_nticks, 0.0);
+
+  for (auto och : m_channel_range[plane]) { // ordered by osp channel
+
+    std::fill(charge.begin(), charge.end(), 0);
+
+    for (auto signal_roi : mp_rois) {
+      if (och.channel != signal_roi.first.first)
+        continue;
+      int start = signal_roi.second.first;
+      int end = signal_roi.second.second;
+      for (int i = start; i <= end; i++) {
+        charge.at(i) = 4000.; // arbitary constant number for ROI display
+      }
+    }
+
+    {
+      auto &bad = m_cmm["bad"];
+      auto badit = bad.find(och.channel);
+      if (badit != bad.end()) {
+        for (auto bad : badit->second) {
+          for (int itick = bad.first; itick < bad.second; ++itick) {
+            charge.at(itick) = 0.0;
+          }
+        }
+      }
+    }
+
+    // actually save out
+    if (m_sparse) {
+      // Save waveform sparsely by finding contiguous, positive samples.
+      std::vector<float>::const_iterator beg = charge.begin(),
+                                         end = charge.end();
+      auto i1 = std::find_if(beg, end, ispositive); // first start
+      while (i1 != end) {
+        // stop at next zero or end and make little temp vector
+        auto i2 = std::find_if(i1, end, isZero);
+        const std::vector<float> q(i1, i2);
+
+        // save out
+        const int tbin = i1 - beg;
+        SimpleTrace *trace = new SimpleTrace(och.ident, tbin, q);
+        const size_t trace_index = itraces.size();
+        indices.push_back(trace_index);
+        itraces.push_back(ITrace::pointer(trace));
+
+        // find start for next loop
+        i1 = std::find_if(i2, end, ispositive);
+      }
+    } else {
       // Save the waveform densely, including zeros.
       SimpleTrace *trace = new SimpleTrace(och.ident, 0, charge);
       const size_t trace_index = itraces.size();
@@ -1210,6 +1281,7 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
   IFrame::trace_list_t wiener_traces, gauss_traces, perframe_traces[3];
   // here are some trace lists for debug mode
   IFrame::trace_list_t tight_lf_traces, loose_lf_traces, cleanup_roi_traces, break_roi_loop1_traces, break_roi_loop2_traces, shrink_roi_traces, extend_roi_traces;
+  IFrame::trace_list_t mp_roi_traces;
 
   // initialize the overall response function ... 
   init_overall_response(in);
@@ -1283,9 +1355,12 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
                roi_refine.get_rois_by_plane(iplane));
     }
 
+    log->debug("[yuhw] m_use_multi_plane_protection {}", m_use_multi_plane_protection);
     if (m_use_multi_plane_protection) {
       roi_refine.MultiPlaneProtection(iplane, m_anode, m_roi_ch_ch_ident, roi_form, 1000,
                                       m_anode->ident() % 2);
+      save_mproi(*itraces, mp_roi_traces, iplane,
+               roi_refine.get_mp_rois());
     }
   }
 
@@ -1374,6 +1449,10 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
     sframe->tag_traces(m_break_roi_loop2_tag, break_roi_loop2_traces);
     sframe->tag_traces(m_shrink_roi_tag, shrink_roi_traces);
     sframe->tag_traces(m_extend_roi_tag, extend_roi_traces);
+  }
+
+  if (m_use_multi_plane_protection) {
+    sframe->tag_traces(m_mp_roi_tag, mp_roi_traces);
   }
 
   log->debug("OmnibusSigProc: produce {} traces: {} {}, {} {}, frame tag: {}",
