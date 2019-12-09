@@ -39,6 +39,9 @@ namespace WireCell{
                                 const int wire_resolution = 2,
                                 const int nbounds_layers = 2);
 
+      typedef std::multimap<std::pair<int, int>, std::pair<int, int> > MapMPROI;
+      MapMPROI get_mp_rois() const { return proteced_rois;}
+
       void CleanUpROIs(int plane);
       void generate_merge_ROIs(int plane);
       void CheckROIs(int plane, ROI_formation& roi_form);
@@ -97,7 +100,7 @@ namespace WireCell{
       SignalROIChList rois_u_loose;
       SignalROIChList rois_v_loose;
 
-      std::multimap<std::pair<int, int>, std::pair<int, int> > proteced_rois; //using chid and start_bin as id
+      MapMPROI proteced_rois; //using chid and start_bin as id
    
     
       SignalROIMap front_rois;
