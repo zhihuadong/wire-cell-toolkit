@@ -62,6 +62,8 @@ function(params, tools, override = {}) {
 
       use_multi_plane_protection: false,
       mp_roi_tag: 'mp_roi%d' % anode.data.ident,
+      
+      isWrapped: false,
 
     } + override,
   }, nin=1, nout=1, uses=[anode, tools.field] + pc.uses + spfilt),

@@ -12,7 +12,7 @@ using namespace WireCell::SigProc;
 #else
 #define LogDebug(x)
 #endif
-ROI_refinement::ROI_refinement(Waveform::ChannelMaskMap& cmm,int nwire_u, int nwire_v, int nwire_w, float th_factor, float fake_signal_low_th, float fake_signal_high_th, float fake_signal_low_th_ind_factor, float fake_signal_high_th_ind_factor, int pad, int break_roi_loop, float th_peak, float sep_peak, float low_peak_sep_threshold_pre, int max_npeaks, float sigma, float th_percent)
+ROI_refinement::ROI_refinement(Waveform::ChannelMaskMap& cmm,int nwire_u, int nwire_v, int nwire_w, float th_factor, float fake_signal_low_th, float fake_signal_high_th, float fake_signal_low_th_ind_factor, float fake_signal_high_th_ind_factor, int pad, int break_roi_loop, float th_peak, float sep_peak, float low_peak_sep_threshold_pre, int max_npeaks, float sigma, float th_percent, bool isWrapped)
   : nwire_u(nwire_u)
   , nwire_v(nwire_v)
   , nwire_w(nwire_w)
@@ -30,6 +30,7 @@ ROI_refinement::ROI_refinement(Waveform::ChannelMaskMap& cmm,int nwire_u, int nw
   , sigma(sigma)
   , th_percent(th_percent)
   , log(Log::logger("sigproc"))
+  , isWrapped(isWrapped)
 {
   rois_u_tight.resize(nwire_u);
   rois_u_loose.resize(nwire_u);
@@ -304,103 +305,108 @@ void ROI_refinement::load_data(int plane, const Array::array_xxf& r_data, ROI_fo
       
       if (plane==0){
 	rois_u_tight[chid].push_back(tight_roi);
-       	if (chid>0){
-       	  //form connectivity map
-       	  for (auto it = rois_u_tight[chid-1].begin();it!=rois_u_tight[chid-1].end();it++){
-       	    SignalROI *prev_roi = *it;
-      	    if (tight_roi->overlap(prev_roi)){
-      	      if (front_rois.find(prev_roi) == front_rois.end()){
-      		SignalROISelection temp_rois;
-      		temp_rois.push_back(tight_roi);
-      		front_rois[prev_roi] = temp_rois;
-      	      }else{
-      		front_rois[prev_roi].push_back(tight_roi);
-      	      }
-      	      if (back_rois.find(tight_roi) == back_rois.end()){
-      		SignalROISelection temp_rois;
-      		temp_rois.push_back(prev_roi);
-      		back_rois[tight_roi] = temp_rois;
-      	      }else{
-      		back_rois[tight_roi].push_back(prev_roi);
-      	      }
-      	    }
-       	  }
-     	}
-	if (chid < nwire_u-1){
-	  // add the code for the next one to be completed
-	  for (auto it = rois_u_tight[chid+1].begin();it!=rois_u_tight[chid+1].end();it++){
-	    SignalROI *next_roi = *it;
-	    if (tight_roi->overlap(next_roi)){
-	      if (back_rois.find(next_roi) == back_rois.end()){
-		SignalROISelection temp_rois;
-		temp_rois.push_back(tight_roi);
-		back_rois[next_roi] = temp_rois;
-	      }else{
-		back_rois[next_roi].push_back(tight_roi);
-	      }
+	// [Hongzhao] connectivity map for Induction Planes' tight ROIs was NEVER used after initialization
+	// CHANGE(S): Hongzhao commented out the initialization of connectivity map for Induction Planes' tight ROIs
+ //       	if (chid>0){
+ //       	  //form connectivity map
+ //       	  for (auto it = rois_u_tight[chid-1].begin();it!=rois_u_tight[chid-1].end();it++){
+ //       	    SignalROI *prev_roi = *it;
+ //      	    if (tight_roi->overlap(prev_roi)){
+ //      	      if (front_rois.find(prev_roi) == front_rois.end()){
+ //      		SignalROISelection temp_rois;
+ //      		temp_rois.push_back(tight_roi);
+ //      		front_rois[prev_roi] = temp_rois;
+ //      	      }else{
+ //      		front_rois[prev_roi].push_back(tight_roi);
+ //      	      }
+ //      	      if (back_rois.find(tight_roi) == back_rois.end()){
+ //      		SignalROISelection temp_rois;
+ //      		temp_rois.push_back(prev_roi);
+ //      		back_rois[tight_roi] = temp_rois;
+ //      	      }else{
+ //      		back_rois[tight_roi].push_back(prev_roi);
+ //      	      }
+ //      	    }
+ //       	  }
+ //     	}
+	// if (chid < nwire_u-1){
+	//   // add the code for the next one to be completed
+	//   for (auto it = rois_u_tight[chid+1].begin();it!=rois_u_tight[chid+1].end();it++){
+	//     SignalROI *next_roi = *it;
+	//     if (tight_roi->overlap(next_roi)){
+	//       if (back_rois.find(next_roi) == back_rois.end()){
+	// 	SignalROISelection temp_rois;
+	// 	temp_rois.push_back(tight_roi);
+	// 	back_rois[next_roi] = temp_rois;
+	//       }else{
+	// 	back_rois[next_roi].push_back(tight_roi);
+	//       }
 	      
-	      if (front_rois.find(tight_roi) == front_rois.end()){
-		SignalROISelection temp_rois;
-		temp_rois.push_back(next_roi);
-		front_rois[tight_roi] = temp_rois;
-	      }else{
-		front_rois[tight_roi].push_back(next_roi);
-	      }
-	    }
-	  }
-	}
+	//       if (front_rois.find(tight_roi) == front_rois.end()){
+	// 	SignalROISelection temp_rois;
+	// 	temp_rois.push_back(next_roi);
+	// 	front_rois[tight_roi] = temp_rois;
+	//       }else{
+	// 	front_rois[tight_roi].push_back(next_roi);
+	//       }
+	//     }
+	//   }
+	// }
       }else if (plane==1){
 	rois_v_tight[chid-nwire_u].push_back(tight_roi);
-      	if (chid>nwire_u){
-      	  //form connectivity map
-      	  for (auto it = rois_v_tight[chid - nwire_u-1].begin();it!=rois_v_tight[chid-nwire_u-1].end();it++){
-      	    SignalROI *prev_roi = *it;
-      	    if (tight_roi->overlap(prev_roi)){
-      	      if (front_rois.find(prev_roi) == front_rois.end()){
-      		SignalROISelection temp_rois;
-      		temp_rois.push_back(tight_roi);
-      		front_rois[prev_roi] = temp_rois;
-      	      }else{
-      		front_rois[prev_roi].push_back(tight_roi);
-      	      }
-      	      if (back_rois.find(tight_roi) == back_rois.end()){
-      		SignalROISelection temp_rois;
-      		temp_rois.push_back(prev_roi);
-      		back_rois[tight_roi] = temp_rois;
-      	      }else{
-      		back_rois[tight_roi].push_back(prev_roi);
-      	      }
-      	    }
-      	  }
-      	}
+ //      	if (chid>nwire_u){
+ //      	  //form connectivity map
+ //      	  for (auto it = rois_v_tight[chid - nwire_u-1].begin();it!=rois_v_tight[chid-nwire_u-1].end();it++){
+ //      	    SignalROI *prev_roi = *it;
+ //      	    if (tight_roi->overlap(prev_roi)){
+ //      	      if (front_rois.find(prev_roi) == front_rois.end()){
+ //      		SignalROISelection temp_rois;
+ //      		temp_rois.push_back(tight_roi);
+ //      		front_rois[prev_roi] = temp_rois;
+ //      	      }else{
+ //      		front_rois[prev_roi].push_back(tight_roi);
+ //      	      }
+ //      	      if (back_rois.find(tight_roi) == back_rois.end()){
+ //      		SignalROISelection temp_rois;
+ //      		temp_rois.push_back(prev_roi);
+ //      		back_rois[tight_roi] = temp_rois;
+ //      	      }else{
+ //      		back_rois[tight_roi].push_back(prev_roi);
+ //      	      }
+ //      	    }
+ //      	  }
+ //      	}
 	
-	if (chid<nwire_u+nwire_v-1){
-      	  //form connectivity map
-      	  for (auto it = rois_v_tight[chid - nwire_u+1].begin();it!=rois_v_tight[chid-nwire_u+1].end();it++){
-      	    SignalROI *next_roi = *it;
-      	    if (tight_roi->overlap(next_roi)){
-      	      if (back_rois.find(next_roi) == back_rois.end()){
-      		SignalROISelection temp_rois;
-      		temp_rois.push_back(tight_roi);
-      		back_rois[next_roi] = temp_rois;
-      	      }else{
-      		back_rois[next_roi].push_back(tight_roi);
-      	      }
-      	      if (front_rois.find(tight_roi) == front_rois.end()){
-      		SignalROISelection temp_rois;
-      		temp_rois.push_back(next_roi);
-      		front_rois[tight_roi] = temp_rois;
-      	      }else{
-      		front_rois[tight_roi].push_back(next_roi);
-      	      }
-      	    }
-      	  }
-      	}
+	// if (chid<nwire_u+nwire_v-1){
+ //      	  //form connectivity map
+ //      	  for (auto it = rois_v_tight[chid - nwire_u+1].begin();it!=rois_v_tight[chid-nwire_u+1].end();it++){
+ //      	    SignalROI *next_roi = *it;
+ //      	    if (tight_roi->overlap(next_roi)){
+ //      	      if (back_rois.find(next_roi) == back_rois.end()){
+ //      		SignalROISelection temp_rois;
+ //      		temp_rois.push_back(tight_roi);
+ //      		back_rois[next_roi] = temp_rois;
+ //      	      }else{
+ //      		back_rois[next_roi].push_back(tight_roi);
+ //      	      }
+ //      	      if (front_rois.find(tight_roi) == front_rois.end()){
+ //      		SignalROISelection temp_rois;
+ //      		temp_rois.push_back(next_roi);
+ //      		front_rois[tight_roi] = temp_rois;
+ //      	      }else{
+ //      		front_rois[tight_roi].push_back(next_roi);
+ //      	      }
+ //      	    }
+ //      	  }
+ //      	}
       }else {
 	rois_w_tight[chid-nwire_u-nwire_v].push_back(tight_roi);
 	
       	if (chid>nwire_u+nwire_v){
       	  //form connectivity map
+      	  // [Hongzhao] should avoid fake adjacency in Collection Plane for wrapped configuration
+      	  // CHANGE(S): Hongzhao added protection to skip fake adjacency
+      	  if (chid!=nwire_u+nwire_v+nwire_w/2. || !isWrapped) { // additional judgement to skip fake adjacency
       	  for (auto it = rois_w_tight[chid-nwire_u-nwire_v-1].begin();it!=rois_w_tight[chid-nwire_u-nwire_v-1].end();it++){
       	    SignalROI *prev_roi = *it;
       	    if (tight_roi->overlap(prev_roi)){
@@ -420,31 +426,37 @@ void ROI_refinement::load_data(int plane, const Array::array_xxf& r_data, ROI_fo
       	      }
       	    }
       	  }
-      	}
-
-
-	if (chid<nwire_u+nwire_v+nwire_w-1){
-      	  //form connectivity map
-      	  for (auto it = rois_w_tight[chid-nwire_u-nwire_v+1].begin();it!=rois_w_tight[chid-nwire_u-nwire_v+1].end();it++){
-      	    SignalROI *next_roi = *it;
-      	    if (tight_roi->overlap(next_roi)){
-      	      if (back_rois.find(next_roi) == back_rois.end()){
-      		SignalROISelection temp_rois;
-      		temp_rois.push_back(tight_roi);
-      		back_rois[next_roi] = temp_rois;
-      	      }else{
-      		back_rois[next_roi].push_back(tight_roi);
-      	      }
-      	      if (front_rois.find(tight_roi) == front_rois.end()){
-      		SignalROISelection temp_rois;
-      		temp_rois.push_back(next_roi);
-      		front_rois[tight_roi] = temp_rois;
-      	      }else{
-      		front_rois[tight_roi].push_back(next_roi);
-      	      }
-      	    }
       	  }
       	}
+
+  // [Hongzhao] description_tag0
+  // In principle, we don't need to explicitly create the connectivity map for channel N & N+1 WHEN we already
+  // LOOP OVER all ROIs in channel N to create the connectivity map with channel N-1 (think about the case if N became N+1)
+  // BUT, if we only update one ROI, we need to consider both sides (see generate_merge_ROIs())
+  // In practical, channel N+1 here is empty.
+  // CHANGE(S): Hongzhao commented out the creation of the connectivity map for channel N & N+1
+	// if (chid<nwire_u+nwire_v+nwire_w-1){
+ //      	  //form connectivity map
+ //      	  for (auto it = rois_w_tight[chid-nwire_u-nwire_v+1].begin();it!=rois_w_tight[chid-nwire_u-nwire_v+1].end();it++){
+ //      	    SignalROI *next_roi = *it;
+ //      	    if (tight_roi->overlap(next_roi)){
+ //      	      if (back_rois.find(next_roi) == back_rois.end()){
+ //      		SignalROISelection temp_rois;
+ //      		temp_rois.push_back(tight_roi);
+ //      		back_rois[next_roi] = temp_rois;
+ //      	      }else{
+ //      		back_rois[next_roi].push_back(tight_roi);
+ //      	      }
+ //      	      if (front_rois.find(tight_roi) == front_rois.end()){
+ //      		SignalROISelection temp_rois;
+ //      		temp_rois.push_back(next_roi);
+ //      		front_rois[tight_roi] = temp_rois;
+ //      	      }else{
+ //      		front_rois[tight_roi].push_back(next_roi);
+ //      	      }
+ //      	    }
+ //      	  }
+ //      	}
       }
 
       
@@ -486,9 +498,36 @@ void ROI_refinement::load_data(int plane, const Array::array_xxf& r_data, ROI_fo
 	    }
 	  }
 	  
-	  if (chid<nwire_u-1){
+	  // see [hyu1] description_tag0
+	  // CHANGE(S): Hongzhao commented out the creation of the connectivity map for channel N & N+1
+	 //  if (chid<nwire_u-1){
+	 //    //form connectivity map
+	 //    for (auto it=rois_u_loose[chid+1].begin();it!=rois_u_loose[chid+1].end();it++){
+	 //      SignalROI *next_roi = *it;
+	 //      if (loose_roi->overlap(next_roi)){
+		// if (back_rois.find(next_roi) == back_rois.end()){
+		//   SignalROISelection temp_rois;
+		//   temp_rois.push_back(loose_roi);
+		//   back_rois[next_roi] = temp_rois;
+		// }else{
+		//   back_rois[next_roi].push_back(loose_roi);
+		// }
+		// if (front_rois.find(loose_roi) == front_rois.end()){
+		//   SignalROISelection temp_rois;
+		//   temp_rois.push_back(next_roi);
+		//   front_rois[loose_roi] = temp_rois;
+		// }else{
+		//   front_rois[loose_roi].push_back(next_roi);
+		// }
+	 //      }
+	 //    }
+	 //  }
+	  
+	  // CHANGE(S): Hongzhao added the code to include wrapped adjacency
+	  // CHANGE(S): connect the LAST & FIRST osp_wire_number in an Induction plane
+	  if (chid==nwire_u-1 && isWrapped){
 	    //form connectivity map
-	    for (auto it=rois_u_loose[chid+1].begin();it!=rois_u_loose[chid+1].end();it++){
+	    for (auto it=rois_u_loose[0].begin();it!=rois_u_loose[0].end();it++){
 	      SignalROI *next_roi = *it;
 	      if (loose_roi->overlap(next_roi)){
 		if (back_rois.find(next_roi) == back_rois.end()){
@@ -552,9 +591,36 @@ void ROI_refinement::load_data(int plane, const Array::array_xxf& r_data, ROI_fo
 	    }
 	  }
 	  
-	  if (chid<nwire_u+nwire_v-1){
+	  // see [hyu1] description_tag0
+	  // CHANGE(S): Hongzhao commented out the creation of the connectivity map for channel N & N+1	  
+	 //  if (chid<nwire_u+nwire_v-1){
+	 //    //form connectivity map
+	 //    for (auto it = rois_v_loose[chid-nwire_u+1].begin();it!=rois_v_loose[chid-nwire_u+1].end();it++){
+	 //      SignalROI *next_roi = *it;
+	 //      if (loose_roi->overlap(next_roi)){
+		// if (back_rois.find(next_roi) == back_rois.end()){
+		//   SignalROISelection temp_rois;
+		//   temp_rois.push_back(loose_roi);
+		//   back_rois[next_roi] = temp_rois;
+		// }else{
+		//   back_rois[next_roi].push_back(loose_roi);
+		// }
+		// if (front_rois.find(loose_roi) == front_rois.end()){
+		//   SignalROISelection temp_rois;
+		//   temp_rois.push_back(next_roi);
+		//   front_rois[loose_roi] = temp_rois;
+		// }else{
+		//   front_rois[loose_roi].push_back(next_roi);
+		// }
+	 //      }
+	 //    }
+	 //  }
+	  
+	  // CHANGE(S): Hongzhao added the code to include wrapped adjacency
+	  // CHANGE(S): connect the LAST & FIRST osp_wire_number in an Induction plane
+	  if (chid==nwire_u+nwire_v-1 && isWrapped){
 	    //form connectivity map
-	    for (auto it = rois_v_loose[chid-nwire_u+1].begin();it!=rois_v_loose[chid-nwire_u+1].end();it++){
+	    for (auto it = rois_v_loose[0].begin();it!=rois_v_loose[0].end();it++){
 	      SignalROI *next_roi = *it;
 	      if (loose_roi->overlap(next_roi)){
 		if (back_rois.find(next_roi) == back_rois.end()){
@@ -832,9 +898,56 @@ void ROI_refinement::generate_merge_ROIs(int plane){
 	    
 	  }
 	}
+	// CHANGE(S): Hongzhao added the code to include wrapped adjacency
+	if (i == nwire_u-1 && isWrapped){
+	  for (auto it1 = rois_u_loose.at(0).begin(); it1!=rois_u_loose.at(0).end(); it1++){
+	    SignalROI *next_roi = *it1;
+	    
+	    if (loose_roi->overlap(next_roi)){
+	      if (back_rois.find(next_roi) == back_rois.end()){
+		SignalROISelection temp_rois;
+		temp_rois.push_back(loose_roi);
+		back_rois[next_roi] = temp_rois;
+	      }else{
+		back_rois[next_roi].push_back(loose_roi);
+	      }
+	      
+	      if (front_rois.find(loose_roi) == front_rois.end()){
+		SignalROISelection temp_rois;
+		temp_rois.push_back(next_roi);
+		front_rois[loose_roi] = temp_rois;
+	      }else{
+		front_rois[loose_roi].push_back(next_roi);
+	      }
+	    }
+	    
+	  }
+	}
 	// back map loose ROI
 	if (i > 0){
 	  for (auto it1 = rois_u_loose.at(i-1).begin(); it1!=rois_u_loose.at(i-1).end(); it1++){
+	    SignalROI *prev_roi = *it1;
+	    if (loose_roi->overlap(prev_roi)){
+	      if (front_rois.find(prev_roi) == front_rois.end()){
+		SignalROISelection temp_rois;
+		temp_rois.push_back(loose_roi);
+		front_rois[prev_roi] = temp_rois;
+	      }else{
+		front_rois[prev_roi].push_back(loose_roi);
+	      }
+	      if (back_rois.find(loose_roi) == back_rois.end()){
+		SignalROISelection temp_rois;
+		temp_rois.push_back(prev_roi);
+		back_rois[loose_roi] = temp_rois;
+	      }else{
+		back_rois[loose_roi].push_back(prev_roi);
+	      }
+	    }
+	  }
+	}
+	// CHANGE(S): Hongzhao added the code to include wrapped adjacency
+	if (i == 0 && isWrapped){
+	  for (auto it1 = rois_u_loose.at(nwire_u-1).begin(); it1!=rois_u_loose.at(nwire_u-1).end(); it1++){
 	    SignalROI *prev_roi = *it1;
 	    if (loose_roi->overlap(prev_roi)){
 	      if (front_rois.find(prev_roi) == front_rois.end()){
@@ -917,9 +1030,56 @@ void ROI_refinement::generate_merge_ROIs(int plane){
 	    
 	  }
 	}
+	// CHANGE(S): Hongzhao added the code to include wrapped adjacency
+	if (i == nwire_v-1 && isWrapped){
+	  for (auto it1 = rois_v_loose.at(0).begin(); it1!=rois_v_loose.at(0).end(); it1++){
+	    SignalROI *next_roi = *it1;
+	    
+	    if (loose_roi->overlap(next_roi)){
+	      if (back_rois.find(next_roi) == back_rois.end()){
+		SignalROISelection temp_rois;
+		temp_rois.push_back(loose_roi);
+		back_rois[next_roi] = temp_rois;
+	      }else{
+		back_rois[next_roi].push_back(loose_roi);
+	      }
+	      
+	      if (front_rois.find(loose_roi) == front_rois.end()){
+		SignalROISelection temp_rois;
+		temp_rois.push_back(next_roi);
+		front_rois[loose_roi] = temp_rois;
+	      }else{
+		front_rois[loose_roi].push_back(next_roi);
+	      }
+	    }
+	    
+	  }
+	}
 	// back map loose ROI
 	if (i > 0){
 	  for (auto it1 = rois_v_loose.at(i-1).begin(); it1!=rois_v_loose.at(i-1).end(); it1++){
+	    SignalROI *prev_roi = *it1;
+	    if (loose_roi->overlap(prev_roi)){
+	      if (front_rois.find(prev_roi) == front_rois.end()){
+		SignalROISelection temp_rois;
+		temp_rois.push_back(loose_roi);
+		front_rois[prev_roi] = temp_rois;
+	      }else{
+		front_rois[prev_roi].push_back(loose_roi);
+	      }
+	      if (back_rois.find(loose_roi) == back_rois.end()){
+		SignalROISelection temp_rois;
+		temp_rois.push_back(prev_roi);
+		back_rois[loose_roi] = temp_rois;
+	      }else{
+		back_rois[loose_roi].push_back(prev_roi);
+	      }
+	    }
+	  }
+	}
+	// CHANGE(S): Hongzhao added the code to include wrapped adjacency
+	if (i == 0 && isWrapped){
+	  for (auto it1 = rois_v_loose.at(nwire_v-1).begin(); it1!=rois_v_loose.at(nwire_v-1).end(); it1++){
 	    SignalROI *prev_roi = *it1;
 	    if (loose_roi->overlap(prev_roi)){
 	      if (front_rois.find(prev_roi) == front_rois.end()){
@@ -1092,7 +1252,7 @@ void ROI_refinement::CleanUpCollectionROIs(){
 	  SignalROI* roi1 = next_rois.at(i);
 	  if (Good_ROIs.find(roi1)!=Good_ROIs.end()) {
 	    flag_qx = 1;
-	    continue;
+	    break; // continue;
 	  }
 	}
 	if (flag_qx == 1) continue;
@@ -1105,7 +1265,7 @@ void ROI_refinement::CleanUpCollectionROIs(){
 	  SignalROI* roi1 = next_rois.at(i);
 	  if (Good_ROIs.find(roi1)!=Good_ROIs.end()) {
 	    flag_qx = 1;
-	    continue;
+	    break; // continue;
 	  }
 	}
 	if (flag_qx == 1) continue;
@@ -1156,85 +1316,87 @@ void ROI_refinement::CleanUpInductionROIs(int plane){
   threshold *= fake_signal_high_th_ind_factor;
   
   std::list<SignalROI*> Bad_ROIs;
-  if (plane==0){
-    for (int i=0;i!=nwire_u;i++){
-      for (auto it = rois_u_loose.at(i).begin();it!=rois_u_loose.at(i).end();it++){
-	SignalROI* roi = *it;
-	//std::cout << "Xin: " << roi->get_max_height() << " " << roi->get_average_heights() << std::endl;
-	if (front_rois.find(roi)==front_rois.end() && back_rois.find(roi)==back_rois.end()){
-	  if (roi->get_above_threshold(threshold).size()==0 && roi->get_average_heights() < mean_threshold)
-	    Bad_ROIs.push_back(roi);
-	}
-      }
-    }
-    for (auto it = Bad_ROIs.begin(); it!=Bad_ROIs.end(); it ++){
-      SignalROI* roi = *it;
-      int chid = roi->get_chid();
-      auto it1 = find(rois_u_loose.at(chid).begin(), rois_u_loose.at(chid).end(),roi);
-      if (it1 != rois_u_loose.at(chid).end())
-	rois_u_loose.at(chid).erase(it1);
 
-      if (front_rois.find(roi)!=front_rois.end()){
-	SignalROISelection next_rois = front_rois[roi];
-	for (size_t i=0;i!=next_rois.size();i++){
-	  //unlink the current roi
-	  unlink(roi,next_rois.at(i));
-	}
-	front_rois.erase(roi);
-      }
-      
-      if (back_rois.find(roi)!=back_rois.end()){
-	SignalROISelection prev_rois = back_rois[roi];
-	for (size_t i=0;i!=prev_rois.size();i++){
-	  //unlink the current roi
-	  unlink(prev_rois.at(i),roi);
-	}
-	back_rois.erase(roi);
-      }
-      
-      delete roi;
-    }
-    Bad_ROIs.clear();
-  }else if (plane==1){
-    for (int i=0;i!=nwire_v;i++){
-      for (auto it = rois_v_loose.at(i).begin();it!=rois_v_loose.at(i).end();it++){
-	SignalROI* roi = *it;
-	//	std::cout << "Xin: " << roi->get_max_height() << " " << roi->get_average_heights() << std::endl;
-	if (front_rois.find(roi)==front_rois.end() && back_rois.find(roi)==back_rois.end()){
-	  if (roi->get_above_threshold(threshold).size()==0 && roi->get_average_heights() < mean_threshold)
-	    Bad_ROIs.push_back(roi);
-	}
-      }
-    }
-    for (auto it = Bad_ROIs.begin(); it!=Bad_ROIs.end(); it ++){
-      SignalROI* roi = *it;
-      int chid = roi->get_chid()-nwire_u;
-      auto it1 = find(rois_v_loose.at(chid).begin(), rois_v_loose.at(chid).end(),roi);
-      if (it1 != rois_v_loose.at(chid).end())
-	rois_v_loose.at(chid).erase(it1);
+  // Hongzhao: bad ROIs without good neighbors will be removed by next step
+ //  if (plane==0){
+ //    for (int i=0;i!=nwire_u;i++){
+ //      for (auto it = rois_u_loose.at(i).begin();it!=rois_u_loose.at(i).end();it++){
+	// SignalROI* roi = *it;
+	// //std::cout << "Xin: " << roi->get_max_height() << " " << roi->get_average_heights() << std::endl;
+	// if (front_rois.find(roi)==front_rois.end() && back_rois.find(roi)==back_rois.end()){
+	//   if (roi->get_above_threshold(threshold).size()==0 && roi->get_average_heights() < mean_threshold)
+	//     Bad_ROIs.push_back(roi);
+	// }
+ //      }
+ //    }
+ //    for (auto it = Bad_ROIs.begin(); it!=Bad_ROIs.end(); it ++){
+ //      SignalROI* roi = *it;
+ //      int chid = roi->get_chid();
+ //      auto it1 = find(rois_u_loose.at(chid).begin(), rois_u_loose.at(chid).end(),roi);
+ //      if (it1 != rois_u_loose.at(chid).end())
+	// rois_u_loose.at(chid).erase(it1);
 
-      if (front_rois.find(roi)!=front_rois.end()){
-	SignalROISelection next_rois = front_rois[roi];
-	for (size_t i=0;i!=next_rois.size();i++){
-	  //unlink the current roi
-	  unlink(roi,next_rois.at(i));
-	}
-	front_rois.erase(roi);
-      }
+ //      if (front_rois.find(roi)!=front_rois.end()){
+	// SignalROISelection next_rois = front_rois[roi];
+	// for (size_t i=0;i!=next_rois.size();i++){
+	//   //unlink the current roi
+	//   unlink(roi,next_rois.at(i));
+	// }
+	// front_rois.erase(roi);
+ //      }
       
-      if (back_rois.find(roi)!=back_rois.end()){
-	SignalROISelection prev_rois = back_rois[roi];
-	for (size_t i=0;i!=prev_rois.size();i++){
-	  //unlink the current roi
-	  unlink(prev_rois.at(i),roi);
-	}
-	back_rois.erase(roi);
-      }
+ //      if (back_rois.find(roi)!=back_rois.end()){
+	// SignalROISelection prev_rois = back_rois[roi];
+	// for (size_t i=0;i!=prev_rois.size();i++){
+	//   //unlink the current roi
+	//   unlink(prev_rois.at(i),roi);
+	// }
+	// back_rois.erase(roi);
+ //      }
+      
+ //      delete roi;
+ //    }
+ //    Bad_ROIs.clear();
+ //  }else if (plane==1){
+ //    for (int i=0;i!=nwire_v;i++){
+ //      for (auto it = rois_v_loose.at(i).begin();it!=rois_v_loose.at(i).end();it++){
+	// SignalROI* roi = *it;
+	// //	std::cout << "Xin: " << roi->get_max_height() << " " << roi->get_average_heights() << std::endl;
+	// if (front_rois.find(roi)==front_rois.end() && back_rois.find(roi)==back_rois.end()){
+	//   if (roi->get_above_threshold(threshold).size()==0 && roi->get_average_heights() < mean_threshold)
+	//     Bad_ROIs.push_back(roi);
+	// }
+ //      }
+ //    }
+ //    for (auto it = Bad_ROIs.begin(); it!=Bad_ROIs.end(); it ++){
+ //      SignalROI* roi = *it;
+ //      int chid = roi->get_chid()-nwire_u;
+ //      auto it1 = find(rois_v_loose.at(chid).begin(), rois_v_loose.at(chid).end(),roi);
+ //      if (it1 != rois_v_loose.at(chid).end())
+	// rois_v_loose.at(chid).erase(it1);
+
+ //      if (front_rois.find(roi)!=front_rois.end()){
+	// SignalROISelection next_rois = front_rois[roi];
+	// for (size_t i=0;i!=next_rois.size();i++){
+	//   //unlink the current roi
+	//   unlink(roi,next_rois.at(i));
+	// }
+	// front_rois.erase(roi);
+ //      }
+      
+ //      if (back_rois.find(roi)!=back_rois.end()){
+	// SignalROISelection prev_rois = back_rois[roi];
+	// for (size_t i=0;i!=prev_rois.size();i++){
+	//   //unlink the current roi
+	//   unlink(prev_rois.at(i),roi);
+	// }
+	// back_rois.erase(roi);
+ //      }
       
       
-      delete roi;
-    }
-  }
+ //      delete roi;
+ //    }
+ //  }
 
 
   // threshold = fake_signal_low_th;
@@ -1260,7 +1422,7 @@ void ROI_refinement::CleanUpInductionROIs(int plane){
 	    SignalROI* roi1 = next_rois.at(i);
 	    if (Good_ROIs.find(roi1)!=Good_ROIs.end()) {
 	      flag_qx = 1;
-	      continue;
+	      break; // continue;
 	    }
 	  }
 	  if (flag_qx == 1) continue;
@@ -1273,7 +1435,7 @@ void ROI_refinement::CleanUpInductionROIs(int plane){
 	    SignalROI* roi1 = next_rois.at(i);
 	    if (Good_ROIs.find(roi1)!=Good_ROIs.end()) {
 	      flag_qx = 1;
-	      continue;
+	      break; // continue;
 	    }
 	  }
 	  if (flag_qx == 1) continue;
@@ -1332,7 +1494,7 @@ void ROI_refinement::CleanUpInductionROIs(int plane){
 	    SignalROI* roi1 = next_rois.at(i);
 	    if (Good_ROIs.find(roi1)!=Good_ROIs.end()) {
 	      flag_qx = 1;
-	      continue;
+	      break; // continue;
 	    }
 	  }
 	  if (flag_qx == 1) continue;
@@ -1345,7 +1507,7 @@ void ROI_refinement::CleanUpInductionROIs(int plane){
 	    SignalROI* roi1 = next_rois.at(i);
 	    if (Good_ROIs.find(roi1)!=Good_ROIs.end()) {
 	      flag_qx = 1;
-	      continue;
+	      break; // continue;
 	    }
 	  }
 	  if (flag_qx == 1) continue;
@@ -2287,7 +2449,7 @@ void ROI_refinement::refine_data(int plane, ROI_formation& roi_form){
     CleanUpInductionROIs(plane);
   }
 
-  ExtendROIs();
+  ExtendROIs(plane);
   //TestROIs();
   //if (plane==2)  std::cout << "Xin: " << rois_w_tight.at(69).size() << " " << std::endl;
 }
@@ -2328,7 +2490,7 @@ void ROI_refinement::refine_data_debug_mode(int plane, ROI_formation& roi_form, 
       CleanUpInductionROIs(plane);
     }
 
-    ExtendROIs();
+    ExtendROIs(plane);
     //TestROIs();
   }
 
@@ -2585,10 +2747,10 @@ void ROI_refinement::refine_data_debug_mode(int plane, ROI_formation& roi_form, 
 }
 
 
-void ROI_refinement::ExtendROIs(){
+void ROI_refinement::ExtendROIs(int plane){
 
   bool flag = true;
-  
+  if (plane==0) {
   // U plane ... 
   for (int chid = 0; chid != nwire_u; chid ++){
     rois_u_loose.at(chid).sort(CompareRois());
@@ -2644,6 +2806,7 @@ void ROI_refinement::ExtendROIs(){
     //   std::cout << chid << " " << roi->get_ext_start_bin() << " " << roi->get_ext_end_bin() << std::endl;
     // }
   }
+  } else if (plane==1) { 
   // V plane
   for (int chid = 0; chid != nwire_v; chid ++){
     rois_v_loose.at(chid).sort(CompareRois());
@@ -2699,7 +2862,7 @@ void ROI_refinement::ExtendROIs(){
     //   std::cout << chid << " " << roi->get_ext_start_bin() << " " << roi->get_ext_end_bin() << std::endl;
     // }
   }
-
+  } else {
   // W plane
   for (int chid = 0; chid != nwire_w; chid ++){
     rois_w_tight.at(chid).sort(CompareRois());
@@ -2754,6 +2917,7 @@ void ROI_refinement::ExtendROIs(){
       //   SignalROI *roi =  *it;
       //   std::cout << chid << " " << roi->get_ext_start_bin() << " " << roi->get_ext_end_bin() << std::endl;
       // }
+  }
   }
 }
 
