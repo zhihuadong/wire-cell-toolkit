@@ -119,11 +119,8 @@ OmnibusSigProc::OmnibusSigProc(const std::string& anode_tn,
   , m_shrink_roi_tag(shrink_roi_tag)
   , m_extend_roi_tag(extend_roi_tag)
   , m_use_multi_plane_protection(false)
-<<<<<<< HEAD
   , m_mp_roi_tag(mp_roi_tag)
-=======
   , m_isWrapped(false)
->>>>>>> d5ab7c394f4d9dc122bc2ced574b1344f39bba76
   , m_sparse(false)
   , log(Log::logger("sigproc"))
 {
@@ -215,11 +212,9 @@ void OmnibusSigProc::configure(const WireCell::Configuration& config)
   m_extend_roi_tag = get(config,"extend_roi_tag",m_extend_roi_tag);
 
   m_use_multi_plane_protection =  get<bool>(config, "use_multi_plane_protection", m_use_multi_plane_protection);
-<<<<<<< HEAD
   m_mp_roi_tag = get(config,"mp_roi_tag",m_mp_roi_tag);
-=======
+  
   m_isWrapped =  get<bool>(config, "isWrapped", m_isWrapped);
->>>>>>> d5ab7c394f4d9dc122bc2ced574b1344f39bba76
 
   // this throws if not found
   m_anode = Factory::find_tn<IAnodePlane>(m_anode_tn);
@@ -335,11 +330,9 @@ WireCell::Configuration OmnibusSigProc::default_configuration() const
   cfg["extend_roi_tag"] = m_extend_roi_tag;
 
   cfg["use_multi_plane_protection"] = m_use_multi_plane_protection; // default false
-<<<<<<< HEAD
   cfg["mp_roi_tag"] = m_mp_roi_tag;
-=======
+  
   cfg["isWarped"] = m_isWrapped; // default false
->>>>>>> d5ab7c394f4d9dc122bc2ced574b1344f39bba76
   
   cfg["sparse"] = false;
 
