@@ -61,7 +61,8 @@ function(params, tools, override = {}) {
       extend_roi_tag: 'extend_roi%d' % anode.data.ident,
 
       use_multi_plane_protection: false,
-      mp_roi_tag: 'mp_roi%d' % anode.data.ident,
+      mp3_roi_tag: 'mp3_roi%d' % anode.data.ident,
+      mp2_roi_tag: 'mp2_roi%d' % anode.data.ident,
       
       isWrapped: false,
 
