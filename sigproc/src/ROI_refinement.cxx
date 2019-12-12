@@ -2695,12 +2695,6 @@ void ROI_refinement::MultiPlaneROI(const int target_plane,
   for (auto r2a : map_roichid_anodechid) {
     map_anodechid_roichid[r2a.second] = r2a.first;
   }
-
-  log->debug("[yuhw] ROI chid -> Anode chid {} {}", map_roichid_anodechid.begin()->first, map_roichid_anodechid.begin()->second);
-  log->debug("[yuhw] ROI chid -> Anode chid {} {}", map_roichid_anodechid.rbegin()->first, map_roichid_anodechid.rbegin()->second);
-
-  log->debug("[yuhw] Anode chid -> ROI chid {} {}", map_anodechid_roichid.begin()->first, map_anodechid_roichid.begin()->second);
-  log->debug("[yuhw] Anode chid -> ROI chid {} {}", map_anodechid_roichid.rbegin()->first, map_anodechid_roichid.rbegin()->second);
  
   std::map<int, int> map_wireid_roichid[3];
   for(auto chident : anode->channels()) { // Anode chiid
@@ -2713,11 +2707,6 @@ void ROI_refinement::MultiPlaneROI(const int target_plane,
       auto wireid = wire->index();
       map_wireid_roichid[iplane][wireid] = roichid;
     }
-  }
-
-  for(int iplane = 0; iplane < 3; ++iplane) {
-    log->debug("[yuhw] wireid -> roichid {} {}", map_wireid_roichid[iplane].begin()->first, map_wireid_roichid[iplane].begin()->second);
-    log->debug("[yuhw] wireid -> roichid {} {}", map_wireid_roichid[iplane].rbegin()->first, map_wireid_roichid[iplane].rbegin()->second);
   }
 
   if (target_plane == 2)
