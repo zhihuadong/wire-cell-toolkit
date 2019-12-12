@@ -637,7 +637,6 @@ void OmnibusSigProc::save_mproi(
     ITrace::vector &itraces, IFrame::trace_list_t &indices, int plane,
     std::multimap<std::pair<int, int>, std::pair<int, int>> mp_rois) {
 
-  log->debug("[yuhw] mp_roi.size(): {}", mp_rois.size());
   // reuse this temporary vector to hold charge for a channel.
   ITrace::ChargeSequence charge(m_nticks, 0.0);
 
@@ -1443,7 +1442,6 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
                roi_refine.get_rois_by_plane(iplane));
     }
 
-    log->debug("[yuhw] m_use_multi_plane_protection {}", m_use_multi_plane_protection);
     if (m_use_multi_plane_protection) {
       roi_refine.MultiPlaneProtection(iplane, m_anode, m_roi_ch_ch_ident, roi_form, 1000,
                                       m_anode->ident() % 2);
