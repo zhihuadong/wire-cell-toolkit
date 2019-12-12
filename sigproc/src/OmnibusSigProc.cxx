@@ -69,7 +69,8 @@ OmnibusSigProc::OmnibusSigProc(const std::string& anode_tn,
                                const std::string& break_roi_loop2_tag,
                                const std::string& shrink_roi_tag,
                                const std::string& extend_roi_tag,
-                               const std::string& mp_roi_tag )
+                               const std::string& mp3_roi_tag,
+                               const std::string& mp2_roi_tag )
   : m_anode_tn (anode_tn)
   , m_per_chan_resp(per_chan_resp_tn)
   , m_field_response(field_response)
@@ -119,7 +120,8 @@ OmnibusSigProc::OmnibusSigProc(const std::string& anode_tn,
   , m_shrink_roi_tag(shrink_roi_tag)
   , m_extend_roi_tag(extend_roi_tag)
   , m_use_multi_plane_protection(false)
-  , m_mp_roi_tag(mp_roi_tag)
+  , m_mp3_roi_tag(mp3_roi_tag)
+  , m_mp2_roi_tag(mp2_roi_tag)
   , m_isWrapped(false)
   , m_sparse(false)
   , log(Log::logger("sigproc"))
@@ -212,7 +214,8 @@ void OmnibusSigProc::configure(const WireCell::Configuration& config)
   m_extend_roi_tag = get(config,"extend_roi_tag",m_extend_roi_tag);
 
   m_use_multi_plane_protection =  get<bool>(config, "use_multi_plane_protection", m_use_multi_plane_protection);
-  m_mp_roi_tag = get(config,"mp_roi_tag",m_mp_roi_tag);
+  m_mp3_roi_tag = get(config,"mp3_roi_tag",m_mp3_roi_tag);
+  m_mp2_roi_tag = get(config,"mp2_roi_tag",m_mp2_roi_tag);
   
   m_isWrapped =  get<bool>(config, "isWrapped", m_isWrapped);
 
@@ -330,7 +333,8 @@ WireCell::Configuration OmnibusSigProc::default_configuration() const
   cfg["extend_roi_tag"] = m_extend_roi_tag;
 
   cfg["use_multi_plane_protection"] = m_use_multi_plane_protection; // default false
-  cfg["mp_roi_tag"] = m_mp_roi_tag;
+  cfg["mp3_roi_tag"] = m_mp3_roi_tag;
+  cfg["mp2_roi_tag"] = m_mp2_roi_tag;
   
   cfg["isWarped"] = m_isWrapped; // default false
   
@@ -1365,7 +1369,7 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
   IFrame::trace_list_t wiener_traces, gauss_traces, perframe_traces[3];
   // here are some trace lists for debug mode
   IFrame::trace_list_t tight_lf_traces, loose_lf_traces, cleanup_roi_traces, break_roi_loop1_traces, break_roi_loop2_traces, shrink_roi_traces, extend_roi_traces;
-  IFrame::trace_list_t mp_roi_traces;
+  IFrame::trace_list_t mp2_roi_traces, mp3_roi_traces;
 
   // initialize the overall response function ... 
   init_overall_response(in);
@@ -1443,8 +1447,12 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
     if (m_use_multi_plane_protection) {
       roi_refine.MultiPlaneProtection(iplane, m_anode, m_roi_ch_ch_ident, roi_form, 1000,
                                       m_anode->ident() % 2);
-      save_mproi(*itraces, mp_roi_traces, iplane,
-               roi_refine.get_mp_rois());
+      save_mproi(*itraces, mp3_roi_traces, iplane,
+               roi_refine.get_mp3_rois());
+      roi_refine.MultiPlaneROI(iplane, m_anode, m_roi_ch_ch_ident, roi_form, 1000,
+                                      m_anode->ident() % 2);
+      save_mproi(*itraces, mp2_roi_traces, iplane,
+               roi_refine.get_mp2_rois());
     }
   }
 
@@ -1536,7 +1544,8 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
   }
 
   if (m_use_multi_plane_protection) {
-    sframe->tag_traces(m_mp_roi_tag, mp_roi_traces);
+    sframe->tag_traces(m_mp3_roi_tag, mp3_roi_traces);
+    sframe->tag_traces(m_mp2_roi_tag, mp2_roi_traces);
   }
 
   log->debug("OmnibusSigProc: produce {} traces: {} {}, {} {}, frame tag: {}",
