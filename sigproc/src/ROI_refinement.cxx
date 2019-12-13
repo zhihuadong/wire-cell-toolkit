@@ -2674,7 +2674,160 @@ void ROI_refinement::refine_data_debug_mode(int plane, ROI_formation& roi_form, 
     }
 #endif
   }
+}
+
+void ROI_refinement::MultiPlaneROI(const int target_plane,
+                                       const IAnodePlane::pointer anode,
+                                       const std::map<int, int> &map_roichid_anodechid, //ROI chid -> Anode chid
+                                       ROI_formation& roi_form,
+                                       const double threshold,
+                                       const int faceid,
+                                       const int tick_resolution,
+                                       const int wire_resolution,
+                                       const int nbounds_layers) {
+  log->info("ROI_refinement::MultiPlaneROI:");
+  const double th2 = 500;
+  LogDebug("th1: " << threshold << ", th2: " << th2);
+  std::set<int> print_chids = {1441, 875};
+  
+  // reverse map
+  std::map<int, int> map_anodechid_roichid;
+  for (auto r2a : map_roichid_anodechid) {
+    map_anodechid_roichid[r2a.second] = r2a.first;
+  }
+ 
+  std::map<int, int> map_wireid_roichid[3];
+  for(auto chident : anode->channels()) { // Anode chiid
+    auto iplane = anode->resolve(chident).index();
+    auto roichid = map_anodechid_roichid[chident];
+    auto ch = anode->channel(chident);
+    auto wires = ch->wires();
+    for (auto wire : wires) {
+      if(faceid != wire->planeid().face()) continue;
+      auto wireid = wire->index();
+      map_wireid_roichid[iplane][wireid] = roichid;
+    }
+  }
+
+  if (target_plane == 2)
+    return;
+  int ref_planes[2] = {0, 2};
+  if (target_plane == 0) ref_planes[0] = 1;
+
+  std::map<int, std::vector<WireCell::RayGrid::coordinate_t>> map_tick_coord[3];
+  std::map<int, std::map<int, SignalROI *>> map_tick_pitch_roi[3];
+
+  for (int iplane = 0; iplane < 3; ++iplane) {
+    auto rois_chan = get_rois_by_plane(iplane);
+    for (auto rois : rois_chan) {
+      for (auto roi : rois) {
+        auto chid = map_roichid_anodechid.at(roi->get_chid());
+        WireCell::RayGrid::coordinate_t coord;
+        auto ch = anode->channel(chid);
+        auto wires = ch->wires();
+        for (auto wire : wires) {
+          if(faceid != wire->planeid().face()) continue;
+          auto pit_id = wire->index();
+          coord.grid = pit_id;
+          coord.layer = iplane + nbounds_layers;
+          for (int tick = roi->get_start_bin() / tick_resolution;
+               tick < roi->get_end_bin() / tick_resolution; ++tick) {
+            int content_id = tick * tick_resolution - roi->get_start_bin();
+            if (content_id < 0)
+              content_id = 0;
+            if (content_id >= (int)roi->get_contents().size())
+              content_id = roi->get_contents().size() - 1;
+
+            //  if (print_chids.find(chid)!=print_chids.end())
+            LogDebug(tick * tick_resolution
+                     << ", " << chid << " : {" << roi->get_chid() << ", "
+                     << roi->get_start_bin()
+                     << " } : " << roi->get_contents().at(content_id));
+
+            if (roi->get_contents().at(content_id) < th2)
+              continue;
+
+            if (map_tick_pitch_roi[iplane].find(tick) ==
+                map_tick_pitch_roi[iplane].end()) {
+              std::map<int, SignalROI *> mtmp;
+              mtmp[pit_id] = roi;
+              map_tick_pitch_roi[iplane][tick] = mtmp;
+            } else {
+              map_tick_pitch_roi[iplane][tick][pit_id] = roi;
+            }
+
+           //  LogDebug(iplane << ", " << tick*tick_resolution << ", " << pit_id);
+            
+            if (roi->get_contents().at(content_id) <
+               //  threshold * roi_form.get_rms_by_plane(iplane).at(roi->get_chid())
+               threshold
+               )
+              continue;
+            
+           //  LogDebug(iplane << ", " << tick*tick_resolution << ", " << coord.grid);
+
+            if (map_tick_coord[iplane].find(tick) ==
+                map_tick_coord[iplane].end()) {
+              std::vector<WireCell::RayGrid::coordinate_t> vtmp;
+              vtmp.push_back(coord);
+              map_tick_coord[iplane][tick] = vtmp;
+            } else {
+              map_tick_coord[iplane][tick].push_back(coord);
+            }
+
+          }
+        }
+      }
+    }
+
+   //  std::cout << " map_tick_coord:     " << map_tick_coord[iplane].size()
+   //            << " map_tick_pitch_roi: " << map_tick_pitch_roi[iplane].size()
+   //            << std::endl;
+  }
+
+  auto face = anode->face(faceid);
+  WireCell::RayGrid::layer_index_t layer = target_plane+nbounds_layers;
+  for (auto tc1 : map_tick_coord[ref_planes[0]]) {
+    for (auto tc2 : map_tick_coord[ref_planes[1]]) {
+      if (tc2.first != tc1.first)
+        continue;
+      auto tick = tc1.first;
+      for (auto c1 : tc1.second) {
+        for (auto c2 : tc2.second) {
+          auto pitch = face->raygrid().pitch_location(c1, c2, layer);
+          auto index = face->raygrid().pitch_index(pitch, layer);
+          // LogDebug(tick*tick_resolution << ", " << c1.grid << ", " << c2.grid);
+
+          for (auto pitch_target = index - wire_resolution+1;
+          pitch_target < index + wire_resolution; ++ pitch_target) {
+            std::pair<int, int> key = {map_wireid_roichid[target_plane][pitch_target],0};
+            int sta = tick * tick_resolution;
+            int end = sta + tick_resolution;
+            mp_rois.insert({key,{sta, end}});
+          }
+        }
+      }
+    }
+  }
+
+ {
+   LogDebug(" total rois:          " << get_rois_by_plane(target_plane).size()
+             << " at target_plane " << target_plane
+             << " protected_rois:      " << mp_rois.size());
+   std::multimap<int, std::pair<std::pair<int, int>, std::pair<int, int>>> tmp;
+   for (auto roi : mp_rois) {
+     tmp.insert({map_roichid_anodechid.at(roi.first.first), roi});
+   }
+#ifdef __DEBUG__
+   for (auto ch : tmp) {
+     LogDebug(ch.first << " : {" << ch.second.first.first << ", "
+                       << ch.second.first.second << "} : {"
+                       << ch.second.second.first << ", "
+                       << ch.second.second.second << "}, ");
+   }
+#endif
  }
+}
 
  void ROI_refinement::TestROIs() {
 
