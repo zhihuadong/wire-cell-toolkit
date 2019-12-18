@@ -24,7 +24,6 @@ install
 .waf-*
 test_*.png
 old
-test_*
 blah*
 foo*
 bar*
@@ -46,7 +45,6 @@ cut
 calgrind.*
 *.patch
 venv*
-test-*.json
 clusters-*.dot
 clusters-*.json
 *.zip
