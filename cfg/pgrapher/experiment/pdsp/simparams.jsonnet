@@ -4,10 +4,10 @@ local base = import 'pgrapher/experiment/pdsp/params.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
 base {
-  //lar: super.lar {
-  //    // be sure you really want to have this. default value: 8 ms
-  //    lifetime: 1000.0*wc.ms,
-  //},
+  lar: super.lar {
+      // be sure you really want to have this. default value: 8 ms
+      lifetime: 35.0*wc.ms,
+  },
   daq: super.daq {
 
     // Number of readout ticks.  See also sim.response.nticks.

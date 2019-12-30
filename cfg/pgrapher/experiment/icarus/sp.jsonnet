@@ -3,10 +3,7 @@
 local g = import 'pgraph.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
-// BIG FAT FIXME: we are taking from uboone.  If PDSP needs tuning do
-// four things: 0) read this comment, 1) cp this file into pdsp/, 2)
-// fix the import and 3) delete this comment.
-local spfilt = import 'pgrapher/experiment/pdsp/sp-filters.jsonnet';
+local spfilt = import 'pgrapher/experiment/icarus/sp-filters.jsonnet';
 
 function(params, tools, override = {}) {
 
@@ -25,7 +22,7 @@ function(params, tools, override = {}) {
       anode: wc.tn(anode),
       field_response: wc.tn(tools.field),
       ftoffset: 0.0, // default 0.0
-      ctoffset: -7.0, // default -8.0
+      ctoffset: 0.0*wc.microsecond, // default -8.0
       per_chan_resp: pc.name,
       fft_flag: 0,  // 1 is faster but higher memory, 0 is slightly slower but lower memory
       postgain: 1,  // default 1.2

@@ -155,6 +155,22 @@ local magnifio3 = g.pnode({
     },
 }, nin=1, nout=1);
 
+local ctreeio3 = g.pnode({
+    type: "CelltreeFrameSink",
+    name: "deconctree",
+    data: {
+        output_filename: magout,
+        root_file_mode: "UPDATE",
+        frames: ["gauss", "wiener"],
+        //cmmtree: [["bad", "T_bad"], ["lf_noisy", "T_lf"]], 
+        anode: wc.tn(anode),
+        nsamples: 9600,
+        //summaries: ["threshold"], 
+        // not saved in FrameMerger
+        // a dedicated FrameSaver breaks into the subpgraph
+        // using g.insert_node()
+    },
+}, nin=1, nout=1);
 
 local magnifio4 = g.pnode({
     type: "MagnifySink",
@@ -183,7 +199,7 @@ local sp_frameio = io.numpy.frames(output, "spframeio", tags="gauss");
 
 local sink = sim.frame_sink;
 
-local graph = g.pipeline([depos, drifter, ductor, miscon, noise, digitizer, magnifio, nf, magnifio2, sp, magnifio3, sink]);
+local graph = g.pipeline([depos, drifter, ductor, miscon, noise, digitizer, magnifio, nf, magnifio2, sp, ctreeio3, magnifio3, sink]);
 //local graph = g.pipeline([depos, drifter, ductor, noise, digitizer, magnifio, nf, magnifio2, sink]);
 
 

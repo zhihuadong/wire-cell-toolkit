@@ -59,7 +59,9 @@ namespace WireCell {
                      const std::string& break_roi_loop1_tag = "break_roi_1st",
                      const std::string& break_roi_loop2_tag = "break_roi_2nd",
                      const std::string& shrink_roi_tag = "shrink_roi",
-                     const std::string& extend_roi_tag = "extend_roi" );
+                     const std::string& extend_roi_tag = "extend_roi",
+                     const std::string& mp3_roi_tag = "mp3_roi",
+                     const std::string& mp2_roi_tag = "mp2_roi" );
       virtual ~OmnibusSigProc();
       
       virtual bool operator()(const input_pointer& in, output_pointer& out);
@@ -91,6 +93,14 @@ namespace WireCell {
       // save ROI into the out frame (set use_roi_debug_mode=true)
       void save_roi(ITrace::vector& itraces, IFrame::trace_list_t& indices, int plane,
                     std::vector<std::list<SignalROI*> >& roi_channel_list);
+      
+      // save Multi-Plane ROI into the out frame (set use_roi_debug_mode=true)
+      // mp_rois: osp-chid, start -> start, end
+      void save_mproi(ITrace::vector& itraces, IFrame::trace_list_t& indices, int plane,
+                    std::multimap<std::pair<int, int>, std::pair<int, int> > mp_rois);
+      
+      void save_ext_roi(ITrace::vector& itraces, IFrame::trace_list_t& indices, int plane,
+                        std::vector<std::list<SignalROI*> >& roi_channel_list);
 
       // initialize the overall response function ...
       void init_overall_response(IFrame::pointer frame);
@@ -222,6 +232,10 @@ namespace WireCell {
       std::string m_extend_roi_tag;
 
       bool m_use_multi_plane_protection;
+      std::string m_mp3_roi_tag;
+      std::string m_mp2_roi_tag;
+      
+      bool m_isWrapped;
 
       // If true, safe output as a sparse frame.  Traces will only
       // cover segments of waveforms which have non-zero signal

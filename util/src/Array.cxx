@@ -8,7 +8,12 @@
 using namespace WireCell;
 using namespace WireCell::Array;
 
-thread_local static Eigen::FFT< float > gEigenFFT;
+// Need to use different planner for different input/output
+// https://eigen.tuxfamily.org/dox/unsupported/ei__fftw__impl_8h_source.html
+
+thread_local static Eigen::FFT< float > gEigenFFT_dft_1d;     // c2c fwd and inv
+thread_local static Eigen::FFT< float > gEigenFFT_dft_r2c_1d; // r2c fwd
+thread_local static Eigen::FFT< float > gEigenFFT_dft_c2r_1d; // c2r inv
 
 //http://stackoverflow.com/a/33636445
 
@@ -23,13 +28,13 @@ WireCell::Array::array_xxc WireCell::Array::dft(const WireCell::Array::array_xxf
         Eigen::VectorXcf fspec(ncols); // frequency spectrum 
 	// gEigenFFT wants vectors, also input arr is const
 	Eigen::VectorXf tmp = arr.row(irow);
-	gEigenFFT.fwd(fspec, tmp);
+	gEigenFFT_dft_r2c_1d.fwd(fspec, tmp); //r2c
         matc.row(irow) = fspec;
     }
 
     for (int icol = 0; icol < ncols; ++icol) {
         Eigen::VectorXcf pspec(nrows); // periodicity spectrum
-        gEigenFFT.fwd(pspec, matc.col(icol));
+        gEigenFFT_dft_1d.fwd(pspec, matc.col(icol)); //c2c
         matc.col(icol) = pspec;
     }
 
@@ -47,7 +52,7 @@ WireCell::Array::array_xxc WireCell::Array::dft_rc(const WireCell::Array::array_
         for (int irow = 0; irow < nrows; ++irow) {
             Eigen::VectorXcf fspec(ncols);
             Eigen::VectorXf tmp = arr.row(irow);
-            gEigenFFT.fwd(fspec, tmp);
+            gEigenFFT_dft_r2c_1d.fwd(fspec, tmp); //r2c
             matc.row(irow) = fspec;
         }
     }
@@ -55,7 +60,7 @@ WireCell::Array::array_xxc WireCell::Array::dft_rc(const WireCell::Array::array_
         for (int icol = 0; icol < ncols; ++icol) {
             Eigen::VectorXcf fspec(nrows);
             Eigen::VectorXf tmp = arr.col(icol);
-            gEigenFFT.fwd(fspec, tmp);
+            gEigenFFT_dft_r2c_1d.fwd(fspec, tmp); //r2c
             matc.col(icol) = fspec;
         }
     }        
@@ -74,14 +79,14 @@ WireCell::Array::array_xxc WireCell::Array::dft_cc(const WireCell::Array::array_
     if (dim == 0) {
         for (int irow = 0; irow < nrows; ++irow) {
             Eigen::VectorXcf pspec(ncols);
-            gEigenFFT.fwd(pspec,matc.row(irow));
+            gEigenFFT_dft_1d.fwd(pspec,matc.row(irow)); //c2c
             matc.row(irow) = pspec;
         }
     }
     else {
         for (int icol = 0; icol < ncols; ++icol) {
             Eigen::VectorXcf pspec(nrows);
-            gEigenFFT.fwd(pspec, matc.col(icol));
+            gEigenFFT_dft_1d.fwd(pspec, matc.col(icol)); //c2c
             matc.col(icol) = pspec;
         }
     }
@@ -101,7 +106,7 @@ WireCell::Array::array_xxf WireCell::Array::idft(const WireCell::Array::array_xx
 
     for (int icol = 0; icol < ncols; ++icol) {
         Eigen::VectorXcf pspec(nrows); // wire spectrum
-        gEigenFFT.inv(pspec, partial.col(icol));
+        gEigenFFT_dft_1d.inv(pspec, partial.col(icol)); //c2c
         partial.col(icol) = pspec;
     }
 
@@ -110,7 +115,7 @@ WireCell::Array::array_xxf WireCell::Array::idft(const WireCell::Array::array_xx
 
     for (int irow = 0; irow < nrows; ++irow) {
         Eigen::VectorXf wave(ncols); // back to real-valued time series
-        gEigenFFT.inv(wave, partial.row(irow));
+        gEigenFFT_dft_c2r_1d.inv(wave, partial.row(irow)); //c2r
         ret.row(irow) = wave;
     }
 
@@ -129,14 +134,14 @@ WireCell::Array::array_xxc WireCell::Array::idft_cc(const WireCell::Array::array
     if (dim == 1) {
         for (int icol = 0; icol < ncols; ++icol) {
             Eigen::VectorXcf pspec(nrows);
-            gEigenFFT.inv(pspec, ret.col(icol));
+            gEigenFFT_dft_1d.inv(pspec, ret.col(icol)); //c2c
             ret.col(icol) = pspec;
         }
     }
     else if (dim == 0) {
         for (int irow = 0; irow < nrows; ++irow) {
             Eigen::VectorXcf pspec(ncols);
-            gEigenFFT.inv(pspec, ret.row(irow));
+            gEigenFFT_dft_1d.inv(pspec, ret.row(irow)); //c2c
             ret.row(irow) = pspec;
         }
     }
@@ -157,14 +162,14 @@ WireCell::Array::array_xxf WireCell::Array::idft_cr(const WireCell::Array::array
     if (dim == 0) {
         for (int irow = 0; irow < nrows; ++irow) {
             Eigen::VectorXf wave(ncols); // back to real-valued time series
-            gEigenFFT.inv(wave, partial.row(irow));
+            gEigenFFT_dft_c2r_1d.inv(wave, partial.row(irow)); //c2r
             ret.row(irow) = wave;
         }
     }
     else if (dim == 1) {
         for (int icol = 0; icol < ncols; ++icol) {
             Eigen::VectorXf wave(nrows);
-            gEigenFFT.inv(wave, partial.col(icol));
+            gEigenFFT_dft_c2r_1d.inv(wave, partial.col(icol)); //c2r
             ret.col(icol) = wave;
         }
     }
@@ -186,13 +191,13 @@ WireCell::Array::deconv(const WireCell::Array::array_xxf& arr,
 	Eigen::VectorXcf fspec(ncols); // frequency spectrum 
 	// gEigenFFT wants vectors, also input arr is const
 	Eigen::VectorXf tmp = arr.row(irow);
-	gEigenFFT.fwd(fspec, tmp);
+	gEigenFFT_dft_r2c_1d.fwd(fspec, tmp); //r2c
 	matc.row(irow) = fspec;
     }
     
     for (int icol = 0; icol < ncols; ++icol) {
 	Eigen::VectorXcf pspec(nrows); // periodicity spectrum
-	gEigenFFT.fwd(pspec, matc.col(icol));
+	gEigenFFT_dft_1d.fwd(pspec, matc.col(icol)); //c2c
 	matc.col(icol) = pspec;
     }
 
@@ -201,7 +206,7 @@ WireCell::Array::deconv(const WireCell::Array::array_xxf& arr,
 
     for (int icol = 0; icol < ncols; ++icol) {
         Eigen::VectorXcf pspec(nrows); // wire spectrum
-        gEigenFFT.inv(pspec, filt.col(icol));
+        gEigenFFT_dft_1d.inv(pspec, filt.col(icol)); //c2c
         filt.col(icol) = pspec;
     }
 
@@ -209,7 +214,7 @@ WireCell::Array::deconv(const WireCell::Array::array_xxf& arr,
 
     for (int irow = 0; irow < nrows; ++irow) {
         Eigen::VectorXf wave(ncols); // back to real-valued time series
-        gEigenFFT.inv(wave, filt.row(irow));
+        gEigenFFT_dft_c2r_1d.inv(wave, filt.row(irow)); //c2r
         ret.row(irow) = wave;
     }
 

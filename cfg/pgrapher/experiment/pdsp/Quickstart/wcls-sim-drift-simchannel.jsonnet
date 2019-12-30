@@ -34,7 +34,7 @@ local wcls_maker = import "pgrapher/ui/wcls/nodes.jsonnet";
 local wcls = wcls_maker(params, tools);
 local wcls_input = {
     // depos: wcls.input.depos(name="", art_tag="ionization"),
-    depos: wcls.input.depos(name="electron"),  // default art_tag="blopper"
+    depos: wcls.input.depos(name="electron", art_tag="IonAndScint"),  // default art_tag="blopper"
 };
 
 // Collect all the wc/ls output converters for use below.  Note the
@@ -82,14 +82,14 @@ local wcls_output = {
 
 //local deposio = io.numpy.depos(output);
 local drifter = sim.drifter;
-// local bagger = sim.make_bagger();
-local bagger = g.pnode({
-        type:'DepoBagger',
-        name: "bagger",
-        data: {
-            gate: [-250*wc.us, 2750*wc.us], // fixed
-        },
-    }, nin=1, nout=1);
+local bagger = sim.make_bagger();
+// local bagger = g.pnode({
+//         type:'DepoBagger',
+//         name: "bagger",
+//         data: {
+//             gate: [-250*wc.us, 2750*wc.us], // need a wider time window, see sim.make_bagger()
+//         },
+//     }, nin=1, nout=1);
 
 // signal plus noise pipelines
 //local sn_pipes = sim.signal_pipelines;
