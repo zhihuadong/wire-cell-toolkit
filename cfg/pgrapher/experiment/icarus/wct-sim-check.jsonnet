@@ -1,6 +1,6 @@
-// This is a main entry point for configuring a wire-cell CLI job to
+ // This is a main entry point for configuring a wire-cell CLI job to
 // simulate ICARUS.  It is simplest signal-only simulation with
-// one set of nominal field response function. 
+// one set of nominal field response function.
 
 local g = import 'pgraph.jsonnet';
 local f = import 'pgrapher/common/funcs.jsonnet';
@@ -23,7 +23,7 @@ local stubby = {
 local tracklist = [
 
   {
-    time: 0 * wc.us, 
+    time: 0 * wc.us,
     charge: -2500, // 5000 e/mm
     ray: stubby,
   },
