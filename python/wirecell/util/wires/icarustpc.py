@@ -73,9 +73,6 @@ def load(filename):
         elif apa%2 > 0 and plane in [0,1]:
             print ("Reversing wire order for p%d f%d a%d" %(plane,face,apa))
             wire_list.reverse()
-        else:
-            continue
-
         plane_index = store.make("plane", plane, wire_list)
         by_apa_face[(apa,face)].append(plane_index)
 
