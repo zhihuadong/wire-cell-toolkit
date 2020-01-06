@@ -67,7 +67,7 @@ def fr2npz(gain, shaping, json_file, npz_file):
 
         - speed :: in mm/ns of the nominal electron drift speed used
           in the Garfield calculation.
-    
+
         - gain : the passed in gain
 
         - shaping :: the passed in shaping time
@@ -200,7 +200,7 @@ def plot_garfield_track_response(ctx, gain, shaping, tick, tick_padding, electro
     shaping *= units.us
     tick *= units.us
     electrons *= units.eplus
-    
+
     adc_gain *= 1.0                       # unitless
     adc_voltage *= units.volt
     adc_resolution = 1<<adc_resolution
@@ -250,7 +250,7 @@ def plot_garfield_track_response(ctx, gain, shaping, tick, tick_padding, electro
         if dump_data.endswith(".json"):
             import json
             open(dump_data,"wt").write(json.dumps(data.tolist(), indent=4))
-                    
+
 
 
 
@@ -379,7 +379,7 @@ def channel_responses(ctx, tscale, scale, name, infile, outfile):
     channels = list()
     for ch in range(nchans):
         # reduce down to ~32 bit float precision to save file space
-        res = [float("%.6g"%x) for x in arr[ch,:].tolist()] 
+        res = [float("%.6g"%x) for x in arr[ch,:].tolist()]
         one = [ch, res]
         channels.append(one)
 
@@ -404,4 +404,3 @@ def main():
 
 if '__main__' == __name__:
     main()
-    
