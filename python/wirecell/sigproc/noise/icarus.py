@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 '''
 Vanilla noise loader for ICARUS. It will probably require some adjustmens when
-more realistic noise details are available. 
+more realistic noise details are available.
 '''
 
 from wirecell import units, util
-import schema
+import wirecell.sigproc.noise.schema
 
 import numpy
 
-
-def load_noise_spectra_v1(filename):
+def load_noise_spectra(filename):
     '''
     Load a noise spectra file in format
 
