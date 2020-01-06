@@ -1,6 +1,6 @@
 import json
 
-from schema import NoiseSpectrum
+from . import schema
 
 # fixme: content here and in other "persist" submodules is repetitive and
 # should be factored to common ground.
@@ -17,7 +17,7 @@ def loads(text):
     Return a list of NoiseSpectrum objects from the JSON text
     '''
     spectra = json.loads(text)
-    return [NoiseSpectrum(**s) for s in spectra]
+    return [schema.NoiseSpectrum(**s) for s in spectra]
 
 
 def dump(filename, spectra):
