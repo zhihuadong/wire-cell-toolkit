@@ -4,7 +4,7 @@ Stuff to deal with MicroBooNE specific noise things and such.
 '''
 
 from wirecell import units, util
-import wirecell.sigproc.noise.schema
+from . import schema
 
 import numpy
 
