@@ -68,7 +68,7 @@ function(params, tools) {
         }}, nin=1, nout=1, uses=[model]),
 
     local noises = [add_noise(model) for model in noise_models],
-    
+
     local outtags = ["orig%d"%n for n in std.range(0, nanodes-1)],
 
     ret : {
@@ -78,7 +78,7 @@ function(params, tools) {
 
         splusn_pipelines:  [g.pipeline([depos2traces[n], reframers[n], noises[n], digitizers[n]],
                                        name="simsignoipipe-" + tools.anodes[n].name) for n in std.range(0, nanodes-1)],
-    
+
         signal: f.fanpipe('DepoSetFanout', self.signal_pipelines, 'FrameFanin', "simsignalgraph", outtags),
         splusn: f.fanpipe('DepoSetFanout', self.splusn_pipelines, 'FrameFanin', "simsplusngraph", outtags),
 

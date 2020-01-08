@@ -12,19 +12,27 @@ base {
         // the geometry files. The horizontal induction is split in two, both
         // sides are enumerated by s, while n counts the physical anodes.
         // NOTE:the actual physical volumes in ICARUS are only 4
-        
+
+        local xanode = [365.33*wc.cm, 0, 0, 365.33*wc.cm],
+        local offset_response = [if a%2==0 then +10*wc.cm else -10*wc.cm for a in std.range(0,3)],
+        local xresponse = [xanode[a] + offset_response[a] for a in std.range(0,3)],
+        local xcathode = [-149.1*wc.cm, -149.1*wc.cm, 149.1*wc.cm, 149.1*wc.cm],
         volumes : [
             {
                 local world = 100,  // identify this geometry
                 local split = s*10, // identify anode side (1 left, 2 right)
                 local anode = a,    // physical anode number
-
                 wires: (world+split+anode),
                 name: "anode%d"%(world+split+anode),
-
-                faces: [ null, null ],    // we don't define faces for ICARUS
-            },
-             for a in std.range(0,3) for s in std.range(1,2)
+                faces: [
+                        {
+                            anode: xanode[a],
+                            response: xresponse[a],
+                            cathode: xcathode[a],
+                        },
+                        null
+                ],
+            } for a in std.range(0,3) for s in std.range(1,2)
         ],
     },
 
@@ -43,7 +51,7 @@ base {
         first_frame_number: 1, // <<< I DON'T UNDERSTAND IT
     },
 
-    adc: super.adc : {
+    adc: super.adc {
 
         //don't know this information (keep standard values)
         baselines: [900*wc.millivolt,900*wc.millivolt,200*wc.millivolt],
@@ -86,11 +94,6 @@ base {
             tbin: $.elec.fields.nticks,
             nticks: $.daq.nticks,
         }
-        // Uncomment the PDSP reframer if necessary
-        //reframer: {
-        //       tbin: response_nticks,
-        //       nticks: $.daq.nticks,
-        //   }
 
     },
 
@@ -98,10 +101,10 @@ base {
 
         wires: "icarus-wires-dualanode.json.bz2",
 
-        fields: ["garfield-1d-boundary-path-rev-dune.json.bz2"],
+        fields: ["garfield-1d-boundary-path-rev-dune.json.bz2",],
 
-        noise: null,
-
+        noise: "t600-corr-noise-spectra.json.bz2",
+        
         chresp: null,
     },
 

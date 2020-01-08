@@ -1,4 +1,4 @@
- // This is a main entry point for configuring a wire-cell CLI job to
+// This is a main entry point for configuring a wire-cell CLI job to
 // simulate ICARUS.  It is simplest signal-only simulation with
 // one set of nominal field response function.
 
@@ -16,8 +16,8 @@ local sim_maker = import 'pgrapher/experiment/icarus/sim.jsonnet';
 local sim = sim_maker(params, tools);
 
 local stubby = {
-  tail: wc.point(1000.0, 3000.0, 1000.0, wc.mm),
-  head: wc.point(1100.0, 3000.0, 2000.0, wc.mm),
+  tail: wc.point(-3.65, -1.7, -9.1, wc.m),
+  head: wc.point(+3.65, +1.4, +8.8, wc.m),
 };
 
 local tracklist = [
@@ -38,6 +38,8 @@ local drifter = sim.drifter;
 local bagger = sim.make_bagger();
 // signal plus noise pipelines
 local sn_pipes = sim.splusn_pipelines;
+// signal only pipeline
+//local sn_pipes = sim.signal_pipelines;
 
 local multimagnify = import 'pgrapher/experiment/icarus/multimagnify.jsonnet';
 local magoutput = 'icarus-sim-check.root';
