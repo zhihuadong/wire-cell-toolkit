@@ -64,7 +64,7 @@ base {
         // important is that the faces are listed "front" first.
         // Front is the one with the more positive X coordinates and
         // if we want to ignore a face it is made null.
-        volumes: [
+        /*volumes: [
             {
                 local sign = 2*(n%2)-1,
                 local centerline = sign*apa_cpa,
@@ -90,7 +90,33 @@ base {
                     },
                     null
                 ],
-            } for n in std.range(0,3)],
+            } for n in std.range(0,3)],*/
+
+        local xanode = [-365.33*wc.cm, 0, 0, 365.33*wc.cm],
+        local offset_response = [if a%2==0 then +10*wc.cm else -10*wc.cm for a in std.range(0,3)],
+        local xresponse = [xanode[a] + offset_response[a] for a in std.range(0,3)],
+        local xcathode = [-149.1*wc.cm, -149.1*wc.cm, 149.1*wc.cm, 149.1*wc.cm],
+        volumes : [
+            {
+                local world = 100,  // identify this geometry
+                local split = s*10, // identify anode side (1 left, 2 right)
+                local anode = a,    // physical anode number
+                local centerline = apa_cpa,
+
+                wires: (world+split+anode),
+                name: "anode%d"%(world+split+anode),
+
+                faces: [
+                        {
+                            anode: xanode[a],
+                            response: xresponse[a],
+                            cathode: xcathode[a], 
+                        },
+
+                        null
+                ],
+            } for a in std.range(0,3) for s in std.range(1,2)
+        ],
 
         // This describes some rough, overall bounding box.  It's not
         // directly needed but can be useful on the Jsonnet side, for
@@ -99,8 +125,8 @@ base {
         // rectangular solid.  Again "wirecell-util wires-info" helps
         // to choose something.
         bounds : {
-            tail: wc.point(-4.0, 0.0, 0.0, wc.m),
-            head: wc.point(+4.0, 6.1, 7.0, wc.m),
+            tail: wc.point(-3.65, -1.7, -9.1, wc.m),
+            head: wc.point(+3.65, +1.4, +8.8, wc.m),
         }
     },
 
@@ -154,7 +180,7 @@ base {
     },
 
     files: {
-        wires: "protodune-wires-larsoft-v4.json.bz2",
+        wires: "icarus-wires-dualanode.json.bz2", // protodune-wires-larsoft-v4.json.bz2",
 
         fields: [
             // "garfield-1d-3planes-21wires-6impacts-dune-v1.json.bz2",
