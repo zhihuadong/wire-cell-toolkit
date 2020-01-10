@@ -5,7 +5,6 @@ local wc = import "wirecell.jsonnet";
 local base = import "pgrapher/common/params.jsonnet";
 
 base {
-
     det: {
 
         // Each wires gets identified with the same number that identifies it in
@@ -13,7 +12,7 @@ base {
         // sides are enumerated by s, while n counts the physical anodes.
         // NOTE:the actual physical volumes in ICARUS are only 4
 
-        local xanode = [365.33*wc.cm, 0, 0, 365.33*wc.cm],
+        local xanode = [-365.33*wc.cm, 0, 0, 365.33*wc.cm],
         local offset_response = [if a%2==0 then +10*wc.cm else -10*wc.cm for a in std.range(0,3)],
         local xresponse = [xanode[a] + offset_response[a] for a in std.range(0,3)],
         local xcathode = [-149.1*wc.cm, -149.1*wc.cm, 149.1*wc.cm, 149.1*wc.cm],
@@ -22,21 +21,35 @@ base {
                 local world = 100,  // identify this geometry
                 local split = s*10, // identify anode side (1 left, 2 right)
                 local anode = a,    // physical anode number
+
                 wires: (world+split+anode),
                 name: "anode%d"%(world+split+anode),
+
                 faces: [
                         {
                             anode: xanode[a],
                             response: xresponse[a],
                             cathode: xcathode[a],
                         },
+
                         null
                 ],
             } for a in std.range(0,3) for s in std.range(1,2)
         ],
+
+        // This describes some rough, overall bounding box.  It's not
+        // directly needed but can be useful on the Jsonnet side, for
+        // example when defining some simple kinematics.  It is
+        // represented by a ray going from extreme corners of a
+        // rectangular solid.  Again "wirecell-util wires-info" helps
+        // to choose something. //FIXME -- ARE CORRECT?
+        bounds : {
+            tail: wc.point(-3.65, -1.7, -9.1, wc.m),
+            head: wc.point(+3.65, +1.4, +8.8, wc.m),
+        }
     },
 
-    daq : {
+    daq : super.daq{
 
         // ICARUS has a sampling frequency at 0.25 MHz
         tick: 0.4*wc.us,
@@ -48,7 +61,7 @@ base {
         start_time: 0.0*wc.s,
         stop_time: self.start_time + self.nreadouts*self.readout_time,
 
-        first_frame_number: 100, // <<< I DON'T UNDERSTAND IT, keep the standard
+        //first_frame_number: 1, // <<< I DON'T UNDERSTAND IT, keep the standard
     },
 
     adc: super.adc {
@@ -64,8 +77,17 @@ base {
         fullscale: [0.8*wc.millivolt, 390*wc.millivolt],
     },
 
-    // Leave it blank for now
-    elec: super.elec { },
+    elec: super.elec {
+
+        //FIXME: same values as PDSP
+
+        gain : 14.0*wc.mV/wc.fC,
+
+        shaping : 2.0*wc.us,
+
+        postgain: 1.0,
+
+    },
 
     sim : super.sim {
 
@@ -103,7 +125,8 @@ base {
 
         fields: ["garfield-1d-boundary-path-rev-dune.json.bz2",],
 
-        noise: "t600-corr-noise-spectra.json.bz2",
+        //noise: "t600-corr-noise-spectra.json.bz2",
+        noise: "protodune-noise-spectra-v1.json.bz2",
 
         chresp: null,
     },

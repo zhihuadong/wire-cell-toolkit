@@ -183,10 +183,13 @@ void Gen::GaussianDiffusion::set_sampling(const Binning& tbin, // overall time t
 	}
     }
 
-    // normalize to total charge
-    ret *= m_deposition->charge() / raw_sum;
+    // Depo charge should be in units of "e" so negative, but
+    // explicitly track sign in case positive charge is given.
+    const double depo_charge = m_deposition->charge();
+    const double charge_sign = depo_charge < 0 ? -1 : 1;
 
-    const double charge_sign = m_deposition->charge() < 0 ? -1 : 1;
+    // normalize to total charge
+    ret *= depo_charge / raw_sum;
 
     double fluc_sum = 0;
     if (fluctuate) {
@@ -194,16 +197,25 @@ void Gen::GaussianDiffusion::set_sampling(const Binning& tbin, // overall time t
 
 	for (size_t ip = 0; ip < npss; ++ip) {
 	    for (size_t it = 0; it < ntss; ++it) {
-		const float oldval = ret(ip,it);
+		const double oldval = ret(ip,it);
                 unfluc_sum += oldval;
                 // should be a multinomial distribution, n_i follows binomial distribution
                 // but n_i, n_j has covariance -n_tot * p_i * p_j
                 // normalize later to approximate this multinomial distribution (how precise?)
                 // how precise? better than poisson and 10000 total charge corresponds to a <1% level error.
-                float number = fluctuate->binomial((int)(std::abs(m_deposition->charge())), oldval/m_deposition->charge());
-                //the charge should be netagive -- ionization electrons
-		fluc_sum += charge_sign*number;
-		ret(ip,it) = charge_sign*number;
+                double number = 0.0;
+                const double relval = oldval/depo_charge;
+                if (relval >= 1.0) {
+                    number = (int)std::abs(depo_charge);
+                }
+                else {
+                    number = fluctuate->binomial((int)std::abs(depo_charge),
+                                                 relval);
+                }
+                // the charge should be negative -- ionization electrons
+                number *= charge_sign;
+                fluc_sum += number;
+                ret(ip,it) = number;
 	    }
 	}
         if (fluc_sum == 0) {
