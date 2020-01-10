@@ -33,8 +33,9 @@ def load_noise_spectra(filename):
                 continue
             lines.append(line)
     meta = lines[0].split()
-    print(meta)
-    period = 1.0/util.unitify(meta[0], meta[1])
+    print(meta[0])
+    period = 1.0/util.unitify(meta[0], 'megahertz')
+    print("======> %d" % period)
     nsamples = int(meta[2])
     gain = util.unitify(meta[4], meta[5])
     shaping = util.unitify(meta[6], meta[7])

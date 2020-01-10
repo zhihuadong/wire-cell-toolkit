@@ -48,13 +48,13 @@ base {
         start_time: 0.0*wc.s,
         stop_time: self.start_time + self.nreadouts*self.readout_time,
 
-        first_frame_number: 1, // <<< I DON'T UNDERSTAND IT
+        first_frame_number: 100, // <<< I DON'T UNDERSTAND IT, keep the standard
     },
 
     adc: super.adc {
 
-        //don't know this information (keep standard values)
-        baselines: [900*wc.millivolt,900*wc.millivolt,200*wc.millivolt],
+        //don't know this information (keep null)
+        baselines: [0*wc.millivolt, 0*wc.millivolt, 0*wc.millivolt],
 
         // From ICARUS papers: https://iopscience.iop.org/article/10.1088/1748-0221/13/12/P12007/pdf
 
@@ -90,10 +90,10 @@ base {
         // can be used to chop off the early excess to meet readout
         // assumptions.  Depending on the form of the ductor, the
         // reframer will likely need it's "tags" configured.
-        reframer: {
-            tbin: $.elec.fields.nticks,
-            nticks: $.daq.nticks,
-        }
+        // reframer: {
+        //    tbin: $.elec.fields.nticks,
+        //    nticks: $.daq.nticks,
+        // }
 
     },
 
@@ -104,7 +104,7 @@ base {
         fields: ["garfield-1d-boundary-path-rev-dune.json.bz2",],
 
         noise: "t600-corr-noise-spectra.json.bz2",
-        
+
         chresp: null,
     },
 
