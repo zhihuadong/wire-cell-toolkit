@@ -6,7 +6,7 @@
 [subrepo]
 	remote = git@github.com:wirecell/waf-tools
 	branch = master
-	commit = 249dcc409e27e9f75b9a0c2f392740b9d6949bed
-	parent = d4f05c54ffbb4058b3abeea8022cd32721dece4a
+	commit = ac75010565d3f67e17decde1dd8da78f7ae0ce2d
+	parent = dd9b222526f77faff5d3bba6585ad182f25e705c
 	method = merge
 	cmdver = 0.4.0
