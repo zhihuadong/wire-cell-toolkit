@@ -699,7 +699,7 @@ WireCell::Waveform::ChannelMaskMap Protodune::StickyCodeMitig::apply(int ch, sig
 
     const int nsiglen = signal.size();
     // tag sticky bins
-    WireCell::Waveform::BinRange sticky_rng;
+    //WireCell::Waveform::BinRange sticky_rng;
     WireCell::Waveform::BinRangeList sticky_rng_list;
     std::vector<short int> extra;
     if (m_extra_stky.find(ch) != m_extra_stky.end()){
