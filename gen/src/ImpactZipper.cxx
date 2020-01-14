@@ -35,7 +35,7 @@ Waveform::realseq_t Gen::ImpactZipper::waveform(int iwire) const
 
     int nfound=0;
     const bool share=true;
-    const Waveform::complex_t complex_one_half(0.5,0.0);
+    //const Waveform::complex_t complex_one_half(0.5,0.0);
 
     // The BinnedDiffusion is indexed by absolute impact and the
     // PlaneImpactResponse relative impact.
