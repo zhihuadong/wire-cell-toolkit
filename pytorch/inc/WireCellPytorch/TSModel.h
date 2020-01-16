@@ -9,7 +9,11 @@
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/IFrameSink.h"
 #include "WireCellIface/IFrameFilter.h"
+#include "WireCellUtil/Array.h"
 #include "WireCellUtil/Logging.h"
+
+
+#include <torch/script.h> // One-stop header.
 
 namespace WireCell {
 namespace Pytorch {
