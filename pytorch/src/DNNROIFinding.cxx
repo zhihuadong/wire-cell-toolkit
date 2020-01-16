@@ -1,4 +1,4 @@
-#include "WireCellPytorch/TSModel.h"
+#include "WireCellPytorch/DNNROIFinding.h"
 #include "WireCellIface/ITrace.h"
 #include "WireCellIface/SimpleFrame.h"
 #include "WireCellIface/SimpleTrace.h"
@@ -17,16 +17,16 @@
 /// @param NAME - used to configure node in JSON/Jsonnet
 /// @parame CONCRETE - C++ concrete type
 /// @parame ... - interfaces
-WIRECELL_FACTORY(TSModel, WireCell::Pytorch::TSModel,
-                 WireCell::IFrameSink, WireCell::IConfigurable)
+WIRECELL_FACTORY(DNNROIFinding, WireCell::Pytorch::DNNROIFinding,
+                 WireCell::IFrameFilter, WireCell::IConfigurable)
 
 using namespace WireCell;
 
-Pytorch::TSModel::TSModel() : m_save_count(0), l(Log::logger("pytorch")) {}
+Pytorch::DNNROIFinding::DNNROIFinding() : m_save_count(0), l(Log::logger("pytorch")) {}
 
-Pytorch::TSModel::~TSModel() {}
+Pytorch::DNNROIFinding::~DNNROIFinding() {}
 
-void Pytorch::TSModel::configure(const WireCell::Configuration &cfg) {
+void Pytorch::DNNROIFinding::configure(const WireCell::Configuration &cfg) {
 
   auto anode_tn = cfg["anode"].asString();
   m_anode = Factory::find_tn<IAnodePlane>(anode_tn);
@@ -49,7 +49,7 @@ void Pytorch::TSModel::configure(const WireCell::Configuration &cfg) {
   m_cfg = cfg;
 }
 
-WireCell::Configuration Pytorch::TSModel::default_configuration() const {
+WireCell::Configuration Pytorch::DNNROIFinding::default_configuration() const {
   Configuration cfg;
 
   // This number is set to the waveform sample array before any
@@ -89,7 +89,7 @@ namespace {
 }
 
 
-Array::array_xxf Pytorch::TSModel::frame_to_eigen(const IFrame::pointer &inframe, const std::string & tag) const {
+Array::array_xxf Pytorch::DNNROIFinding::frame_to_eigen(const IFrame::pointer &inframe, const std::string & tag) const {
   const unsigned int tick_rebin = 10;
   const double scaling = 4000.;
   const int win_cbeg = 800;
@@ -116,9 +116,9 @@ Array::array_xxf Pytorch::TSModel::frame_to_eigen(const IFrame::pointer &inframe
   const size_t nrows = cend-cbeg+1;
 
   auto traces = FrameTools::tagged_traces(inframe, tag);
-  l->debug("TSModel: save {} tagged as {}", traces.size(), tag);
+  l->debug("DNNROIFinding: save {} tagged as {}", traces.size(), tag);
   if (traces.empty()) {
-      l->warn("TSModel: no traces for tag: \"{}\"", tag);
+      l->warn("DNNROIFinding: no traces for tag: \"{}\"", tag);
       return Array::array_xxf::Zero(nrows/tick_rebin, ncols);
   }
 
@@ -130,12 +130,12 @@ Array::array_xxf Pytorch::TSModel::frame_to_eigen(const IFrame::pointer &inframe
   return rebin(arr,tick_rebin)/scaling;
 }
 
-bool Pytorch::TSModel::operator()(const IFrame::pointer &inframe,
+bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
                                       IFrame::pointer &outframe) {
 
   outframe = inframe;
   if (!inframe) {
-      l->debug("TSModel: EOS");
+      l->debug("DNNROIFinding: EOS");
       outframe = nullptr;
       return true;
   }

@@ -18,10 +18,10 @@
 namespace WireCell {
 namespace Pytorch {
 
-class TSModel : public IFrameFilter, public IConfigurable {
+class DNNROIFinding : public IFrameFilter, public IConfigurable {
 public:
-  TSModel();
-  virtual ~TSModel();
+  DNNROIFinding();
+  virtual ~DNNROIFinding();
 
   /// working operation - interface from IFrameFilter
   /// executed when called by pgrapher
