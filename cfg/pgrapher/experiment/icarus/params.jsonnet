@@ -67,14 +67,14 @@ base {
     adc: super.adc {
 
         //don't know this information (keep null)
-        baselines: [0*wc.millivolt, 0*wc.millivolt, 0*wc.millivolt],
+        baselines: [10*wc.millivolt,10*wc.millivolt, 10*wc.millivolt],
 
         // From ICARUS papers: https://iopscience.iop.org/article/10.1088/1748-0221/13/12/P12007/pdf
 
         resolution: 12, // #bit
 
         //check (values taken from the FE calibration shown in pg. 7 of the paper)
-        fullscale: [0.8*wc.millivolt, 390*wc.millivolt],
+        fullscale: [0.8*wc.millivolt, 3.3*wc.volt],
     },
 
     elec: super.elec {
@@ -83,7 +83,7 @@ base {
 
         gain : 14.0*wc.mV/wc.fC,
 
-        shaping : 2.0*wc.us,
+        shaping : 2.2*wc.us,
 
         postgain: 1.0,
 

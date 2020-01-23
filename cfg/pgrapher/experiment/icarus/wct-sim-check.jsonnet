@@ -68,6 +68,7 @@ local mega_anode = {
     anodes_tn: [wc.tn(anode) for anode in tools.anodes],
   },
 };
+
 local make_noise_model = function(anode, csdb=null) {
     type: "EmpiricalNoiseModel",
     name: "empericalnoise-" + anode.name,
@@ -94,7 +95,6 @@ local add_noise = function(model) g.pnode({
 local noise = add_noise(noise_model);
 
 local digitizer = sim.digitizer(mega_anode, name="digitizer", tag="orig");
-
 
 local fansel = g.pnode({
     type: "ChannelSplitter",
