@@ -47,6 +47,24 @@ void Pytorch::DNNROIFinding::configure(const WireCell::Configuration &cfg) {
   h5::create(fn, H5F_ACC_TRUNC);
 
   m_cfg = cfg;
+
+  // load Torch Script Model
+  try {
+    // Deserialize the ScriptModule from a file using torch::jit::load().
+    module = torch::jit::load(m_cfg["model"].asString());
+    module.to(at::kCUDA);
+    l->info("Model: {} loaded",m_cfg["model"].asString());
+  }
+  catch (const c10::Error& e) {
+    l->critical( "error loading model: {}", m_cfg["model"].asString());
+    exit(0);
+  }
+
+  m_timers.insert({"frame2eigen",0});
+  m_timers.insert({"eigen2tensor",0});
+  m_timers.insert({"forward",0});
+  m_timers.insert({"tensor2eigen",0});
+  m_timers.insert({"h5",0});
 }
 
 WireCell::Configuration Pytorch::DNNROIFinding::default_configuration() const {
@@ -145,71 +163,91 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
   }
 
   h5::fd_t fd = h5::open(m_cfg["filename"].asString(), H5F_ACC_RDWR);
+  std::clock_t start;
+  double duration = 0;
 
   // frame to eigen
+  start = std::clock();
+  duration = 0;
   std::vector<Array::array_xxf> ch_eigen;
   for (auto jtag : m_cfg["trace_tags"]) {
     const std::string tag = jtag.asString();
     ch_eigen.push_back(frame_to_eigen(inframe, tag));
   }
+  duration += (std::clock() - start) / (double)CLOCKS_PER_SEC;
+  l->info("frame2eigen: {}", duration);
+  m_timers["frame2eigen"] += duration;
 
+  start = std::clock();
+  duration = 0;
   // eigen to tensor
   torch::Tensor ch[3];
   for(unsigned int i=0; i<3; ++i) {
     ch[i] = torch::from_blob(ch_eigen[i].data(), {ch_eigen[i].cols(),ch_eigen[i].rows()});
-    const int ncols = ch_eigen[i].cols();
-    const int nrows = ch_eigen[i].rows();
-    std::cout << "ncols: " << ncols << "nrows: " << nrows << std::endl;
-    h5::write<float>(fd, String::format("/%d/frame_%s%d%d", m_save_count, "ch", i, 0), ch_eigen[i].data(), h5::count{ncols, nrows}, h5::chunk{ncols, nrows} | h5::gzip{2});
+    // const int ncols = ch_eigen[i].cols();
+    // const int nrows = ch_eigen[i].rows();
+    // std::cout << "ncols: " << ncols << "nrows: " << nrows << std::endl;
+    // h5::write<float>(fd, String::format("/%d/frame_%s%d%d", m_save_count, "ch", i, 0), ch_eigen[i].data(), h5::count{ncols, nrows}, h5::chunk{ncols, nrows} | h5::gzip{2});
   }
   auto img = torch::stack({ch[0], ch[1], ch[2]}, 0);
   auto batch = torch::stack({torch::transpose(img,1,2)}, 0);
 
-  std::cout << "batch.shape: {"
-  << batch.size(0) << ", "
-  << batch.size(1) << ", "
-  << batch.size(2) << ", "
-  << batch.size(3) << "} "
-  << std::endl;
-
-
-  // load Torch Script Model
-  torch::jit::script::Module module;
-  try {
-    // Deserialize the ScriptModule from a file using torch::jit::load().
-    module = torch::jit::load(m_cfg["model"].asString());
-    module.to(at::kCUDA);
-    l->info("Model: {} loaded",m_cfg["model"].asString());
-  }
-  catch (const c10::Error& e) {
-    l->critical( "error loading model: {}", m_cfg["model"].asString());
-    return -1;
-  }
+  // std::cout << "batch.shape: {"
+  // << batch.size(0) << ", "
+  // << batch.size(1) << ", "
+  // << batch.size(2) << ", "
+  // << batch.size(3) << "} "
+  // << std::endl;
 
   // Create a vector of inputs.
   std::vector<torch::jit::IValue> inputs;
   inputs.push_back(batch.cuda());
+
+  duration += (std::clock() - start) / (double)CLOCKS_PER_SEC;
+  l->info("eigen2tensor: {}", duration);
+  m_timers["eigen2tensor"] += duration;
   
+  start = std::clock();
+  duration = 0;
   // Execute the model and turn its output into a tensor.
   torch::Tensor output = module.forward(inputs).toTensor().cpu();
 
-  std::cout << "output.shape: {"
-  << output.size(0) << ", "
-  << output.size(1) << ", "
-  << output.size(2) << ", "
-  << output.size(3) << "} "
-  << std::endl;
+  duration += (std::clock() - start) / (double)CLOCKS_PER_SEC;
+  l->info("forward: {}", duration);
+  m_timers["forward"] += duration;
 
+  // std::cout << "output.shape: {"
+  // << output.size(0) << ", "
+  // << output.size(1) << ", "
+  // << output.size(2) << ", "
+  // << output.size(3) << "} "
+  // << std::endl;
+  
+  start = std::clock();
+  duration = 0;
   // tensor to eigen
   Eigen::Map<Eigen::ArrayXXf> out_e(output[0][0].data<float>(), output.size(3), output.size(2));
 
+  duration += (std::clock() - start) / (double)CLOCKS_PER_SEC;
+  l->info("tensor2eigen: {}", duration);
+  m_timers["tensor2eigen"] += duration;
+  
+  start = std::clock();
+  duration = 0;
   // eigen to frame
   {
     const int ncols = out_e.cols();
     const int nrows = out_e.rows();
-    std::cout << "ncols: " << ncols << "nrows: " << nrows << std::endl;
+    // std::cout << "ncols: " << ncols << "nrows: " << nrows << std::endl;
     const std::string aname = String::format("/%d/frame_%s%d", m_save_count, "dlsp", 0);
     h5::write<float>(fd, aname, out_e.data(), h5::count{ncols, nrows}, h5::chunk{ncols, nrows} | h5::gzip{2});
+  }
+  duration += (std::clock() - start) / (double)CLOCKS_PER_SEC;
+  l->info("h5: {}", duration);
+  m_timers["h5"] += duration;
+
+  for (auto pair : m_timers) {
+    l->info("{} : {}",pair.first, pair.second);
   }
 
   ++m_save_count;

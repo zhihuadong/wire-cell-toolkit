@@ -42,10 +42,13 @@ private:
   Configuration m_cfg; /// copy of configuration
   IAnodePlane::pointer m_anode; /// pointer to some APA, needed to associate chnnel ID to planes
 
+  torch::jit::script::Module module;
+
   int m_save_count;   // count frames saved
   
   /// SPD logger
   Log::logptr_t l;
+  std::unordered_map<std::string, float> m_timers;
 };
 } // namespace Pytorch
 } // namespace WireCell
