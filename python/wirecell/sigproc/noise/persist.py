@@ -55,7 +55,7 @@ def load(filename):
 
     if filename.endswith(".json.bz2"):
         import bz2
-        return loads(bz2.BZ2File(filename, 'r').read())
+        return loads(bz2.BZ2File(filename, 'rb').read())
 
     if filename.endswith(".json.gz"):
         import gzip

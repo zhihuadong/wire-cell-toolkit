@@ -35,10 +35,13 @@ def load_noise_spectra(filename):
     meta = lines[0].split()
     print(meta[0])
     period = 1.0/util.unitify(meta[0], 'megahertz')
-    print("======> %d" % period)
+    print("Period %d" % period)
     nsamples = int(meta[2])
+    print("nsamples %d" % nsamples)
     gain = util.unitify(meta[4], meta[5])
+    print("gain %.4f" % gain)
     shaping = util.unitify(meta[6], meta[7])
+    print("shaping %.4f" % shaping)
     wirelens = [float(v)*units.cm for v in lines[1].split()[1:]]
     planes = [int(v) for v in lines[2].split()[1:]]
     consts = [float(v)*units.mV for v in lines[3].split()[1:]]
@@ -50,6 +53,9 @@ def load_noise_spectra(filename):
     amps = data[:,1:].T*units.mV
     nwires = len(wirelens)
     noises = list ()
+
+    print(len(freq))
+    print(len(amps))
 
     # TODO: NoiseSpectrum schema must contain also anode sorting for ICARUS...
     for iwire in range(nwires):

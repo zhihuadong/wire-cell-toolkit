@@ -88,7 +88,7 @@ local add_noise = function(model) g.pnode({
     data: {
         rng: wc.tn(tools.random),
         model: wc.tn(model),
-  nsamples: params.daq.nticks,
+        nsamples: params.daq.nticks,
         replacement_percentage: 0.02, // random optimization
     }}, nin=1, nout=1, uses=[model]);
 local noise = add_noise(noise_model);

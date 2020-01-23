@@ -1,5 +1,5 @@
 // This file specifies the paramter configuration for the ICARUS detector. It
-// inherit from the base params.jsonnet and override the relevant paramters
+// inherit from the base params.jsonnet and override the relevant parameters
 
 local wc = import "wirecell.jsonnet";
 local base = import "pgrapher/common/params.jsonnet";
@@ -125,8 +125,8 @@ base {
 
         fields: ["garfield-1d-boundary-path-rev-dune.json.bz2",],
 
-        //noise: "t600-corr-noise-spectra.json.bz2",
-        noise: "protodune-noise-spectra-v1.json.bz2",
+        noise: "t600-corr-noise-spectra.json.bz2",
+        //noise: "protodune-noise-spectra-v1.json.bz2",
 
         chresp: null,
     },
