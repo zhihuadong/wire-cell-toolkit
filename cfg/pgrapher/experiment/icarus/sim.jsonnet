@@ -73,12 +73,16 @@ function(params, tools) {
 
     ret : {
 
+        analog_pipelines: [g.pipeline([depos2traces[n], reframers[n]],
+                                      name="simanalogpipe-" + tools.anodes[n].name) for n in std.range(0, nanodes-1)],
+
         signal_pipelines: [g.pipeline([depos2traces[n], reframers[n],  digitizers[n]],
                                       name="simsigpipe-" + tools.anodes[n].name) for n in std.range(0, nanodes-1)],
 
         splusn_pipelines:  [g.pipeline([depos2traces[n], reframers[n], noises[n], digitizers[n]],
                                        name="simsignoipipe-" + tools.anodes[n].name) for n in std.range(0, nanodes-1)],
-    
+
+        analog: f.fanpipe('DepoSetFanout', self.analog_pipelines, 'FrameFanin', "simanaloggraph", outtags),
         signal: f.fanpipe('DepoSetFanout', self.signal_pipelines, 'FrameFanin', "simsignalgraph", outtags),
         splusn: f.fanpipe('DepoSetFanout', self.splusn_pipelines, 'FrameFanin', "simsplusngraph", outtags),
 

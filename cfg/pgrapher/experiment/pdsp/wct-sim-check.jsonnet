@@ -49,14 +49,8 @@ local tracklist = [
 
   {
     time: 0 * wc.us, 
-    charge: -2500, // 5000 e/mm
-    ray: parallel,
-  },
-
-  {
-    time: 0 * wc.us,
-    charge: -2500, // 5000 e/mm
-    ray: cathpier,
+    charge: -5000, // 5000 e/mm
+    ray: params.det.bounds,
   },
 
 ];
@@ -65,7 +59,7 @@ local output = 'wct-sim-ideal-sig.npz';
 
 //local depos = g.join_sources(g.pnode({type:"DepoMerger", name:"BlipTrackJoiner"}, nin=2, nout=1),
 //                             [sim.ar39(), sim.tracks(tracklist)]);
-local depos = sim.tracks(tracklist, step=0.5 * wc.mm);
+local depos = sim.tracks(tracklist, step=1.0 * wc.mm);
 
 
 //local deposio = io.numpy.depos(output);

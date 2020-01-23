@@ -16,42 +16,32 @@ local sim_maker = import 'pgrapher/experiment/icarus/sim.jsonnet';
 local sim = sim_maker(params, tools);
 
 local stubby = {
-  tail: wc.point(1000.0, 3000.0, 1000.0, wc.mm),
-  head: wc.point(1100.0, 3000.0, 2000.0, wc.mm),
+  tail: wc.point(-3000, 0, -9100, wc.mm),
+  head: wc.point(-3000, 0, 8800, wc.mm),
 };
 
 local tracklist = [
 
   {
     time: 0 * wc.us, 
-    charge: -2500, // 5000 e/mm
-    ray: stubby,
+    charge: -5000, // 5000 e/mm
+    ray: params.det.bounds,
   },
 
 ];
 
-local depos = sim.tracks(tracklist, step=0.5 * wc.mm);
+local depos = sim.tracks(tracklist, step=1.0 * wc.mm);
 
 // local output = 'wct-sim-ideal-sig.npz';
 // local deposio = io.numpy.depos(output);
 local drifter = sim.drifter;
 local bagger = sim.make_bagger();
 // signal plus noise pipelines
-local sn_pipes = sim.splusn_pipelines;
+// local sn_pipes = sim.splusn_pipelines;
 
-local multimagnify = import 'pgrapher/experiment/icarus/multimagnify.jsonnet';
-local magoutput = 'icarus-sim-check.root';
-
-local multi_magnify = multimagnify('orig', tools, magoutput);
-local magnify_pipes = multi_magnify.magnify_pipelines;
-local multi_magnify2 = multimagnify('raw', tools, magoutput);
-local magnify_pipes2 = multi_magnify2.magnify_pipelines;
-local multi_magnify3 = multimagnify('gauss', tools, magoutput);
-local magnify_pipes3 = multi_magnify3.magnify_pipelines;
-local multi_magnify4 = multimagnify('wiener', tools, magoutput);
-local magnify_pipes4 = multi_magnify4.magnify_pipelines;
-local multi_magnify5 = multimagnify('threshold', tools, magoutput);
-local magnify_pipes5 = multi_magnify5.magnifysummaries_pipelines;
+local nanodes = std.length(tools.anodes);
+local anode_iota = std.range(0, nanodes-1);
+local anode_idents = [anode.data.ident for anode in tools.anodes];
 
 local perfect = import 'pgrapher/experiment/icarus/chndb-base.jsonnet';
 local chndb = [{
@@ -59,7 +49,7 @@ local chndb = [{
   name: 'ocndbperfect%d' % n,
   data: perfect(params, tools.anodes[n], tools.field, n),
   uses: [tools.anodes[n], tools.field],  // pnode extension
-} for n in std.range(0, std.length(tools.anodes) - 1)];
+} for n in anode_iota];
 
 // local nf_maker = import 'pgrapher/experiment/pdsp/nf.jsonnet';
 // local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
@@ -68,28 +58,123 @@ local sp_maker = import 'pgrapher/experiment/icarus/sp.jsonnet';
 local sp = sp_maker(params, tools);
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
-local main_pipelines = [
-  g.pipeline([
-               sn_pipes[n],
-               magnify_pipes[n],
-               // nf_pipes[n],
-               // magnify_pipes2[n],
-               sp_pipes[n],
-               magnify_pipes3[n],
-               // magnify_pipes4[n],
-               magnify_pipes5[n],
-             ],
-             'parallel_pipe_%d' % n)
-  for n in std.range(0, std.length(tools.anodes) - 1)
-];
-local outtags = ['raw%d' % n for n in std.range(0, std.length(tools.anodes) - 1)];
-local manifold = f.fanpipe('DepoSetFanout', main_pipelines, 'FrameFanin', 'sn_mag_nf', outtags);
+// fixme: see https://github.com/WireCell/wire-cell-gen/issues/29
+local mega_anode = {
+  type: 'MegaAnodePlane',
+  name: 'meganodes',
+  data: {
+    anodes_tn: [wc.tn(anode) for anode in tools.anodes],
+  },
+};
+local make_noise_model = function(anode, csdb=null) {
+    type: "EmpiricalNoiseModel",
+    name: "empericalnoise-" + anode.name,
+    data: {
+        anode: wc.tn(anode),
+        chanstat: if std.type(csdb) == "null" then "" else wc.tn(csdb),
+        spectra_file: params.files.noise,
+        nsamples: params.daq.nticks,
+        period: params.daq.tick,
+        wire_length_scale: 1.0*wc.cm, // optimization binning
+    },
+    uses: [anode] + if std.type(csdb) == "null" then [] else [csdb],
+};
+local noise_model = make_noise_model(mega_anode);
+local add_noise = function(model) g.pnode({
+    type: "AddNoise",
+    name: "addnoise-" + model.name,
+    data: {
+        rng: wc.tn(tools.random),
+        model: wc.tn(model),
+  nsamples: params.daq.nticks,
+        replacement_percentage: 0.02, // random optimization
+    }}, nin=1, nout=1, uses=[model]);
+local noise = add_noise(noise_model);
 
+local digitizer = sim.digitizer(mega_anode, name="digitizer", tag="orig");
+
+
+local fansel = g.pnode({
+    type: "ChannelSplitter",
+    name: "peranode",
+    data: {
+        anodes: [wc.tn(a) for a in tools.anodes],
+        tag_rules: [{
+            frame: {
+                '.*': 'orig%d'%ind,
+            },
+        } for ind in anode_idents/*anode_iota*/],
+    },
+}, nin=1, nout=nanodes, uses=tools.anodes);
+
+local magoutput = 'icarus-sim-check.root';
+local magnify = import 'pgrapher/experiment/icarus/magnify-sinks.jsonnet';
+local magnifyio = magnify(tools, magoutput);
+
+local pipelines = [
+    g.pipeline([
+        magnifyio.orig_pipe[n],
+
+        // nf_pipes[n],
+        // magnifyio.raw_pipe[n],
+
+        sp_pipes[n],
+        magnifyio.decon_pipe[n],
+        // magnifyio.threshold_pipe[n],
+        // magnifyio.debug_pipe[n], // use_roi_debug_mode=true in sp.jsonnet
+    ],
+               'nfsp_pipe_%d' % n)
+    for n in anode_iota
+    ];
+
+local fanin = g.pnode({
+    type: 'FrameFanin',
+    name: 'sigmerge',
+    data: {
+        multiplicity: nanodes,
+        tags: [],
+        tag_rules: [{
+            trace: {
+                ['gauss%d'%ind]:'gauss%d'%ind,
+                ['wiener%d'%ind]:'wiener%d'%ind,
+                ['threshold%d'%ind]:'threshold%d'%ind,
+            },
+        } for ind in anode_iota],
+    },
+}, nin=nanodes, nout=1);
+
+local retagger = g.pnode({
+    type: 'Retagger',
+    data: {
+        // Note: retagger keeps tag_rules in an array to be like frame
+        // fanin/fanout but only uses first element.
+        tag_rules: [{
+            // Retagger also handles "frame" and "trace" like
+            // fanin/fanout and also "merge" separately all traces
+            // like gaussN to gauss.
+            frame: {
+                '.*': 'retagger',
+            },
+            merge: {
+                'gauss\\d': 'gauss',
+                'wiener\\d': 'wiener',
+            },
+        }],
+    },
+}, nin=1, nout=1);
+
+local fanpipe = g.intern(innodes=[fansel],
+                         outnodes=[fanin],
+                         centernodes=pipelines,
+                         edges=
+                         [g.edge(fansel, pipelines[n], n, 0) for n in anode_iota] +
+                         [g.edge(pipelines[n], fanin, 0, n) for n in anode_iota],
+                         name="fanpipe");
 
 //local frameio = io.numpy.frames(output);
 local sink = sim.frame_sink;
 
-local graph = g.pipeline([depos, drifter, bagger, manifold, sink]);
+local graph = g.pipeline([depos, drifter, bagger, sim.analog, noise, digitizer, fanpipe, retagger, sink]);
 
 local app = {
   type: 'Pgrapher',

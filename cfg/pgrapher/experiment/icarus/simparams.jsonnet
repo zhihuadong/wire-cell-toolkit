@@ -13,7 +13,7 @@ base {
     // Number of readout ticks.  See also sim.response.nticks.
     // In MB LArSoft simulation, they expect a different number of
     // ticks than acutal data.
-    nticks: 6000,
+    // nticks: 4096,
   },
 
   sim: super.sim {
