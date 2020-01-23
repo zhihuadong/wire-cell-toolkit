@@ -48,6 +48,7 @@ namespace WireCell {
                      int r_max_npeaks = 200,
                      double r_sigma = 2.0,
                      double r_th_percent = 0.1,
+                     std::vector<int> process_planes = {0, 1, 2},
                      int charge_ch_offset = 10000,
                      const std::string& wiener_tag = "wiener",
                      const std::string& wiener_threshold_tag = "threshold",
@@ -174,6 +175,9 @@ namespace WireCell {
       int m_r_max_npeaks;
       double m_r_sigma;
       double m_r_th_percent;
+
+      // specify the planes to process
+      std::vector<int> m_process_planes;
 
       // fixme: this is apparently not used:
       // channel offset

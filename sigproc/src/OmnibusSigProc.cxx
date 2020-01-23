@@ -57,6 +57,7 @@ OmnibusSigProc::OmnibusSigProc(const std::string& anode_tn,
                                int r_max_npeaks ,
                                double r_sigma ,
                                double r_th_percent ,
+                               std::vector<int> process_planes,
                                int charge_ch_offset,
                                const std::string& wiener_tag,
                                const std::string& wiener_threshold_tag,
@@ -106,6 +107,7 @@ OmnibusSigProc::OmnibusSigProc(const std::string& anode_tn,
   , m_r_max_npeaks(r_max_npeaks)
   , m_r_sigma(r_sigma)
   , m_r_th_percent(r_th_percent)
+  , m_process_planes(process_planes)
   , m_charge_ch_offset(charge_ch_offset)
   , m_wiener_tag(wiener_tag)
   , m_wiener_threshold_tag(wiener_threshold_tag)
@@ -197,6 +199,13 @@ void OmnibusSigProc::configure(const WireCell::Configuration& config)
   m_r_sigma = get(config,"r_sigma",m_r_sigma);
   m_r_th_percent = get(config,"r_th_percent",m_r_th_percent);
 
+  if (config.isMember("process_planes")){
+      m_process_planes.clear();
+      for (auto jplane: config["process_planes"]) {
+          m_process_planes.push_back(jplane.asInt());
+      }
+  }
+  
   m_charge_ch_offset = get(config,"charge_ch_offset",m_charge_ch_offset);
   
   m_wiener_tag = get(config,"wiener_tag",m_wiener_tag);
@@ -314,6 +323,8 @@ WireCell::Configuration OmnibusSigProc::default_configuration() const
   cfg["r_max_npeaks"] = m_r_max_npeaks;
   cfg["r_sigma"] = m_r_sigma;
   cfg["r_th_precent"] = m_r_th_percent;
+
+  // cfg["process_planes"] = Json::arrayValue;
       
   // fixme: unused?
   cfg["charge_ch_offset"] = m_charge_ch_offset;
@@ -1386,6 +1397,8 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
 
 
   for (int iplane = 0; iplane != 3; ++iplane){
+    auto it = std::find(m_process_planes.begin(), m_process_planes.end(), iplane);
+    if ( it == m_process_planes.end() ) continue;
     const std::vector<float>& perwire_rmses = *perplane_thresholds[iplane];
 
     // load data into EIGEN matrices ...
@@ -1431,7 +1444,9 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
   }
   
   for (int iplane = 0; iplane != 3; ++iplane){
-    
+    auto it = std::find(m_process_planes.begin(), m_process_planes.end(), iplane);
+    if ( it == m_process_planes.end() ) continue;
+
     // roi_refine.refine_data(iplane, roi_form);
 
     roi_refine.CleanUpROIs(iplane);
@@ -1455,6 +1470,9 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
   }
 
   for (int iplane = 0; iplane != 3; ++iplane){
+    auto it = std::find(m_process_planes.begin(), m_process_planes.end(), iplane);
+    if ( it == m_process_planes.end() ) continue;
+
     const std::vector<float>& perwire_rmses = *perplane_thresholds[iplane];
 
     for (int qx = 0; qx != m_r_break_roi_loop; qx++) {
