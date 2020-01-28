@@ -13,7 +13,7 @@ using namespace WireCell;
 using namespace WireCellTbb;
 
 TbbFlow::TbbFlow()
-: l(Log::logger("tbb"))
+    : l(Log::logger("tbb"))
 {
 }
 
@@ -44,11 +44,10 @@ void TbbFlow::configure(const Configuration& cfg)
 	auto head_tn = get<1>(thc);
 	auto conn = get<2>(thc);
 
-    l->debug("TbbFlow: Connect: {}:{} ( {} -> {} ) {}:{}",
-    tail_tn.type, tail_tn.name,
-    conn.tail, conn.head,
-    head_tn.type, head_tn.name
-    );
+        l->debug("TbbFlow: Connect: {}:{} ( {} -> {} ) {}:{}",
+                 tail_tn.type, tail_tn.name,
+                 conn.tail, conn.head,
+                 head_tn.type, head_tn.name);
 
 	INode::pointer tail_node = WireCell::Factory::lookup<INode>(tail_tn.type, tail_tn.name);
 	INode::pointer head_node = WireCell::Factory::lookup<INode>(head_tn.type, head_tn.name);
@@ -61,11 +60,16 @@ void TbbFlow::configure(const Configuration& cfg)
 void TbbFlow::execute()
 {
     if (!m_dfp) {
-    l->critical("TbbFlow: not configured");
+        l->critical("TbbFlow: not configured");
 	return;
     }
 
     l->info("TbbFlow: run: ");
     m_dfp->run();
+    for (auto& vpv : m_dfpgraph.vertex_property_map) {
+        auto& v = vpv.first;
+	INode::pointer node = WireCell::Factory::lookup<INode>(v.type, v.name);
+        node->reset();
+    }
 }
 

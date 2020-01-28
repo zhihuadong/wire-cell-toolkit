@@ -39,6 +39,7 @@ namespace WireCell {
 
             Node* operator()(WireCell::INode::pointer wcnode);
 
+            WCNodeWrapperMap& nodemap() { return m_nodes; }
 
         private:
             typedef std::map<INode::NodeCategory, Maker*> NodeMakers;

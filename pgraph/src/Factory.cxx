@@ -20,6 +20,7 @@ Factory::Factory()
     // ...
 }
 
+
 Node* Factory::operator()(WireCell::INode::pointer wcnode) {
     if (!wcnode) {
         l->critical("factory given nullptr wcnode");

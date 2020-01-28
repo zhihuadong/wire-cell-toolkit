@@ -1,5 +1,4 @@
 #include "WireCellPgraph/Pgrapher.h"
-#include "WireCellPgraph/Factory.h"
 #include "WireCellIface/INode.h"
 #include "WireCellUtil/NamedFactory.h"
 
@@ -36,7 +35,8 @@ std::pair<WireCell::INode::pointer, int> get_node(WireCell::Configuration jone)
 void Pgrapher::configure(const WireCell::Configuration& cfg)
 
 {
-    Pgraph::Factory fac;
+    //Pgraph::Factory fac;
+    
     l->debug("connecting: {} edges", cfg["edges"].size());
     for (auto jedge : cfg["edges"]) {
         auto tail = get_node(jedge["tail"]);
@@ -44,7 +44,7 @@ void Pgrapher::configure(const WireCell::Configuration& cfg)
 
         SPDLOG_LOGGER_TRACE(l,"connecting: {}", jedge);
         
-        bool ok = m_graph.connect(fac(tail.first),  fac(head.first),
+        bool ok = m_graph.connect(m_fac(tail.first),  m_fac(head.first),
                                   tail.second, head.second);
         if (!ok) {
             l->critical("failed to connect edge: {}", jedge);
@@ -62,8 +62,11 @@ void Pgrapher::configure(const WireCell::Configuration& cfg)
 void Pgrapher::execute()
 {
     m_graph.execute();
-
     m_graph.print_timers();
+    l->info("pgrapher::execute ending");
+    for (auto& nn : m_fac.nodemap()) {
+        nn.first->reset();
+    }
 }
 
 
