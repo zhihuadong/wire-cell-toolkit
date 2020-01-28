@@ -8,6 +8,7 @@
 #include "WireCellUtil/Point.h"
 
 #include "WireCellIface/IConfigurable.h"
+#include "WireCellIface/ITerminal.h"
 #include "WireCellIface/IApplication.h"
 
 #include <boost/program_options.hpp>
@@ -41,6 +42,7 @@ Main::Main()
 
 Main::~Main()
 {
+    finalize();
 }
 
 
@@ -291,3 +293,20 @@ void Main::operator()()
 }
 
 
+void Main::finalize()
+{
+    for (auto c : m_cfgmgr.all()) {
+        if (c.isNull()) {
+            continue;           // allow and ignore any totally empty configurations
+        }
+	string type = get<string>(c, "type");
+	string name = get<string>(c, "name");
+	auto doomed = Factory::find_maybe<ITerminal>(type, name); // doesn't throw. 
+        if (!doomed) {
+            continue;
+        }
+        l->info("finalizing component: \"{}\":\"{}\"", type, name);
+
+        doomed->finalize();
+    }    
+}

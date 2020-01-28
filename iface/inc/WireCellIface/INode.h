@@ -60,8 +60,8 @@ namespace WireCell {
 	}
 
 	
-        /// Optional hook to be implemented in order to reset internal
-        /// state after a data flow graph execution has completed.
+        /// Optional hook to be implemented in order to reset after an
+        /// end of stream is encountered.  Fixme: this should be removed.
         virtual void reset() {
         }
 

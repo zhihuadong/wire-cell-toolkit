@@ -66,10 +66,5 @@ void TbbFlow::execute()
 
     l->info("TbbFlow: run: ");
     m_dfp->run();
-    for (auto& vpv : m_dfpgraph.vertex_property_map) {
-        auto& v = vpv.first;
-	INode::pointer node = WireCell::Factory::lookup<INode>(v.type, v.name);
-        node->reset();
-    }
 }
 

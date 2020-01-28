@@ -74,6 +74,7 @@
 #include "WireCellIface/ISplitNode.h"
 #include "WireCellIface/IStripe.h"
 #include "WireCellIface/IStripeSet.h"
+#include "WireCellIface/ITerminal.h"
 #include "WireCellIface/ITiling.h"
 #include "WireCellIface/ITrace.h"
 #include "WireCellIface/IWaveform.h"
@@ -162,6 +163,7 @@ ISourceNodeBase::~ISourceNodeBase() {}
 ISplitNodeBase::~ISplitNodeBase() {}
 IStripe::~IStripe() {}
 IStripeSet::~IStripeSet() {}
+ITerminal::~ITerminal() {}
 ITiling::~ITiling() {}
 ITrace::~ITrace() {}
 IWaveform::~IWaveform() {}
