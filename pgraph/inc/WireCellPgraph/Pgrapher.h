@@ -55,7 +55,6 @@
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellUtil/Logging.h"
 #include "WireCellPgraph/Graph.h"
-#include "WireCellPgraph/Factory.h"
 
 namespace WireCell {
     namespace Pgraph {
@@ -73,7 +72,6 @@ namespace WireCell {
             virtual WireCell::Configuration default_configuration() const;
         private:
             Graph m_graph;
-            Pgraph::Factory m_fac;
             Log::logptr_t l;
         };
     }

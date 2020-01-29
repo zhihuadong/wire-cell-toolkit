@@ -1,4 +1,5 @@
 #include "WireCellPgraph/Pgrapher.h"
+#include "WireCellPgraph/Factory.h"
 #include "WireCellIface/INode.h"
 #include "WireCellUtil/NamedFactory.h"
 
