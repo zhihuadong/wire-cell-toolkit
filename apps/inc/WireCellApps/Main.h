@@ -82,6 +82,8 @@ namespace WireCell {
         /// Run any and all application components once.
         void operator()();
 
+        /// Call to finalize any terminal components.
+        void finalize();
 
     private:
         ConfigManager m_cfgmgr;
