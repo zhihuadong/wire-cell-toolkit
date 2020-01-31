@@ -174,6 +174,7 @@ void Gen::AnodePlane::configure(const WireCell::Configuration& cfg)
 
         IWirePlane::vector planes(nplanes);
         // note, WireSchema requires U/V/W plane ordering in a face.
+        std::vector<BoundingBox> bbvols; // sensitive volume for all planes
         for (size_t iplane=0; iplane<nplanes; ++iplane) { 
             const auto& ws_plane = ws_planes[iplane];
 
@@ -242,26 +243,64 @@ void Gen::AnodePlane::configure(const WireCell::Configuration& cfg)
             sort(wires.begin(), wires.end(), IWireCompareIndex()); // redundant?
             planes[iplane] = make_shared<WirePlane>(ws_plane.ident, pimpos, wires, plane_channels);
 
-            // Last iteration, use W plane to define volume
-            if (iplane == nplanes-1) { 
-                const double mean_pitch = (pitchmax - pitchmin) / (nwires-1);
-                BoundingBox sensvol;
-                if (sensitive_face) {
-                    auto v1 = bb_ray.first;
-                    auto v2 = bb_ray.second;
-                    // Enlarge to anode/cathode planes in X and by 1/2 pitch in Z.
-                    Point p1(  anode_x, v1.y(), std::min(v1.z(), v2.z()) - 0.5*mean_pitch);
-                    sensvol(p1);
-                    Point p2(cathode_x, v2.y(), std::max(v1.z(), v2.z()) + 0.5*mean_pitch);
-                    sensvol(p2);
-                }
+            // // Last iteration, use W plane to define volume
+            // if (iplane == nplanes-1) { 
+            //     const double mean_pitch = (pitchmax - pitchmin) / (nwires-1);
+            //     BoundingBox sensvol;
+            //     if (sensitive_face) {
+            //         auto v1 = bb_ray.first;
+            //         auto v2 = bb_ray.second;
+            //         // Enlarge to anode/cathode planes in X and by 1/2 pitch in Z.
+            //         Point p1(  anode_x, v1.y(), std::min(v1.z(), v2.z()) - 0.5*mean_pitch);
+            //         sensvol(p1);
+            //         Point p2(cathode_x, v2.y(), std::max(v1.z(), v2.z()) + 0.5*mean_pitch);
+            //         sensvol(p2);
+            //     }
                 
-                l->debug("AnodePlane: face:{} with {} planes and sensvol: {}",
-                         ws_face.ident, planes.size(), sensvol.bounds());
+            //     l->debug("AnodePlane: face:{} with {} planes and sensvol: {}",
+            //              ws_face.ident, planes.size(), sensvol.bounds());
 
-                m_faces[iface] = make_shared<AnodeFace>(ws_face.ident, planes, sensvol);
+            //     m_faces[iface] = make_shared<AnodeFace>(ws_face.ident, planes, sensvol);
+            // }
+
+            // compute sensitive volume for this plane
+            const double mean_pitch = (pitchmax - pitchmin) / (nwires-1);
+            if (sensitive_face) {
+                auto v1 = bb_ray.first;
+                auto v2 = bb_ray.second;
+                BoundingBox bb;
+                Point pext;
+                // Enlarge to anode/cathode planes in X and by 1/2 pitch in Y or Z.
+                auto pitch_dir = wire_pitch_dirs.second;
+                if (std::fabs(pitch_dir.z())>0.999) // parallel to z. FIXME: probably need a better comparison
+                    pext = Point(0, 0, 0.5*mean_pitch); // 1/2 pitch extension in Z
+                else if (std::fabs(pitch_dir.y())>0.999)
+                    pext = Point(0, 0.5*mean_pitch, 0);
+
+                Point p1(  anode_x, std::min(v1.y(), v2.y()), std::min(v1.z(), v2.z()));
+                p1 += pext*(-1.0);
+                bb(p1);
+                Point p2(cathode_x, std::max(v1.y(), v2.y()), std::max(v1.z(), v2.z()));
+                p2 += pext;
+                bb(p2);
+                bbvols.push_back(bb);
             }
         } // plane
+
+        // intersection of sensitive volumes from all planes
+        BoundingBox sensvol;
+        if (not bbvols.empty()) {
+            Ray r1 = bbvols.at(0).bounds();
+            for(auto& bb: bbvols) {
+                r1 = WireCell::box_intersect(r1, bb.bounds());
+            }
+            sensvol(r1);
+        }
+                
+        l->debug("AnodePlane: face:{} with {} planes and sensvol: {}",
+                 ws_face.ident, planes.size(), sensvol.bounds());
+
+        m_faces[iface] = make_shared<AnodeFace>(ws_face.ident, planes, sensvol);
     } // face
 
     // remove any duplicate channels
