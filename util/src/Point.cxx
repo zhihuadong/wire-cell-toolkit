@@ -104,3 +104,28 @@ double WireCell::ray_volume(const WireCell::Ray& ray)
     return diff.x() * diff.y() * diff.z();
 }
 
+// This returns the intersection between two unrotated(!)
+// box volumes, represented by a Ray.
+//       ________
+//      |    S2  |
+//  ____|___     |
+// |    |   |    |
+// |    |___|____|
+// | S1     |
+// |________|
+WireCell::Ray WireCell::box_intersect(const Ray& s1, const Ray& s2)
+{
+    Ray bb_ray;
+    for(size_t ind=0; ind<3; ind++) {
+        auto lb1 = s1.first[ind]; // left bound
+        auto rb1 = s1.second[ind]; // right bound
+        if (lb1 > rb1) std::swap(lb1, rb1); // let left < right
+        auto lb2 = s2.first[ind];
+        auto rb2 = s2.second[ind];
+        if (lb2 > rb2) std::swap(lb2, rb2);
+
+        bb_ray.first[ind] = std::max(lb1, lb2);
+        bb_ray.second[ind] = std::min(rb1, rb2);
+    }
+    return bb_ray;
+}

@@ -85,6 +85,8 @@ namespace WireCell {
      * at opposite corners. */
     double ray_volume(const Ray& ray);
 
+    /** Return the ray representing the intersection of two BoundingBox. */
+    Ray box_intersect(const Ray& r1, const Ray& r2);
 
     template<>
     inline			// fixme: ignores default
