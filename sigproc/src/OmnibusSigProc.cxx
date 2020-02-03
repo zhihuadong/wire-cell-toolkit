@@ -61,6 +61,7 @@ OmnibusSigProc::OmnibusSigProc(const std::string& anode_tn,
                                int charge_ch_offset,
                                const std::string& wiener_tag,
                                const std::string& wiener_threshold_tag,
+                               const std::string& decon_charge_tag,
                                const std::string& gauss_tag,
                                bool use_roi_debug_mode,
                                const std::string& tight_lf_tag,
@@ -111,6 +112,7 @@ OmnibusSigProc::OmnibusSigProc(const std::string& anode_tn,
   , m_charge_ch_offset(charge_ch_offset)
   , m_wiener_tag(wiener_tag)
   , m_wiener_threshold_tag(wiener_threshold_tag)
+  , m_decon_charge_tag(decon_charge_tag) 
   , m_gauss_tag(gauss_tag) 
   , m_frame_tag("sigproc")
   , m_use_roi_debug_mode(use_roi_debug_mode)
@@ -210,6 +212,7 @@ void OmnibusSigProc::configure(const WireCell::Configuration& config)
   
   m_wiener_tag = get(config,"wiener_tag",m_wiener_tag);
   m_wiener_threshold_tag = get(config,"wiener_threshold_tag",m_wiener_threshold_tag);
+  m_decon_charge_tag = get(config,"decon_charge_tag",m_decon_charge_tag); 
   m_gauss_tag = get(config,"gauss_tag",m_gauss_tag);  
   m_frame_tag = get(config,"frame_tag",m_frame_tag);  
 
@@ -331,6 +334,7 @@ WireCell::Configuration OmnibusSigProc::default_configuration() const
 
   cfg["wiener_tag"] = m_wiener_tag;
   cfg["wiener_threshold_tag"] = m_wiener_threshold_tag;
+  cfg["decon_charge_tag"] = m_decon_charge_tag;
   cfg["gauss_tag"] = m_gauss_tag;
   cfg["frame_tag"] = m_frame_tag;
 
@@ -1380,6 +1384,7 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
   // here are some trace lists for debug mode
   IFrame::trace_list_t tight_lf_traces, loose_lf_traces, cleanup_roi_traces, break_roi_loop1_traces, break_roi_loop2_traces, shrink_roi_traces, extend_roi_traces;
   IFrame::trace_list_t mp2_roi_traces, mp3_roi_traces;
+  IFrame::trace_list_t decon_charge_traces;
 
   // initialize the overall response function ... 
   init_overall_response(in);
@@ -1517,9 +1522,12 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
     wiener_traces.insert(wiener_traces.end(), perframe_traces[iplane].begin(), perframe_traces[iplane].end());
 
     decon_2D_charge(iplane);
+    std::vector<double> dummy_thresholds;
+    if (m_use_roi_debug_mode) {
+      save_data(*itraces, decon_charge_traces, iplane, perwire_rmses, thresholds);
+    }
     roi_refine.apply_roi(iplane, m_r_data[iplane]);
     //roi_form.apply_roi(iplane, m_r_data[plane],1);
-    std::vector<double> dummy_thresholds;
     save_data(*itraces, gauss_traces, iplane, perwire_rmses, dummy_thresholds);
 
     m_c_data[iplane].resize(0,0); // clear memory
@@ -1550,6 +1558,7 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
   sframe->tag_traces(m_gauss_tag, gauss_traces);
 
   if (m_use_roi_debug_mode) {
+    sframe->tag_traces(m_decon_charge_tag, decon_charge_traces);
     sframe->tag_traces(m_tight_lf_tag, tight_lf_traces);
     sframe->tag_traces(m_loose_lf_tag, loose_lf_traces);
     sframe->tag_traces(m_cleanup_roi_tag, cleanup_roi_traces);
@@ -1564,9 +1573,10 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
     sframe->tag_traces(m_mp2_roi_tag, mp2_roi_traces);
   }
 
-  log->debug("OmnibusSigProc: produce {} traces: {} {}, {} {}, frame tag: {}",
+  log->debug("OmnibusSigProc: produce {} traces: {} {}, {} {}, {} {}, frame tag: {}",
              itraces->size(),
              wiener_traces.size(), m_wiener_tag,
+             decon_charge_traces.size(), m_decon_charge_tag,
              gauss_traces.size(), m_gauss_tag, m_frame_tag);
 
   out = IFrame::pointer(sframe);
