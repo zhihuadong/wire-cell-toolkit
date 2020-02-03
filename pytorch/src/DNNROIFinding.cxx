@@ -90,6 +90,9 @@ WireCell::Configuration Pytorch::DNNROIFinding::default_configuration() const {
 
   // taces used as input
   cfg["trace_tags"] = Json::arrayValue;
+  
+  // decon charge to fill in ROIs
+  cfg["decon_charge_tag"] = "decon_charge0";
 
   cfg["filename"] = "tsmodel-eval.h5";
 
@@ -103,6 +106,28 @@ namespace {
       out.col(i/k) = out.col(i/k) + in.col(i);
     }
     return out/k;
+  }
+
+  Array::array_xxf mask(const Array::array_xxf &in, const Array::array_xxf &mask, const float th = 0.5) {
+    Array::array_xxf ret = Eigen::ArrayXXf::Zero(in.rows(),in.cols());
+    if(in.rows()!=mask.rows() || in.cols()!=mask.cols()) {
+      std::cerr << "error: in.rows()!=mask.rows() || in.cols()!=mask.cols()\n";
+      return ret;
+    }
+    // for(int icol=0; icol<in.cols();++icol) {
+    //   auto in_col = in.col(icol);
+    //   auto mask_col = mask.col(icol);
+    // }
+    return (mask>th).select(in, ret);
+  }
+
+  Array::array_xxf baseline_subtraction(const Array::array_xxf &in) {
+    Array::array_xxf ret = Eigen::ArrayXXf::Zero(in.rows(),in.cols());
+    // for(int icol=0; icol<in.cols();++icol) {
+    //   auto in_col = in.col(icol);
+    //   auto mask_col = mask.col(icol);
+    // }
+    return ret;
   }
 }
 
@@ -231,6 +256,13 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
   duration += (std::clock() - start) / (double)CLOCKS_PER_SEC;
   l->info("tensor2eigen: {}", duration);
   m_timers["tensor2eigen"] += duration;
+
+  // decon charge frame to eigen
+  Array::array_xxf decon_charge_eigen = frame_to_eigen(inframe, m_cfg["decon_charge_tag"].asString());
+  l->info("ncols: {} nrows: {}", decon_charge_eigen.cols(), decon_charge_eigen.rows());
+
+  // apply ROI
+  auto sp_charge = mask(decon_charge_eigen.transpose(), out_e, 0.7);
   
   start = std::clock();
   duration = 0;
@@ -238,9 +270,12 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
   {
     const int ncols = out_e.cols();
     const int nrows = out_e.rows();
-    // std::cout << "ncols: " << ncols << "nrows: " << nrows << std::endl;
-    const std::string aname = String::format("/%d/frame_%s%d", m_save_count, "dlsp", 0);
+    l->info("ncols: {} nrows: {}", ncols, nrows);
+    std::string aname = String::format("/%d/frame_%s%d", m_save_count, "dlroi", 0);
     h5::write<float>(fd, aname, out_e.data(), h5::count{ncols, nrows}, h5::chunk{ncols, nrows} | h5::gzip{2});
+
+    aname = String::format("/%d/frame_%s%d", m_save_count, "dlcharge", 0);
+    h5::write<float>(fd, aname, sp_charge.data(), h5::count{ncols, nrows}, h5::chunk{ncols, nrows} | h5::gzip{2});
   }
   duration += (std::clock() - start) / (double)CLOCKS_PER_SEC;
   l->info("h5: {}", duration);
