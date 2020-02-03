@@ -1,6 +1,6 @@
 import json
 
-from schema import NoiseSpectrum
+from . import schema
 
 # fixme: content here and in other "persist" submodules is repetitive and
 # should be factored to common ground.
@@ -17,7 +17,7 @@ def loads(text):
     Return a list of NoiseSpectrum objects from the JSON text
     '''
     spectra = json.loads(text)
-    return [NoiseSpectrum(**s) for s in spectra]
+    return [schema.NoiseSpectrum(**s) for s in spectra]
 
 
 def dump(filename, spectra):
@@ -28,7 +28,7 @@ def dump(filename, spectra):
     File is saved depending on extension.  .json, .json.bz2 and
     .json.gz are supported.
     '''
-    text = dumps(spectra,indent=4)
+    text = dumps(spectra,indent=4).encode()
     if filename.endswith(".json"):
         open(filename, 'w').write(text)
         return
@@ -55,7 +55,7 @@ def load(filename):
 
     if filename.endswith(".json.bz2"):
         import bz2
-        return loads(bz2.BZ2File(filename, 'r').read())
+        return loads(bz2.BZ2File(filename, 'rb').read())
 
     if filename.endswith(".json.gz"):
         import gzip

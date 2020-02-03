@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 '''
-Stuff to deal with MicroBooNE specific noise things and such.
+Vanilla noise loader for ICARUS. It will probably require some adjustmens when
+more realistic noise details are available.
 '''
 
 from wirecell import units, util
@@ -8,8 +9,7 @@ from . import schema
 
 import numpy
 
-
-def load_noise_spectra_v1(filename):
+def load_noise_spectra(filename):
     '''
     Load a noise spectra file in format
 
@@ -33,10 +33,15 @@ def load_noise_spectra_v1(filename):
                 continue
             lines.append(line)
     meta = lines[0].split()
-    period = 1.0/util.unitify(meta[0], meta[1])
+    print(meta[0])
+    period = 1.0/util.unitify(meta[0], 'megahertz')
+    print("Period %d" % period)
     nsamples = int(meta[2])
+    print("nsamples %d" % nsamples)
     gain = util.unitify(meta[4], meta[5])
+    print("gain %.4f" % gain)
     shaping = util.unitify(meta[6], meta[7])
+    print("shaping %.4f" % shaping)
     wirelens = [float(v)*units.cm for v in lines[1].split()[1:]]
     planes = [int(v) for v in lines[2].split()[1:]]
     consts = [float(v)*units.mV for v in lines[3].split()[1:]]
@@ -48,16 +53,16 @@ def load_noise_spectra_v1(filename):
     amps = data[:,1:].T*units.mV
     nwires = len(wirelens)
     noises = list ()
+
+    print(len(freq))
+    print(len(amps))
+
+    # TODO: NoiseSpectrum schema must contain also anode sorting for ICARUS...
     for iwire in range(nwires):
         ns = schema.NoiseSpectrum(period, nsamples, gain, shaping,
                                       planes[iwire], wirelens[iwire],
                                       consts[iwire], list(freq), list(amps[iwire]))
         noises.append(ns)
-        if planes[iwire] == 1:            # v1 implicitly equates U and V planes but only provides plane=1 data
-            ns0 = schema.NoiseSpectrum(period, nsamples, gain, shaping,
-                                           0, wirelens[iwire],
-                                           consts[iwire], list(freq), list(amps[iwire]))
 
-            noises.append(ns0)
     noises.sort(key = lambda s: 100*(s.plane+1) + s.wirelen/units.meter)
     return noises
