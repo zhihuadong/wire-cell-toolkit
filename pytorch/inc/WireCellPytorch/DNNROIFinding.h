@@ -12,7 +12,6 @@
 #include "WireCellUtil/Array.h"
 #include "WireCellUtil/Logging.h"
 
-
 #include <torch/script.h> // One-stop header.
 
 namespace WireCell {
@@ -37,7 +36,11 @@ public:
 
 private:
 
-  Array::array_xxf frame_to_eigen(const IFrame::pointer &inframe, const std::string & tag) const;
+  Array::array_xxf frame_to_eigen(
+    const IFrame::pointer &inframe
+    , const std::string & tag
+    , const unsigned int tick_rebin = 10
+    ) const;
 
   Configuration m_cfg; /// copy of configuration
   IAnodePlane::pointer m_anode; /// pointer to some APA, needed to associate chnnel ID to planes

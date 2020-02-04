@@ -8,7 +8,6 @@
 #include "WireCellUtil/Array.h"
 
 #include <h5cpp/all>
-#include <torch/script.h> // One-stop header.
 
 #include <string>
 #include <vector>
@@ -82,25 +81,30 @@ WireCell::Configuration Pytorch::DNNROIFinding::default_configuration() const {
   // casting to dtype.
   cfg["offset"] = 0.0;
 
-  cfg["model"] = "model.pt";
-
   cfg["anode"] = "AnodePlane";
   cfg["nticks"] = 6000;
   cfg["tick0"]  = 0;
 
+  // TorchScript model
+  cfg["model"] = "model.pt";
+
   // taces used as input
   cfg["trace_tags"] = Json::arrayValue;
+
+  // tick/slice
+  cfg["tick_per_slice"] = 10;
   
   // decon charge to fill in ROIs
   cfg["decon_charge_tag"] = "decon_charge0";
 
+  // evaluation output
   cfg["filename"] = "tsmodel-eval.h5";
 
   return cfg;
 }
 
 namespace {
-  Array::array_xxf rebin(const Array::array_xxf &in, const unsigned int k) {
+  Array::array_xxf downsample(const Array::array_xxf &in, const unsigned int k) {
     Array::array_xxf out = Array::array_xxf::Zero(in.rows(), in.cols()/k);
     for(unsigned int i=0; i<in.cols(); ++i) {
       out.col(i/k) = out.col(i/k) + in.col(i);
@@ -108,32 +112,65 @@ namespace {
     return out/k;
   }
 
+  Array::array_xxf upsample(
+    const Array::array_xxf &in,
+    const unsigned int k,
+    const int dim = 0) {
+    if(dim==0) {
+      Array::array_xxf out = Array::array_xxf::Zero(in.rows()*k, in.cols());
+      for(unsigned int i=0; i<in.rows()*k; ++i) {
+        out.row(i) = in.row(i/k);
+      }
+      return out;
+    }
+    if(dim==1) {
+      Array::array_xxf out = Array::array_xxf::Zero(in.rows(), in.cols()*k);
+      for(unsigned int i=0; i<in.cols()*k; ++i) {
+        out.col(i) = in.col(i/k);
+      }
+      return out;
+    }
+  }
+
   Array::array_xxf mask(const Array::array_xxf &in, const Array::array_xxf &mask, const float th = 0.5) {
     Array::array_xxf ret = Eigen::ArrayXXf::Zero(in.rows(),in.cols());
     if(in.rows()!=mask.rows() || in.cols()!=mask.cols()) {
-      std::cerr << "error: in.rows()!=mask.rows() || in.cols()!=mask.cols()\n";
+      std::cout << "error: in.rows()!=mask.rows() || in.cols()!=mask.cols()\n";
       return ret;
     }
-    // for(int icol=0; icol<in.cols();++icol) {
-    //   auto in_col = in.col(icol);
-    //   auto mask_col = mask.col(icol);
-    // }
     return (mask>th).select(in, ret);
   }
 
-  Array::array_xxf baseline_subtraction(const Array::array_xxf &in) {
+  Array::array_xxf baseline_subtraction(
+    const Array::array_xxf &in
+  ) {
     Array::array_xxf ret = Eigen::ArrayXXf::Zero(in.rows(),in.cols());
-    // for(int icol=0; icol<in.cols();++icol) {
-    //   auto in_col = in.col(icol);
-    //   auto mask_col = mask.col(icol);
-    // }
+    for(int ich=0; ich<in.cols(); ++ich) {
+      int sta = 0;
+      int end = 0;
+      for(int it=0; it<in.rows(); ++it) {
+        if(in(it,ich) == 0) {
+          if(sta < end){
+            for(int i=sta;i<end+1;++i) {
+              ret(i,ich) = in(i,ich)-(in(sta,ich)+(i-sta)*(in(end,ich)-in(sta,ich))/(end-sta));
+            }
+          }
+          sta = it+1; // first tick in ROI
+        } else {
+          end = it; // last tick in ROI
+        }
+      }
+    }
     return ret;
   }
 }
 
 
-Array::array_xxf Pytorch::DNNROIFinding::frame_to_eigen(const IFrame::pointer &inframe, const std::string & tag) const {
-  const unsigned int tick_rebin = 10;
+Array::array_xxf Pytorch::DNNROIFinding::frame_to_eigen(
+  const IFrame::pointer &inframe
+  , const std::string & tag
+  , const unsigned int tick_per_slice
+) const {
   const double scaling = 4000.;
   const int win_cbeg = 800;
   const int win_cend = 1600; // not include
@@ -162,7 +199,7 @@ Array::array_xxf Pytorch::DNNROIFinding::frame_to_eigen(const IFrame::pointer &i
   l->debug("DNNROIFinding: save {} tagged as {}", traces.size(), tag);
   if (traces.empty()) {
       l->warn("DNNROIFinding: no traces for tag: \"{}\"", tag);
-      return Array::array_xxf::Zero(nrows/tick_rebin, ncols);
+      return Array::array_xxf::Zero(nrows/tick_per_slice, ncols);
   }
 
   Array::array_xxf arr = Array::array_xxf::Zero(nrows, ncols) + baseline;
@@ -170,7 +207,7 @@ Array::array_xxf Pytorch::DNNROIFinding::frame_to_eigen(const IFrame::pointer &i
   FrameTools::fill(arr, traces, channels.begin()+win_cbeg, channels.begin()+win_cend, tick0);
   arr = arr * scale + offset;
 
-  return rebin(arr,tick_rebin)/scaling;
+  return downsample(arr,tick_per_slice)/scaling;
 }
 
 bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
@@ -192,12 +229,13 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
   double duration = 0;
 
   // frame to eigen
+  const unsigned int tick_per_slice = m_cfg["tick_per_slice"].asInt();
   start = std::clock();
   duration = 0;
   std::vector<Array::array_xxf> ch_eigen;
   for (auto jtag : m_cfg["trace_tags"]) {
     const std::string tag = jtag.asString();
-    ch_eigen.push_back(frame_to_eigen(inframe, tag));
+    ch_eigen.push_back(frame_to_eigen(inframe, tag, tick_per_slice));
   }
   duration += (std::clock() - start) / (double)CLOCKS_PER_SEC;
   l->info("frame2eigen: {}", duration);
@@ -252,27 +290,31 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
   duration = 0;
   // tensor to eigen
   Eigen::Map<Eigen::ArrayXXf> out_e(output[0][0].data<float>(), output.size(3), output.size(2));
+  auto mask_e = upsample(out_e, tick_per_slice);
 
   duration += (std::clock() - start) / (double)CLOCKS_PER_SEC;
   l->info("tensor2eigen: {}", duration);
   m_timers["tensor2eigen"] += duration;
 
   // decon charge frame to eigen
-  Array::array_xxf decon_charge_eigen = frame_to_eigen(inframe, m_cfg["decon_charge_tag"].asString());
-  l->info("ncols: {} nrows: {}", decon_charge_eigen.cols(), decon_charge_eigen.rows());
+  Array::array_xxf decon_charge_eigen = frame_to_eigen(inframe, m_cfg["decon_charge_tag"].asString(), 1);
+  l->info("decon_charge_eigen: ncols: {} nrows: {}", decon_charge_eigen.cols(), decon_charge_eigen.rows()); // c600 x r800
 
   // apply ROI
-  auto sp_charge = mask(decon_charge_eigen.transpose(), out_e, 0.7);
+  auto sp_charge = mask(decon_charge_eigen.transpose(), mask_e, 0.7);
+  sp_charge = baseline_subtraction(sp_charge);
+  // sp_charge = upsample(sp_charge, 10);
+  sp_charge = sp_charge;
   
   start = std::clock();
   duration = 0;
   // eigen to frame
   {
-    const int ncols = out_e.cols();
-    const int nrows = out_e.rows();
+    const int ncols = mask_e.cols();
+    const int nrows = mask_e.rows();
     l->info("ncols: {} nrows: {}", ncols, nrows);
     std::string aname = String::format("/%d/frame_%s%d", m_save_count, "dlroi", 0);
-    h5::write<float>(fd, aname, out_e.data(), h5::count{ncols, nrows}, h5::chunk{ncols, nrows} | h5::gzip{2});
+    h5::write<float>(fd, aname, mask_e.data(), h5::count{ncols, nrows}, h5::chunk{ncols, nrows} | h5::gzip{2});
 
     aname = String::format("/%d/frame_%s%d", m_save_count, "dlcharge", 0);
     h5::write<float>(fd, aname, sp_charge.data(), h5::count{ncols, nrows}, h5::chunk{ncols, nrows} | h5::gzip{2});
