@@ -51,7 +51,8 @@ void Pytorch::DNNROIFinding::configure(const WireCell::Configuration &cfg) {
   try {
     // Deserialize the ScriptModule from a file using torch::jit::load().
     module = torch::jit::load(m_cfg["model"].asString());
-    module.to(at::kCUDA);
+    if(m_cfg["gpu"].asBool()) module.to(at::kCUDA);
+    else module.to(at::kCPU);
     l->info("Model: {} loaded",m_cfg["model"].asString());
   }
   catch (const c10::Error& e) {
@@ -87,6 +88,7 @@ WireCell::Configuration Pytorch::DNNROIFinding::default_configuration() const {
 
   // TorchScript model
   cfg["model"] = "model.pt";
+  cfg["gpu"] = true;
 
   // taces used as input
   cfg["trace_tags"] = Json::arrayValue;
@@ -264,7 +266,8 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
 
   // Create a vector of inputs.
   std::vector<torch::jit::IValue> inputs;
-  inputs.push_back(batch.cuda());
+  if(m_cfg["gpu"].asBool()) inputs.push_back(batch.cuda());
+  else inputs.push_back(batch);
 
   duration += (std::clock() - start) / (double)CLOCKS_PER_SEC;
   l->info("eigen2tensor: {}", duration);
