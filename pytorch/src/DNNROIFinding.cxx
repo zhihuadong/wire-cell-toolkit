@@ -33,14 +33,14 @@ void Pytorch::DNNROIFinding::configure(const WireCell::Configuration &cfg) {
   auto model_path = cfg["model"].asString();
   if (model_path.empty()) {
     THROW(ValueError() << errmsg{
-              "Must provide output filename to HDF5FrameTap"});
+              "Must provide output model to DNNROIFinding"});
   }
 
   
-  std::string fn = cfg["filename"].asString();
+  std::string fn = cfg["evalfile"].asString();
   if (fn.empty()) {
     THROW(ValueError() << errmsg{
-              "Must provide output filename to HDF5FrameTap"});
+              "Must provide output evalfile to DNNROIFinding"});
   }
 
   h5::create(fn, H5F_ACC_TRUNC);
@@ -70,28 +70,26 @@ void Pytorch::DNNROIFinding::configure(const WireCell::Configuration &cfg) {
 WireCell::Configuration Pytorch::DNNROIFinding::default_configuration() const {
   Configuration cfg;
 
-  // This number is set to the waveform sample array before any
-  // charge is added.
-  cfg["baseline"] = 0.0;
+  // anode
+  cfg["anode"] = "AnodePlane";
 
-  // This number will be multiplied to each waveform sample before
-  // casting to dtype.
-  cfg["scale"] = 1.0;
+  // DNN needs consistent scaling with trained model
+  cfg["scale"] = 1.0/4000;
 
-  // This number will be added to each scaled waveform sample before
-  // casting to dtype.
+  // offset for frame to eigen for DNN input
   cfg["offset"] = 0.0;
 
-  cfg["anode"] = "AnodePlane";
-  cfg["nticks"] = 6000;
+  cfg["cbeg"] = 800;
+  cfg["cend"]  = 1600;
   cfg["tick0"]  = 0;
+  cfg["nticks"] = 6000;
 
   // TorchScript model
   cfg["model"] = "model.pt";
   cfg["gpu"] = true;
 
   // taces used as input
-  cfg["trace_tags"] = Json::arrayValue;
+  cfg["intags"] = Json::arrayValue;
 
   // tick/slice
   cfg["tick_per_slice"] = 10;
@@ -100,7 +98,10 @@ WireCell::Configuration Pytorch::DNNROIFinding::default_configuration() const {
   cfg["decon_charge_tag"] = "decon_charge0";
 
   // evaluation output
-  cfg["filename"] = "tsmodel-eval.h5";
+  cfg["evalfile"] = "tsmodel-eval.h5";
+
+  // output trace tag
+  cfg["outtag"] = "dnn_sp";
 
   return cfg;
 }
@@ -170,7 +171,7 @@ namespace {
   bool ispositive(float x) { return x > 0.0; }
   bool isZero(float x) { return x == 0.0; }
 
-  void eigen_to_frame(
+  void eigen_to_traces(
     const Array::array_xxf& data
     , ITrace::vector& itraces
     , IFrame::trace_list_t& indices
@@ -218,50 +219,38 @@ namespace {
       }
     }
   }
-}
 
-Array::array_xxf Pytorch::DNNROIFinding::frame_to_eigen(
-  const IFrame::pointer & inframe
-  , const std::string & tag
-  , const unsigned int tick_per_slice
-) const {
-  const double scaling = 4000.;
-  const int win_cbeg = 800;
-  const int win_cend = 1600; // not include
-  
-  const float baseline = m_cfg["baseline"].asFloat();
-  const float scale = m_cfg["scale"].asFloat();
-  const float offset = m_cfg["offset"].asFloat();
+  Array::array_xxf frame_to_eigen(
+    const IFrame::pointer & inframe
+    , const std::string & tag
+    , const IAnodePlane::pointer anode
+    , const float scale = 1.0
+    , const float offset = 0
+    , const int win_cbeg = 0
+    , const int win_cend = 800
+    , const int tick0 = 0
+    , const int nticks = 6000
+  ) {
+    const int tbeg = tick0;
+    const int tend = tick0+nticks-1;
+    auto channels = anode->channels();
+    const int cbeg = channels.front()+win_cbeg;
+    const int cend = channels.front()+win_cend-1;      
 
-  const int tick0 = m_cfg["tick0"].asInt();
-  const int nticks = m_cfg["nticks"].asInt();
-  const int tbeg = tick0;
-  const int tend = tick0+nticks-1;
-  auto channels = m_anode->channels();
-  // const int cbeg = channels.front();
-  // const int cend = channels.back();
-  const int cbeg = channels.front()+win_cbeg;
-  const int cend = channels.front()+win_cend-1;
-  l->debug("{}: t: {} - {}; c: {} - {}",
-            m_cfg["anode"].asString(),
-            tbeg, tend, cbeg, cend);        
+    const size_t ncols = nticks;
+    const size_t nrows = cend-cbeg+1;
+    Array::array_xxf arr = Array::array_xxf::Zero(nrows, ncols);
 
-  const size_t ncols = nticks;
-  const size_t nrows = cend-cbeg+1;
+    auto traces = FrameTools::tagged_traces(inframe, tag);
+    if (traces.empty()) {
+      return arr;
+    }
 
-  auto traces = FrameTools::tagged_traces(inframe, tag);
-  l->debug("DNNROIFinding: save {} tagged as {}", traces.size(), tag);
-  if (traces.empty()) {
-      l->warn("DNNROIFinding: no traces for tag: \"{}\"", tag);
-      return Array::array_xxf::Zero(nrows/tick_per_slice, ncols);
+    FrameTools::fill(arr, traces, channels.begin()+win_cbeg, channels.begin()+win_cend, tick0);
+    arr = arr * scale + offset;
+
+    return arr;
   }
-
-  Array::array_xxf arr = Array::array_xxf::Zero(nrows, ncols) + baseline;
-  // FrameTools::fill(arr, traces, channels.begin(), channels.end(), tick0);
-  FrameTools::fill(arr, traces, channels.begin()+win_cbeg, channels.begin()+win_cend, tick0);
-  arr = arr * scale + offset;
-
-  return downsample(arr,tick_per_slice)/scaling;
 }
 
 bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
@@ -274,11 +263,11 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
       return true;
   }
 
-  if (m_cfg["trace_tags"].size() != 3) {
+  if (m_cfg["intags"].size() != 3) {
     return true;
   }
 
-  h5::fd_t fd = h5::open(m_cfg["filename"].asString(), H5F_ACC_RDWR);
+  h5::fd_t fd = h5::open(m_cfg["evalfile"].asString(), H5F_ACC_RDWR);
   std::clock_t start;
   double duration = 0;
 
@@ -287,9 +276,15 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
   start = std::clock();
   duration = 0;
   std::vector<Array::array_xxf> ch_eigen;
-  for (auto jtag : m_cfg["trace_tags"]) {
+  for (auto jtag : m_cfg["intags"]) {
     const std::string tag = jtag.asString();
-    ch_eigen.push_back(frame_to_eigen(inframe, tag, tick_per_slice));
+    ch_eigen.push_back(
+      downsample(
+        frame_to_eigen(inframe, tag, m_anode,
+        m_cfg["scale"].asFloat(), m_cfg["offset"].asFloat(),
+        m_cfg["cbeg"].asInt(), m_cfg["cend"].asInt(),
+        m_cfg["tick0"].asInt(), m_cfg["nticks"].asInt())
+        , tick_per_slice));
   }
   duration += (std::clock() - start) / (double)CLOCKS_PER_SEC;
   l->info("frame2eigen: {}", duration);
@@ -352,7 +347,10 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
   m_timers["tensor2eigen"] += duration;
 
   // decon charge frame to eigen
-  Array::array_xxf decon_charge_eigen = frame_to_eigen(inframe, m_cfg["decon_charge_tag"].asString(), 1);
+  Array::array_xxf decon_charge_eigen = frame_to_eigen(inframe, m_cfg["decon_charge_tag"].asString(), m_anode,
+  1., 0.,
+  m_cfg["cbeg"].asInt(), m_cfg["cend"].asInt(),
+  m_cfg["tick0"].asInt(), m_cfg["nticks"].asInt());
   l->info("decon_charge_eigen: ncols: {} nrows: {}", decon_charge_eigen.cols(), decon_charge_eigen.rows()); // c600 x r800
 
   // apply ROI
@@ -363,7 +361,7 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
   
   start = std::clock();
   duration = 0;
-  // eigen to frame
+  // hdf5 eval
   {
     const int ncols = mask_e.cols();
     const int nrows = mask_e.rows();
@@ -378,25 +376,26 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
   l->info("h5: {}", duration);
   m_timers["h5"] += duration;
 
-  for (auto pair : m_timers) {
-    l->info("{} : {}",pair.first, pair.second);
-  }
-
   //eigen to frame
   ITrace::vector* itraces = new ITrace::vector;
   IFrame::trace_list_t trace_index;
-  eigen_to_frame(sp_charge, *itraces, trace_index, 800, m_cfg["nticks"].asInt(), false);
+  eigen_to_traces(sp_charge, *itraces, trace_index, m_cfg["cbeg"].asInt(), m_cfg["nticks"].asInt(), false);
 
   SimpleFrame* sframe = new SimpleFrame(inframe->ident(), inframe->time(),
                                         ITrace::shared_vector(itraces),
                                         inframe->tick(), inframe->masks());
-  sframe->tag_frame("dnn_sp");
-  sframe->tag_traces("dnn_sp", trace_index);
+  sframe->tag_frame("DNNROIFinding");
+  sframe->tag_traces(m_cfg["outtag"].asString(), trace_index);
 
   l->info("DNNROIFinding: produce {} traces: {}",
              itraces->size(), trace_index.size());
 
   outframe = IFrame::pointer(sframe);
+  
+  l->info("timer summary:");
+  for (auto pair : m_timers) {
+    l->info("{} : {}",pair.first, pair.second);
+  }
 
   ++m_save_count;
   return true;
