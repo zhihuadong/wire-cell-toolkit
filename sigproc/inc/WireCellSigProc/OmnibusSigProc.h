@@ -52,6 +52,7 @@ namespace WireCell {
                      int charge_ch_offset = 10000,
                      const std::string& wiener_tag = "wiener",
                      const std::string& wiener_threshold_tag = "threshold",
+                     const std::string& decon_charge_tag = "decon_charge",
                      const std::string& gauss_tag = "gauss",
                      bool use_roi_debug_mode = false,
                      const std::string& tight_lf_tag = "tight_lf",
@@ -223,6 +224,7 @@ namespace WireCell {
       // tag name for traces
       std::string m_wiener_tag;
       std::string m_wiener_threshold_tag;
+      std::string m_decon_charge_tag;
       std::string m_gauss_tag;
       std::string m_frame_tag;
 
