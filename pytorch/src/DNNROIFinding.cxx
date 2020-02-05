@@ -165,11 +165,63 @@ namespace {
     }
     return ret;
   }
+
+  // used in sparsifying below.  Could use C++17 lambdas....
+  bool ispositive(float x) { return x > 0.0; }
+  bool isZero(float x) { return x == 0.0; }
+
+  void eigen_to_frame(
+    const Array::array_xxf& data
+    , ITrace::vector& itraces
+    , IFrame::trace_list_t& indices
+    , const int cbeg
+    , const int nticks
+    , const bool sparse = false
+    )
+  {
+    // reuse this temporary vector to hold charge for a channel.
+    ITrace::ChargeSequence charge(nticks, 0.0);
+
+    for (int ch = cbeg; ch < cbeg+data.cols(); ++ch) {
+      for (int itick=0;itick!=nticks;itick++){
+        const float q = data(itick,ch-cbeg);
+        charge.at(itick) = q;
+      }
+
+      // actually save out
+      if (sparse) {
+        // Save waveform sparsely by finding contiguous, positive samples.
+        std::vector<float>::const_iterator beg=charge.begin(), end=charge.end();
+        auto i1 = std::find_if(beg, end, ispositive); // first start
+        while (i1 != end) {
+          // stop at next zero or end and make little temp vector
+          auto i2 = std::find_if(i1, end, isZero);
+          const std::vector<float> q(i1,i2);
+
+          // save out
+          const int tbin = i1 - beg;
+          SimpleTrace *trace = new SimpleTrace(ch, tbin, q);
+          const size_t trace_index = itraces.size();
+          indices.push_back(trace_index);
+          itraces.push_back(ITrace::pointer(trace));
+
+          // find start for next loop
+          i1 = std::find_if(i2, end, ispositive);
+        }
+      }
+      else {
+        // Save the waveform densely, including zeros.
+        SimpleTrace *trace = new SimpleTrace(ch, 0, charge);
+        const size_t trace_index = itraces.size();
+        indices.push_back(trace_index);
+        itraces.push_back(ITrace::pointer(trace));
+      }
+    }
+  }
 }
 
-
 Array::array_xxf Pytorch::DNNROIFinding::frame_to_eigen(
-  const IFrame::pointer &inframe
+  const IFrame::pointer & inframe
   , const std::string & tag
   , const unsigned int tick_per_slice
 ) const {
@@ -329,6 +381,22 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
   for (auto pair : m_timers) {
     l->info("{} : {}",pair.first, pair.second);
   }
+
+  //eigen to frame
+  ITrace::vector* itraces = new ITrace::vector;
+  IFrame::trace_list_t trace_index;
+  eigen_to_frame(sp_charge, *itraces, trace_index, 800, m_cfg["nticks"].asInt(), false);
+
+  SimpleFrame* sframe = new SimpleFrame(inframe->ident(), inframe->time(),
+                                        ITrace::shared_vector(itraces),
+                                        inframe->tick(), inframe->masks());
+  sframe->tag_frame("dnn_sp");
+  sframe->tag_traces("dnn_sp", trace_index);
+
+  l->info("DNNROIFinding: produce {} traces: {}",
+             itraces->size(), trace_index.size());
+
+  outframe = IFrame::pointer(sframe);
 
   ++m_save_count;
   return true;
