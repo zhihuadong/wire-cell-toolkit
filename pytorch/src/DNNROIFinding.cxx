@@ -107,76 +107,6 @@ WireCell::Configuration Pytorch::DNNROIFinding::default_configuration() const {
 }
 
 namespace {
-  Array::array_xxf downsample(const Array::array_xxf &in, const unsigned int k, const int dim = 0) {
-    if(dim==0) {
-      Array::array_xxf out = Array::array_xxf::Zero(in.rows()/k, in.cols());
-      for(unsigned int i=0; i<in.rows(); ++i) {
-        out.row(i/k) = out.row(i/k) + in.row(i);
-      }
-      return out/k;
-    }
-    if(dim==1) {
-      Array::array_xxf out = Array::array_xxf::Zero(in.rows(), in.cols()/k);
-      for(unsigned int i=0; i<in.cols(); ++i) {
-        out.col(i/k) = out.col(i/k) + in.col(i);
-      }
-      return out/k;
-    }
-    return Array::array_xxf::Zero(in.rows(), in.cols());
-  }
-
-  Array::array_xxf upsample(
-    const Array::array_xxf &in,
-    const unsigned int k,
-    const int dim = 0) {
-    if(dim==0) {
-      Array::array_xxf out = Array::array_xxf::Zero(in.rows()*k, in.cols());
-      for(unsigned int i=0; i<in.rows()*k; ++i) {
-        out.row(i) = in.row(i/k);
-      }
-      return out;
-    }
-    if(dim==1) {
-      Array::array_xxf out = Array::array_xxf::Zero(in.rows(), in.cols()*k);
-      for(unsigned int i=0; i<in.cols()*k; ++i) {
-        out.col(i) = in.col(i/k);
-      }
-      return out;
-    }
-    return Array::array_xxf::Zero(in.rows(), in.cols());
-  }
-
-  Array::array_xxf mask(const Array::array_xxf &in, const Array::array_xxf &mask, const float th = 0.5) {
-    Array::array_xxf ret = Eigen::ArrayXXf::Zero(in.rows(),in.cols());
-    if(in.rows()!=mask.rows() || in.cols()!=mask.cols()) {
-      std::cout << "error: in.rows()!=mask.rows() || in.cols()!=mask.cols()\n";
-      return ret;
-    }
-    return (mask>th).select(in, ret);
-  }
-
-  Array::array_xxf baseline_subtraction(
-    const Array::array_xxf &in
-  ) {
-    Array::array_xxf ret = Eigen::ArrayXXf::Zero(in.rows(),in.cols());
-    for(int ich=0; ich<in.cols(); ++ich) {
-      int sta = 0;
-      int end = 0;
-      for(int it=0; it<in.rows(); ++it) {
-        if(in(it,ich) == 0) {
-          if(sta < end){
-            for(int i=sta;i<end+1;++i) {
-              ret(i,ich) = in(i,ich)-(in(sta,ich)+(i-sta)*(in(end,ich)-in(sta,ich))/(end-sta));
-            }
-          }
-          sta = it+1; // first tick in ROI
-        } else {
-          end = it; // last tick in ROI
-        }
-      }
-    }
-    return ret;
-  }
 
   // used in sparsifying below.  Could use C++17 lambdas....
   bool ispositive(float x) { return x > 0.0; }
@@ -288,7 +218,7 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
   for (auto jtag : m_cfg["intags"]) {
     const std::string tag = jtag.asString();
     ch_eigen.push_back(
-      downsample(
+      Array::downsample(
         frame_to_eigen(inframe, tag, m_anode,
         m_cfg["scale"].asFloat(), m_cfg["offset"].asFloat(),
         m_cfg["cbeg"].asInt(), m_cfg["cend"].asInt(),
@@ -349,7 +279,7 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
   duration = 0;
   // tensor to eigen
   Eigen::Map<Eigen::ArrayXXf> out_e(output[0][0].data<float>(), output.size(3), output.size(2));
-  auto mask_e = upsample(out_e, tick_per_slice, 0);
+  auto mask_e = Array::upsample(out_e, tick_per_slice, 0);
 
   duration += (std::clock() - start) / (double)CLOCKS_PER_SEC;
   l->info("tensor2eigen: {}", duration);
@@ -363,8 +293,8 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
   l->info("decon_charge_eigen: ncols: {} nrows: {}", decon_charge_eigen.cols(), decon_charge_eigen.rows()); // c600 x r800
 
   // apply ROI
-  auto sp_charge = mask(decon_charge_eigen.transpose(), mask_e, 0.7);
-  sp_charge = baseline_subtraction(sp_charge);
+  auto sp_charge = Array::mask(decon_charge_eigen.transpose(), mask_e, 0.7);
+  sp_charge = Array::baseline_subtraction(sp_charge);
   
   start = std::clock();
   duration = 0;
