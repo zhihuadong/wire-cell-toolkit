@@ -107,12 +107,22 @@ WireCell::Configuration Pytorch::DNNROIFinding::default_configuration() const {
 }
 
 namespace {
-  Array::array_xxf downsample(const Array::array_xxf &in, const unsigned int k) {
-    Array::array_xxf out = Array::array_xxf::Zero(in.rows(), in.cols()/k);
-    for(unsigned int i=0; i<in.cols(); ++i) {
-      out.col(i/k) = out.col(i/k) + in.col(i);
+  Array::array_xxf downsample(const Array::array_xxf &in, const unsigned int k, const int dim = 0) {
+    if(dim==0) {
+      Array::array_xxf out = Array::array_xxf::Zero(in.rows()/k, in.cols());
+      for(unsigned int i=0; i<in.rows(); ++i) {
+        out.row(i/k) = out.row(i/k) + in.row(i);
+      }
+      return out/k;
     }
-    return out/k;
+    if(dim==1) {
+      Array::array_xxf out = Array::array_xxf::Zero(in.rows(), in.cols()/k);
+      for(unsigned int i=0; i<in.cols(); ++i) {
+        out.col(i/k) = out.col(i/k) + in.col(i);
+      }
+      return out/k;
+    }
+    return Array::array_xxf::Zero(in.rows(), in.cols());
   }
 
   Array::array_xxf upsample(
@@ -133,6 +143,7 @@ namespace {
       }
       return out;
     }
+    return Array::array_xxf::Zero(in.rows(), in.cols());
   }
 
   Array::array_xxf mask(const Array::array_xxf &in, const Array::array_xxf &mask, const float th = 0.5) {
@@ -231,8 +242,6 @@ namespace {
     , const int tick0 = 0
     , const int nticks = 6000
   ) {
-    const int tbeg = tick0;
-    const int tend = tick0+nticks-1;
     auto channels = anode->channels();
     const int cbeg = channels.front()+win_cbeg;
     const int cend = channels.front()+win_cend-1;      
@@ -284,7 +293,7 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
         m_cfg["scale"].asFloat(), m_cfg["offset"].asFloat(),
         m_cfg["cbeg"].asInt(), m_cfg["cend"].asInt(),
         m_cfg["tick0"].asInt(), m_cfg["nticks"].asInt())
-        , tick_per_slice));
+        , tick_per_slice, 1));
   }
   duration += (std::clock() - start) / (double)CLOCKS_PER_SEC;
   l->info("frame2eigen: {}", duration);
@@ -340,7 +349,7 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
   duration = 0;
   // tensor to eigen
   Eigen::Map<Eigen::ArrayXXf> out_e(output[0][0].data<float>(), output.size(3), output.size(2));
-  auto mask_e = upsample(out_e, tick_per_slice);
+  auto mask_e = upsample(out_e, tick_per_slice, 0);
 
   duration += (std::clock() - start) / (double)CLOCKS_PER_SEC;
   l->info("tensor2eigen: {}", duration);
@@ -356,15 +365,13 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
   // apply ROI
   auto sp_charge = mask(decon_charge_eigen.transpose(), mask_e, 0.7);
   sp_charge = baseline_subtraction(sp_charge);
-  // sp_charge = upsample(sp_charge, 10);
-  sp_charge = sp_charge;
   
   start = std::clock();
   duration = 0;
   // hdf5 eval
   {
-    const int ncols = mask_e.cols();
-    const int nrows = mask_e.rows();
+    const unsigned long ncols = mask_e.cols();
+    const unsigned long nrows = mask_e.rows();
     l->info("ncols: {} nrows: {}", ncols, nrows);
     std::string aname = String::format("/%d/frame_%s%d", m_save_count, "dlroi", 0);
     h5::write<float>(fd, aname, mask_e.data(), h5::count{ncols, nrows}, h5::chunk{ncols, nrows} | h5::gzip{2});
