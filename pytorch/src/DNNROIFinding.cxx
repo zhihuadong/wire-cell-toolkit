@@ -107,65 +107,6 @@ WireCell::Configuration Pytorch::DNNROIFinding::default_configuration() const {
 }
 
 namespace {
-  Array::array_xxf downsample(const Array::array_xxf &in, const unsigned int k) {
-    Array::array_xxf out = Array::array_xxf::Zero(in.rows(), in.cols()/k);
-    for(unsigned int i=0; i<in.cols(); ++i) {
-      out.col(i/k) = out.col(i/k) + in.col(i);
-    }
-    return out/k;
-  }
-
-  Array::array_xxf upsample(
-    const Array::array_xxf &in,
-    const unsigned int k,
-    const int dim = 0) {
-    if(dim==0) {
-      Array::array_xxf out = Array::array_xxf::Zero(in.rows()*k, in.cols());
-      for(unsigned int i=0; i<in.rows()*k; ++i) {
-        out.row(i) = in.row(i/k);
-      }
-      return out;
-    }
-    if(dim==1) {
-      Array::array_xxf out = Array::array_xxf::Zero(in.rows(), in.cols()*k);
-      for(unsigned int i=0; i<in.cols()*k; ++i) {
-        out.col(i) = in.col(i/k);
-      }
-      return out;
-    }
-  }
-
-  Array::array_xxf mask(const Array::array_xxf &in, const Array::array_xxf &mask, const float th = 0.5) {
-    Array::array_xxf ret = Eigen::ArrayXXf::Zero(in.rows(),in.cols());
-    if(in.rows()!=mask.rows() || in.cols()!=mask.cols()) {
-      std::cout << "error: in.rows()!=mask.rows() || in.cols()!=mask.cols()\n";
-      return ret;
-    }
-    return (mask>th).select(in, ret);
-  }
-
-  Array::array_xxf baseline_subtraction(
-    const Array::array_xxf &in
-  ) {
-    Array::array_xxf ret = Eigen::ArrayXXf::Zero(in.rows(),in.cols());
-    for(int ich=0; ich<in.cols(); ++ich) {
-      int sta = 0;
-      int end = 0;
-      for(int it=0; it<in.rows(); ++it) {
-        if(in(it,ich) == 0) {
-          if(sta < end){
-            for(int i=sta;i<end+1;++i) {
-              ret(i,ich) = in(i,ich)-(in(sta,ich)+(i-sta)*(in(end,ich)-in(sta,ich))/(end-sta));
-            }
-          }
-          sta = it+1; // first tick in ROI
-        } else {
-          end = it; // last tick in ROI
-        }
-      }
-    }
-    return ret;
-  }
 
   // used in sparsifying below.  Could use C++17 lambdas....
   bool ispositive(float x) { return x > 0.0; }
@@ -231,8 +172,6 @@ namespace {
     , const int tick0 = 0
     , const int nticks = 6000
   ) {
-    const int tbeg = tick0;
-    const int tend = tick0+nticks-1;
     auto channels = anode->channels();
     const int cbeg = channels.front()+win_cbeg;
     const int cend = channels.front()+win_cend-1;      
@@ -279,12 +218,12 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
   for (auto jtag : m_cfg["intags"]) {
     const std::string tag = jtag.asString();
     ch_eigen.push_back(
-      downsample(
+      Array::downsample(
         frame_to_eigen(inframe, tag, m_anode,
         m_cfg["scale"].asFloat(), m_cfg["offset"].asFloat(),
         m_cfg["cbeg"].asInt(), m_cfg["cend"].asInt(),
         m_cfg["tick0"].asInt(), m_cfg["nticks"].asInt())
-        , tick_per_slice));
+        , tick_per_slice, 1));
   }
   duration += (std::clock() - start) / (double)CLOCKS_PER_SEC;
   l->info("frame2eigen: {}", duration);
@@ -340,7 +279,7 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
   duration = 0;
   // tensor to eigen
   Eigen::Map<Eigen::ArrayXXf> out_e(output[0][0].data<float>(), output.size(3), output.size(2));
-  auto mask_e = upsample(out_e, tick_per_slice);
+  auto mask_e = Array::upsample(out_e, tick_per_slice, 0);
 
   duration += (std::clock() - start) / (double)CLOCKS_PER_SEC;
   l->info("tensor2eigen: {}", duration);
@@ -354,17 +293,15 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
   l->info("decon_charge_eigen: ncols: {} nrows: {}", decon_charge_eigen.cols(), decon_charge_eigen.rows()); // c600 x r800
 
   // apply ROI
-  auto sp_charge = mask(decon_charge_eigen.transpose(), mask_e, 0.7);
-  sp_charge = baseline_subtraction(sp_charge);
-  // sp_charge = upsample(sp_charge, 10);
-  sp_charge = sp_charge;
+  auto sp_charge = Array::mask(decon_charge_eigen.transpose(), mask_e, 0.7);
+  sp_charge = Array::baseline_subtraction(sp_charge);
   
   start = std::clock();
   duration = 0;
   // hdf5 eval
   {
-    const int ncols = mask_e.cols();
-    const int nrows = mask_e.rows();
+    const unsigned long ncols = mask_e.cols();
+    const unsigned long nrows = mask_e.rows();
     l->info("ncols: {} nrows: {}", ncols, nrows);
     std::string aname = String::format("/%d/frame_%s%d", m_save_count, "dlroi", 0);
     h5::write<float>(fd, aname, mask_e.data(), h5::count{ncols, nrows}, h5::chunk{ncols, nrows} | h5::gzip{2});

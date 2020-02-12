@@ -116,6 +116,29 @@ namespace WireCell {
 	 */
 	array_xxf deconv(const array_xxf& arr, const array_xxc& filter);
 
+        /** downsample a 2D array along one axis by k
+         *  simple average of all numbers in a bin
+         *  e.g: MxN -> Mxfloor(N/k)
+         *  extra rows/cols are ignored
+         */
+        array_xxf downsample(const array_xxf &in, const unsigned int k, const int dim = 0);
+        
+        /** upsample a 2D array along one axis by k
+         *  e.g: MxN -> MxN*k
+         *  all numbers in a new bin are assigned with same value
+         */
+        array_xxf upsample(const array_xxf &in, const unsigned int k, const int dim = 0);
+                
+        /** put a mask on in
+         *  in and mask need to have same shape
+         *  values > th in mask are considered pass
+         */
+        array_xxf mask(const array_xxf &in, const array_xxf &mask, const float th = 0.5);
+                        
+        /** linear baseline subtraction along row direction
+         */
+        array_xxf baseline_subtraction(const array_xxf &in);
+
     }
 }
 
