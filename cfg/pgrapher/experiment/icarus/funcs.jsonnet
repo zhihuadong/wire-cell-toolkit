@@ -3,6 +3,10 @@
 local g = import 'pgraph.jsonnet';
 
 {
+    //  Return a list of channel by anode index [1-8]
+    anode_channels(n):: std.range(1056 * (n % 2) + 13312 * (n - n % 2) / 2, 1056 * (n % 2 + 1) - 1 + 13312 * (n - n % 2) / 2) + std.range(1056 * 2 + 13312 * (n - n % 2) / 2, 13312 - 1 + 13312 * (n - n % 2) / 2),
+
+
     //  Build a depofanout-[signal]-[framesummer]-[pipelines]-fanin graph.
     //  FrameSummer add up the two "split" anodes into one frame.
     //  Each branch of the pipelines operates on the summed signal frame.

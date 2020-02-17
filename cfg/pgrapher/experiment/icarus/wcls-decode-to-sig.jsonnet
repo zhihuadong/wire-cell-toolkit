@@ -132,13 +132,13 @@ local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n
 local sp = sp_maker(params, tools, { sparse: sigoutform == 'sparse' });
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
+local util = import 'pgrapher/experiment/icarus/funcs.jsonnet';
 local chsel_pipes = [
   g.pnode({
     type: 'ChannelSelector',
     name: 'chsel%d' % n,
     data: {
-      channels: std.range( 1056*(n%2) + 13312*(n-n%2)/2, 1056*(n%2+1) -1 + 13312*(n-n%2)/2 )
-      + std.range(1056*2 + 13312*(n-n%2)/2, 13312 - 1 + 13312*(n-n%2)/2),
+      channels: util.anode_channels(n),
       //tags: ['orig%d' % n], // traces tag
     },
   }, nin=1, nout=1)
@@ -154,8 +154,8 @@ local nfsp_pipes = [
                chsel_pipes[n],
                magnifyio.orig_pipe[n],
 
-               // nf_pipes[n],
-               // magnifyio.raw_pipe[n],
+               nf_pipes[n],
+               magnifyio.raw_pipe[n],
 
                sp_pipes[n],
                magnifyio.decon_pipe[n],
@@ -167,10 +167,20 @@ local nfsp_pipes = [
 ];
 
 local f = import 'pgrapher/common/funcs.jsonnet';
-// local f = import 'pgrapher/experiment/pdsp/funcs.jsonnet';
-//local outtags = ['gauss%d' % n for n in std.range(0, std.length(tools.anodes) - 1)];
-//local fanpipe = f.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'sn_mag_nf', outtags);
-local fanpipe = f.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'sn_mag_nf');
+local tag_rules = [ 
+          {
+            frame: {
+              '.*': 'orig%d' % tools.anodes[n].data.ident,
+            },
+            trace: {
+              // fake doing Nmult SP pipelines
+              //orig: ['wiener', 'gauss'],
+              //'.*': 'orig',
+            },
+          }
+          for n in std.range(0, std.length(tools.anodes) - 1)
+        ];
+local fanpipe = f.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'nfsp', [], tag_rules);
 
 local retagger = g.pnode({
   type: 'Retagger',
