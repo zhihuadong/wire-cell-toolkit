@@ -32,12 +32,12 @@ function(tools, outputfile) {
       data: {
         output_filename: outputfile,
         root_file_mode: 'UPDATE',
-        frames: ['raw%d' % n],
+        frames: ['raw%d' % tools.anodes[n].data.ident],
         trace_has_tag: true,
-        cmmtree: [["noisy", "T_noisy%d"%n],
-                  ["sticky", "T_stky%d"%n],
-                  ["ledge", "T_ldg%d"%n],
-                  ["harmonic", "T_hm%d"%n] ], // maskmap in nf.jsonnet 
+//        cmmtree: [["noisy", "T_noisy%d"%n],
+//                  ["sticky", "T_stky%d"%n],
+//                  ["ledge", "T_ldg%d"%n],
+//                  ["harmonic", "T_hm%d"%n] ], // maskmap in nf.jsonnet 
         anode: wc.tn(tools.anodes[n]),
       },
     }, nin=1, nout=1)

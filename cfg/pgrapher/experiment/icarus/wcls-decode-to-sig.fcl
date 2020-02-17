@@ -27,7 +27,7 @@ physics :{
             apps: ["Pgrapher"]
 
             logsinks: ["stdout"]
-            loglevels: ["debug", "pgraph:info"]
+            loglevels: ["debug", "pgraph:info", "glue:debug", "sigproc:debug"]
 
             // Libraries in which to look for WCT components
             plugins: ["WireCellGen", "WireCellSigProc", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
