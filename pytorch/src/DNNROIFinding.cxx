@@ -325,7 +325,7 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
   //eigen to frame
   ITrace::vector* itraces = new ITrace::vector;
   IFrame::trace_list_t trace_index;
-  eigen_to_traces(sp_charge, *itraces, trace_index, m_cfg["cbeg"].asInt(), m_cfg["nticks"].asInt(), false);
+  eigen_to_traces(sp_charge, *itraces, trace_index, m_anode->channels().front()+m_cfg["cbeg"].asInt(), m_cfg["nticks"].asInt(), false);
 
   SimpleFrame* sframe = new SimpleFrame(inframe->ident(), inframe->time(),
                                         ITrace::shared_vector(itraces),
