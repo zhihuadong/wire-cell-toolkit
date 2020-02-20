@@ -33,6 +33,7 @@ private:
   torch::jit::script::Module m_module;
 
   std::unordered_map<std::string, float> m_timers;
+
 };
 } // namespace Pytorch
 } // namespace WireCell

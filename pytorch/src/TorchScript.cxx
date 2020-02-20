@@ -19,6 +19,9 @@ Configuration Pytorch::TorchScript::default_configuration() const {
   // if failed, wait this time and try again
   cfg["wait_time"] = 500; // ms
 
+  // for debug
+  cfg["nloop"] = 10;
+
   return cfg;
 }
 
@@ -44,15 +47,15 @@ void Pytorch::TorchScript::configure(const WireCell::Configuration &cfg) {
     l->critical("error loading model: {}", m_cfg["model"].asString());
     exit(0);
   }
-
-  m_timers["total_wait_time"] = 0;
 }
 
 torch::IValue
 Pytorch::TorchScript::forward(const std::vector<torch::IValue> &inputs) {
   torch::IValue ret;
   int wait_time = m_cfg["wait_time"].asInt();
+  int thread_wait_time = 0;
 
+  // for(int iloop=0; iloop<m_cfg["nloop"].asInt();++iloop) {
   bool success = false;
   while (!success) {
     try {
@@ -60,11 +63,12 @@ Pytorch::TorchScript::forward(const std::vector<torch::IValue> &inputs) {
       success = true;
     } catch (...) {
       std::this_thread::sleep_for(std::chrono::milliseconds(wait_time));
-      m_timers["total_wait_time"] += wait_time;
+      thread_wait_time += wait_time;
     }
   }
+  // }
 
-  l->info("total_wait_time: {} sec", m_timers["total_wait_time"] / 1000.);
+  l->info("thread_wait_time: {} sec", thread_wait_time / 1000.);
 
   return ret;
 }
