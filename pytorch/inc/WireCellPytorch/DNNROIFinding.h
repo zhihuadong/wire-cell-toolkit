@@ -12,6 +12,8 @@
 #include "WireCellUtil/Array.h"
 #include "WireCellUtil/Logging.h"
 
+#include "WireCellPytorch/ITorchScript.h"
+
 #include <torch/script.h> // One-stop header.
 
 namespace WireCell {
@@ -38,6 +40,8 @@ private:
 
   Configuration m_cfg; /// copy of configuration
   IAnodePlane::pointer m_anode; /// pointer to some APA, needed to associate chnnel ID to planes
+
+  ITorchScript::pointer m_torch; ///
 
   torch::jit::script::Module module;
 

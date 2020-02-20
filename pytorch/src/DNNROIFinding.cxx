@@ -35,7 +35,6 @@ void Pytorch::DNNROIFinding::configure(const WireCell::Configuration &cfg) {
     THROW(ValueError() << errmsg{
               "Must provide output model to DNNROIFinding"});
   }
-
   
   std::string fn = cfg["evalfile"].asString();
   if (fn.empty()) {
@@ -47,18 +46,21 @@ void Pytorch::DNNROIFinding::configure(const WireCell::Configuration &cfg) {
 
   m_cfg = cfg;
 
+  auto torch_tn = cfg["torch_script"].asString();
+  m_torch = Factory::find_tn<ITorchScript>(torch_tn);
+
   // load Torch Script Model
-  try {
-    // Deserialize the ScriptModule from a file using torch::jit::load().
-    module = torch::jit::load(m_cfg["model"].asString());
-    if(m_cfg["gpu"].asBool()) module.to(at::kCUDA);
-    else module.to(at::kCPU);
-    l->info("Model: {} loaded",m_cfg["model"].asString());
-  }
-  catch (const c10::Error& e) {
-    l->critical( "error loading model: {}", m_cfg["model"].asString());
-    exit(0);
-  }
+  // try {
+  //   // Deserialize the ScriptModule from a file using torch::jit::load().
+  //   module = torch::jit::load(m_cfg["model"].asString());
+  //   if(m_cfg["gpu"].asBool()) module.to(at::kCUDA);
+  //   else module.to(at::kCPU);
+  //   l->info("Model: {} loaded",m_cfg["model"].asString());
+  // }
+  // catch (const c10::Error& e) {
+  //   l->critical( "error loading model: {}", m_cfg["model"].asString());
+  //   exit(0);
+  // }
 
   m_timers.insert({"frame2eigen",0});
   m_timers.insert({"eigen2tensor",0});
@@ -174,7 +176,12 @@ namespace {
   ) {
     auto channels = anode->channels();
     const int cbeg = channels.front()+win_cbeg;
-    const int cend = channels.front()+win_cend-1;      
+    const int cend = channels.front()+win_cend-1;
+    // std::cout << "[yuhw] " <<
+    // " anode->ident(): " << anode->ident() <<
+    // " channels.front(): " << channels.front() <<
+    // " channels.back(): " << channels.back() <<
+    // std::endl;
 
     const size_t ncols = nticks;
     const size_t nrows = cend-cbeg+1;
@@ -182,6 +189,7 @@ namespace {
 
     auto traces = FrameTools::tagged_traces(inframe, tag);
     if (traces.empty()) {
+      // std::cout << "[yuhw] frame " << inframe->frame_tags() << " has 0 " << tag << " traces!\n";
       return arr;
     }
 
@@ -262,7 +270,8 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
   start = std::clock();
   duration = 0;
   // Execute the model and turn its output into a tensor.
-  torch::Tensor output = module.forward(inputs).toTensor().cpu();
+  // torch::Tensor output = module.forward(inputs).toTensor().cpu();
+  torch::Tensor output = m_torch->forward(inputs).toTensor().cpu();
 
   duration += (std::clock() - start) / (double)CLOCKS_PER_SEC;
   l->info("forward: {}", duration);
@@ -303,10 +312,10 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
     const unsigned long ncols = mask_e.cols();
     const unsigned long nrows = mask_e.rows();
     l->info("ncols: {} nrows: {}", ncols, nrows);
-    std::string aname = String::format("/%d/frame_%s%d", m_save_count, "dlroi", 0);
+    std::string aname = String::format("/%d/frame_%s%d", m_save_count, "dlroi", m_anode->ident());
     h5::write<float>(fd, aname, mask_e.data(), h5::count{ncols, nrows}, h5::chunk{ncols, nrows} | h5::gzip{2});
 
-    aname = String::format("/%d/frame_%s%d", m_save_count, "dlcharge", 0);
+    aname = String::format("/%d/frame_%s%d", m_save_count, "dlcharge", m_anode->ident());
     h5::write<float>(fd, aname, sp_charge.data(), h5::count{ncols, nrows}, h5::chunk{ncols, nrows} | h5::gzip{2});
   }
   duration += (std::clock() - start) / (double)CLOCKS_PER_SEC;
