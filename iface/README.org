@@ -1,0 +1,27 @@
+#+title:  Wire Cell Interfaces
+
+This package provides a set of abstract base classes aka interface
+classes.  In general, there should be no implementation code in this
+package although we currently violate that slightly.
+
+Ideally, all implementation classes, besides what is in ~util/~, are
+based on one or more interface classes in ~iface/~.  
+
+Guidelines for adding new interfaces to this subpackage:
+
+- general in terms of concept (abstract the concept and type)
+- specific in terms of API (fewer methods are better)
+- minimal in terms of dependencies (nothing outside ~util/~ and core dependence)
+
+When adding a new interface which is very specific to an
+implementation try to remove any special purpose data types.  Use
+Eigen3 arrays instead of libtorch tensors.  Use ~IFrame~ instead of
+Eigen3 arrays.
+
+If a new interface must bring in a new dependency then it may be
+rejected for living in iface/.  Developers are free to add interfaces
+to implementation packages however this will lead to complication in
+the overall WCT dependency tree.  Discussion is warranted in these cases. 
+
+See the user manual for more info.  https://wirecell.bnl.gov/
+
