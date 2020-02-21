@@ -41,9 +41,7 @@ private:
   Configuration m_cfg; /// copy of configuration
   IAnodePlane::pointer m_anode; /// pointer to some APA, needed to associate chnnel ID to planes
 
-  ITorchScript::pointer m_torch; ///
-
-  torch::jit::script::Module module;
+  ITorchScript::pointer m_torch; /// pointer to a TorchScript wrapper
 
   int m_save_count;   // count frames saved
   
