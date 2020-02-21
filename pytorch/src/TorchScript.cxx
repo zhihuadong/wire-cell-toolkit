@@ -38,7 +38,7 @@ void Pytorch::TorchScript::configure(const WireCell::Configuration &cfg) {
   try {
     // Deserialize the ScriptModule from a file using torch::jit::load().
     m_module = torch::jit::load(m_cfg["model"].asString());
-    if (m_cfg["gpu"].asBool())
+    if (gpu())
       m_module.to(at::kCUDA);
     else
       m_module.to(at::kCPU);
