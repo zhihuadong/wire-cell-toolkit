@@ -69,6 +69,7 @@ bool Gen::AddNoise::operator()(const input_pointer& inframe, output_pointer& out
     for (const auto& intrace : *inframe->traces()) {
         int chid = intrace->channel();
         const auto& spec = (*m_model)(chid);
+
         Waveform::realseq_t wave = Gen::Noise::generate_waveform(spec, m_rng, m_rep_percent);
 
 	wave.resize(m_nsamples,0);

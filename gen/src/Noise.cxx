@@ -57,17 +57,5 @@ Waveform::realseq_t Gen::Noise::generate_waveform(const std::vector<float>& spec
 
     Waveform::realseq_t noise_time = WireCell::Waveform::idft(noise_freq);
 
-    /*
-    log->debug("[ascarpel] begin noise debug ====");
-    int iter = 0;
-    for(auto noise : noise_time)
-    {
-      if(iter == 1000){break;}
-      log->debug("[ascarpel] {}", noise);
-      iter++;
-    }
-    log->debug("[ascarpel] end noise debug ====");
-    */
-
     return noise_time;
 }

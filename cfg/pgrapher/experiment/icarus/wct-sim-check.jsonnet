@@ -94,14 +94,16 @@ local add_noise = function(model) g.pnode({
     }}, nin=1, nout=1, uses=[model]);
 local noise = add_noise(noise_model);
 
-
 ////////////////////////////////////////////////////////////////////////////////
 //
 local add_coherent_noise = function() g.pnode({
       type: "AddCoherentNoise",
       name: "addcoherentnoise",
       data: {
+          rng: wc.tn(tools.random),
           nsamples: params.daq.nticks,
+          period: params.daq.tick,
+          normalization: 8
       }}, nin=1, nout=1);
 local coherent_noise = add_coherent_noise();
 //
@@ -189,7 +191,7 @@ local fanpipe = g.intern(innodes=[fansel],
 //local frameio = io.numpy.frames(output);
 local sink = sim.frame_sink;
 
-local graph = g.pipeline([depos, drifter, bagger, sim.analog, noise, coherent_noise, digitizer, fanpipe, retagger, sink]);
+local graph = g.pipeline([depos, drifter, bagger, sim.analog, coherent_noise ,digitizer, fanpipe, retagger, sink]);
 
 local app = {
   type: 'Pgrapher',
