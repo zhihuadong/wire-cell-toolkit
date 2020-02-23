@@ -1,2 +1,3 @@
-bld.smplpkg('WireCellApps', use='WireCellIface JSONNET FFTWTHREADS', app_use='WireCellUtil JSONNET',
-            test_use='WireCellUtil DYNAMO BOOST JSONCPP JSONNET')
+bld.smplpkg('WireCellApps', use='WireCellIface FFTWTHREADS')
+#            app_use='WireCellUtil JSONNET',
+#            test_use='WireCellUtil DYNAMO BOOST JSONCPP JSONNET')
