@@ -18,4 +18,3 @@ def configure(cfg):
 
 def build(bld):
     bld.load('wcb')
-
