@@ -1,2 +1,4 @@
-bld.smplpkg('WireCellRoot', use='WireCellUtil WireCellIface WireCellGen WireCellSigProc WireCellRess ROOTSYS')
+bld.smplpkg('WireCellRoot',
+            use='WireCellIface ROOTSYS',
+            test_use='WireCellGen WireCellSigProc')
 

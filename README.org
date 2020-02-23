@@ -22,21 +22,16 @@ https://lar.bnl.gov/software/releases/
 
 ** External software dependencies
 
-The core of WCT depends on:
+The WCT dependency tree:
 
-- Boost
-- JsonCPP
-- Jsonnet
-- Eigen
-- FFTW
+[[file:wct-deps.png]]
 
-Optional dependencies include
+Anything that the ~WireCellUtil~ package depends on is required.  The
+rest are optional.  Missing optional dependencies will cause the
+dependent WCT package to not be built.
 
-- ROOT
-- TBB
-
-You may provide the necessary external software dependencies as you
-wish.  Some options include:
+You may provide the necessary external software dependencies in a
+manner of your own choosing and some options include:
 
 - [[https://github.com/WireCell/wire-cell-spack][Spack-based install]] automatically builds all (non-OS) externals and WCT itself
 - Some WCT releases are built at FNAL as a UPS product named =wirecell=.
