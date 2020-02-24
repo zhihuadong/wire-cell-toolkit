@@ -4,12 +4,13 @@
 
 using namespace std;
 
+
 int main()
 {
     const int ndim = 3;
+
     typedef boost::multi_array<double, ndim> array_type;
     typedef array_type::index index;
-
 
     array_type ar3(boost::extents[3][4][5]);
 

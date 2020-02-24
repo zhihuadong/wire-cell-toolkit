@@ -6,6 +6,12 @@
 #ifndef WIRECELL_ITENSOR
 #define WIRECELL_ITENSOR
 
+#include "WireCellIface/IData.h"
+#include <vector>
+#include <cstddef>              // std::byte
+#include <typeinfo>
+#include <typeindex>
+
 namespace WireCell {
 
     class ITensor : public IData<ITensor> {
@@ -17,7 +23,9 @@ namespace WireCell {
         typedef std::vector<size_t> order_t;
 
         /// The type of the element.
-        virtual std::type_info element_type() const = 0;
+        virtual std::type_index element_type() const = 0;
+        /// The size in bytes of an element
+        virtual size_t element_size() const = 0;
 
         /// The shape of the tensor.
         virtual shape_t shape() const = 0;
@@ -28,7 +36,7 @@ namespace WireCell {
         }
 
         /// The tensor store data array.
-        virtual std::byte* data() const = 0;
+        virtual const std::byte* data() const = 0;
         /// The store size.  Size divided by product of shape gives
         /// word size
         virtual size_t size() const = 0;
