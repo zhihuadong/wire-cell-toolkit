@@ -35,6 +35,7 @@ bool Aux::TaggedFrameTensorSet::operator()(const input_pointer& in, output_point
 
     Configuration md;
     md["time"] = in->time();
+    md["tick"] = in->tick();
 
     for (auto jten : m_cfg["tensors"]) {
         auto tag = get<std::string>(jten, "tag", "");

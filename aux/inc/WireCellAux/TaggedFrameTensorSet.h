@@ -29,7 +29,8 @@ namespace WireCell {
          * The ITensorSet also provides a metadata object with these
          * attributes:
          *
-         * time - float, the frame's reference time
+         * time - float, the frame's reference time  (in WCT s.o.u.)
+         * tick - float, the sample period (in WCT s.o.u.)
          * tensors - a per-output tensor metadata object
          *
          * Each element of the latter forwards the attributes of the

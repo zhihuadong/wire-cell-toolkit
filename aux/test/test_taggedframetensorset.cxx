@@ -43,18 +43,38 @@ int main()
     Assert(shape.size() == 2);
     cout << shape[0] <<  " " << shape[1] << endl;
     Assert(shape[0] == 2);
+    const int nchans = shape[0];
+    const int nticks = shape[1];
     
     auto md = out->metadata();
     cout << "metadata: " << md << endl;
     Assert(get(md,"time",0.0) == signal_start_time);
+    Assert(get(md,"tick",0.0) == tick);
     auto jtens = md["tensors"];
     Assert(jtens.size() == 1);
     auto jten = jtens[0];
-    Assert(get(jten, "tbin", -1) == 10);
+    int tbin = get(jten, "tbin", -1);
+    Assert(tbin == 10);
     auto jch = jten["channels"];
-    Assert(jch.size() == 2);
-    Assert(jch[0].asInt() == 1);
+    Assert(nchans == (int)jch.size()); // JsonCPP type unsafety is annoying!
+    Assert(jch[0].asInt() == 1);       // arrays must be int, not size_t, but size is size_t!
     Assert(jch[1].asInt() == 2);
+
+    Eigen::Map<Eigen::ArrayXXf> arr((float*)ten->data(), nchans, nticks);
+    std::cout << "channels:\ntick\t"; 
+    for (int ichan=0; ichan<nchans; ++ichan) {
+        std::cout << jch[ichan].asInt() << "\t";
+    }
+    std::cout << endl;
+
+    for (int itick=0; itick<nticks; ++itick) {
+        std::cout << tbin+itick;
+        for (int ichan=0; ichan<nchans; ++ichan) {
+            std::cout << "\t" << arr(ichan, itick);
+        }
+        std::cout << endl;
+    }
+
 
     return 0;
 }
