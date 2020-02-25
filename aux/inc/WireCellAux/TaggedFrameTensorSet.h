@@ -9,6 +9,8 @@ namespace WireCell {
 
         /*! Produce a set of 2D tensors and metadata from a frame.
          *
+         * The inverse converter is @ref TaggedTensorSetFrame.
+         *
          * The converter configuration consists of an object
          * containing an attribute "tensors" that holds an array of
          * "tensor config objects".  Each object has the attributes:
@@ -38,6 +40,7 @@ namespace WireCell {
          *
          * tbin - the time bin of the first column of the tensor
          * channels - an array holding channel IDs associated with each row of the tensor.
+         * summary - an optional array, corresponding 1-to-2 with channels holding "channel summary" values.
          * 
          */
         class TaggedFrameTensorSet

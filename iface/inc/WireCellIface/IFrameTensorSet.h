@@ -7,9 +7,9 @@
 
 namespace WireCell {
 
-    /*! An IFrame to ITensorSet converter interface.
-     */
-    class IFrameTensorSet : public IFunctionNode<IFrame,ITensorSet> {
+    /*! An IFrame to ITensorSet converter interface. */
+    class IFrameTensorSet : public IFunctionNode<IFrame,ITensorSet>
+    {
     public:
 	typedef std::shared_ptr<IFrameTensorSet> pointer;
 

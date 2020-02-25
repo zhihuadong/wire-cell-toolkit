@@ -1,4 +1,11 @@
+/*! test TaggedFrameTensorSet
+ *
+ * Also provides an example of how to "hook" an Eigen array to 2D
+ * tensor data provided by an ITensor.
+ */
+
 #include "WireCellAux/TaggedFrameTensorSet.h"
+#include "WireCellAux/TaggedTensorSetFrame.h"
 #include "WireCellIface/SimpleTrace.h"
 #include "WireCellIface/SimpleFrame.h"
 #include "WireCellUtil/Testing.h"
@@ -19,22 +26,22 @@ int main()
         make_shared<SimpleTrace>(1, 20, signal),
         make_shared<SimpleTrace>(2, 30, signal),
         make_shared<SimpleTrace>(2, 33, signal)};
-    auto f1 = make_shared<SimpleFrame>(signal_frame_ident,
+    auto iframe1 = make_shared<SimpleFrame>(signal_frame_ident,
                                        signal_start_time,
                                        signal_traces,
                                        tick);
 
-    ITensorSet::pointer out=nullptr;
+    ITensorSet::pointer itensorset=nullptr;
     Aux::TaggedFrameTensorSet tfts;
     auto cfg = tfts.default_configuration();
     cfg["tensors"][0]["tag"] = "";
     tfts.configure(cfg);
-    bool ok = tfts(f1, out);
+    bool ok = tfts(iframe1, itensorset);
     Assert(ok);
-    Assert(out);
+    Assert(itensorset);
 
-    Assert(out->ident() == signal_frame_ident);
-    auto tens = out->tensors();
+    Assert(itensorset->ident() == signal_frame_ident);
+    auto tens = itensorset->tensors();
     Assert(tens);
     Assert(tens->size() == 1);
     auto ten = tens->at(0);
@@ -46,7 +53,7 @@ int main()
     const int nchans = shape[0];
     const int nticks = shape[1];
     
-    auto md = out->metadata();
+    auto md = itensorset->metadata();
     cout << "metadata: " << md << endl;
     Assert(get(md,"time",0.0) == signal_start_time);
     Assert(get(md,"tick",0.0) == tick);
@@ -75,6 +82,30 @@ int main()
         std::cout << endl;
     }
 
+    Aux::TaggedTensorSetFrame ttsf;
+    cfg = ttsf.default_configuration();
+    cfg["tensors"][0]["tag"] = "";
+    ttsf.configure(cfg);
+
+    IFrame::pointer iframe2;
+    ok = ttsf(itensorset, iframe2);
+    Assert(ok);
+    Assert(iframe2);
+    {
+        auto tt = iframe2->trace_tags();
+        Assert(tt.size() == 1);
+        Assert(tt[0] == "");
+    }
+    {
+        auto traces = iframe2->traces();
+        Assert(traces->size() == 2);
+        Assert(traces->at(0)->channel() == 1);
+        Assert(traces->at(1)->channel() == 2);
+    }
+    {
+        auto tt = iframe2->tagged_traces("");
+        Assert(tt.size() == 2);
+    }
 
     return 0;
 }

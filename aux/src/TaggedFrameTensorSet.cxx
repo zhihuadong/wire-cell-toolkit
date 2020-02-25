@@ -62,6 +62,12 @@ bool Aux::TaggedFrameTensorSet::operator()(const input_pointer& in, output_point
             chid2ind[chid] = ind;
             jten["channels"].append(chid);
         }
+
+        const auto& ts = in->trace_summary(tag);
+        for (int ind=0; ind<(int)ts.size(); ++ind) {
+            jten["summary"][ind] = ts[ind];
+        }
+
         ///
 
         size_t nticks = mm_tbin.second - mm_tbin.first;
