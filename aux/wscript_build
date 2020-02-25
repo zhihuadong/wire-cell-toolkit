@@ -1,0 +1,2 @@
+bld.smplpkg('WireCellAux', use='WireCellIface',
+            test_use='WireCellUtil') # needed to get rpath correct!

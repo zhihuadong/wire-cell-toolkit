@@ -3,6 +3,7 @@ digraph deps {
 	"WireCellApps";
 	"WireCellSigProc";
 	"WireCellImg";
+	"WireCellAux";
 	"WireCellTbb";
 	"WireCellCuda";
 	"WireCellPytorch";
@@ -17,11 +18,13 @@ digraph deps {
 	"WireCellApps" -> "FFTWTHREADS"[color="black"];
 	"WireCellRess" -> "ZLIB"[color="black"];
 	"WireCellUtil" -> "DYNAMO"[color="black"];
+	"WireCellAux" -> "WireCellIface"[color="black"];
 	"WireCellUtil" -> "BOOST"[color="black"];
 	"WireCellUtil" -> "ZLIB"[color="black"];
 	"WireCellHio" -> "H5CPP"[color="black"];
 	"WireCellPgraph" -> "WireCellIface"[color="black"];
 	"WireCellHio" -> "HDF5"[color="black"];
+	"WireCellAux" -> "WireCellUtil"[color="gray",constraint=false];
 	"WireCellSigProc" -> "WireCellIface"[color="black"];
 	"WireCellTbb" -> "WireCellIface"[color="black"];
 	"WireCellGen" -> "WireCellIface"[color="black"];
