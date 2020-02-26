@@ -5,7 +5,6 @@ digraph deps {
 	"WireCellImg";
 	"WireCellAux";
 	"WireCellTbb";
-	"WireCellCuda";
 	"WireCellPytorch";
 	"WireCellSio";
 	"WireCellRess";
@@ -33,7 +32,6 @@ digraph deps {
 	"WireCellUtil" -> "EIGEN"[color="black"];
 	"WireCellRoot" -> "ROOTSYS"[color="black"];
 	"WireCellUtil" -> "WireCellRess"[color="black"];
-	"WireCellCuda" -> "CUDA"[color="black"];
 	"WireCellRoot" -> "WireCellSigProc"[color="gray",constraint=false];
 	"WireCellTbb" -> "PTHREAD"[color="gray",constraint=false];
 	"WireCellPytorch" -> "H5CPP"[color="black"];
