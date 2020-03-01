@@ -4,6 +4,7 @@ local g = import 'pgraph.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
 local spfilt = import 'pgrapher/experiment/icarus/sp-filters.jsonnet';
+local util = import 'pgrapher/experiment/icarus/funcs.jsonnet';
 
 function(params, tools, override = {}) {
 
@@ -62,6 +63,7 @@ function(params, tools, override = {}) {
       mp2_roi_tag: 'mp2_roi%d' % anode.data.ident,
       
       isWrapped: false,
+      process_planes: [0, util.anode_split(anode.data.ident)], // balance the left and right split
 
     } + override,
   }, nin=1, nout=1, uses=[anode, tools.field] + pc.uses + spfilt),
