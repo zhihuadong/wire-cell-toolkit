@@ -6,6 +6,8 @@
 
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/IFrameSource.h"
+#include "WireCellIface/IAnodePlane.h"
+#include "WireCellUtil/Logging.h"
 
 namespace WireCell {
 namespace Hdf5 {
@@ -23,8 +25,14 @@ public:
   virtual void configure(const WireCell::Configuration &config);
 
 private:
+
+  Configuration m_cfg; /// copy of configuration
+  IAnodePlane::pointer m_anode; /// pointer to some APA, needed to associate chnnel ID to planes
+  
   std::vector<std::string> m_filenames;
   std::string m_policy;
+  Log::logptr_t l;
+
   IFrame::vector m_frames; // current set of depos
 };
 } // namespace Hdf5
