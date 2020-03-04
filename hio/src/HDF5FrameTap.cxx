@@ -196,9 +196,9 @@ bool Hdf5::HDF5FrameTap::operator()(const IFrame::pointer &inframe,
         // FrameTools::fill(arr, traces, channels.begin(), chend, tbinmm.first);
         FrameTools::fill(arr, traces, channels.begin(), channels.end(), tick0);
         arr = arr * scale + offset;
-
+        int sequence = inframe->ident();
         {                   // the 2D frame array
-            const std::string aname = String::format("/%d/frame_%s", m_save_count, tag.c_str());
+            const std::string aname = String::format("/%d/frame_%s", sequence, tag.c_str());
             if (digitize) {
                 Array::array_xxs sarr = arr.cast<short>();
                 const short* sdata = sarr.data();
@@ -222,13 +222,13 @@ bool Hdf5::HDF5FrameTap::operator()(const IFrame::pointer &inframe,
         }
 
         {                   // the channel array
-            const std::string aname = String::format("/%d/channels_%s", m_save_count, tag.c_str());
+            const std::string aname = String::format("/%d/channels_%s", sequence, tag.c_str());
             // cnpy::npz_save(fname, aname, channels.data(), {nrows}, mode);
             h5::write<int>(fd, aname, channels.data(), h5::count{nrows});
         }
 
         {                   // the tick array
-            const std::string aname = String::format("/%d/tickinfo_%s", m_save_count, tag.c_str());
+            const std::string aname = String::format("/%d/tickinfo_%s", sequence, tag.c_str());
             // const std::vector<double> tickinfo{inframe->time(), inframe->tick(), (double)tbinmm.first};
             const std::vector<double> tickinfo{inframe->time(), inframe->tick(), (double)tick0};
             // cnpy::npz_save(fname, aname, tickinfo.data(), {3}, mode);
