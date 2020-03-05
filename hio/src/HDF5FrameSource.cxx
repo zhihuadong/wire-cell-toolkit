@@ -162,12 +162,12 @@ bool Hdf5::HDF5FrameSource::operator()(IFrame::pointer &out) {
     }
   }
   std::reverse(m_frames.begin(), m_frames.end());
-  std::cout << "[yuhw] : ";
-  for(auto fr : m_frames) {
-    if(fr) std::cout << fr->ident() << " ";
-    else std::cout << "null ";
-  }
-  std::cout << "\n";
+  // std::cout << "[yuhw] : ";
+  // for(auto fr : m_frames) {
+  //   if(fr) std::cout << fr->ident() << " ";
+  //   else std::cout << "null ";
+  // }
+  // std::cout << "\n";
 
   if (m_frames.empty()) {
     return false;
