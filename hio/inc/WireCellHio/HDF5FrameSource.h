@@ -10,7 +10,7 @@
 #include "WireCellUtil/Logging.h"
 
 namespace WireCell {
-namespace Hdf5 {
+namespace Hio {
 
 class HDF5FrameSource : public IFrameSource, public IConfigurable {
 public:
@@ -35,7 +35,7 @@ private:
 
   IFrame::vector m_frames; // current set of depos
 };
-} // namespace Hdf5
+} // namespace Hio
 } // namespace WireCell
 
 #endif

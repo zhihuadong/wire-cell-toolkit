@@ -7,7 +7,7 @@
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/Array.h"
 
-#include <h5cpp/all>
+#include "WireCellHio/Util.h"
 
 #include <string>
 #include <vector>
@@ -38,7 +38,7 @@ void Pytorch::DNNROIFinding::configure(const WireCell::Configuration &cfg) {
               "Must provide output evalfile to DNNROIFinding"});
   }
 
-  h5::create(fn, H5F_ACC_TRUNC);
+  Hio::create(fn, H5F_ACC_TRUNC);
 
   auto torch_tn = cfg["torch_script"].asString();
   m_torch = Factory::find_tn<ITorchScript>(torch_tn);
@@ -189,7 +189,7 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
     return true;
   }
 
-  h5::fd_t fd = h5::open(m_cfg["evalfile"].asString(), H5F_ACC_RDWR);
+  h5::fd_t fd = Hio::open(m_cfg["evalfile"].asString(), H5F_ACC_RDWR);
   std::clock_t start;
   double duration = 0;
 
@@ -221,7 +221,7 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
     // const int ncols = ch_eigen[i].cols();
     // const int nrows = ch_eigen[i].rows();
     // std::cout << "ncols: " << ncols << "nrows: " << nrows << std::endl;
-    // h5::write<float>(fd, String::format("/%d/frame_%s%d%d", m_save_count, "ch", i, 0), ch_eigen[i].data(), h5::count{ncols, nrows}, h5::chunk{ncols, nrows} | h5::gzip{2});
+    // Hio::write<float>(fd, String::format("/%d/frame_%s%d%d", m_save_count, "ch", i, 0), ch_eigen[i].data(), h5::count{ncols, nrows}, h5::chunk{ncols, nrows} | h5::gzip{2});
   }
   auto img = torch::stack({ch[0], ch[1], ch[2]}, 0);
   auto batch = torch::stack({torch::transpose(img,1,2)}, 0);
@@ -287,10 +287,10 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
     const unsigned long nrows = mask_e.rows();
     // l->info("ncols: {} nrows: {}", ncols, nrows);
     std::string aname = String::format("/%d/frame_%s%d", m_save_count, "dlroi", m_anode->ident());
-    h5::write<float>(fd, aname, mask_e.data(), h5::count{ncols, nrows}, h5::chunk{ncols, nrows} | h5::gzip{2});
+    Hio::write<float>(fd, aname, mask_e.data(), h5::count{ncols, nrows}, h5::chunk{ncols, nrows} | h5::gzip{2});
 
     aname = String::format("/%d/frame_%s%d", m_save_count, "dlcharge", m_anode->ident());
-    h5::write<float>(fd, aname, sp_charge.data(), h5::count{ncols, nrows}, h5::chunk{ncols, nrows} | h5::gzip{2});
+    Hio::write<float>(fd, aname, sp_charge.data(), h5::count{ncols, nrows}, h5::chunk{ncols, nrows} | h5::gzip{2});
   }
   duration += (std::clock() - start) / (double)CLOCKS_PER_SEC;
   l->info("h5: {}", duration);

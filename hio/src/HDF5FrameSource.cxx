@@ -6,23 +6,18 @@
 #include "WireCellUtil/String.h"
 #include "WireCellUtil/Array.h"
 
-#include <thread>
-#include <mutex>
+#include "WireCellHio/Util.h"
 
-#include <h5cpp/all>
-
-std::mutex g_h5cpp_mutex;
-
-WIRECELL_FACTORY(HDF5FrameSource, WireCell::Hdf5::HDF5FrameSource,
+WIRECELL_FACTORY(HDF5FrameSource, WireCell::Hio::HDF5FrameSource,
                  WireCell::IFrameSource, WireCell::IConfigurable)
 
 using namespace WireCell;
 
-Hdf5::HDF5FrameSource::HDF5FrameSource() : m_policy(""), l(Log::logger("hio")) {}
+Hio::HDF5FrameSource::HDF5FrameSource() : m_policy(""), l(Log::logger("hio")) {}
 
-Hdf5::HDF5FrameSource::~HDF5FrameSource() {}
+Hio::HDF5FrameSource::~HDF5FrameSource() {}
 
-Configuration Hdf5::HDF5FrameSource::default_configuration() const {
+Configuration Hio::HDF5FrameSource::default_configuration() const {
   Configuration cfg;
   cfg["anode"] = "AnodePlane";
   cfg["filelist"] = Json::arrayValue; // list of input files, empties are skipped
@@ -34,7 +29,7 @@ Configuration Hdf5::HDF5FrameSource::default_configuration() const {
   return cfg;
 }
 
-void Hdf5::HDF5FrameSource::configure(const WireCell::Configuration &cfg) {
+void Hio::HDF5FrameSource::configure(const WireCell::Configuration &cfg) {
   m_cfg = cfg;
 
   m_anode = Factory::find_tn<IAnodePlane>(get<std::string>(cfg, "anode", ""));
@@ -95,8 +90,8 @@ void eigen_to_traces(const Array::array_xxf &data, ITrace::vector &itraces,
 }
 } // namespace
 
-bool Hdf5::HDF5FrameSource::operator()(IFrame::pointer &out) {
-  l->info("HDF5FrameSource {} : START", m_anode->ident());
+bool Hio::HDF5FrameSource::operator()(IFrame::pointer &out) {
+  l->trace("HDF5FrameSource {} : START", m_anode->ident());
   out = nullptr;
 
   const double start_time = -312500; // ns
@@ -108,18 +103,17 @@ bool Hdf5::HDF5FrameSource::operator()(IFrame::pointer &out) {
   if (m_frames.size() > 0) {
     out = m_frames.back();
     m_frames.pop_back();
-    if(out) l->info("HDF5FrameSource {} : pop {}", m_anode->ident(), out->ident());
-    else l->info("HDF5FrameSource {} : pop nullptr", m_anode->ident());
+    if(out) l->trace("HDF5FrameSource {} : pop {}", m_anode->ident(), out->ident());
+    else l->trace("HDF5FrameSource {} : pop nullptr", m_anode->ident());
     return true;
   }
 
   while (!m_filenames.empty()) {
-    std::lock_guard<std::mutex> guard(g_h5cpp_mutex);
     auto fname = m_filenames.back();
     m_filenames.pop_back();
     h5::fd_t fd;
     try {
-      fd = h5::open(fname, H5F_ACC_RDONLY); // H5F_ACC_RDONLY
+      fd = Hio::open(fname, H5F_ACC_RDONLY); // H5F_ACC_RDONLY
       l->trace("h5::open {}", fname);
     } catch (...) {
       l->error("Can't open {}", fname);
@@ -132,7 +126,7 @@ bool Hdf5::HDF5FrameSource::operator()(IFrame::pointer &out) {
 
       Eigen::MatrixXf d;
       try {
-        d = h5::read<Eigen::MatrixXf>(fd, key);
+        d = Hio::read<Eigen::MatrixXf>(fd, key);
       } catch (...) {
         l->error("Can't load {}", key);
         break;
@@ -175,7 +169,7 @@ bool Hdf5::HDF5FrameSource::operator()(IFrame::pointer &out) {
 
   out = m_frames.back();
   m_frames.pop_back();
-  if(out) l->info("HDF5FrameSource {} : pop {}", m_anode->ident(), out->ident());
-  else l->info("HDF5FrameSource {} : pop nullptr", m_anode->ident());
+  if(out) l->trace("HDF5FrameSource {} : pop {}", m_anode->ident(), out->ident());
+  else l->trace("HDF5FrameSource {} : pop nullptr", m_anode->ident());
   return true;
 }

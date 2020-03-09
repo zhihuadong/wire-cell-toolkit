@@ -6,25 +6,27 @@
 #include "WireCellIface/FrameTools.h"
 #include "WireCellUtil/NamedFactory.h"
 
-#include <h5cpp/all>
+#include "WireCellHio/Util.h"
 
 #include <string>
 #include <vector>
+
+std::mutex g_h5cpp_HDF5FrameTap_mutex;
 
 /// macro to register name - concrete pair in the NamedFactory
 /// @param NAME - used to configure node in JSON/Jsonnet
 /// @parame CONCRETE - C++ concrete type
 /// @parame ... - interfaces
-WIRECELL_FACTORY(HDF5FrameTap, WireCell::Hdf5::HDF5FrameTap,
+WIRECELL_FACTORY(HDF5FrameTap, WireCell::Hio::HDF5FrameTap,
                  WireCell::IFrameFilter, WireCell::IConfigurable)
 
 using namespace WireCell;
 
-Hdf5::HDF5FrameTap::HDF5FrameTap() : m_save_count(0), l(Log::logger("io")) {}
+Hio::HDF5FrameTap::HDF5FrameTap() : m_save_count(0), l(Log::logger("io")) {}
 
-Hdf5::HDF5FrameTap::~HDF5FrameTap() {}
+Hio::HDF5FrameTap::~HDF5FrameTap() {}
 
-void Hdf5::HDF5FrameTap::configure(const WireCell::Configuration &cfg) {
+void Hio::HDF5FrameTap::configure(const WireCell::Configuration &cfg) {
 
   auto anode_tn = cfg["anode"].asString();
   m_anode = Factory::find_tn<IAnodePlane>(anode_tn);
@@ -37,11 +39,11 @@ void Hdf5::HDF5FrameTap::configure(const WireCell::Configuration &cfg) {
               "Must provide output filename to HDF5FrameTap"});
   }
 
-  h5::create(fn, H5F_ACC_TRUNC);
+  Hio::create(fn, H5F_ACC_TRUNC);
 
 }
 
-WireCell::Configuration Hdf5::HDF5FrameTap::default_configuration() const {
+WireCell::Configuration Hio::HDF5FrameTap::default_configuration() const {
     Configuration cfg;
 
     // If digitize is true, then samples as 16 bit ints.  Otherwise
@@ -84,9 +86,9 @@ WireCell::Configuration Hdf5::HDF5FrameTap::default_configuration() const {
   return cfg;
 }
 
-bool Hdf5::HDF5FrameTap::operator()(const IFrame::pointer &inframe,
+bool Hio::HDF5FrameTap::operator()(const IFrame::pointer &inframe,
                                       IFrame::pointer &outframe) {
-
+    std::lock_guard<std::mutex> guard(g_h5cpp_HDF5FrameTap_mutex);
     if (!inframe) {
         l->debug("HDF5FrameTap: EOS");
         outframe = nullptr;
@@ -156,7 +158,7 @@ bool Hdf5::HDF5FrameTap::operator()(const IFrame::pointer &inframe,
     }
     l->debug(ss.str());
 
-    h5::fd_t fd = h5::open(m_cfg["filename"].asString(), H5F_ACC_RDWR);
+    h5::fd_t fd = Hio::open(m_cfg["filename"].asString(), H5F_ACC_RDWR);
     // TODO some protection
 
     for (auto jtag : m_cfg["trace_tags"]) {
@@ -204,17 +206,17 @@ bool Hdf5::HDF5FrameTap::operator()(const IFrame::pointer &inframe,
                 const short* sdata = sarr.data();
                 // cnpy::npz_save(fname, aname, sdata, {ncols, nrows}, mode);
                 if(high_throughput) {
-                  h5::write<short>(fd, aname, sdata, h5::count{ncols, nrows}, h5::chunk{chunk_ncols, chunk_nrows} | h5::gzip{gzip_level}, h5::high_throughput);
+                  Hio::write<short>(fd, aname, sdata, h5::count{ncols, nrows}, h5::chunk{chunk_ncols, chunk_nrows} | h5::gzip{gzip_level}, h5::high_throughput);
                 } else {
-                  h5::write<short>(fd, aname, sdata, h5::count{ncols, nrows}, h5::chunk{chunk_ncols, chunk_nrows} | h5::gzip{gzip_level});
+                  Hio::write<short>(fd, aname, sdata, h5::count{ncols, nrows}, h5::chunk{chunk_ncols, chunk_nrows} | h5::gzip{gzip_level});
                 }
             }
             else {
                 // cnpy::npz_save(fname, aname, arr.data(), {ncols, nrows}, mode);
                 if(high_throughput) {
-                  h5::write<float>(fd, aname, arr.data(), h5::count{ncols, nrows}, h5::chunk{chunk_ncols, chunk_nrows} | h5::gzip{gzip_level}, h5::high_throughput);
+                  Hio::write<float>(fd, aname, arr.data(), h5::count{ncols, nrows}, h5::chunk{chunk_ncols, chunk_nrows} | h5::gzip{gzip_level}, h5::high_throughput);
                 } else {
-                  h5::write<float>(fd, aname, arr.data(), h5::count{ncols, nrows}, h5::chunk{chunk_ncols, chunk_nrows} | h5::gzip{gzip_level});
+                  Hio::write<float>(fd, aname, arr.data(), h5::count{ncols, nrows}, h5::chunk{chunk_ncols, chunk_nrows} | h5::gzip{gzip_level});
                 }
             }
             l->debug("HDF5FrameTap: saved {} with {} channels {} ticks @t={} ms qtot={}",
@@ -224,7 +226,7 @@ bool Hdf5::HDF5FrameTap::operator()(const IFrame::pointer &inframe,
         {                   // the channel array
             const std::string aname = String::format("/%d/channels_%s", sequence, tag.c_str());
             // cnpy::npz_save(fname, aname, channels.data(), {nrows}, mode);
-            h5::write<int>(fd, aname, channels.data(), h5::count{nrows});
+            Hio::write<int>(fd, aname, channels.data(), h5::count{nrows});
         }
 
         {                   // the tick array
@@ -232,7 +234,7 @@ bool Hdf5::HDF5FrameTap::operator()(const IFrame::pointer &inframe,
             // const std::vector<double> tickinfo{inframe->time(), inframe->tick(), (double)tbinmm.first};
             const std::vector<double> tickinfo{inframe->time(), inframe->tick(), (double)tick0};
             // cnpy::npz_save(fname, aname, tickinfo.data(), {3}, mode);
-            h5::write<double>(fd, aname, tickinfo.data(), h5::count{3});
+            Hio::write<double>(fd, aname, tickinfo.data(), h5::count{3});
         }
     }
 
