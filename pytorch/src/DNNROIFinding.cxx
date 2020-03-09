@@ -7,10 +7,14 @@
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/Array.h"
 
-#include "WireCellHio/Util.h"
-
 #include <string>
 #include <vector>
+
+// #define __DEBUG__
+
+#ifdef __DEBUG__
+#include "WireCellHio/Util.h"
+#endif
 
 /// macro to register name - concrete pair in the NamedFactory
 /// @param NAME - used to configure node in JSON/Jsonnet
@@ -31,15 +35,19 @@ void Pytorch::DNNROIFinding::configure(const WireCell::Configuration &cfg) {
 
   auto anode_tn = cfg["anode"].asString();
   m_anode = Factory::find_tn<IAnodePlane>(anode_tn);
-  
-  std::string fn = cfg["evalfile"].asString();
-  if (fn.empty()) {
-    THROW(ValueError() << errmsg{
-              "Must provide output evalfile to DNNROIFinding"});
+
+#ifdef __DEBUG__
+  {
+    std::lock_guard<std::mutex> guard(Hio::g_h5cpp_mutex);
+    std::string fn = cfg["evalfile"].asString();
+    if (fn.empty()) {
+      THROW(ValueError() << errmsg{
+                "Must provide output evalfile to DNNROIFinding"});
+    }
+    h5::create(fn, H5F_ACC_TRUNC);
   }
-
-  Hio::create(fn, H5F_ACC_TRUNC);
-
+#endif
+  
   auto torch_tn = cfg["torch_script"].asString();
   m_torch = Factory::find_tn<ITorchScript>(torch_tn);
 
@@ -189,7 +197,6 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
     return true;
   }
 
-  h5::fd_t fd = Hio::open(m_cfg["evalfile"].asString(), H5F_ACC_RDWR);
   std::clock_t start;
   double duration = 0;
 
@@ -221,7 +228,7 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
     // const int ncols = ch_eigen[i].cols();
     // const int nrows = ch_eigen[i].rows();
     // std::cout << "ncols: " << ncols << "nrows: " << nrows << std::endl;
-    // Hio::write<float>(fd, String::format("/%d/frame_%s%d%d", m_save_count, "ch", i, 0), ch_eigen[i].data(), h5::count{ncols, nrows}, h5::chunk{ncols, nrows} | h5::gzip{2});
+    // h5::write<float>(fd, String::format("/%d/frame_%s%d%d", m_save_count, "ch", i, 0), ch_eigen[i].data(), h5::count{ncols, nrows}, h5::chunk{ncols, nrows} | h5::gzip{2});
   }
   auto img = torch::stack({ch[0], ch[1], ch[2]}, 0);
   auto batch = torch::stack({torch::transpose(img,1,2)}, 0);
@@ -278,23 +285,27 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
   // apply ROI
   auto sp_charge = Array::mask(decon_charge_eigen.transpose(), mask_e, 0.7);
   sp_charge = Array::baseline_subtraction(sp_charge);
-  
+
+#ifdef __DEBUG__
+  // hdf5 eval
   start = std::clock();
   duration = 0;
-  // hdf5 eval
   {
+    std::lock_guard<std::mutex> guard(Hio::g_h5cpp_mutex);
+    h5::fd_t fd = h5::open(m_cfg["evalfile"].asString(), H5F_ACC_RDWR);
     const unsigned long ncols = mask_e.cols();
     const unsigned long nrows = mask_e.rows();
     // l->info("ncols: {} nrows: {}", ncols, nrows);
     std::string aname = String::format("/%d/frame_%s%d", m_save_count, "dlroi", m_anode->ident());
-    Hio::write<float>(fd, aname, mask_e.data(), h5::count{ncols, nrows}, h5::chunk{ncols, nrows} | h5::gzip{2});
+    h5::write<float>(fd, aname, mask_e.data(), h5::count{ncols, nrows}, h5::chunk{ncols, nrows} | h5::gzip{2});
 
     aname = String::format("/%d/frame_%s%d", m_save_count, "dlcharge", m_anode->ident());
-    Hio::write<float>(fd, aname, sp_charge.data(), h5::count{ncols, nrows}, h5::chunk{ncols, nrows} | h5::gzip{2});
+    h5::write<float>(fd, aname, sp_charge.data(), h5::count{ncols, nrows}, h5::chunk{ncols, nrows} | h5::gzip{2});
   }
   duration += (std::clock() - start) / (double)CLOCKS_PER_SEC;
   l->info("h5: {}", duration);
   m_timers["h5"] += duration;
+#endif
   
   start = std::clock();
   duration = 0;
