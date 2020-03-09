@@ -15,7 +15,5 @@ def configure(cfg):
     cfg.env.CXXFLAGS += ['-Wall', '-Wno-unused-local-typedefs', '-Wno-unused-function']
     # cfg.env.CXXFLAGS += ['-Wpedantic', '-Werror']
 
-
 def build(bld):
     bld.load('wcb')
-

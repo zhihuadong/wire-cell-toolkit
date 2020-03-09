@@ -42,9 +42,6 @@ local tools = tools_maker(params);
 local wcls_maker = import 'pgrapher/ui/wcls/nodes.jsonnet';
 local wcls = wcls_maker(params, tools);
 
-//local nf_maker = import "pgrapher/experiment/pdsp/nf.jsonnet";
-//local chndb_maker = import "pgrapher/experiment/pdsp/chndb.jsonnet";
-
 local sp_maker = import 'pgrapher/experiment/icarus/sp.jsonnet';
 
 //local chndbm = chndb_maker(params, tools);
@@ -166,8 +163,7 @@ local nfsp_pipes = [
   for n in std.range(0, std.length(tools.anodes) - 1)
 ];
 
-local f = import 'pgrapher/common/funcs.jsonnet';
-local tag_rules = [ 
+local fanout_tag_rules = [ 
           {
             frame: {
               '.*': 'orig%d' % tools.anodes[n].data.ident,
@@ -180,7 +176,24 @@ local tag_rules = [
           }
           for n in std.range(0, std.length(tools.anodes) - 1)
         ];
-local fanpipe = f.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'nfsp', [], tag_rules);
+
+local anode_ident = [tools.anodes[n].data.ident for n in std.range(0, std.length(tools.anodes) - 1)];
+local fanin_tag_rules = [
+          {
+            frame: {
+              //['number%d' % n]: ['output%d' % n, 'output'],
+              '.*': 'framefanin',
+            },
+            trace: {
+              ['gauss%d'%ind]:'gauss%d'%ind,
+              ['wiener%d'%ind]:'wiener%d'%ind,
+              ['threshold%d'%ind]:'threshold%d'%ind,
+            },
+
+          }
+          for ind in anode_ident
+        ];
+local fanpipe = util.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'nfsp', [], fanout_tag_rules, fanin_tag_rules);
 
 local retagger = g.pnode({
   type: 'Retagger',
@@ -188,13 +201,13 @@ local retagger = g.pnode({
     // Note: retagger keeps tag_rules an array to be like frame fanin/fanout.
     tag_rules: [{
       // Retagger also handles "frame" and "trace" like fanin/fanout
-      // merge separately all traces like gaussN to gauss.
+      // merge separately all traces like gaussXYZ to gauss.
       frame: {
         '.*': 'retagger',
       },
       merge: {
-        'gauss\\d': 'gauss',
-        'wiener\\d': 'wiener',
+        'gauss\\d\\d\\d': 'gauss',
+        'wiener\\d\\d\\d': 'wiener',
       },
     }],
   },
@@ -203,8 +216,7 @@ local retagger = g.pnode({
 local sink = g.pnode({ type: 'DumpFrames' }, nin=1, nout=0);
 
 
-// local graph = g.pipeline([wcls_input.adc_digits, fanpipe, retagger, wcls_output.sp_signals, sink]);
-local graph = g.pipeline([wcls_input.adc_digits, fanpipe, retagger, sink]);
+local graph = g.pipeline([wcls_input.adc_digits, fanpipe, retagger, wcls_output.sp_signals, sink]);
 
 local app = {
   type: 'Pgrapher',

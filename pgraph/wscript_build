@@ -1,5 +1,4 @@
-bld.smplpkg('WireCellPgraph', use='WireCellIface WireCellUtil',
-            app_use='DYNAMO BOOST',
-            test_use='JSONCPP JSONNET BOOST')
+bld.smplpkg('WireCellPgraph', use='WireCellIface')
+#            test_use='JSONCPP JSONNET BOOST')
 
 
