@@ -16,6 +16,6 @@ int main() {
   h5::create(fn, H5F_ACC_TRUNC);
   h5::fd_t fd = h5::open(fn, H5F_ACC_RDWR);
   int d[2] = {42, 45};
-  Hio::write<int>(fd, "/d", d, h5::count{2});
+  h5::write<int>(fd, "/d", d, h5::count{2});
   return 0;
 }

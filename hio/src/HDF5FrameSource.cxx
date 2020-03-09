@@ -91,6 +91,7 @@ void eigen_to_traces(const Array::array_xxf &data, ITrace::vector &itraces,
 } // namespace
 
 bool Hio::HDF5FrameSource::operator()(IFrame::pointer &out) {
+  std::lock_guard<std::mutex> guard(g_h5cpp_mutex);
   l->trace("HDF5FrameSource {} : START", m_anode->ident());
   out = nullptr;
 
@@ -113,7 +114,7 @@ bool Hio::HDF5FrameSource::operator()(IFrame::pointer &out) {
     m_filenames.pop_back();
     h5::fd_t fd;
     try {
-      fd = Hio::open(fname, H5F_ACC_RDONLY); // H5F_ACC_RDONLY
+      fd = h5::open(fname, H5F_ACC_RDONLY); // H5F_ACC_RDONLY
       l->trace("h5::open {}", fname);
     } catch (...) {
       l->error("Can't open {}", fname);
@@ -126,7 +127,7 @@ bool Hio::HDF5FrameSource::operator()(IFrame::pointer &out) {
 
       Eigen::MatrixXf d;
       try {
-        d = Hio::read<Eigen::MatrixXf>(fd, key);
+        d = h5::read<Eigen::MatrixXf>(fd, key);
       } catch (...) {
         l->error("Can't load {}", key);
         break;
