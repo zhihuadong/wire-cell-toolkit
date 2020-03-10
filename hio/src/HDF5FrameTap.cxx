@@ -6,7 +6,7 @@
 #include "WireCellIface/FrameTools.h"
 #include "WireCellUtil/NamedFactory.h"
 
-#include <h5cpp/all>
+#include "WireCellHio/Util.h"
 
 #include <string>
 #include <vector>
@@ -15,16 +15,16 @@
 /// @param NAME - used to configure node in JSON/Jsonnet
 /// @parame CONCRETE - C++ concrete type
 /// @parame ... - interfaces
-WIRECELL_FACTORY(HDF5FrameTap, WireCell::Hdf5::HDF5FrameTap,
+WIRECELL_FACTORY(HDF5FrameTap, WireCell::Hio::HDF5FrameTap,
                  WireCell::IFrameFilter, WireCell::IConfigurable)
 
 using namespace WireCell;
 
-Hdf5::HDF5FrameTap::HDF5FrameTap() : m_save_count(0), l(Log::logger("io")) {}
+Hio::HDF5FrameTap::HDF5FrameTap() : m_save_count(0), l(Log::logger("io")) {}
 
-Hdf5::HDF5FrameTap::~HDF5FrameTap() {}
+Hio::HDF5FrameTap::~HDF5FrameTap() {}
 
-void Hdf5::HDF5FrameTap::configure(const WireCell::Configuration &cfg) {
+void Hio::HDF5FrameTap::configure(const WireCell::Configuration &cfg) {
 
   auto anode_tn = cfg["anode"].asString();
   m_anode = Factory::find_tn<IAnodePlane>(anode_tn);
@@ -41,7 +41,7 @@ void Hdf5::HDF5FrameTap::configure(const WireCell::Configuration &cfg) {
 
 }
 
-WireCell::Configuration Hdf5::HDF5FrameTap::default_configuration() const {
+WireCell::Configuration Hio::HDF5FrameTap::default_configuration() const {
     Configuration cfg;
 
     // If digitize is true, then samples as 16 bit ints.  Otherwise
@@ -84,9 +84,9 @@ WireCell::Configuration Hdf5::HDF5FrameTap::default_configuration() const {
   return cfg;
 }
 
-bool Hdf5::HDF5FrameTap::operator()(const IFrame::pointer &inframe,
+bool Hio::HDF5FrameTap::operator()(const IFrame::pointer &inframe,
                                       IFrame::pointer &outframe) {
-
+    std::lock_guard<std::mutex> guard(g_h5cpp_mutex);
     if (!inframe) {
         l->debug("HDF5FrameTap: EOS");
         outframe = nullptr;
@@ -196,9 +196,9 @@ bool Hdf5::HDF5FrameTap::operator()(const IFrame::pointer &inframe,
         // FrameTools::fill(arr, traces, channels.begin(), chend, tbinmm.first);
         FrameTools::fill(arr, traces, channels.begin(), channels.end(), tick0);
         arr = arr * scale + offset;
-
+        int sequence = inframe->ident();
         {                   // the 2D frame array
-            const std::string aname = String::format("/%d/frame_%s", m_save_count, tag.c_str());
+            const std::string aname = String::format("/%d/frame_%s", sequence, tag.c_str());
             if (digitize) {
                 Array::array_xxs sarr = arr.cast<short>();
                 const short* sdata = sarr.data();
@@ -222,13 +222,13 @@ bool Hdf5::HDF5FrameTap::operator()(const IFrame::pointer &inframe,
         }
 
         {                   // the channel array
-            const std::string aname = String::format("/%d/channels_%s", m_save_count, tag.c_str());
+            const std::string aname = String::format("/%d/channels_%s", sequence, tag.c_str());
             // cnpy::npz_save(fname, aname, channels.data(), {nrows}, mode);
             h5::write<int>(fd, aname, channels.data(), h5::count{nrows});
         }
 
         {                   // the tick array
-            const std::string aname = String::format("/%d/tickinfo_%s", m_save_count, tag.c_str());
+            const std::string aname = String::format("/%d/tickinfo_%s", sequence, tag.c_str());
             // const std::vector<double> tickinfo{inframe->time(), inframe->tick(), (double)tbinmm.first};
             const std::vector<double> tickinfo{inframe->time(), inframe->tick(), (double)tick0};
             // cnpy::npz_save(fname, aname, tickinfo.data(), {3}, mode);

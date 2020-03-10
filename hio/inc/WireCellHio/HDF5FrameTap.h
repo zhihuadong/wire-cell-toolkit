@@ -19,7 +19,7 @@
 #include "WireCellUtil/Logging.h"
 
 namespace WireCell {
-namespace Hdf5 {
+namespace Hio {
 
 class HDF5FrameTap : public IFrameFilter, public IConfigurable {
 public:
@@ -47,7 +47,7 @@ private:
   /// SPD logger
   Log::logptr_t l;
 };
-} // namespace Hdf5
+} // namespace Hio
 } // namespace WireCell
 
 #endif
