@@ -51,15 +51,15 @@ void print(const ITensor::pointer tens) {
 
 int main() {
 
-    auto itensorset = make_tensorset();
+    auto input = make_tensorset();
     
     std::cout << "\n======== input ITensorSet ========\n";
     Json::FastWriter jwriter;
-    std::cout << jwriter.write(itensorset->metadata());
-    print(itensorset->tensors()->front());
+    std::cout << jwriter.write(input->metadata());
+    print(input->tensors()->front());
 
     std::cout << "\n======== zio::Message ========\n";
-    auto msg = Zio::FlowConfigurable::pack(itensorset);
+    auto msg = Zio::FlowConfigurable::pack(input);
     std::cout << msg.label() << std::endl;
 
     std::cout << "\n======== output ITensorSet ========\n";
