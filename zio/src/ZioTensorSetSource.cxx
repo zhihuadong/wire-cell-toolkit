@@ -7,20 +7,9 @@ WIRECELL_FACTORY(ZioTensorSetSource, WireCell::Zio::ZioTensorSetSource,
 
 using namespace WireCell;
 
-Zio::ZioTensorSetSource::ZioTensorSetSource() : l(Log::logger("zio")) {}
+Zio::ZioTensorSetSource::ZioTensorSetSource() : FlowConfigurable("extract"), l(Log::logger("zio")), m_had_eos(false) {}
 
 Zio::ZioTensorSetSource::~ZioTensorSetSource() {}
-
-Configuration Zio::ZioTensorSetSource::default_configuration() const
-{
-    Configuration cfg;
-    return cfg;
-}
-
-void Zio::ZioTensorSetSource::configure(const WireCell::Configuration &cfg)
-{
-    m_cfg = cfg;
-}
 
 bool Zio::ZioTensorSetSource::operator()(ITensorSet::pointer &out)
 {
@@ -33,6 +22,32 @@ bool Zio::ZioTensorSetSource::operator()(ITensorSet::pointer &out)
     }
 
     // fill m_tensors
+    pre_flow();
+    if (!m_flow) {
+        return false;
+    }
+
+    zio::Message msg;
+    bool ok = m_flow->get(msg, m_timeout);
+    if (!ok) {
+        zio::Message eot;
+        m_flow->send_eot(eot);
+        m_flow = nullptr;
+        return false;           // timeout, eot or other error
+    }
+
+    const zio::multipart_t& pls = msg.payload();
+    if (!pls.size()) {           // EOS
+        if (m_had_eos) {         // 2nd
+            finalize();
+            return false;
+        }
+        m_had_eos = true;
+        return true;
+    }
+    m_had_eos = false;
+
+    m_tensors.push_back(Zio::FlowConfigurable::unpack(msg));
 
     // issue quit if buffer empty after filling
     if (m_tensors.empty())
