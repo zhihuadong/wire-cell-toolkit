@@ -1,5 +1,5 @@
 /**
- * 
+ * IFrame -> ITensorset -> zio::Message -> ITensorset
  */
 #include "WireCellUtil/Testing.h"
 #include "WireCellZio/FlowConfigurable.h"
@@ -52,14 +52,17 @@ void print(const ITensor::pointer tens) {
 int main() {
 
     auto itensorset = make_tensorset();
-
+    
+    std::cout << "\n======== input ITensorSet ========\n";
     Json::FastWriter jwriter;
     std::cout << jwriter.write(itensorset->metadata());
     print(itensorset->tensors()->front());
 
+    std::cout << "\n======== zio::Message ========\n";
     auto msg = Zio::FlowConfigurable::pack(itensorset);
     std::cout << msg.label() << std::endl;
 
+    std::cout << "\n======== output ITensorSet ========\n";
     auto out = Zio::FlowConfigurable::unpack(msg);
     std::cout << jwriter.write(out->metadata());
     print(out->tensors()->front());
