@@ -71,12 +71,13 @@ namespace WireCell {
 
             /// Called after going online and before configuration phase is over
             virtual bool user_online() { return true; }
+        
+        public:
+            /// Pack the ITensorSet into a ZIO Message
+            static zio::Message pack(ITensorSet::pointer & itens);
 
-            /// Pack the ITensorSet into a ZIO payload
-            zio::Message pack(ITensorSet::pointer & itens);
-
-            /// Unpack ZIO payload to ITensorSet
-            void unpack(const zio::Message& zmsg, ITensorSet::pointer & itens);
+            /// Unpack ZIO Message to ITensorSet
+            static ITensorSet::pointer unpack(const zio::Message& zmsg);
 
         private:
             // assure pre_flow() body called just once.

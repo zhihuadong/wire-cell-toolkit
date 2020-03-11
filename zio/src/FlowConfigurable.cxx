@@ -1,5 +1,7 @@
 #include "WireCellUtil/Exceptions.h"
 #include "WireCellZio/FlowConfigurable.h"
+#include "WireCellAux/SimpleTensorSet.h"
+#include "WireCellAux/SimpleTensor.h"
 
 #include "zio/tens.hpp"
 
@@ -214,7 +216,14 @@ bool Zio::FlowConfigurable::pre_flow()
 
 zio::Message Zio::FlowConfigurable::pack(ITensorSet::pointer & itens)
 {
-    auto meta = itens->metadata();
+    // prepare "metadata" of the label
+    auto it_md = itens->metadata();
+    Configuration label;
+    label[zio::tens::form]["metadata"] = {};
+    auto &meta = label[zio::tens::form]["metadata"];
+    meta["tick"] = it_md["tick"];
+    meta["time"] = it_md["time"];
+    meta["tensor_attributes"] = it_md["tensors"];
 
     zio::Message msg(zio::tens::form);
 
@@ -223,18 +232,39 @@ zio::Message Zio::FlowConfigurable::pack(ITensorSet::pointer & itens)
     msg.add(zio::message_t((char*)nullptr,0));
 
     Json::FastWriter jwriter;
-    msg.set_label(jwriter.write(meta));
+    msg.set_label(jwriter.write(label));
 
     for(auto ten : *(itens->tensors())) {
-        zio::tens::append(msg, ten->data(), ten->shape());
+        zio::tens::append(msg, (const float*)ten->data(), ten->shape());
     }
     
     return msg;
 }
 
-void Zio::FlowConfigurable::unpack(const zio::Message& zmsg,
-                                   ITensorSet::pointer & itens)
+ITensorSet::pointer Zio::FlowConfigurable::unpack(const zio::Message& zmsg)
 {
+    ITensor::vector* itv = new ITensor::vector;
+
+    auto label = zmsg.label_object();
+    int ind = 0;
+    for(auto jten : label[zio::tens::form]["tensors"]) {
+        std::vector<size_t> shape =  jten["shape"];
+        // TODO need to figure out type from dtyp
+        Aux::SimpleTensor<float>* st = new Aux::SimpleTensor<float>(shape);
+        size_t nbyte = jten["word"];
+        for(auto n : shape) nbyte *= n;
+        auto data = (float*)st->data();
+        memcpy(data, zio::tens::at<float>(zmsg, ind), nbyte);
+        itv->push_back(ITensor::pointer(st));
+        ++ind;
+    }
+
+    int seqno = zmsg.seqno();
+    Configuration md;
+    Json::Reader reader;
+    reader.parse(label[zio::tens::form]["metadata"].dump(), md);
+
+    return std::make_shared<Aux::SimpleTensorSet>(seqno, md, ITensor::shared_vector(itv));
 }
 
 
