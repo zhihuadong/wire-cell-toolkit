@@ -93,18 +93,32 @@ torch::IValue from_itensor(const ITensorSet::pointer &inputs)
               << std::endl;
     return ten;
 }
+std::string dump(const zio::Message &msg) {
+    std::stringstream ss;
+    ss << "zio.Message: ";
+    ss << "ZIO" << msg.level() << msg.form() << msg.label();
+    ss << " + [0x" << msg.origin() << "," << msg.granule() << "," << msg.seqno() << "]";
+    ss << " + [" << msg.payload().str() << "]";
+    return ss.str();
+}
 zio::Message zio_tens_msg()
 {
-    float tensor[2][3][4] = {0};
+    std::vector<size_t> shape = {2, 2, 30};
+    float tensor[2][2][300] = {0};
     const float *tensor1 = (float *)tensor;
-
-    std::vector<size_t> shape = {2, 3, 4};
-
     zio::Message msg(zio::tens::form);
-
     // Add an initial, unrelated message part just to make sure tens
     // respects it.
     msg.add(zio::message_t((char *)nullptr, 0));
+
+    Configuration label;
+    label[zio::tens::form]["metadata"] = {};
+    auto &meta = label[zio::tens::form]["metadata"];
+    meta["tick"] = 500;
+    Json::FastWriter jwriter;
+    msg.set_label(jwriter.write(label));
+
+    zio::tens::append(msg, tensor1, shape);
 
     return msg;
 }
@@ -112,6 +126,7 @@ zio::Message zio_tens_msg()
 
 int main()
 {
+    // client
     std::shared_ptr<generaldomo::Client> m_client;
     generaldomo::console_log log;
     zmq::context_t ctx;
@@ -124,25 +139,28 @@ int main()
     {
         THROW(RuntimeError() << errmsg{"Client init faileds!"});
     }
-    std::vector<torch::jit::IValue> inputs;
-    inputs.push_back(torch::ones({1, 3, 800, 600}, torch::dtype(torch::kFloat32).device(torch::kCUDA, 0)));
+    
+    // complete msg
+    // std::vector<torch::jit::IValue> inputs;
+    // inputs.push_back(torch::ones({1, 2, 2, 600}, torch::dtype(torch::kFloat32).device(torch::kCUDA, 0)));
 
-    auto iitens = to_itensor(inputs);
-    std::cout << "to_itensor ... OK\n";
-    std::cout << "iitens->tensors()->size(): " << iitens->tensors()->size() << "\n";
-    auto iten = iitens->tensors()->front();
-    std::cout << "iten->shape: {"
-              << iten->shape()[0] << ", "
-              << iten->shape()[1] << ", "
-              << iten->shape()[2] << "} \n";
+    // auto iitens = to_itensor(inputs);
+    // std::cout << "to_itensor ... OK\n";
+    // std::cout << "iitens->tensors()->size(): " << iitens->tensors()->size() << "\n";
+    // auto iten = iitens->tensors()->front();
+    // std::cout << "iten->shape: {"
+    //           << iten->shape()[0] << ", "
+    //           << iten->shape()[1] << ", "
+    //           << iten->shape()[2] << "} \n";
 
-    auto msg = Zio::FlowConfigurable::pack(iitens);
-    std::cout << "Zio::FlowConfigurable::pack ... OK\n";
-    std::cout << "msg.label: " << msg.label() << "\n";
+    // auto msg = Zio::FlowConfigurable::pack(iitens);
+    // std::cout << dump(msg) << "\n";
 
-    // zmq::multipart_t mmsg(msg.toparts());
-    // m_client->send("torch", mmsg);
-    zmq::multipart_t mmsg(zio_tens_msg().toparts());
+    // simple msg
+    auto msg = zio_tens_msg();
+    std::cout << dump(msg) << "\n";
+    
+    zmq::multipart_t mmsg(msg.toparts());
     m_client->send("echo", mmsg);
     std::cout << "m_client->send ... OK\n";
 
