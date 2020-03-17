@@ -104,7 +104,7 @@ std::string dump(const zio::Message &msg) {
 zio::Message zio_tens_msg()
 {
     std::vector<size_t> shape = {2, 2, 30};
-    float tensor[2][2][300] = {0};
+    float tensor[2][2][30] = {0};
     const float *tensor1 = (float *)tensor;
     zio::Message msg(zio::tens::form);
     // Add an initial, unrelated message part just to make sure tens
