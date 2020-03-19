@@ -101,6 +101,20 @@ std::string dump(const zio::Message &msg) {
     ss << " + [" << msg.payload().str() << "]";
     return ss.str();
 }
+std::string dump(const ITensorSet::pointer &itens) {
+    std::stringstream ss;
+    ss << "ITensorSet: ";
+    Json::FastWriter jwriter;
+    ss << itens->ident() << ", " << jwriter.write(itens->metadata());
+    for (auto iten : *itens->tensors()) {
+        ss << "shape: [";
+        for(auto l : iten->shape()) {
+            ss << l << " ";
+        }
+        ss << "]\n";
+    }
+    return ss.str();
+}
 } // namespace
 
 int main()
@@ -119,36 +133,34 @@ int main()
         THROW(RuntimeError() << errmsg{"Client init faileds!"});
     }
     
-    // complete msg
+    // 
     std::vector<torch::jit::IValue> inputs;
-    inputs.push_back(torch::ones({1, 3, 20, 20}, torch::dtype(torch::kFloat32).device(torch::kCUDA, 0)));
+    inputs.push_back(torch::ones({1, 20, 20, 3}, torch::dtype(torch::kFloat32).device(torch::kCUDA, 0)));
 
     auto iitens = to_itensor(inputs);
-    std::cout << "to_itensor ... OK\n";
-    // std::cout << "iitens->tensors()->size(): " << iitens->tensors()->size() << "\n";
-    // auto iten = iitens->tensors()->front();
-    // std::cout << "iten->shape: {"
-    //           << iten->shape()[0] << ", "
-    //           << iten->shape()[1] << ", "
-    //           << iten->shape()[2] << "} \n";
+    std::cout << "torch -> itens ... OK\n";
 
     auto msg = Zio::FlowConfigurable::pack(iitens);
     std::cout << "itens -> msg ... OK\n";
     // std::cout << dump(msg) << "\n";
     
     zmq::multipart_t mmsg(msg.toparts());
-    m_client->send("echo", mmsg);
+    m_client->send("torch", mmsg);
     std::cout << "Client::send ... OK\n";
 
     mmsg.clear();
     m_client->recv(mmsg);
     std::cout << "Client::recv ... OK\n";
+    // std::cout << mmsg.str() << "\n";
 
     msg.fromparts(mmsg);
-    auto oiten = Zio::FlowConfigurable::unpack(msg);
+    // std::cout << dump(msg) << "\n";
+    auto oitens = Zio::FlowConfigurable::unpack(msg);
     std::cout << "msg -> itens ... OK\n";
-    Json::FastWriter jwriter;
-    std::cout << jwriter.write(oiten->metadata());
+    // std::cout << dump(oitens);
+
+    auto out_ival = from_itensor(oitens);
+    std::cout << "itens -> torch ... OK\n";
     
     return 0;
 }
