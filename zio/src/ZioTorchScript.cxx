@@ -112,7 +112,7 @@ void Pytorch::ZioTorchScript::configure(const WireCell::Configuration &cfg)
 torch::IValue
 Pytorch::ZioTorchScript::forward(const std::vector<torch::IValue> &inputs)
 {
-    l->info("ZioTorchScript::forward");
+    l->debug("ZioTorchScript::forward");
     torch::IValue ret;
     int wait_time = m_cfg["wait_time"].asInt();
     int thread_wait_time = 0;
@@ -129,26 +129,14 @@ Pytorch::ZioTorchScript::forward(const std::vector<torch::IValue> &inputs)
         try
         {
             auto iitens = to_itensor(inputs);
-            std::cout << "torch -> itens ... OK\n";
-            std::cout << dump(iitens);
             auto msg = Zio::FlowConfigurable::pack(iitens);
-            std::cout << "itens -> msg ... OK\n";
-            // std::cout << dump(msg) << "\n";
             zmq::multipart_t mmsg(msg.toparts());
-            std::cout << mmsg.str() << "\n";
             m_client.send("torch", mmsg);
-            std::cout << "Client::send ... OK\n";
             mmsg.clear();
             m_client.recv(mmsg);
-            std::cout << "Client::recv ... OK\n";
-            // std::cout << mmsg.str() << "\n";
             msg.fromparts(mmsg);
-            // std::cout << dump(msg) << "\n";
             auto oitens = Zio::FlowConfigurable::unpack(msg);
-            std::cout << "msg -> itens ... OK\n";
-            // std::cout << dump(oitens);
             ret = from_itensor(oitens);
-            std::cout << "itens -> torch ... OK\n";
             
             success = true;
         }
@@ -160,7 +148,7 @@ Pytorch::ZioTorchScript::forward(const std::vector<torch::IValue> &inputs)
     }
     // }
 
-    l->info("thread_wait_time: {} sec", thread_wait_time / 1000.);
+    l->debug("thread_wait_time: {} sec", thread_wait_time / 1000.);
 
     return ret;
 }
