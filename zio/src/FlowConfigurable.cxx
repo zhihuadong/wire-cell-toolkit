@@ -217,13 +217,15 @@ bool Zio::FlowConfigurable::pre_flow()
 zio::Message Zio::FlowConfigurable::pack(ITensorSet::pointer & itens)
 {
     // prepare "metadata" of the label
-    auto it_md = itens->metadata();
+    // TODO need to implement this
     Configuration label;
     label[zio::tens::form]["metadata"] = {};
-    auto &meta = label[zio::tens::form]["metadata"];
-    meta["tick"] = it_md["tick"];
-    meta["time"] = it_md["time"];
-    meta["tensor_attributes"] = it_md["tensors"];
+    // auto &meta = label[zio::tens::form]["metadata"];
+    // meta["tick"] = 500;
+    // auto it_md = itens->metadata();
+    // meta["tick"] = it_md["tick"];
+    // meta["time"] = it_md["time"];
+    // meta["tensor_attributes"] = it_md["tensors"];
 
     zio::Message msg(zio::tens::form);
 
@@ -233,7 +235,7 @@ zio::Message Zio::FlowConfigurable::pack(ITensorSet::pointer & itens)
 
     Json::FastWriter jwriter;
     msg.set_label(jwriter.write(label));
-
+    
     for(auto ten : *(itens->tensors())) {
         zio::tens::append(msg, (const float*)ten->data(), ten->shape());
     }
