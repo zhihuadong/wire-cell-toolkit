@@ -7,7 +7,6 @@
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellPytorch/ITorchScript.h"
 #include "WireCellUtil/Logging.h"
-#include "zio/domo/client.hpp"
 
 #include <torch/script.h> // One-stop header.
 
@@ -31,8 +30,6 @@ private:
   int m_ident;
   Log::logptr_t l;
   Configuration m_cfg; /// copy of configuration
-
-  std::shared_ptr<zio::domo::Client> m_client;
 
   std::unordered_map<std::string, float> m_timers;
 
