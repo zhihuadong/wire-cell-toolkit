@@ -135,7 +135,7 @@ int main()
     
     // 
     std::vector<torch::jit::IValue> inputs;
-    inputs.push_back(torch::ones({1, 20, 20, 3}, torch::dtype(torch::kFloat32).device(torch::kCUDA, 0)));
+    inputs.push_back(torch::ones({1, 3, 800, 600}, torch::dtype(torch::kFloat32).device(torch::kCUDA, 0)));
 
     auto iitens = to_itensor(inputs);
     std::cout << "torch -> itens ... OK\n";
@@ -145,6 +145,7 @@ int main()
     // std::cout << dump(msg) << "\n";
     
     zmq::multipart_t mmsg(msg.toparts());
+    // std::cout << mmsg.str() << "\n";
     m_client->send("torch", mmsg);
     std::cout << "Client::send ... OK\n";
 
