@@ -4,7 +4,7 @@
 #include "WireCellUtil/Exceptions.h"
 #include "WireCellUtil/Configuration.h"
 
-#include "generaldomo/client.hpp"
+#include "zio/domo/client.hpp"
 #include "zio/tens.hpp"
 
 #include <torch/script.h> // One-stop header.
@@ -26,9 +26,9 @@ std::string dump(const zio::Message &msg) {
 }
 zio::Message zio_tens_msg()
 {
-    #define N2 3 // <--- breaks broker if change to 30
+    #define N2 20 // <--- breaks broker if change to 30
     std::vector<size_t> shape = {2, 2, N2};
-    float tensor[2][2][N2] = {1};
+    float tensor[2][2][N2] = {0};
     const float *tensor1 = (float *)tensor;
     zio::Message msg(zio::tens::form);
     // Add an initial, unrelated message part just to make sure tens
@@ -51,17 +51,19 @@ zio::Message zio_tens_msg()
 int main()
 {
     // client
-    std::shared_ptr<generaldomo::Client> m_client;
-    generaldomo::console_log log;
+    std::shared_ptr<zio::domo::Client> m_client;
+    zio::console_log log;
     zmq::context_t ctx;
     zmq::socket_t sock(ctx, ZMQ_CLIENT);
-    m_client = std::make_shared<generaldomo::Client>(sock, "tcp://localhost:5555", log);
+    m_client = std::make_shared<zio::domo::Client>(sock, "tcp://localhost:5555", log);
 
     // simple msg
     auto msg = zio_tens_msg();
     std::cout << dump(msg) << "\n";
     
     zmq::multipart_t mmsg(msg.toparts());
+    std::cout << "\nzmq::multipart_t: " << mmsg.size();
+    std::cout << mmsg.str() << "\n";
     m_client->send("echo", mmsg);
     std::cout << "m_client->send ... OK\n";
 
