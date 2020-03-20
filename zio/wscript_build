@@ -1,2 +1,2 @@
-bld.smplpkg('WireCellZio', use='ZIO WireCellIface WireCellAux ZMQ ZYRE',
-                      test_use='')
+bld.smplpkg('WireCellZio', use='WireCellIface WireCellAux ZMQ ZYRE ZIO',
+            test_use='')
