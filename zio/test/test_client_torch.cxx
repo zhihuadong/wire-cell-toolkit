@@ -121,12 +121,11 @@ int main()
 {
     // client
     std::shared_ptr<zio::domo::Client> m_client;
-    zio::console_log log;
     zmq::context_t ctx;
     zmq::socket_t sock(ctx, ZMQ_CLIENT);
     try
     {
-        m_client = std::make_shared<zio::domo::Client>(sock, "tcp://localhost:5555", log);
+        m_client = std::make_shared<zio::domo::Client>(sock, "tcp://localhost:5555");
     }
     catch (...)
     {
