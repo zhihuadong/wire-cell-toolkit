@@ -22,6 +22,9 @@ Configuration Pytorch::ZioTorchScript::default_configuration() const
 {
     Configuration cfg;
 
+    // zio
+    cfg["address"] = "tcp://localhost:5555";
+
     // TorchScript model
     cfg["model"] = "model.ts";
     cfg["gpu"] = true;
@@ -33,6 +36,11 @@ Configuration Pytorch::ZioTorchScript::default_configuration() const
     cfg["nloop"] = 10;
 
     return cfg;
+}
+
+void Pytorch::ZioTorchScript::configure(const WireCell::Configuration &cfg)
+{
+    m_cfg = cfg;
 }
 
 namespace
@@ -104,11 +112,6 @@ std::string dump(const ITensorSet::pointer &itens) {
 }
 } // namespace
 
-void Pytorch::ZioTorchScript::configure(const WireCell::Configuration &cfg)
-{
-    m_cfg = cfg;
-}
-
 torch::IValue
 Pytorch::ZioTorchScript::forward(const std::vector<torch::IValue> &inputs)
 {
@@ -119,7 +122,7 @@ Pytorch::ZioTorchScript::forward(const std::vector<torch::IValue> &inputs)
 
     zmq::context_t ctx;
     zmq::socket_t sock(ctx, ZMQ_CLIENT);
-    zio::domo::Client m_client(sock, "tcp://localhost:5555");
+    zio::domo::Client m_client(sock, get<std::string>(m_cfg, "address", "tcp://localhost:5555"));
 
     // for(int iloop=0; iloop<m_cfg["nloop"].asInt();++iloop) {
     bool success = false;
