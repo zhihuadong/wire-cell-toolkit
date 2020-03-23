@@ -117,10 +117,9 @@ Pytorch::ZioTorchScript::forward(const std::vector<torch::IValue> &inputs)
     int wait_time = m_cfg["wait_time"].asInt();
     int thread_wait_time = 0;
 
-    zio::console_log log;
     zmq::context_t ctx;
     zmq::socket_t sock(ctx, ZMQ_CLIENT);
-    zio::domo::Client m_client(sock, "tcp://localhost:5555", log);
+    zio::domo::Client m_client(sock, "tcp://localhost:5555");
 
     // for(int iloop=0; iloop<m_cfg["nloop"].asInt();++iloop) {
     bool success = false;
