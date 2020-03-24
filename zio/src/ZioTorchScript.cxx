@@ -24,6 +24,7 @@ Configuration Pytorch::ZioTorchScript::default_configuration() const
 
     // zio
     cfg["address"] = "tcp://localhost:5555";
+    cfg["service"] = "torch:dnnroi";
 
     // TorchScript model
     cfg["model"] = "model.ts";
@@ -133,7 +134,7 @@ Pytorch::ZioTorchScript::forward(const std::vector<torch::IValue> &inputs)
             auto iitens = to_itensor(inputs);
             auto msg = Zio::FlowConfigurable::pack(iitens);
             zmq::multipart_t mmsg(msg.toparts());
-            m_client.send("torch", mmsg);
+            m_client.send(get<std::string>(m_cfg, "service", "torch:dnnroi"), mmsg);
             mmsg.clear();
             m_client.recv(mmsg);
             msg.fromparts(mmsg);
