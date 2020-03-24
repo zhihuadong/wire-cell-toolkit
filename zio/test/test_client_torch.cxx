@@ -145,7 +145,7 @@ int main()
     
     zmq::multipart_t mmsg(msg.toparts());
     // std::cout << mmsg.str() << "\n";
-    m_client->send("torch", mmsg);
+    m_client->send("torch:dnnroi", mmsg);
     std::cout << "Client::send ... OK\n";
 
     mmsg.clear();
