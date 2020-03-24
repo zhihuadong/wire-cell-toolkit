@@ -11,11 +11,11 @@ std::string Pytorch::dump(const torch::Tensor &ten)
 {
     std::stringstream ss;
     ss << "torch::Tensor: ";
-    ss << " shape {"
-       << ten.size(0) << ", "
-       << ten.size(1) << ", "
-       << ten.size(2) << ", "
-       << ten.size(3) << "} ";
+    ss << " shape {";
+    for(int idim=0; idim < ten.dim(); ++idim) {
+        ss << ten.size(idim) << " ";
+    }
+    ss << "} ";
     return ss.str();
 }
 
