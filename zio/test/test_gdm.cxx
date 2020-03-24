@@ -26,7 +26,7 @@ std::string dump(const zio::Message &msg) {
 }
 zio::Message zio_tens_msg()
 {
-    #define N2 20 // <--- breaks broker if change to 30
+    #define N2 20
     std::vector<size_t> shape = {2, 2, N2};
     float tensor[2][2][N2] = {0};
     const float *tensor1 = (float *)tensor;
