@@ -1,1 +1,1 @@
-bld.smplpkg('WireCellPytorch', use='WireCellIface LIBTORCH')
+bld.smplpkg('WireCellPytorch', use='WireCellIface WireCellAux LIBTORCH')

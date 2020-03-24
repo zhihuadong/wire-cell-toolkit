@@ -74,7 +74,7 @@ namespace WireCell {
         
         public:
             /// Pack the ITensorSet into a ZIO Message
-            static zio::Message pack(ITensorSet::pointer & itens);
+            static zio::Message pack(const ITensorSet::pointer & itens);
 
             /// Unpack ZIO Message to ITensorSet
             static ITensorSet::pointer unpack(const zio::Message& zmsg);

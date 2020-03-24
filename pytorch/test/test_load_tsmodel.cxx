@@ -14,6 +14,7 @@ int main(int argc, const char* argv[]) {
 
   } catch (const torch::Error &e) {
     std::cout << "error loading the model\n";
+    std::cout << "example models: https://github.com/HaiwangYu/Pytorch-UNet/tree/master/ts-model\n";
   }
 
   return 0;

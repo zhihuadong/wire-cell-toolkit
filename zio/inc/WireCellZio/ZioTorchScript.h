@@ -1,21 +1,19 @@
-/** A wrapper for pytorch torchscript
+/** A wrapper for pytorch torchscript using zio
  */
 
-#ifndef WIRECELLPYTORCH_TORCHSCRIPT
-#define WIRECELLPYTORCH_TORCHSCRIPT
+#ifndef WIRECELLPYTORCH_ZIOTORCHSCRIPT
+#define WIRECELLPYTORCH_ZIOTORCHSCRIPT
 
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellPytorch/ITorchScript.h"
 #include "WireCellUtil/Logging.h"
 
-#include <torch/script.h> // One-stop header.
-
 namespace WireCell {
 namespace Pytorch {
-class TorchScript : public ITorchScript, public IConfigurable {
+class ZioTorchScript : public ITorchScript, public IConfigurable {
 public:
-  TorchScript();
-  virtual ~TorchScript() {}
+  ZioTorchScript();
+  virtual ~ZioTorchScript() {}
 
   // IConfigurable interface
   virtual void configure(const WireCell::Configuration &config);
@@ -31,12 +29,10 @@ private:
   Log::logptr_t l;
   Configuration m_cfg; /// copy of configuration
 
-  torch::jit::script::Module m_module;
-
   std::unordered_map<std::string, float> m_timers;
 
 };
 } // namespace Pytorch
 } // namespace WireCell
 
-#endif // WIRECELLPYTORCH_TORCHSCRIPT
+#endif // WIRECELLPYTORCH_ZIOTORCHSCRIPT

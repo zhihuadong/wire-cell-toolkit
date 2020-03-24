@@ -1,8 +1,8 @@
 #include "WireCellPytorch/DNNROIFinding.h"
+#include "WireCellPytorch/Util.h"
 #include "WireCellIface/ITrace.h"
 #include "WireCellIface/SimpleFrame.h"
 #include "WireCellIface/SimpleTrace.h"
-
 #include "WireCellIface/FrameTools.h"
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/Array.h"
@@ -233,17 +233,9 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
   auto img = torch::stack({ch[0], ch[1], ch[2]}, 0);
   auto batch = torch::stack({torch::transpose(img,1,2)}, 0);
 
-  // std::cout << "batch.shape: {"
-  // << batch.size(0) << ", "
-  // << batch.size(1) << ", "
-  // << batch.size(2) << ", "
-  // << batch.size(3) << "} "
-  // << std::endl;
-
   // Create a vector of inputs.
   std::vector<torch::jit::IValue> inputs;
-  if(m_torch->gpu()) inputs.push_back(batch.cuda());
-  else inputs.push_back(batch);
+  inputs.push_back(batch);
 
   duration += (std::clock() - start) / (double)CLOCKS_PER_SEC;
   l->info("eigen2tensor: {}", duration);
@@ -252,18 +244,16 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
   start = std::clock();
   duration = 0;
   // Execute the model and turn its output into a tensor.
-  torch::Tensor output = m_torch->forward(inputs).toTensor().cpu();
+  auto iitens = Pytorch::to_itensor(inputs);
+  auto oitens = m_torch->forward(iitens);
+  if(oitens->tensors()->size()!=1) {
+    THROW(ValueError() << errmsg{"oitens->tensors()->size()!=1"});
+  }
+  torch::Tensor output =  Pytorch::from_itensor({oitens}).front().toTensor().cpu();
 
   duration += (std::clock() - start) / (double)CLOCKS_PER_SEC;
   l->info("forward: {}", duration);
   m_timers["forward"] += duration;
-
-  // std::cout << "output.shape: {"
-  // << output.size(0) << ", "
-  // << output.size(1) << ", "
-  // << output.size(2) << ", "
-  // << output.size(3) << "} "
-  // << std::endl;
   
   start = std::clock();
   duration = 0;
@@ -326,11 +316,6 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
   outframe = IFrame::pointer(sframe);
   duration += (std::clock() - start) / (double)CLOCKS_PER_SEC;
   l->info("eigen2frame: {}", duration);
-  
-  // l->info("timer summary:");
-  // for (auto pair : m_timers) {
-  //   l->info("{} : {}",pair.first, pair.second);
-  // }
 
   ++m_save_count;
   return true;
