@@ -214,7 +214,7 @@ bool Zio::FlowConfigurable::pre_flow()
     return true;
 }
 
-zio::Message Zio::FlowConfigurable::pack(ITensorSet::pointer & itens)
+zio::Message Zio::FlowConfigurable::pack(const ITensorSet::pointer & itens)
 {
     // prepare "metadata" of the label
     // TODO need to implement this
