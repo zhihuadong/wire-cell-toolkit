@@ -46,49 +46,49 @@ void Pytorch::ZioTorchScript::configure(const WireCell::Configuration &cfg)
 
 namespace
 {
-ITensorSet::pointer to_itensor(const std::vector<torch::IValue> &inputs)
-{
-    ITensor::vector *itv = new ITensor::vector;
+// ITensorSet::pointer to_itensor(const std::vector<torch::IValue> &inputs)
+// {
+//     ITensor::vector *itv = new ITensor::vector;
 
-    int ind = 0;
-    for (auto ival : inputs)
-    {
-        auto ten = ival.toTensor().cpu();
-        std::vector<size_t> shape = {(size_t)ten.size(1), (size_t)ten.size(2), (size_t)ten.size(3)};
-        // TODO need to figure out type from dtyp
-        Aux::SimpleTensor<float> *st = new Aux::SimpleTensor<float>(shape);
-        size_t nbyte = 4;
-        for (auto n : shape)
-            nbyte *= n;
-        auto data = (float *)st->data();
-        memcpy(data, (float *)ten[0][0].data<float>(), nbyte);
-        itv->push_back(ITensor::pointer(st));
-        ++ind;
-    }
+//     int ind = 0;
+//     for (auto ival : inputs)
+//     {
+//         auto ten = ival.toTensor().cpu();
+//         std::vector<size_t> shape = {(size_t)ten.size(1), (size_t)ten.size(2), (size_t)ten.size(3)};
+//         // TODO need to figure out type from dtyp
+//         Aux::SimpleTensor<float> *st = new Aux::SimpleTensor<float>(shape);
+//         size_t nbyte = 4;
+//         for (auto n : shape)
+//             nbyte *= n;
+//         auto data = (float *)st->data();
+//         memcpy(data, (float *)ten[0][0].data<float>(), nbyte);
+//         itv->push_back(ITensor::pointer(st));
+//         ++ind;
+//     }
 
-    int seqno = 0;
-    Configuration md;
+//     int seqno = 0;
+//     Configuration md;
 
-    return std::make_shared<Aux::SimpleTensorSet>(seqno, md, ITensor::shared_vector(itv));
-}
-torch::IValue from_itensor(const ITensorSet::pointer &inputs)
-{
-    if (inputs->tensors()->size() != 1)
-    {
-        THROW(ValueError() << errmsg{"inputs->tensors()->size()!=1"});
-    }
-    auto iten = inputs->tensors()->front();
-    if (iten->shape().size() != 4)
-    {
-        THROW(ValueError() << errmsg{"iten->shape().size()!=4"});
-    }
-    //TODO determine data type from metadata
-    auto ten = torch::from_blob((float *)iten->data(), {(long)iten->shape()[0],
-                                                        (long)iten->shape()[1],
-                                                        (long)iten->shape()[2],
-                                                        (long)iten->shape()[3]});
-    return ten;
-}
+//     return std::make_shared<Aux::SimpleTensorSet>(seqno, md, ITensor::shared_vector(itv));
+// }
+// torch::IValue from_itensor(const ITensorSet::pointer &inputs)
+// {
+//     if (inputs->tensors()->size() != 1)
+//     {
+//         THROW(ValueError() << errmsg{"inputs->tensors()->size()!=1"});
+//     }
+//     auto iten = inputs->tensors()->front();
+//     if (iten->shape().size() != 4)
+//     {
+//         THROW(ValueError() << errmsg{"iten->shape().size()!=4"});
+//     }
+//     //TODO determine data type from metadata
+//     auto ten = torch::from_blob((float *)iten->data(), {(long)iten->shape()[0],
+//                                                         (long)iten->shape()[1],
+//                                                         (long)iten->shape()[2],
+//                                                         (long)iten->shape()[3]});
+//     return ten;
+// }
 std::string dump(const zio::Message &msg) {
     std::stringstream ss;
     ss << "zio.Message: ";
@@ -113,11 +113,10 @@ std::string dump(const ITensorSet::pointer &itens) {
 }
 } // namespace
 
-torch::IValue
-Pytorch::ZioTorchScript::forward(const std::vector<torch::IValue> &inputs)
+ITensorSet::pointer Pytorch::ZioTorchScript::forward(const ITensorSet::pointer &inputs)
 {
     l->debug("ZioTorchScript::forward");
-    torch::IValue ret;
+    ITensorSet::pointer ret;
     int wait_time = m_cfg["wait_time"].asInt();
     int thread_wait_time = 0;
 
@@ -131,15 +130,13 @@ Pytorch::ZioTorchScript::forward(const std::vector<torch::IValue> &inputs)
     {
         try
         {
-            auto iitens = to_itensor(inputs);
-            auto msg = Zio::FlowConfigurable::pack(iitens);
+            auto msg = Zio::FlowConfigurable::pack(inputs);
             zmq::multipart_t mmsg(msg.toparts());
             m_client.send(get<std::string>(m_cfg, "service", "torch:dnnroi"), mmsg);
             mmsg.clear();
             m_client.recv(mmsg);
             msg.fromparts(mmsg);
-            auto oitens = Zio::FlowConfigurable::unpack(msg);
-            ret = from_itensor(oitens);
+            ret = Zio::FlowConfigurable::unpack(msg);
             
             success = true;
         }
