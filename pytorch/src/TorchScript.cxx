@@ -1,4 +1,5 @@
 #include "WireCellPytorch/TorchScript.h"
+#include "WireCellPytorch/Util.h"
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/String.h"
 
@@ -49,9 +50,8 @@ void Pytorch::TorchScript::configure(const WireCell::Configuration &cfg) {
   }
 }
 
-torch::IValue
-Pytorch::TorchScript::forward(const std::vector<torch::IValue> &inputs) {
-  torch::IValue ret;
+ITensorSet::pointer Pytorch::TorchScript::forward(const ITensorSet::pointer &inputs) {
+  ITensorSet::pointer ret;
   int wait_time = m_cfg["wait_time"].asInt();
   int thread_wait_time = 0;
 
@@ -59,7 +59,10 @@ Pytorch::TorchScript::forward(const std::vector<torch::IValue> &inputs) {
   bool success = false;
   while (!success) {
     try {
-      ret = m_module.forward(inputs);
+      auto iival = Pytorch::from_itensor(inputs);
+      auto oival = m_module.forward(iival);
+      ret = Pytorch::to_itensor({oival});
+
       success = true;
     } catch (...) {
       std::this_thread::sleep_for(std::chrono::milliseconds(wait_time));

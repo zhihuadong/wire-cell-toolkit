@@ -1,4 +1,5 @@
 #include "WireCellPytorch/DNNROIFinding.h"
+#include "WireCellPytorch/Util.h"
 #include "WireCellIface/ITrace.h"
 #include "WireCellIface/SimpleFrame.h"
 #include "WireCellIface/SimpleTrace.h"
@@ -252,7 +253,12 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
   start = std::clock();
   duration = 0;
   // Execute the model and turn its output into a tensor.
-  torch::Tensor output = m_torch->forward(inputs).toTensor().cpu();
+  auto iitens = Pytorch::to_itensor(inputs);
+  auto oitens = m_torch->forward(iitens);
+  if(oitens->tensors()->size()!=1) {
+    THROW(ValueError() << errmsg{"oitens->tensors()->size()!=1"});
+  }
+  torch::Tensor output =  Pytorch::from_itensor({oitens}).front().toTensor().cpu();
 
   duration += (std::clock() - start) / (double)CLOCKS_PER_SEC;
   l->info("forward: {}", duration);
