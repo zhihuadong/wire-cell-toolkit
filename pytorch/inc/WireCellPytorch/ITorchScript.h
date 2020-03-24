@@ -7,8 +7,6 @@
 #include "WireCellUtil/IComponent.h"
 #include "WireCellIface/ITensorSet.h"
 
-// #include <torch/script.h> // One-stop header.
-
 namespace WireCell {
 namespace Pytorch {
 class ITorchScript : public IComponent<ITorchScript> {
@@ -22,7 +20,6 @@ public:
   virtual bool gpu() const = 0;
 
   /// wrapper of the torch script forward function
-  // virtual torch::IValue forward(const std::vector<torch::IValue> &inputs) = 0;
   virtual ITensorSet::pointer forward(const ITensorSet::pointer &inputs) = 0;
 };
 } // namespace Pytorch

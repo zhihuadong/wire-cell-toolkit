@@ -24,7 +24,6 @@ public:
   // ITorchScript interface
   virtual int ident() const { return m_ident; }
   virtual bool gpu() const {return get<bool>(m_cfg, "gpu", false);}
-  // virtual torch::IValue forward(const std::vector<torch::IValue> &inputs);
   virtual ITensorSet::pointer forward(const ITensorSet::pointer &inputs);
 
 private:

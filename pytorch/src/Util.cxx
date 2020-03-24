@@ -27,7 +27,11 @@ ITensorSet::pointer Pytorch::to_itensor(const std::vector<torch::IValue> &inputs
     for (auto ival : inputs)
     {
         auto ten = ival.toTensor().cpu();
-        std::vector<size_t> shape = {(size_t)ten.size(1), (size_t)ten.size(2), (size_t)ten.size(3)};
+        if (ten.dim() != 4)
+        {
+            THROW(ValueError() << errmsg{"ten.dim() != 4"});
+        }
+        std::vector<size_t> shape = {(size_t)ten.size(0), (size_t)ten.size(1), (size_t)ten.size(2), (size_t)ten.size(3)};
         // TODO need to figure out type from dtyp
         Aux::SimpleTensor<float> *st = new Aux::SimpleTensor<float>(shape);
         size_t nbyte = 4;
@@ -46,7 +50,7 @@ ITensorSet::pointer Pytorch::to_itensor(const std::vector<torch::IValue> &inputs
     return std::make_shared<Aux::SimpleTensorSet>(seqno, md, ITensor::shared_vector(itv));
 }
 
-std::vector<torch::IValue> Pytorch::from_itensor(const ITensorSet::pointer &inputs)
+std::vector<torch::IValue> Pytorch::from_itensor(const ITensorSet::pointer &inputs, const bool gpu)
 {
     std::vector<torch::IValue> ret;
 
@@ -61,7 +65,11 @@ std::vector<torch::IValue> Pytorch::from_itensor(const ITensorSet::pointer &inpu
                                                             (long)iten->shape()[1],
                                                             (long)iten->shape()[2],
                                                             (long)iten->shape()[3]});
-        ret.push_back(ten);
+        if(gpu) {
+            ret.push_back(ten.cuda());
+        } else {
+            ret.push_back(ten);
+        }
     }
 
     return ret;

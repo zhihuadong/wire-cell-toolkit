@@ -53,13 +53,14 @@ void Pytorch::TorchScript::configure(const WireCell::Configuration &cfg) {
 ITensorSet::pointer Pytorch::TorchScript::forward(const ITensorSet::pointer &inputs) {
   ITensorSet::pointer ret;
   int wait_time = m_cfg["wait_time"].asInt();
+  const bool gpu = get<bool>(m_cfg, "gpu", false);
   int thread_wait_time = 0;
 
   // for(int iloop=0; iloop<m_cfg["nloop"].asInt();++iloop) {
   bool success = false;
   while (!success) {
     try {
-      auto iival = Pytorch::from_itensor(inputs);
+      auto iival = Pytorch::from_itensor(inputs, gpu);
       auto oival = m_module.forward(iival);
       ret = Pytorch::to_itensor({oival});
 
