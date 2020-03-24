@@ -7,6 +7,18 @@
 
 using namespace WireCell;
 
+std::string Pytorch::dump(const torch::Tensor &ten)
+{
+    std::stringstream ss;
+    ss << "torch::Tensor: ";
+    ss << " shape {"
+       << ten.size(0) << ", "
+       << ten.size(1) << ", "
+       << ten.size(2) << ", "
+       << ten.size(3) << "} ";
+    return ss.str();
+}
+
 ITensorSet::pointer Pytorch::to_itensor(const std::vector<torch::IValue> &inputs)
 {
     ITensor::vector *itv = new ITensor::vector;
@@ -49,6 +61,7 @@ std::vector<torch::IValue> Pytorch::from_itensor(const ITensorSet::pointer &inpu
                                                             (long)iten->shape()[1],
                                                             (long)iten->shape()[2],
                                                             (long)iten->shape()[3]});
+        ret.push_back(ten);
     }
 
     return ret;
