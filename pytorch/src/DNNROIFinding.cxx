@@ -3,7 +3,6 @@
 #include "WireCellIface/ITrace.h"
 #include "WireCellIface/SimpleFrame.h"
 #include "WireCellIface/SimpleTrace.h"
-
 #include "WireCellIface/FrameTools.h"
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/Array.h"
