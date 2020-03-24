@@ -11,6 +11,8 @@
 #include "zio/domo/client.hpp"
 #include "zio/tens.hpp"
 
+#include <thread>
+
 WIRECELL_FACTORY(ZioTorchScript, WireCell::Pytorch::ZioTorchScript,
                  WireCell::Pytorch::ITorchScript, WireCell::IConfigurable)
 

@@ -8,8 +8,6 @@
 #include "WireCellPytorch/ITorchScript.h"
 #include "WireCellUtil/Logging.h"
 
-#include <torch/script.h> // One-stop header.
-
 namespace WireCell {
 namespace Pytorch {
 class ZioTorchScript : public ITorchScript, public IConfigurable {
@@ -24,7 +22,6 @@ public:
   // ITorchScript interface
   virtual int ident() const { return m_ident; }
   virtual bool gpu() const {return get<bool>(m_cfg, "gpu", false);}
-  // virtual torch::IValue forward(const std::vector<torch::IValue> &inputs);
   virtual ITensorSet::pointer forward(const ITensorSet::pointer &inputs);
 
 private:
