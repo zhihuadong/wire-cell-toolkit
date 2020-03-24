@@ -1,4 +1,5 @@
 *~
+.vscode
 build
 .lock-waf*
 README.html
