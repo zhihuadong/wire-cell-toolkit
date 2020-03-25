@@ -5,14 +5,14 @@
 #define WIRECELLPYTORCH_TORCHSCRIPT
 
 #include "WireCellIface/IConfigurable.h"
-#include "WireCellPytorch/ITorchScript.h"
+#include "WireCellIface/ITensorSetFilter.h"
 #include "WireCellUtil/Logging.h"
 
 #include <torch/script.h> // One-stop header.
 
 namespace WireCell {
 namespace Pytorch {
-class TorchScript : public ITorchScript, public IConfigurable {
+class TorchScript : public ITensorSetFilter, public IConfigurable {
 public:
   TorchScript();
   virtual ~TorchScript() {}
@@ -21,13 +21,10 @@ public:
   virtual void configure(const WireCell::Configuration &config);
   virtual WireCell::Configuration default_configuration() const;
 
-  // ITorchScript interface
-  virtual int ident() const { return m_ident; }
-  virtual bool gpu() const {return get<bool>(m_cfg, "gpu", false);}
-  virtual ITensorSet::pointer forward(const ITensorSet::pointer &inputs);
+  // ITensorSetFilter interface
+  virtual bool operator()(const ITensorSet::pointer& in, ITensorSet::pointer& out);
 
 private:
-  int m_ident;
   Log::logptr_t l;
   Configuration m_cfg; /// copy of configuration
 
