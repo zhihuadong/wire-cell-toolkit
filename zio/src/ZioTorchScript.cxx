@@ -75,6 +75,13 @@ std::string dump(const ITensorSet::pointer &itens) {
 bool Pytorch::ZioTorchScript::operator()(const ITensorSet::pointer& in, ITensorSet::pointer& out)
 {
     l->debug("ZioTorchScript::forward");
+
+    if (!in)
+    {
+        out = nullptr;
+        return true;
+    }
+
     int wait_time = m_cfg["wait_time"].asInt();
     int thread_wait_time = 0;
 

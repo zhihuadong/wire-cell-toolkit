@@ -52,6 +52,12 @@ void Pytorch::TorchScript::configure(const WireCell::Configuration &cfg) {
 }
 
 bool Pytorch::TorchScript::operator()(const ITensorSet::pointer& in, ITensorSet::pointer& out) {
+  
+  if (!in) {
+    out=nullptr;
+    return true;
+  }
+  
   int wait_time = m_cfg["wait_time"].asInt();
   const bool gpu = get<bool>(m_cfg, "gpu", false);
   int thread_wait_time = 0;
