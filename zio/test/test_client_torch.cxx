@@ -36,7 +36,7 @@ ITensorSet::pointer to_itensor(const std::vector<torch::IValue> &inputs)
         //           << ten.size(2) << ", "
         //           << ten.size(3) << "} "
         //           << std::endl;
-        std::vector<size_t> shape = {(size_t)ten.size(1), (size_t)ten.size(2), (size_t)ten.size(3)};
+        std::vector<size_t> shape = {(size_t)ten.size(0), (size_t)ten.size(1), (size_t)ten.size(2), (size_t)ten.size(3)};
         // TODO need to figure out type from dtyp
         Aux::SimpleTensor<float> *st = new Aux::SimpleTensor<float>(shape);
         // std::cout << "st.shape: {"

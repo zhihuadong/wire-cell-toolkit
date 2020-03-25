@@ -75,6 +75,7 @@
 #include "WireCellIface/IStripe.h"
 #include "WireCellIface/IStripeSet.h"
 #include "WireCellIface/ITerminal.h"
+#include "WireCellIface/ITensorSetFilter.h"
 #include "WireCellIface/ITiling.h"
 #include "WireCellIface/ITrace.h"
 #include "WireCellIface/IWaveform.h"
@@ -164,6 +165,7 @@ ISplitNodeBase::~ISplitNodeBase() {}
 IStripe::~IStripe() {}
 IStripeSet::~IStripeSet() {}
 ITerminal::~ITerminal() {}
+ITensorSetFilter::~ITensorSetFilter() {}
 ITiling::~ITiling() {}
 ITrace::~ITrace() {}
 IWaveform::~IWaveform() {}
