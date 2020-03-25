@@ -49,7 +49,7 @@ void Pytorch::DNNROIFinding::configure(const WireCell::Configuration &cfg) {
 #endif
   
   auto torch_tn = cfg["torch_script"].asString();
-  m_torch = Factory::find_tn<ITorchScript>(torch_tn);
+  m_torch = Factory::find_tn<ITensorSetFilter>(torch_tn);
 
   m_timers.insert({"frame2eigen",0});
   m_timers.insert({"eigen2tensor",0});
@@ -245,7 +245,8 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
   duration = 0;
   // Execute the model and turn its output into a tensor.
   auto iitens = Pytorch::to_itensor(inputs);
-  auto oitens = m_torch->forward(iitens);
+  ITensorSet::pointer oitens;
+  (*m_torch)(iitens, oitens);
   if(oitens->tensors()->size()!=1) {
     THROW(ValueError() << errmsg{"oitens->tensors()->size()!=1"});
   }

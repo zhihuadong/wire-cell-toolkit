@@ -14,11 +14,11 @@
 #include <thread>
 
 WIRECELL_FACTORY(ZioTorchScript, WireCell::Pytorch::ZioTorchScript,
-                 WireCell::Pytorch::ITorchScript, WireCell::IConfigurable)
+                 WireCell::ITensorSetFilter, WireCell::IConfigurable)
 
 using namespace WireCell;
 
-Pytorch::ZioTorchScript::ZioTorchScript() : m_ident(0), l(Log::logger("pytorch")) {}
+Pytorch::ZioTorchScript::ZioTorchScript() : l(Log::logger("pytorch")) {}
 
 Configuration Pytorch::ZioTorchScript::default_configuration() const
 {
@@ -72,10 +72,16 @@ std::string dump(const ITensorSet::pointer &itens) {
 }
 } // namespace
 
-ITensorSet::pointer Pytorch::ZioTorchScript::forward(const ITensorSet::pointer &inputs)
+bool Pytorch::ZioTorchScript::operator()(const ITensorSet::pointer& in, ITensorSet::pointer& out)
 {
     l->debug("ZioTorchScript::forward");
-    ITensorSet::pointer ret;
+
+    if (!in)
+    {
+        out = nullptr;
+        return true;
+    }
+
     int wait_time = m_cfg["wait_time"].asInt();
     int thread_wait_time = 0;
 
@@ -89,13 +95,13 @@ ITensorSet::pointer Pytorch::ZioTorchScript::forward(const ITensorSet::pointer &
     {
         try
         {
-            auto msg = Zio::FlowConfigurable::pack(inputs);
+            auto msg = Zio::FlowConfigurable::pack(in);
             zmq::multipart_t mmsg(msg.toparts());
             m_client.send(get<std::string>(m_cfg, "service", "torch:dnnroi"), mmsg);
             mmsg.clear();
             m_client.recv(mmsg);
             msg.fromparts(mmsg);
-            ret = Zio::FlowConfigurable::unpack(msg);
+            out = Zio::FlowConfigurable::unpack(msg);
             
             success = true;
         }
@@ -109,5 +115,5 @@ ITensorSet::pointer Pytorch::ZioTorchScript::forward(const ITensorSet::pointer &
 
     l->debug("thread_wait_time: {} sec", thread_wait_time / 1000.);
 
-    return ret;
+    return true;
 }

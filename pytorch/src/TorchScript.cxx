@@ -4,11 +4,11 @@
 #include "WireCellUtil/String.h"
 
 WIRECELL_FACTORY(TorchScript, WireCell::Pytorch::TorchScript,
-                 WireCell::Pytorch::ITorchScript, WireCell::IConfigurable)
+                 WireCell::ITensorSetFilter, WireCell::IConfigurable)
 
 using namespace WireCell;
 
-Pytorch::TorchScript::TorchScript() : m_ident(0), l(Log::logger("pytorch")) {}
+Pytorch::TorchScript::TorchScript() : l(Log::logger("pytorch")) {}
 
 Configuration Pytorch::TorchScript::default_configuration() const {
   Configuration cfg;
@@ -29,6 +29,7 @@ Configuration Pytorch::TorchScript::default_configuration() const {
 void Pytorch::TorchScript::configure(const WireCell::Configuration &cfg) {
 
   m_cfg = cfg;
+  const bool gpu = get<bool>(m_cfg, "gpu", false);
 
   auto model_path = m_cfg["model"].asString();
   if (model_path.empty()) {
@@ -39,7 +40,7 @@ void Pytorch::TorchScript::configure(const WireCell::Configuration &cfg) {
   try {
     // Deserialize the ScriptModule from a file using torch::jit::load().
     m_module = torch::jit::load(m_cfg["model"].asString());
-    if (gpu())
+    if (gpu)
       m_module.to(at::kCUDA);
     else
       m_module.to(at::kCPU);
@@ -50,8 +51,13 @@ void Pytorch::TorchScript::configure(const WireCell::Configuration &cfg) {
   }
 }
 
-ITensorSet::pointer Pytorch::TorchScript::forward(const ITensorSet::pointer &inputs) {
-  ITensorSet::pointer ret;
+bool Pytorch::TorchScript::operator()(const ITensorSet::pointer& in, ITensorSet::pointer& out) {
+  
+  if (!in) {
+    out=nullptr;
+    return true;
+  }
+  
   int wait_time = m_cfg["wait_time"].asInt();
   const bool gpu = get<bool>(m_cfg, "gpu", false);
   int thread_wait_time = 0;
@@ -60,9 +66,9 @@ ITensorSet::pointer Pytorch::TorchScript::forward(const ITensorSet::pointer &inp
   bool success = false;
   while (!success) {
     try {
-      auto iival = Pytorch::from_itensor(inputs, gpu);
+      auto iival = Pytorch::from_itensor(in, gpu);
       auto oival = m_module.forward(iival);
-      ret = Pytorch::to_itensor({oival});
+      out = Pytorch::to_itensor({oival});
 
       success = true;
     } catch (...) {
@@ -74,5 +80,5 @@ ITensorSet::pointer Pytorch::TorchScript::forward(const ITensorSet::pointer &inp
 
   l->info("thread_wait_time: {} sec", thread_wait_time / 1000.);
 
-  return ret;
+  return true;
 }

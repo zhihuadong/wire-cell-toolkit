@@ -5,12 +5,12 @@
 #define WIRECELLPYTORCH_ZIOTORCHSCRIPT
 
 #include "WireCellIface/IConfigurable.h"
-#include "WireCellPytorch/ITorchScript.h"
+#include "WireCellIface/ITensorSetFilter.h"
 #include "WireCellUtil/Logging.h"
 
 namespace WireCell {
 namespace Pytorch {
-class ZioTorchScript : public ITorchScript, public IConfigurable {
+class ZioTorchScript : public ITensorSetFilter, public IConfigurable {
 public:
   ZioTorchScript();
   virtual ~ZioTorchScript() {}
@@ -19,13 +19,10 @@ public:
   virtual void configure(const WireCell::Configuration &config);
   virtual WireCell::Configuration default_configuration() const;
 
-  // ITorchScript interface
-  virtual int ident() const { return m_ident; }
-  virtual bool gpu() const {return get<bool>(m_cfg, "gpu", false);}
-  virtual ITensorSet::pointer forward(const ITensorSet::pointer &inputs);
+  // ITensorSetFilter interface
+  virtual bool operator()(const ITensorSet::pointer& in, ITensorSet::pointer& out);
 
 private:
-  int m_ident;
   Log::logptr_t l;
   Configuration m_cfg; /// copy of configuration
 
