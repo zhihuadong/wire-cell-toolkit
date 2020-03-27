@@ -20,7 +20,6 @@ public:
     ZioTensorSetSource();
     virtual ~ZioTensorSetSource();
 
-    /// IFrameSource
     virtual bool operator()(ITensorSet::pointer &out);
 
 private:

@@ -7,21 +7,14 @@ WIRECELL_FACTORY(ZioTensorSetSource, WireCell::Zio::ZioTensorSetSource,
 
 using namespace WireCell;
 
-Zio::ZioTensorSetSource::ZioTensorSetSource() : FlowConfigurable("extract"), l(Log::logger("zio")), m_had_eos(false) {}
+Zio::ZioTensorSetSource::ZioTensorSetSource() : FlowConfigurable("inject"), l(Log::logger("zio")), m_had_eos(false) {}
 
 Zio::ZioTensorSetSource::~ZioTensorSetSource() {}
 
 bool Zio::ZioTensorSetSource::operator()(ITensorSet::pointer &out)
 {
-    // if buffer not empty
-    if (m_tensors.size() > 0)
-    {
-        out = m_tensors.back();
-        m_tensors.pop_back();
-        return true;
-    }
+    out = nullptr;
 
-    // fill m_tensors
     pre_flow();
     if (!m_flow) {
         return false;
@@ -47,16 +40,7 @@ bool Zio::ZioTensorSetSource::operator()(ITensorSet::pointer &out)
     }
     m_had_eos = false;
 
-    m_tensors.push_back(Zio::FlowConfigurable::unpack(msg));
+    out = Zio::FlowConfigurable::unpack(msg);
 
-    // issue quit if buffer empty after filling
-    if (m_tensors.empty())
-    {
-        return false;
-    }
-
-    // pop one from buffer
-    out = m_tensors.back();
-    m_tensors.pop_back();
     return true;
 }

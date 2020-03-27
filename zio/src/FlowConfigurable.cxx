@@ -118,7 +118,6 @@ void Zio::FlowConfigurable::configure(const WireCell::Configuration& cfg)
         }
     }
 
-    m_headers["ZPB-Type"] = m_type_name;
     for (auto key : cfg["headers"].getMemberNames()) {
         auto val = cfg["headers"][key];
         m_headers[key] = val.asString();
@@ -128,7 +127,6 @@ void Zio::FlowConfigurable::configure(const WireCell::Configuration& cfg)
         {"flow", "BOT"},
         {"direction",m_direction},
         {"credit",m_credit},
-        {"dtype", m_type_name}
     };
     for (auto key : cfg["attributes"].getMemberNames()) {
         auto val = cfg["attributes"][key];
@@ -158,6 +156,7 @@ void Zio::FlowConfigurable::configure(const WireCell::Configuration& cfg)
         l->critical("node {}: failed to go online", nick);
         THROW(ValueError() << errmsg{"online failed"});
     }
+    post_configure();
 }
 
 
@@ -216,23 +215,10 @@ bool Zio::FlowConfigurable::pre_flow()
 
 zio::Message Zio::FlowConfigurable::pack(const ITensorSet::pointer & itens)
 {
-    // prepare "metadata" of the label
-    // TODO need to implement this
     Configuration label;
-    label[zio::tens::form]["metadata"] = {};
-    // auto &meta = label[zio::tens::form]["metadata"];
-    // meta["tick"] = 500;
-    // auto it_md = itens->metadata();
-    // meta["tick"] = it_md["tick"];
-    // meta["time"] = it_md["time"];
-    // meta["tensor_attributes"] = it_md["tensors"];
+    label[zio::tens::form]["metadata"]  = itens->metadata();
 
     zio::Message msg(zio::tens::form);
-
-    // Add an initial, unrelated message part just to make sure tens
-    // respects it.
-    msg.add(zio::message_t((char*)nullptr,0));
-
     Json::FastWriter jwriter;
     msg.set_label(jwriter.write(label));
     
@@ -261,7 +247,10 @@ ITensorSet::pointer Zio::FlowConfigurable::unpack(const zio::Message& zmsg)
         ++ind;
     }
 
-    int seqno = zmsg.seqno();
+    // fixme: this violates layers.  ITensorSet has no seqno.  It's
+    // ident needs to be stored as TENS metadata in pack() and then
+    // removed here.
+    int seqno = zmsg.seqno();   
     Configuration md;
     Json::Reader reader;
     reader.parse(label[zio::tens::form]["metadata"].dump(), md);

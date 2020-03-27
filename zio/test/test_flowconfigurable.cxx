@@ -42,6 +42,7 @@ ITensorSet::pointer make_tensorset() {
 void print(const ITensor::pointer tens) {
     float* data = (float*) tens->data();
     for(size_t x1=0; x1<tens->shape()[0]; ++x1) {
+        std::cout << "[" << x1 << "]: ";
         for(size_t x2=0; x2<tens->shape()[1]; ++x2) {
             std::cout << data[x2*tens->shape()[0]+x1] << " ";
         }
@@ -53,17 +54,19 @@ int main() {
 
     auto input = make_tensorset();
     
+    Zio::FlowConfigurable fc("extract", "fc");
+
     std::cout << "\n======== input ITensorSet ========\n";
     Json::FastWriter jwriter;
     std::cout << jwriter.write(input->metadata());
     print(input->tensors()->front());
 
     std::cout << "\n======== zio::Message ========\n";
-    auto msg = Zio::FlowConfigurable::pack(input);
+    auto msg = fc.pack(input);
     std::cout << msg.label() << std::endl;
 
     std::cout << "\n======== output ITensorSet ========\n";
-    auto out = Zio::FlowConfigurable::unpack(msg);
+    auto out = fc.unpack(msg);
     std::cout << jwriter.write(out->metadata());
     print(out->tensors()->front());
 

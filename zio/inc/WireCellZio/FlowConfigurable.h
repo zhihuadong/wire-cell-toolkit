@@ -48,18 +48,18 @@ namespace WireCell {
 
             Log::logptr_t l;
 
-            /// Subclass should set this to the type of protobuf payload message
-            std::string m_type_name{""};
-
             /// Subclass may use this for all but BOT.
             typedef std::unique_ptr<zio::flow::Flow> flowptr_t;
             flowptr_t m_flow;
+
+            /// Called at end of configure.  Subclass may implement.
+            virtual void post_configure() { }
 
             /// Subclass must call this before any actual flow.  It is
             /// safe to call at the top of each execution.  If it
             /// returns false, no flow is possible.  The m_flow will
             /// be invalid.
-            bool pre_flow();
+            virtual bool pre_flow();
 
             /// Give subclass a chance to add to a configuration
             virtual void user_default_configuration(WireCell::Configuration& cfg) const {};
@@ -74,10 +74,10 @@ namespace WireCell {
         
         public:
             /// Pack the ITensorSet into a ZIO Message
-            static zio::Message pack(const ITensorSet::pointer & itens);
+            zio::Message pack(const ITensorSet::pointer & itens);
 
             /// Unpack ZIO Message to ITensorSet
-            static ITensorSet::pointer unpack(const zio::Message& zmsg);
+            ITensorSet::pointer unpack(const zio::Message& zmsg);
 
         private:
             // assure pre_flow() body called just once.
