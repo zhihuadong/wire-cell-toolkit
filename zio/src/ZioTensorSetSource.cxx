@@ -1,5 +1,6 @@
 #include "WireCellZio/ZioTensorSetSource.h"
 #include "WireCellZio/FlowConfigurable.h"
+#include "WireCellZio/TensUtil.h"
 #include "WireCellUtil/NamedFactory.h"
 
 WIRECELL_FACTORY(ZioTensorSetSource, WireCell::Zio::ZioTensorSetSource,
@@ -40,7 +41,7 @@ bool Zio::ZioTensorSetSource::operator()(ITensorSet::pointer &out)
     }
     m_had_eos = false;
 
-    out = Zio::FlowConfigurable::unpack(msg);
+    out = Tens::unpack(msg);
 
     return true;
 }

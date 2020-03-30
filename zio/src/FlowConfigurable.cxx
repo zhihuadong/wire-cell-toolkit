@@ -1,9 +1,5 @@
 #include "WireCellUtil/Exceptions.h"
 #include "WireCellZio/FlowConfigurable.h"
-#include "WireCellAux/SimpleTensorSet.h"
-#include "WireCellAux/SimpleTensor.h"
-
-#include "zio/tens.hpp"
 
 #include <memory>
 
@@ -212,53 +208,6 @@ bool Zio::FlowConfigurable::pre_flow()
 
     return true;
 }
-
-zio::Message Zio::FlowConfigurable::pack(const ITensorSet::pointer & itens)
-{
-    Configuration label;
-    label[zio::tens::form]["metadata"]  = itens->metadata();
-
-    zio::Message msg(zio::tens::form);
-    Json::FastWriter jwriter;
-    msg.set_label(jwriter.write(label));
-    
-    for(auto ten : *(itens->tensors())) {
-        zio::tens::append(msg, (const float*)ten->data(), ten->shape());
-    }
-    
-    return msg;
-}
-
-ITensorSet::pointer Zio::FlowConfigurable::unpack(const zio::Message& zmsg)
-{
-    ITensor::vector* itv = new ITensor::vector;
-
-    auto label = zmsg.label_object();
-    int ind = 0;
-    for(auto jten : label[zio::tens::form]["tensors"]) {
-        std::vector<size_t> shape =  jten["shape"];
-        // TODO need to figure out type from dtyp
-        Aux::SimpleTensor<float>* st = new Aux::SimpleTensor<float>(shape);
-        size_t nbyte = jten["word"];
-        for(auto n : shape) nbyte *= n;
-        auto data = (float*)st->data();
-        memcpy(data, zio::tens::at<float>(zmsg, ind), nbyte);
-        itv->push_back(ITensor::pointer(st));
-        ++ind;
-    }
-
-    // fixme: this violates layers.  ITensorSet has no seqno.  It's
-    // ident needs to be stored as TENS metadata in pack() and then
-    // removed here.
-    int seqno = zmsg.seqno();   
-    Configuration md;
-    Json::Reader reader;
-    reader.parse(label[zio::tens::form]["metadata"].dump(), md);
-
-    return std::make_shared<Aux::SimpleTensorSet>(seqno, md, ITensor::shared_vector(itv));
-}
-
-
 void Zio::FlowConfigurable::finalize()
 {
     const std::string nick = m_node.nick();

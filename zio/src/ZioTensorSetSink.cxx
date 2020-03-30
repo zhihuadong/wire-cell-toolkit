@@ -1,5 +1,6 @@
 #include "WireCellZio/ZioTensorSetSink.h"
 #include "WireCellZio/FlowConfigurable.h"
+#include "WireCellZio/TensUtil.h"
 #include "WireCellUtil/NamedFactory.h"
 
 WIRECELL_FACTORY(ZioTensorSetSink, WireCell::Zio::ZioTensorSetSink,
@@ -48,7 +49,7 @@ bool Zio::ZioTensorSetSink::operator()(const ITensorSet::pointer &in)
     }
 
     m_had_eos = false;
-    zio::Message msg = Zio::FlowConfigurable::pack(in);
+    zio::Message msg = Tens::pack(in);
 
     bool ok = m_flow->put(msg);
     if (!ok) {                  // got eot from remote

@@ -33,6 +33,8 @@ bool Aux::TaggedTensorSetFrame::operator()(const input_pointer& in, output_point
         return true;
     }
     
+    auto log = Log::logger("tens");
+
     auto traces = new std::vector<ITrace::pointer>;
 
     auto md = in->metadata();
@@ -53,6 +55,7 @@ bool Aux::TaggedTensorSetFrame::operator()(const input_pointer& in, output_point
         size_t nchans = wf_shape[0];
         size_t nticks = wf_shape[1];
         int tbin = get<int>(jten, "tbin", 0);
+        log->debug("Tensor->Frame: {} chans x {} ticks", nchans, nticks);
 
         Eigen::Map<const Eigen::ArrayXXf> wf_arr((const float*)wf_ten->data(), nchans, nticks);
         
@@ -66,6 +69,7 @@ bool Aux::TaggedTensorSetFrame::operator()(const input_pointer& in, output_point
             for (size_t itick=0; itick<nticks; ++itick) {
                 q[itick] = wf_arr(ind,itick);
             }
+            log->debug("Tensor->Frame: #{}: ch: {}, q: {} filled {}", ind, ch_arr[ind], q.size(), nticks);
             traces->push_back(ITrace::pointer(st));
         }
     }
@@ -76,6 +80,7 @@ bool Aux::TaggedTensorSetFrame::operator()(const input_pointer& in, output_point
                         ITrace::shared_vector(traces),
                         get(md, "tick", 0.5*units::microsecond));
 
+    size_t index_start = 0;
     // Do second pass for tagged indices and summary...
     for (size_t iten=0; iten<ntens; ++iten) {
 
@@ -88,12 +93,13 @@ bool Aux::TaggedTensorSetFrame::operator()(const input_pointer& in, output_point
         size_t ich = jten["channels"].asInt();
         auto ch_ten = in->tensors()->at(ich);
         size_t nchans = ch_ten->shape()[0];
+        log->debug("Tensor->Frame: traces {} -> {}", index_start, index_start+nchans);
 
-        const size_t index_start = traces->size();
         IFrame::trace_list_t indices;
         for (size_t ind=0; ind<nchans; ++ind) {
             indices.push_back(index_start + ind);
         }
+        index_start += nchans;
 
         IFrame::trace_summary_t summary;
         auto jsum = jten["summary"];

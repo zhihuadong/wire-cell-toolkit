@@ -19,9 +19,6 @@
 #include "zio/flow.hpp"
 
 
-#include "WireCellIface/ITensorSet.h"
-
-
 namespace WireCell {
     namespace Zio {
 
@@ -72,13 +69,6 @@ namespace WireCell {
             /// Called after going online and before configuration phase is over
             virtual bool user_online() { return true; }
         
-        public:
-            /// Pack the ITensorSet into a ZIO Message
-            zio::Message pack(const ITensorSet::pointer & itens);
-
-            /// Unpack ZIO Message to ITensorSet
-            ITensorSet::pointer unpack(const zio::Message& zmsg);
-
         private:
             // assure pre_flow() body called just once.
             bool m_did_bot{false};
