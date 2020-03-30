@@ -21,6 +21,7 @@ void Aux::TaggedTensorSetFrame::configure(const WireCell::Configuration& config)
 {
     m_tags.clear();
     for (auto jten : config["tensors"]) {
+        // no tag means empty tag
         m_tags.insert(get<std::string>(jten, "tag", ""));
     }
 }
@@ -46,19 +47,24 @@ bool Aux::TaggedTensorSetFrame::operator()(const input_pointer& in, output_point
             continue;           // we don't want this one
         }
 
-        auto ten = in->tensors()->at(iten);
-        auto shape = ten->shape();
-        size_t nchans = shape[0];
-        size_t nticks = shape[1];
+        size_t iwf = jten["waveform"].asInt();
+        auto wf_ten = in->tensors()->at(iwf);
+        auto wf_shape = wf_ten->shape();
+        size_t nchans = wf_shape[0];
+        size_t nticks = wf_shape[1];
         int tbin = get<int>(jten, "tbin", 0);
+
+        Eigen::Map<const Eigen::ArrayXXf> wf_arr((const float*)wf_ten->data(), nchans, nticks);
         
-        Eigen::Map<const Eigen::ArrayXXf> arr((const float*)ten->data(), nchans, nticks);
-        auto jchans = jten["channels"];
+        size_t ich = jten["channels"].asInt();
+        auto ch_ten = in->tensors()->at(ich);
+        Eigen::Map<const Eigen::ArrayXi> ch_arr((const int*)ch_ten->data(), nchans);
+
         for (size_t ind=0; ind<nchans; ++ind) {
-            SimpleTrace* st = new SimpleTrace(jchans[(int)ind].asInt(), tbin, nticks);
+            SimpleTrace* st = new SimpleTrace(ch_arr[ind], tbin, nticks);
             auto& q = st->charge();
             for (size_t itick=0; itick<nticks; ++itick) {
-                q[itick] = arr(ind,itick);
+                q[itick] = wf_arr(ind,itick);
             }
             traces->push_back(ITrace::pointer(st));
         }
@@ -79,20 +85,26 @@ bool Aux::TaggedTensorSetFrame::operator()(const input_pointer& in, output_point
             continue;           // we don't want this one
         }
 
-        IFrame::trace_summary_t summary;
-        auto jsum = jten["summary"];
-        if (jsum.size()) {
-            for (auto js : jsum) {
-                summary.push_back(js.asFloat());
-            }
-        }
+        size_t ich = jten["channels"].asInt();
+        auto ch_ten = in->tensors()->at(ich);
+        size_t nchans = ch_ten->shape()[0];
 
-        auto jchans = jten["channels"];
-        size_t nchans = jchans.size();
         const size_t index_start = traces->size();
         IFrame::trace_list_t indices;
         for (size_t ind=0; ind<nchans; ++ind) {
             indices.push_back(index_start + ind);
+        }
+
+        IFrame::trace_summary_t summary;
+        auto jsum = jten["summary"];
+        if (! jsum.isNull()) {
+            size_t isum = jsum.asInt();
+            auto sum_ten = in->tensors()->at(isum);
+            Eigen::Map<const Eigen::ArrayXd> sum_arr((const double*)sum_ten->data(), nchans);
+            summary.resize(nchans);
+            for (size_t ind=0; ind<nchans; ++ind) {
+                summary[ind] = sum_arr(ind);
+            }
         }
         frame->tag_traces(tag, indices, summary);
     }
