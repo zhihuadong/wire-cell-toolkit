@@ -120,6 +120,7 @@ void giver(zio::socket_t& link)
 
     Zio::TensorSetSink sink;
     auto cfg = sink.default_configuration();
+    cfg["verbose"] = 0;
     cfg["nodename"] = "giver";
     cfg["portname"] = "give";
     cfg["connects"][0]["nodename"] = "middleman";
@@ -151,6 +152,7 @@ void taker(zio::socket_t& link)
 
     Zio::TensorSetSource src;
     auto cfg = src.default_configuration();
+    cfg["verbose"] = 0;
     cfg["nodename"] = "taker";
     cfg["portname"] = "take";
     cfg["connects"][0]["nodename"] = "middleman";
