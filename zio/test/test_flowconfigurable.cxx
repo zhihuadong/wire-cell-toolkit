@@ -55,8 +55,6 @@ int main() {
 
     auto input = make_tensorset();
     
-    Zio::FlowConfigurable fc("extract", "fc");
-
     std::cout << "\n======== input ITensorSet ========\n";
     Json::FastWriter jwriter;
     std::cout << jwriter.write(input->metadata());

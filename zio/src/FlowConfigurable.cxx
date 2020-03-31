@@ -26,6 +26,7 @@ WireCell::Configuration Zio::FlowConfigurable::default_configuration() const
     cfg["timeout"] = m_timeout;
     cfg["binds"] = Json::arrayValue;
     cfg["connects"] = Json::arrayValue;
+    cfg["stype"] = m_stype;
     // zyre
     cfg["nodename"] = m_node.nick();
     cfg["headers"] = Json::objectValue;
