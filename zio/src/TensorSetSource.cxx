@@ -1,18 +1,18 @@
-#include "WireCellZio/ZioTensorSetSource.h"
+#include "WireCellZio/TensorSetSource.h"
 #include "WireCellZio/FlowConfigurable.h"
 #include "WireCellZio/TensUtil.h"
 #include "WireCellUtil/NamedFactory.h"
 
-WIRECELL_FACTORY(ZioTensorSetSource, WireCell::Zio::ZioTensorSetSource,
+WIRECELL_FACTORY(ZioTensorSetSource, WireCell::Zio::TensorSetSource,
                  WireCell::ITensorSetSource, WireCell::IConfigurable)
 
 using namespace WireCell;
 
-Zio::ZioTensorSetSource::ZioTensorSetSource() : FlowConfigurable("inject"), l(Log::logger("zio")), m_had_eos(false) {}
+Zio::TensorSetSource::TensorSetSource() : FlowConfigurable("inject"), l(Log::logger("zio")), m_had_eos(false) {}
 
-Zio::ZioTensorSetSource::~ZioTensorSetSource() {}
+Zio::TensorSetSource::~TensorSetSource() {}
 
-bool Zio::ZioTensorSetSource::operator()(ITensorSet::pointer &out)
+bool Zio::TensorSetSource::operator()(ITensorSet::pointer &out)
 {
     out = nullptr;
 

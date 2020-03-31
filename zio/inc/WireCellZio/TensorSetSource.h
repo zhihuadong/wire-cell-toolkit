@@ -14,11 +14,11 @@ namespace WireCell
 namespace Zio
 {
 
-class ZioTensorSetSource : public ITensorSetSource, public FlowConfigurable
+class TensorSetSource : public ITensorSetSource, public FlowConfigurable
 {
 public:
-    ZioTensorSetSource();
-    virtual ~ZioTensorSetSource();
+    TensorSetSource();
+    virtual ~TensorSetSource();
 
     virtual bool operator()(ITensorSet::pointer &out);
 

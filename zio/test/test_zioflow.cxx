@@ -1,7 +1,7 @@
 /// Test tensor -> flow -> tensor 
 
-#include "WireCellZio/ZioTensorSetSink.h"
-#include "WireCellZio/ZioTensorSetSource.h"
+#include "WireCellZio/TensorSetSink.h"
+#include "WireCellZio/TensorSetSource.h"
 #include "WireCellZio/TensUtil.h"
 #include "WireCellUtil/Testing.h"
 
@@ -118,7 +118,7 @@ void giver(zio::socket_t& link)
 {
     link.send(msg_ready, zio::send_flags::none);
 
-    Zio::ZioTensorSetSink sink;
+    Zio::TensorSetSink sink;
     auto cfg = sink.default_configuration();
     cfg["nodename"] = "giver";
     cfg["portname"] = "give";
@@ -149,7 +149,7 @@ void taker(zio::socket_t& link)
 {
     link.send(msg_ready, zio::send_flags::none);
 
-    Zio::ZioTensorSetSource src;
+    Zio::TensorSetSource src;
     auto cfg = src.default_configuration();
     cfg["nodename"] = "taker";
     cfg["portname"] = "take";

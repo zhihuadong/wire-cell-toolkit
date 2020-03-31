@@ -1,30 +1,30 @@
-#include "WireCellZio/ZioTensorSetSink.h"
+#include "WireCellZio/TensorSetSink.h"
 #include "WireCellZio/FlowConfigurable.h"
 #include "WireCellZio/TensUtil.h"
 #include "WireCellUtil/NamedFactory.h"
 
-WIRECELL_FACTORY(ZioTensorSetSink, WireCell::Zio::ZioTensorSetSink,
+WIRECELL_FACTORY(ZioTensorSetSink, WireCell::Zio::TensorSetSink,
                  WireCell::ITensorSetSink, WireCell::IConfigurable)
 
 using namespace WireCell;
 
-Zio::ZioTensorSetSink::ZioTensorSetSink()
+Zio::TensorSetSink::TensorSetSink()
     : FlowConfigurable("extract"),
       l(Log::logger("zio")),
       m_had_eos(false)
 {
 }
 
-Zio::ZioTensorSetSink::~ZioTensorSetSink() {}
+Zio::TensorSetSink::~TensorSetSink() {}
 
-void Zio::ZioTensorSetSink::post_configure()
+void Zio::TensorSetSink::post_configure()
 {
     if (!pre_flow()) {
         throw std::runtime_error("Failed to set up flow.  Is server alive?");
     }
 }
 
-bool Zio::ZioTensorSetSink::operator()(const ITensorSet::pointer &in)
+bool Zio::TensorSetSink::operator()(const ITensorSet::pointer &in)
 {
     pre_flow();
     if (!m_flow) {
