@@ -16,17 +16,17 @@ namespace WireCell {
          *
          * The converter configuration consists of an object
          * containing an attribute "tensors" that holds an array of
-         * "tensor config objects".  Each object has the attributes:
+         * "tensor config objects", each of which has the attributes:
          *
-         * - tag :: the frame trace tag supplying the traces
-         * - pad :: number to pad sparse tensors (def=0.0)
+         * - tag :: the frame trace tag supplying the traces, optional, default='""'.
          *
-         * Each element of the "tensors" configuration array results
-         * in a set of tensors corresponding to the value of the
-         * "tag".  If the frame has no matching tag no tensors are
-         * produced.
+         * - pad :: number to pad sparse tensors, optional, default=0.0.
          *
-         * Each tag produces the following types of tensors
+         * Each element of the "tensors" configuration array, if the
+         * "tag" is found, results in multiple tensors on output.  If
+         * "tag" is not found, no tensors are output.
+         *
+         * Each "tag" produces the following set of tensor types:
          *
          * - waveform :: 2D float in channel (each row) X tick (each column)
          * - channels :: 1D int, gives channel IDs for each row
@@ -34,28 +34,27 @@ namespace WireCell {
          *
          * Waveform tensors are in row-major (C-style) order with a
          * row holding one waveform from one channel.  Sparse frames
-         * result in dense, padded tensors (padded with "pad" value,
-         * if given).  Any overlapping traces are summed.
+         * result in dense, padded tensors (initialized with "pad"
+         * value to which input is summed).  Any overlapping traces
+         * are summed.
          *
          * The resulting ITensorSet also provides a metadata object
-         * with these attributes:
+         * with these metadata attributes:
          *
          * - time :: float, the frame's reference time  (in WCT's units)
          * - tick :: float, the sample period (in WCT's units)
-         * - tensors :: an array with per-tag metadata
+         * - tags :: array of string, the tags saved
          *
-         * Each element of "tensors" forwards the attributes of the
-         * corresponding element from the input tensor Configuration
-         * object ("tag" and "pad") and it sets these additional
-         * attributes:
+         * Each tensor of a tag is saved with the following  metadata:
          *
-         * - tbin :: the time bin of the first column of the tensor
-         * - waveform :: the index for the waveform tensor
-         * - channels :: the index for the channel tensor
-         * - summary :: the index for the channel tensor, optional
+         * - tag :: the corresponding tag
+         * - type :: a string indicate frame tensor type ("waveform", "channels", "summary")
+         *
+         * Additional metadata depending on type:
+         *
+         * - tbin :: ("waveform" type) the time bin of the first column of the tensor
+         * - pad :: the configured pad value
          * 
-         * When multiple tagged traces correspond to the same channel
-         * ID their summary elements are summed.
          */
         class TaggedFrameTensorSet
             : public WireCell::IConfigurable

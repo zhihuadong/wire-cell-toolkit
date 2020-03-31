@@ -7,12 +7,12 @@
 
 using namespace WireCell;
 
-void Tens::zio_to_wct(const zio::json& zioj, Json::Value& wctj)
+void Zio::zio_to_wct(const zio::json& zioj, Json::Value& wctj)
 {
     std::stringstream ss(zioj.dump());
     ss >> wctj;
 }
-void Tens::wct_to_zio(const Json::Value& wctj, zio::json& zioj)
+void Zio::wct_to_zio(const Json::Value& wctj, zio::json& zioj)
 {
     std::stringstream ss;
     ss << wctj;
@@ -20,7 +20,7 @@ void Tens::wct_to_zio(const Json::Value& wctj, zio::json& zioj)
 }
 
 
-zio::Message Tens::pack(const ITensorSet::pointer & itens)
+zio::Message Zio::pack(const ITensorSet::pointer & itens)
 {
     Configuration label;
     auto md = itens->metadata();
@@ -54,7 +54,7 @@ void fill_tensor(ITensor::vector* itv, const std::vector<size_t>& shape,
     auto& store = st->store();
     memcpy(store.data(), one.data(), one.size());
     if (! md.is_null()) {
-        Tens::zio_to_wct(md, st->metadata());
+        Zio::zio_to_wct(md, st->metadata());
     }
     
     itv->push_back(ITensor::pointer(st));
@@ -62,7 +62,7 @@ void fill_tensor(ITensor::vector* itv, const std::vector<size_t>& shape,
 
 
 
-ITensorSet::pointer Tens::unpack(const zio::Message& zmsg)
+ITensorSet::pointer Zio::unpack(const zio::Message& zmsg)
 {
     ITensor::vector* itv = new ITensor::vector;
 

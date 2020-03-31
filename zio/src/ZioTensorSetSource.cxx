@@ -41,7 +41,7 @@ bool Zio::ZioTensorSetSource::operator()(ITensorSet::pointer &out)
     }
     m_had_eos = false;
 
-    out = Tens::unpack(msg);
+    out = Zio::unpack(msg);
 
     return true;
 }

@@ -2,7 +2,7 @@
 #include "zio/message.hpp"
 
 namespace WireCell {
-    namespace Tens {
+    namespace Zio {
 
         /// Pack the ITensorSet into a ZIO Message
         zio::Message pack(const ITensorSet::pointer & itens);

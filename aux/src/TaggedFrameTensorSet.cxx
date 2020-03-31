@@ -5,7 +5,7 @@
 #include "WireCellIface/FrameTools.h"
 #include "WireCellUtil/Logging.h"
 
-#include<iostream>
+#include <unordered_set>
 
 WIRECELL_FACTORY(TaggedFrameTensorSet, WireCell::Aux::TaggedFrameTensorSet,
                  WireCell::IFrameTensorSet, WireCell::IConfigurable)
@@ -36,13 +36,22 @@ bool Aux::TaggedFrameTensorSet::operator()(const input_pointer& in, output_point
 
     ITensor::vector* itv = new ITensor::vector;
 
-    Configuration md;
-    md["time"] = in->time();
-    md["tick"] = in->tick();
+    Configuration set_md;
+    set_md["time"] = in->time();
+    set_md["tick"] = in->tick();
+
+    std::unordered_set<std::string> tags_seen;
 
     for (auto jten : m_cfg["tensors"]) {
         auto tag = get<std::string>(jten, "tag", "");
-        jten["tag"] = tag;      // assure it is there for output
+        if (tags_seen.find(tag) == tags_seen.end()) {
+            tags_seen.insert(tag);
+        }
+        else {
+            log->warn("Frame->Tensor: skipping duplicate tag '{}'", tag);
+            continue;
+        }
+
         auto traces = FrameTools::tagged_traces(in, tag);
         if (traces.empty()) {
             log->warn("Frame->Tensor: no traces for tag '{}', skipping", tag);
@@ -52,11 +61,10 @@ bool Aux::TaggedFrameTensorSet::operator()(const input_pointer& in, output_point
         //log->debug("Frame->Tensor: {} traces for tag '{}'", ntraces, tag);
 
         float pad = get<float>(jten, "pad", 0.0);
-        jten["pad"] = pad;
 
         auto mm_tbin = FrameTools::tbin_range(traces);
         int tbin0 = mm_tbin.first;
-        jten["tbin"] = tbin0;
+
 
         // traces may be degenerate/overlapping in channels and ticks.
         // Do a little dance to map chid to an index sorted by chid.
@@ -127,22 +135,30 @@ bool Aux::TaggedFrameTensorSet::operator()(const input_pointer& in, output_point
             arr.row(chind).segment(tbini, tbinn) += wave;
         }
 
-        jten["waveform"] = (int)itv->size();
+        auto& wf_md = st->metadata();
+        wf_md["tag"] = tag;
+        wf_md["pad"] = pad;
+        wf_md["tbin"] = tbin0;
+        wf_md["type"] = "waveform";
         itv->push_back(ITensor::pointer(st));
 
-        jten["channels"] = (int)itv->size();
+        auto& ch_md = cht->metadata();
+        ch_md["tag"] = tag;
+        ch_md["type"] = "channels";
         itv->push_back(ITensor::pointer(cht));
 
         if (have_summary) {
-            jten["summary"] = (int)itv->size();            
+            auto& sum_md = sumt->metadata();
+            sum_md["tag"] = tag;
+            sum_md["type"] = "summary";
             itv->push_back(ITensor::pointer(sumt));
         }
 
-        md["tensors"].append(jten);
+        set_md["tags"].append(tag);
 
     }
 
-    out = std::make_shared<SimpleTensorSet>(in->ident(), md,
+    out = std::make_shared<SimpleTensorSet>(in->ident(), set_md,
                                             ITensor::shared_vector(itv));
     return true;
 }

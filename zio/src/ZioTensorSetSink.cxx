@@ -49,7 +49,7 @@ bool Zio::ZioTensorSetSink::operator()(const ITensorSet::pointer &in)
     }
 
     m_had_eos = false;
-    zio::Message msg = Tens::pack(in);
+    zio::Message msg = Zio::pack(in);
 
     bool ok = m_flow->put(msg);
     if (!ok) {                  // got eot from remote

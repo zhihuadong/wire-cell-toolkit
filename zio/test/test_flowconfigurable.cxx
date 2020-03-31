@@ -3,6 +3,7 @@
  */
 #include "WireCellUtil/Testing.h"
 #include "WireCellZio/FlowConfigurable.h"
+#include "WireCellZio/TensUtil.h"
 #include "WireCellIface/SimpleTrace.h"
 #include "WireCellIface/SimpleFrame.h"
 #include "WireCellAux/SimpleTensor.h"
@@ -62,11 +63,11 @@ int main() {
     print(input->tensors()->front());
 
     std::cout << "\n======== zio::Message ========\n";
-    auto msg = fc.pack(input);
+    auto msg = Zio::pack(input);
     std::cout << msg.label() << std::endl;
 
     std::cout << "\n======== output ITensorSet ========\n";
-    auto out = fc.unpack(msg);
+    auto out = Zio::unpack(msg);
     std::cout << jwriter.write(out->metadata());
     print(out->tensors()->front());
 
