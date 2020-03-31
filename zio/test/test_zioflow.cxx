@@ -4,6 +4,7 @@
 #include "WireCellZio/TensorSetSource.h"
 #include "WireCellZio/TensUtil.h"
 #include "WireCellUtil/Testing.h"
+#include "WireCellUtil/Logging.h"
 
 #include "zio/actor.hpp"
 #include "zio/main.hpp"
@@ -90,34 +91,42 @@ void middleman(zio::socket_t& link)
     const auto wait = std::chrono::milliseconds{1000};
 
     zio::debug("[middleman]: starting loop"); 
-    std::deque<zio::Message> queued;
+
     while (true) {
         std::vector<zio::poller_event<>> events(3);
         int nevents = poller.wait_all(events, wait);
         for (int iev=0; iev<nevents; ++iev) {
             if (events[iev].socket == iport->socket()) {
                 zio::Message dat;
-                bool ok = iflow.get(dat);
-                if (!ok) return;
-                queued.emplace_back(std::move(dat));
-                zio::info("middleman: queued take");
-                continue;
-            }
-            if (events[iev].socket == oport->socket()) {
-                while (queued.size()) {
-                    zio::Message dat(std::move(queued.front()));
-                    queued.pop_front();
-                    bool ok = oflow.put(dat);
-                    zio::info("middleman: give");
-                    if (!ok) return;
+                if (! iflow.get(dat)) {
+                    zio::error("[middleman]: take interupted");
+                    iflow.send_eot(dat);
+                    goto bail;
+                }
+
+                zio::info("[middleman]: #{}:\n{}",
+                          dat.seqno(), dat.label());
+
+                if (! oflow.put(dat)) {
+                    zio::error("[middleman]: give interupted");
+                    oflow.send_eot(dat);
                 }
                 continue;
             }
-            // it's the link
-            link.send(msg_done, zio::send_flags::none);
-            return;
+
+            // it's the link telling us to quit, we initiate end of
+            // transmission
+            {
+                zio::Message eot;
+                iflow.send_eot(eot);
+                oflow.send_eot(eot);
+                oflow.recv_eot(eot);
+                iflow.recv_eot(eot);
+            }
+            goto bail;
         }
     }
+  bail:
     link.send(msg_done, zio::send_flags::none);    
 }
 
@@ -135,21 +144,28 @@ void giver(zio::socket_t& link)
     sink.configure(cfg);
 
     for (int ind=0; ind<10; ++ind) {
+        zio::info("[giver]: pretending work");
+        sleep(1);
         auto ts = make_tensor_set<int>();
         bool ok = sink(ts);
         if (!ok) {
-            zio::info("giver: failed to give");
+            zio::info("[giver]: failed to give");
             break;
         }
 
         zio::message_t msg;     // check for term
         auto res = link.recv(msg, zio::recv_flags::dontwait);
         if (res) {
-            zio::info("giver: link hit");
+            zio::info("[giver]: link hit");
             break;
         }
     }
+    zio::info("[giver]: send EOS");
+    sink(nullptr);
+    zio::info("[giver]: send EOT");
+    sink(nullptr);
 
+    zio::info("[giver]: sending actor done message");
     link.send(msg_done, zio::send_flags::none);    
 }
 
@@ -170,28 +186,35 @@ void taker(zio::socket_t& link)
         ITensorSet::pointer ts;
         bool ok = src(ts);
         if (!ok) {
-            zio::info("taker: failed to take");
+            zio::info("[taker]: failed to take");
             break;
         }
         if (!ts) {
-            zio::info("taker: EOS");
+            zio::info("[taker]: EOS");
             break;
         }
 
         zio::message_t msg;     // check for term
         auto res = link.recv(msg, zio::recv_flags::dontwait);
         if (res) {
-            zio::info("taker: link hit");
+            zio::info("[taker]: link hit");
             break;
         }
     }
 
+    zio::info("[taker]: sending actor done message");
     link.send(msg_done, zio::send_flags::none);    
 }
 
 int main()
 {
+    Log::add_stdout(true, "debug");
+    Log::set_level("debug");
+    auto log = Log::logger("test");
+    log->info("Started WCT logging");
     zio::init_all();
+    zio::info("Started ZIO logging");
+
     zio::context_t ctx;
     zio::zactor_t mm(ctx, middleman);
     zio::zactor_t g(ctx, giver);
