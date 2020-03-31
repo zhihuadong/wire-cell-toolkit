@@ -19,7 +19,7 @@ using namespace WireCell;
 template<typename TYPE>
 ITensorSet::pointer make_tensor_set()
 {
-    zio::info ("by_type {}{}", zio::tens::type_name(typeid(TYPE)), sizeof(TYPE));
+    zio::debug ("make tensor set {}{}", zio::tens::type_name(typeid(TYPE)), sizeof(TYPE));
 
     TYPE tensor[2][3][4] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23};
     const TYPE* tensor1 = (TYPE*) tensor;
@@ -51,20 +51,24 @@ void middleman(zio::socket_t& link)
     link.send(msg_ready, zio::send_flags::none); // ready
 
     zio::Node node("middleman");
-    auto iport = node.port("take", ZMQ_SERVER);
-    auto oport = node.port("give", ZMQ_SERVER);
-    iport->bind("inproc://test_zioflow_take");
-    oport->bind("inproc://test_zioflow_give");
+    node.set_verbose(false);
+    auto iport = node.port("takes", ZMQ_SERVER);
+    auto oport = node.port("gives", ZMQ_SERVER);
+    // server/client can't to inproc, "@" is "abstract namespace" and Linux-only
+    iport->bind("ipc://@test_zioflow_take");
+    oport->bind("ipc://@test_zioflow_give");
     zio::flow::Flow iflow(iport), oflow(oport);
     node.online();
+
+    zio::debug("[middleman]: online");
 
     zio::poller_t<> poller;
     poller.add(iport->socket(), zio::event_flags::pollin);
     poller.add(oport->socket(), zio::event_flags::pollin);
     poller.add(link, zio::event_flags::pollin);
 
-
     
+    zio::debug("[middleman]: recv bot from giver"); 
     {   // say hi to input
         zio::Message bot;
         iflow.recv_bot(bot);
@@ -72,7 +76,9 @@ void middleman(zio::socket_t& link)
         fobj["direction"] = "inject";
         iflow.send_bot(bot);
     }
+    iflow.flush_pay();
 
+    zio::debug("[middleman]: recv bot from taker"); 
     {   // say hi to output
         zio::Message bot;
         oflow.recv_bot(bot);
@@ -83,6 +89,7 @@ void middleman(zio::socket_t& link)
 
     const auto wait = std::chrono::milliseconds{1000};
 
+    zio::debug("[middleman]: starting loop"); 
     std::deque<zio::Message> queued;
     while (true) {
         std::vector<zio::poller_event<>> events(3);
@@ -124,7 +131,7 @@ void giver(zio::socket_t& link)
     cfg["nodename"] = "giver";
     cfg["portname"] = "give";
     cfg["connects"][0]["nodename"] = "middleman";
-    cfg["connects"][0]["portname"] = "take";
+    cfg["connects"][0]["portname"] = "takes";
     sink.configure(cfg);
 
     for (int ind=0; ind<10; ++ind) {
@@ -156,7 +163,7 @@ void taker(zio::socket_t& link)
     cfg["nodename"] = "taker";
     cfg["portname"] = "take";
     cfg["connects"][0]["nodename"] = "middleman";
-    cfg["connects"][0]["portname"] = "give";
+    cfg["connects"][0]["portname"] = "gives";
     src.configure(cfg);
 
     while (true) {
