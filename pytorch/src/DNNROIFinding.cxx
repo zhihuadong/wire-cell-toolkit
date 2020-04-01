@@ -6,6 +6,7 @@
 #include "WireCellIface/FrameTools.h"
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/Array.h"
+#include "WireCellUtil/Exceptions.h"
 
 #include <string>
 #include <vector>
@@ -193,8 +194,8 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
       return true;
   }
 
-  if (m_cfg["intags"].size() != 3) {
-    return true;
+  if (m_cfg["intags"].size() == 0) {
+    THROW(ValueError() << errmsg{"No intags provided!"});
   }
 
   std::clock_t start;
@@ -222,15 +223,17 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer &inframe,
   start = std::clock();
   duration = 0;
   // eigen to tensor
-  torch::Tensor ch[3];
-  for(unsigned int i=0; i<3; ++i) {
-    ch[i] = torch::from_blob(ch_eigen[i].data(), {ch_eigen[i].cols(),ch_eigen[i].rows()});
+  std::vector<torch::Tensor> ch;
+  for(unsigned int i=0; i<ch_eigen.size(); ++i) {
+    ch.push_back(
+      torch::from_blob(ch_eigen[i].data(), {ch_eigen[i].cols(),ch_eigen[i].rows()})
+      );
     // const int ncols = ch_eigen[i].cols();
     // const int nrows = ch_eigen[i].rows();
     // std::cout << "ncols: " << ncols << "nrows: " << nrows << std::endl;
     // h5::write<float>(fd, String::format("/%d/frame_%s%d%d", m_save_count, "ch", i, 0), ch_eigen[i].data(), h5::count{ncols, nrows}, h5::chunk{ncols, nrows} | h5::gzip{2});
   }
-  auto img = torch::stack({ch[0], ch[1], ch[2]}, 0);
+  auto img = torch::stack(ch, 0);
   auto batch = torch::stack({torch::transpose(img,1,2)}, 0);
 
   // Create a vector of inputs.
