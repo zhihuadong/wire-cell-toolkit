@@ -1,4 +1,4 @@
-#include "WireCellSig/Decon2DInit.h"
+#include "WireCellSig/Decon2DResponse.h"
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/String.h"
 #include "WireCellUtil/Array.h"
@@ -9,21 +9,21 @@
 #include "WireCellIface/ITensorSet.h"
 #include "WireCellUtil/Exceptions.h"
 
-WIRECELL_FACTORY(Decon2DInit, WireCell::Sig::Decon2DInit,
+WIRECELL_FACTORY(Decon2DResponse, WireCell::Sig::Decon2DResponse,
                  WireCell::ITensorSetFilter, WireCell::IConfigurable)
 
 using namespace WireCell;
 
-Sig::Decon2DInit::Decon2DInit() : l(Log::logger("pytorch")) {}
+Sig::Decon2DResponse::Decon2DResponse() : l(Log::logger("pytorch")) {}
 
-Configuration Sig::Decon2DInit::default_configuration() const
+Configuration Sig::Decon2DResponse::default_configuration() const
 {
     Configuration cfg;
 
     return cfg;
 }
 
-void Sig::Decon2DInit::configure(const WireCell::Configuration &cfg)
+void Sig::Decon2DResponse::configure(const WireCell::Configuration &cfg)
 {
     m_cfg = cfg;
 }
@@ -46,9 +46,9 @@ std::string dump(const ITensorSet::pointer &itens) {
 }
 } // namespace
 
-bool Sig::Decon2DInit::operator()(const ITensorSet::pointer& in, ITensorSet::pointer& out)
+bool Sig::Decon2DResponse::operator()(const ITensorSet::pointer& in, ITensorSet::pointer& out)
 {
-    l->debug("Decon2DInit: start");
+    l->debug("Decon2DResponse: start");
 
     if (!in)
     {
@@ -83,7 +83,7 @@ bool Sig::Decon2DInit::operator()(const ITensorSet::pointer& in, ITensorSet::poi
     Configuration md;
     out = std::make_shared<Aux::SimpleTensorSet>(seqno, md, ITensor::shared_vector(itv));
 
-    l->debug("Decon2DInit: end");
+    l->debug("Decon2DResponse: end");
 
     return true;
 }

@@ -1,8 +1,8 @@
 /** Init Decon2D for signal processing
  */
 
-#ifndef WIRECELLSIG_DECON2DINIT
-#define WIRECELLSIG_DECON2DINIT
+#ifndef WIRECELLSIG_DECON2DRESPONSE
+#define WIRECELLSIG_DECON2DRESPONSE
 
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/ITensorSetFilter.h"
@@ -10,10 +10,10 @@
 
 namespace WireCell {
 namespace Sig {
-class Decon2DInit : public ITensorSetFilter, public IConfigurable {
+class Decon2DResponse : public ITensorSetFilter, public IConfigurable {
 public:
-  Decon2DInit();
-  virtual ~Decon2DInit() {}
+  Decon2DResponse();
+  virtual ~Decon2DResponse() {}
 
   // IConfigurable interface
   virtual void configure(const WireCell::Configuration &config);
@@ -32,4 +32,4 @@ private:
 } // namespace Sig
 } // namespace WireCell
 
-#endif // WIRECELLSIG_DECON2DINIT
+#endif // WIRECELLSIG_DECON2DRESPONSE

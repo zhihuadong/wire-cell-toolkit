@@ -1,4 +1,4 @@
-#include "WireCellSig/Decon2DInit.h"
+#include "WireCellSig/Decon2DResponse.h"
 #include "WireCellAux/Util.h"
 #include "WireCellAux/SimpleTensorSet.h"
 #include "WireCellAux/SimpleTensor.h"
@@ -42,7 +42,7 @@ int main()
     auto iitens = gen_tensorset();
     ITensorSet::pointer oitens;
 
-    auto node = std::make_shared<Sig::Decon2DInit>();
+    auto node = std::make_shared<Sig::Decon2DResponse>();
     auto cfg = node->default_configuration();
 
     auto t1 = Clock::now();
@@ -51,7 +51,7 @@ int main()
         (*node)(iitens, oitens);
     }
     auto t2 = Clock::now();
-    std::cout << "Decon2DInit: "
+    std::cout << "Decon2DResponse: "
               << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() / (float)nloop
               << " ms/loop" << std::endl;
 
