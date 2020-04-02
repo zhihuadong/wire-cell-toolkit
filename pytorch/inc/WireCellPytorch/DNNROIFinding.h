@@ -6,13 +6,10 @@
 #define WIRECELLPYTORCH_TSMODEL
 
 #include "WireCellIface/IAnodePlane.h"
+#include "WireCellIface/ITensorSetFilter.h"
 #include "WireCellIface/IConfigurable.h"
-#include "WireCellIface/IFrameSink.h"
 #include "WireCellIface/IFrameFilter.h"
-#include "WireCellUtil/Array.h"
 #include "WireCellUtil/Logging.h"
-
-#include <torch/script.h> // One-stop header.
 
 namespace WireCell {
 namespace Pytorch {
@@ -39,7 +36,7 @@ private:
   Configuration m_cfg; /// copy of configuration
   IAnodePlane::pointer m_anode; /// pointer to some APA, needed to associate chnnel ID to planes
 
-  torch::jit::script::Module module;
+  ITensorSetFilter::pointer m_torch; /// pointer to a TorchScript wrapper
 
   int m_save_count;   // count frames saved
   

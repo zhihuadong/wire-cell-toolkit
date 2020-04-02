@@ -77,7 +77,7 @@ function(params, anode, chndbobj, n, name='')
           // wc.tn(gaincalib),
         ],
         grouped_filters: [
-          wc.tn(grouped),
+          // wc.tn(grouped),
         ],
         channel_status_filters: [
         ],
@@ -85,21 +85,8 @@ function(params, anode, chndbobj, n, name='')
         intraces: 'orig%d' % anode.data.ident,  // frame tag get all traces
         outtraces: 'raw%d' % anode.data.ident,
       },
-      //}, uses=[chndbobj, anode, single, grouped, bitshift, status], nin=1, nout=1),
-      //}, uses=[chndbobj, anode, single, grouped, status], nin=1, nout=1),
     }, uses=[chndbobj, anode, sticky, single, grouped, gaincalib], nin=1, nout=1),
 
 
-//    local pmtfilter = g.pnode({
-//        type: "OmnibusPMTNoiseFilter",
-//        name:name,
-//        data: {
-//            intraces: "quiet",
-//            outtraces: "raw",
-//            anode: wc.tn(anode),
-//        }
-//    }, nin=1, nout=1, uses=[anode]),
-
-    //pipe:  g.pipeline([obnf, pmtfilter], name=name),
     pipe: g.pipeline([obnf], name=name),
   }.pipe
