@@ -9,7 +9,7 @@ function(params, tools, override = {}) {
 
   local pc = tools.perchanresp_nameuses,
 
-  // pDSP needs a per-anode sigproc
+  // ICARUS needs a per-anode sigproc
   make_sigproc(anode, name=null):: g.pnode({
     type: 'OmnibusSigProc',
     name:
@@ -38,7 +38,7 @@ function(params, tools, override = {}) {
       r_fake_signal_low_th: 375,  // default 500
       r_fake_signal_high_th: 750,  // default 1000
       r_fake_signal_low_th_ind_factor: 1.0,  // default 1
-      r_fake_signal_high_th_ind_factor: 1.0,  // default 1      
+      r_fake_signal_high_th_ind_factor: 1.0,  // default 1
       r_th_peak: 3.0, // default 3.0
       r_sep_peak: 6.0, // default 6.0
       r_low_peak_sep_threshold_pre: 1200, // default 1200
@@ -60,7 +60,7 @@ function(params, tools, override = {}) {
       use_multi_plane_protection: false,
       mp3_roi_tag: 'mp3_roi%d' % anode.data.ident,
       mp2_roi_tag: 'mp2_roi%d' % anode.data.ident,
-      
+
       isWrapped: false,
 
     } + override,

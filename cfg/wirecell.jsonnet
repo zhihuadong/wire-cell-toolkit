@@ -304,7 +304,7 @@
 	name:"",
 	data:{}
     },
-    /// example usage: 
+    /// example usage:
     TrackDepos :: self.Component + { type: "TrackDepos" },
 
     /// Return canonical "type:name" or just "type" if no name from a
@@ -325,8 +325,6 @@
     unique_helper(l, x):: if std.count(l,x) == 0 then l + [x] else l,
     unique_list(l):: std.foldl($.unique_helper, l, []),
 
-
-
     // Round a floating point to nearest integer.  It's a bit weird to
     // go through a format/parse.  Maybe there's a better way?
     roundToInt(x):: std.parseInt("%d" % (x+0.5)),
@@ -346,8 +344,8 @@
             self.bin(std.max(0, meanfreq-deltafreq)),
             self.bin(std.min(self.nyquist, meanfreq+deltafreq))
         ],
-    
-        
+
+
         // Return something suitable to set to chndb's
         // channel_info[].freqmasks.  The "meanfreqs" should be a list
         // of frequencies in the sytem of units and delta is a common
@@ -362,9 +360,7 @@
 
         testfreqs :: [f*$.kilohertz for f in [51.5, 102.8, 154.2, 205.5, 256.8, 308.2, 359.2, 410.5, 461.8, 513.2, 564.5, 615.8]],
         testmasks : self.freqmasks(self.testfreqs, 2*$.kilohertz),
-        
+
     },
 
 }
-
-

@@ -51,7 +51,7 @@ void Gen::AddNoise::configure(const WireCell::Configuration& cfg)
     m_model = Factory::find_tn<IChannelSpectrum>(m_model_tn);
     m_nsamples = get<int>(cfg,"nsamples",m_nsamples);
     m_rep_percent = get<double>(cfg,"replacement_percentage",m_rep_percent);
-    
+
     log->debug("AddNoise: using IRandom: \"{}\", IChannelSpectrum: \"{}\"",
                m_rng_tn, m_model_tn);
 }
@@ -69,6 +69,7 @@ bool Gen::AddNoise::operator()(const input_pointer& inframe, output_pointer& out
     for (const auto& intrace : *inframe->traces()) {
         int chid = intrace->channel();
         const auto& spec = (*m_model)(chid);
+
         Waveform::realseq_t wave = Gen::Noise::generate_waveform(spec, m_rng, m_rep_percent);
 
 	wave.resize(m_nsamples,0);
@@ -80,5 +81,3 @@ bool Gen::AddNoise::operator()(const input_pointer& inframe, output_pointer& out
                                         outtraces, inframe->tick());
     return true;
 }
-
-

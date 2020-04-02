@@ -1,96 +1,16 @@
-// ProtoDUNE-SP specific parameters.  This file inerets from the
-// generic set of parameters and overrides things specific to PDSP.
+// This file specifies the paramter configuration for the ICARUS detector. It
+// inherit from the base params.jsonnet and override the relevant parameters
 
 local wc = import "wirecell.jsonnet";
 local base = import "pgrapher/common/params.jsonnet";
 
 base {
-    det : {
+    det: {
 
-        // define the 6 APAs.  This must use the coordinate system
-        // defined by the wire geometry file.
-        // A full drift is a box: xyz=[3.594*wc.m, 5.9*wc.m, 2.2944*wc.m].
-        //
-        // The "faces" is consumed by, at least, the Drifter and
-        // AnodePlane.  The "wires" number is used to set
-        // AnodePlane.ident used to lookup the anode in WireSchema.
-        // It corresponds to the anode number.
-        //
-        // Also see:
-        //   wirecell-util wire-volumes protodune-wires-larsoft-v3.json.bz2
-        // to help with defining these parameters.
-
-        // from DocDB 203 and assuming wires are symmetric across x=0
-
-        // between center lines
-        local apa_cpa = 3.637*wc.m,
-        local cpa_thick = 50.8*wc.mm,
-        local apa_w2w = 85.725*wc.mm, // DocDB 203 calls "W" as "X"
-        local plane_gap = 4.76*wc.mm,
-        local apa_g2g = 114.3*wc.mm, // note that grid plane must have
-                                     // gap 4.7675mm for this number
-                                     // to be consistent with above.
-                                     // There's probably round-off
-                                     // error in DocDB 203.
-
-        // The "anode" cut off plane, here measured from APA
-        // centerline, determines how close to the wires do we
-        // consider any depo.  Anything closer will simply be
-        // discarded, else it will either be drifted or "backed up" to
-        // the response plane.  This is somewhat arbitrary choice.
-        // Placing it w/in the response plane means any depos that are
-        // "backed up" won't have proper field response.  But, the
-        // tighter this is made, the less volume is simulated.
-        local apa_plane = 0.5*apa_g2g, // pick it to be at the grid wires
-
-        // The "response" plane is where the field response functions
-        // start.  Garfield calcualtions start somewhere relative to
-        // something, here's where that is made concrete.  This MUST
-        // match what field response functions also used.
-        response_plane: 10*wc.cm, // relative to collection wires
-        local res_plane = 0.5*apa_w2w + self.response_plane,
-
-        // The cathode plane is like the anode cut off plane.  Any
-        // depo not between the two is dropped prior to drifting.
-        local cpa_plane = apa_cpa - 0.5*cpa_thick,
-
-
-        // The volumes are then defined in terms of these above
-        // numbers.  You can use "wirecell-util wires-info" or
-        // "wirecell-util wires-volumes" or others to understand the
-        // mapping of anode number to the 6 locations in X and Z.  For
-        // Larsoft wires the numbering is column major starting at
-        // small X and Z so the centerline is -/+/-/+/-/+.  Also
-        // important is that the faces are listed "front" first.
-        // Front is the one with the more positive X coordinates and
-        // if we want to ignore a face it is made null.
-        /*volumes: [
-            {
-                local sign = 2*(n%2)-1,
-                local centerline = sign*apa_cpa,
-                wires: n,       // anode number
-                name: "apa%d"%n,
-                faces:
-                // top, front face is against cryo wall
-                if sign > 0
-                then [
-                    null,
-                    {
-                        anode: centerline - apa_plane,
-                        response: centerline - res_plane,
-                        cathode: centerline - cpa_plane, 
-                    }
-                ]
-                // bottom, back face is against cryo wall
-                else [
-                    {
-                        anode: centerline + apa_plane,
-                        response: centerline + res_plane,
-                        cathode: centerline + cpa_plane, 
-                    },
-                    null
-                ],
-            } for n in std.range(0,3)],*/
+        // Each wires gets identified with the same number that identifies it in
+        // the geometry files. The horizontal induction is split in two, both
+        // sides are enumerated by s, while n counts the physical anodes.
+        // NOTE:the actual physical volumes in ICARUS are only 4
 
         local xanode = [-369.33*wc.cm, -71.1*wc.cm, 71.1*wc.cm, 369.33*wc.cm],
         local offset_response = [if a%2==0 then +10*wc.cm else -10*wc.cm for a in std.range(0,3)],
@@ -101,7 +21,6 @@ base {
                 local world = 100,  // identify this geometry
                 local split = s*10, // identify anode side (1 left, 2 right)
                 local anode = a,    // physical anode number
-                local centerline = apa_cpa,
 
                 wires: (world+split+anode),
                 name: "anode%d"%(world+split+anode),
@@ -110,7 +29,7 @@ base {
                         {
                             anode: xanode[a],
                             response: xresponse[a],
-                            cathode: xcathode[a], 
+                            cathode: xcathode[a],
                         },
 
                         null
@@ -123,46 +42,65 @@ base {
         // example when defining some simple kinematics.  It is
         // represented by a ray going from extreme corners of a
         // rectangular solid.  Again "wirecell-util wires-info" helps
-        // to choose something.
+        // to choose something. //FIXME -- ARE CORRECT?
         bounds : {
             tail: wc.point(-3.65, -1.7, -9.1, wc.m),
             head: wc.point(+3.65, +1.4, +8.8, wc.m),
         }
     },
 
-    daq: super.daq {
-        nticks: 4096,
+    daq : super.daq{
+
+        // ICARUS has a sampling frequency at 0.25 MHz
+        tick: 0.4*wc.us,
+        nticks: 4096, //two drift times
+
+        readout_time: self.tick*self.nticks,
+        nreadouts: 1,
+
+        start_time: 0.0*wc.s,
+        stop_time: self.start_time + self.nreadouts*self.readout_time,
+
+        //first_frame_number: 1, // <<< I DON'T UNDERSTAND IT, keep the standard
     },
 
     adc: super.adc {
-        // per tdr, chapter 2
-        baselines: [1003*wc.millivolt,1003*wc.millivolt,508*wc.millivolt],
 
-        // check this.  The tdr says, "The ADC ASIC has an input
-        // buffer with offset compensation to match the output of the
-        // FE ASIC.  The input buffer first samples the input signal
-        // (with a range of 0.2 V to 1.6 V)..."
-        fullscale: [0.2*wc.volt, 1.6*wc.volt],
+        //don't know this information (keep null)
+        baselines: [10*wc.millivolt,10*wc.millivolt, 10*wc.millivolt],
+
+        // From ICARUS papers: https://iopscience.iop.org/article/10.1088/1748-0221/13/12/P12007/pdf
+
+        resolution: 12, // #bit
+
+        //check (values taken from the FE calibration shown in pg. 7 of the paper)
+        fullscale: [0.8*wc.millivolt, 3.3*wc.volt],
     },
 
     elec: super.elec {
 
+        //FIXME: same values as PDSP
+
+        gain : 14.0*wc.mV/wc.fC,
+
+        shaping : 2.2*wc.us,
+
+        postgain: 1.0,
+
     },
 
+    sim : super.sim {
 
-    sim: super.sim {
-
-        // For running in LArSoft, the simulation must be in fixed time mode. 
+        // For running in LArSoft, the simulation must be in fixed time mode.
         fixed: true,
 
-        // The "absolute" time (ie, in G4 time) that the lower edge of
-        // of final readout tick #0 should correspond to.  This is a
-        // "fixed" notion.
-        local tick0_time = -250*wc.us,
+        // ductor logic adapted from PDSP
+        // Assume 1.28 m of drift (coherent with the sampling time and window chosen)
+        local tick0_time = -820*wc.us,
 
-        // Open the ductor's gate a bit early.
-        local response_time_offset = $.det.response_plane / $.lar.drift_speed,
+        local response_time_offset = 0.0*wc.us,  // modify to add a delay
         local response_nticks = wc.roundToInt(response_time_offset / $.daq.tick),
+
 
         ductor : {
             nticks: $.daq.nticks + response_nticks,
@@ -170,32 +108,27 @@ base {
             start_time: tick0_time - response_time_offset,
         },
 
-        // To counter the enlarged duration of the ductor, a Reframer
-        // chops off the little early, extra time.  Note, tags depend on how 
-        reframer: {
-            tbin: response_nticks,
-            nticks: $.daq.nticks,
-        }
-        
+        // If a ductor's time acceptance is increased then a Reframer
+        // can be used to chop off the early excess to meet readout
+        // assumptions.  Depending on the form of the ductor, the
+        // reframer will likely need it's "tags" configured.
+        // reframer: {
+        //    tbin: $.elec.fields.nticks,
+        //    nticks: $.daq.nticks,
+        // }
+
     },
 
-    files: {
-        wires: "icarus-wires-dualanode.json.bz2", // protodune-wires-larsoft-v4.json.bz2",
+    files : {
 
-        fields: [
-            // "garfield-1d-3planes-21wires-6impacts-dune-v1.json.bz2",
-            "garfield-1d-boundary-path-rev-dune.json.bz2",
-            // "garfield-1d-boundary-path-rev-dune-no-grid.json.bz2",
-        ],
+        wires: "icarus-wires-dualanode.json.bz2",
 
-        // fixme: this is for microboone and probably bogus for
-        // protodune because (at least) the span of MB wire lengths do
-        // not cover pdsp's.
-        noise: "t600-corr-noise-spectra.json.bz2",
+        fields: ["garfield-1d-boundary-path-rev-dune.json.bz2"],
 
+        noise: "sbn_fd_incoherent_noise.json.bz2",
+        coherent_noise: "sbn_fd_coherent_noise.json.bz2",
 
-        chresp: null,
+        chresp: null
     },
 
 }
-
