@@ -301,9 +301,12 @@ def convert_noise_spectra(ctx, format, inputfile, outputfile):
     if format == "microboonev1":
         from wirecell.sigproc.noise.microboone import load_noise_spectra_v1
         loader = load_noise_spectra_v1
-    elif format == "icarusv1":
+    elif format == "icarusv1-incoherent":
         from wirecell.sigproc.noise.icarus import load_noise_spectra
         loader = load_noise_spectra
+    elif format == "icarusv1-coherent":
+        from wirecell.sigproc.noise.icarus import load_coherent_noise_spectra
+        loader = load_coherent_noise_spectra
 
     if not loader:
         click.echo('Unknown format: "%s"' % format)

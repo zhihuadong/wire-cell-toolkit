@@ -1,6 +1,9 @@
-// This is a main entry point for configuring a wire-cell CLI job to
-// simulate ICARUS.  It is simplest signal-only simulation with
-// one set of nominal field response function.
+////////////////////////////////////////////////////////////////////////////////
+// Copy from wct-sim-check.jsonnet
+// Uses The empirical noise model to produce a spectrum for the coherent noise
+//
+// mailto: ascarpell@bnl.gov
+////////////////////////////////////////////////////////////////////////////////
 
 local g = import 'pgraph.jsonnet';
 local f = import 'pgrapher/common/funcs.jsonnet';
@@ -69,13 +72,15 @@ local mega_anode = {
   },
 };
 
+
+
 local make_noise_model = function(anode, csdb=null) {
     type: "EmpiricalNoiseModel",
     name: "empericalnoise-" + anode.name,
     data: {
         anode: wc.tn(anode),
         chanstat: if std.type(csdb) == "null" then "" else wc.tn(csdb),
-        spectra_file: "t600-corr-noise-spectra.json.bz2",
+        spectra_file: params.files.noise,
         nsamples: params.daq.nticks,
         period: params.daq.tick,
         wire_length_scale: 1.0*wc.cm, // optimization binning
@@ -83,6 +88,8 @@ local make_noise_model = function(anode, csdb=null) {
     uses: [anode] + if std.type(csdb) == "null" then [] else [csdb],
 };
 local noise_model = make_noise_model(mega_anode);
+
+
 local add_noise = function(model) g.pnode({
     type: "AddNoise",
     name: "addnoise-" + model.name,
@@ -93,6 +100,22 @@ local add_noise = function(model) g.pnode({
         replacement_percentage: 0.02, // random optimization
     }}, nin=1, nout=1, uses=[model]);
 local noise = add_noise(noise_model);
+
+
+
+local add_coherent_noise = function() g.pnode({
+      type: "AddCoherentNoise",
+      name: "addcoherentnoise",
+      data: {
+          spectra_file: params.files.coherent_noise,
+          rng: wc.tn(tools.random),
+          nsamples: params.daq.nticks,
+          random_fluctuation_amplitude: 0.1,
+          period: params.daq.tick,
+          normalization: 1
+      }}, nin=1, nout=1, uses=[]);
+local coherent_noise = add_coherent_noise();
+
 
 local digitizer = sim.digitizer(mega_anode, name="digitizer", tag="orig");
 
@@ -109,7 +132,7 @@ local fansel = g.pnode({
     },
 }, nin=1, nout=nanodes, uses=tools.anodes);
 
-local magoutput = 'icarus-sim-check.root';
+local magoutput = 'icarus-noise-check.root';
 local magnify = import 'pgrapher/experiment/icarus/magnify-sinks.jsonnet';
 local magnifyio = magnify(tools, magoutput);
 
@@ -176,7 +199,9 @@ local fanpipe = g.intern(innodes=[fansel],
 //local frameio = io.numpy.frames(output);
 local sink = sim.frame_sink;
 
-local graph = g.pipeline([depos, drifter, bagger, sim.analog, noise ,digitizer, fanpipe, retagger, sink]);
+
+local graph = g.pipeline([depos, drifter, bagger, sim.analog, noise, coherent_noise ,digitizer, fanpipe, retagger, sink]); //both
+
 
 local app = {
   type: 'Pgrapher',

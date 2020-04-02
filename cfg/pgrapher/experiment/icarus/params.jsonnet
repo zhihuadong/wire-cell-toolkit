@@ -124,10 +124,9 @@ base {
         wires: "icarus-wires-dualanode.json.bz2",
 
         fields: ["garfield-1d-boundary-path-rev-dune.json.bz2",],
-        //fields: ["garfield_5pt_icarus_standard.json.bz2"],
 
-        noise: "t600-corr-noise-spectra.json.bz2",
-        //noise: "protodune-noise-spectra-v1.json.bz2",
+        noise: "sbn_fd_incoherent_noise.json.bz2",
+        coherent_noise: "sbn_fd_coherent_noise.json.bz2"
 
         chresp: null,
     },

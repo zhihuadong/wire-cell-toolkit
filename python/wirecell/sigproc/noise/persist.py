@@ -9,7 +9,8 @@ def dumps(spectra, indent=4):
     '''
     Dump the spectra to a JSON string
     '''
-    spectra = [s._asdict() for s in spectra]
+    if type(spectra[0]) is not dict:
+        spectra = [s._asdict() for s in spectra]
     return json.dumps(spectra, indent=indent)
 
 def loads(text):

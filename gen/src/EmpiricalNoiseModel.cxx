@@ -97,7 +97,6 @@ WireCell::Configuration Gen::EmpiricalNoiseModel::default_configuration() const
 void Gen::EmpiricalNoiseModel::resample(NoiseSpectrum& spectrum) const
 {
     if (spectrum.nsamples == m_fft_length && spectrum.period == m_period) {
-        log->debug("[ascarpel]: no resampling");
         return;
     }
 
@@ -117,16 +116,16 @@ void Gen::EmpiricalNoiseModel::resample(NoiseSpectrum& spectrum) const
     for (int i=0;i!=m_fft_length;i++){
       double frequency = m_elec_resp_freq.at(i);
       if (frequency <= spectrum.freqs[0]){
-	count_low = 0;
-     	count_high = 1;
-     	mu = 0;
+	       count_low = 0;
+     	   count_high = 1;
+     	   mu = 0;
       }else if (frequency >= spectrum.freqs.back()){
-     	count_low = spectrum.freqs.size()-2;
-     	count_high = spectrum.freqs.size()-1;
-     	mu = 1;
+     	  count_low = spectrum.freqs.size()-2;
+     	  count_high = spectrum.freqs.size()-1;
+     	  mu = 1;
       }else{
      	for (unsigned int j=0;j!=spectrum.freqs.size();j++){
-	  if (frequency>spectrum.freqs.at(j)){
+	       if (frequency>spectrum.freqs.at(j)){
 	    count_low = j;
 	    count_high = j+1;
 	  }else{
@@ -194,7 +193,7 @@ void Gen::EmpiricalNoiseModel::configure(const WireCell::Configuration& cfg)
         const int nfreqs = jfreqs.size();
         nsptr->freqs.resize(nfreqs, 0.0);
         for (int ind=0; ind<nfreqs; ++ind) {
-	  nsptr->freqs[ind] = jfreqs[ind].asFloat();// * m_fres;
+	         nsptr->freqs[ind] = jfreqs[ind].asFloat();// * m_fres;
         }
         auto jamps = jentry["amps"];
         const int namps = jamps.size();
@@ -205,9 +204,7 @@ void Gen::EmpiricalNoiseModel::configure(const WireCell::Configuration& cfg)
 	// put the constant term at the end of the amplitude ...
 	// nsptr->amps[namps] = nsptr->constant;
 
-        log->debug("[ascarpel]: amps.size() {}", nsptr->amps.size());
         resample(*nsptr);
-        log->debug("[ascarpel]: (after resampling) amps.size() {}", nsptr->amps.size());
 
         m_spectral_data[nsptr->plane].push_back(nsptr); // assumes ordered by wire length!
     }

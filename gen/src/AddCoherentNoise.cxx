@@ -17,29 +17,21 @@ WIRECELL_FACTORY(AddCoherentNoise, WireCell::Gen::AddCoherentNoise,
 using namespace std;
 using namespace WireCell;
 
-Gen::AddCoherentNoise::AddCoherentNoise(const std::string& rng)
-    : m_rng_tn(rng)
-    , m_nsamples(9600)
+Gen::AddCoherentNoise::AddCoherentNoise(const std::string& spectra_file, const std::string& rng)
+    : m_spectra_file(spectra_file)
+    , m_rng_tn(rng)
+    , m_nsamples(4096)
+    , m_fluctuation(0.1) // Fluctuation randomization
     , m_period(0.4)
     , log(Log::logger("sim"))
 {
 
-  // Need some cleanig? (might be unnecessary)
-   coherent_groups.clear();
-   phase_groups.clear();
 }
 
 Gen::AddCoherentNoise::~AddCoherentNoise()
 {
 }
 
-std::complex<double> Gen::AddCoherentNoise::multiply( std::complex<double> a, std::complex<double> b)
-{
-  std::complex<double> c;
-  c.real(a.real()*b.real()-a.imag()*b.imag());
-  c.imag(a.real()*b.imag()+a.imag()*b.real());
-  return c;
-}
 
 void Gen::AddCoherentNoise::gen_elec_resp_default()
 {
@@ -55,193 +47,148 @@ void Gen::AddCoherentNoise::gen_elec_resp_default()
   }
 }
 
-size_t Gen::AddCoherentNoise::argclosest(std::vector<float> const& vec, float value)
-{
-    // Returns the location in vec of the entry closest to value
-    auto const it = std::lower_bound(vec.begin(), vec.end(), value);
-    if (it == vec.end()) { return -1; }
-
-    return std::distance(vec.begin(), it);
-}
-
-
 WireCell::Configuration Gen::AddCoherentNoise::default_configuration() const
 {
     Configuration cfg;
 
+    cfg["spectra_file"] = m_spectra_file;
     cfg["rng"] = m_rng_tn;
     cfg["nsamples"] = m_nsamples;
+    cfg["random_fluctuation_amplitude"] = m_fluctuation;
     cfg["period"] = m_period;
     cfg["normalization"] = m_normalization;
-
 
     return cfg;
 }
 
 void Gen::AddCoherentNoise::configure(const WireCell::Configuration& cfg)
 {
+
     m_rng_tn = get(cfg, "rng", m_rng_tn);
     m_rng = Factory::find_tn<IRandom>(m_rng_tn);
+    m_spectra_file = get(cfg, "spectra_file", m_spectra_file);
     m_nsamples = get<int>(cfg,"nsamples",m_nsamples);
     m_period = get<int>(cfg,"period",m_period);
+    m_fluctuation = get<double>(cfg,"random_fluctuation_amplitude",m_fluctuation);
     m_normalization = get<int>(cfg,"normalization",m_normalization);
 
-    log->debug("AddCoherentNoise: using IRandom: \"{}\"", m_rng_tn);
-    log->debug("AddCoherentNoise: using m_nsamples: \"{}\"", m_nsamples);
-    log->debug("AddCoherentNoise: using m_period: \"{}\"", m_period);
-
     m_fft_length = fft_best_length(m_nsamples);
-
-    log->debug("AddCoherentNoise: m_fft_length: {}", m_fft_length);
-
     gen_elec_resp_default();
 
-    log->debug("AddCoherentNoise: m_elec_resp_freq.size(): {}", m_elec_resp_freq.size());
+    auto jdat = Persist::load(m_spectra_file);
+    const int ngroups = jdat.size();
 
-    // Make a map with frequencies and amplitudes associated to a correlation number
-    // These quantities have to be imported from somewhere. Just put them hardcoded for today
-    std::vector<int> groups = { 64 };
-
-    for(int group : groups)
+    for(int igroup=0; igroup<ngroups; igroup++)
     {
-      std::vector<float> cohfreqs = { 0.01*1./units::us }; //<< in MHz
-      std::vector<float> cohampls = { 400.*units::mV }; //<< in mV
+      auto jentry = jdat[igroup];
+      int wire_deltas = jentry["wire-delta"].asInt();
 
-      std::vector<float> temp_amplitudes(m_fft_length,0);
+      auto jfreqs = jentry["freqs"];
+      auto jamps = jentry["amps"];
+      const int nfreqs = jfreqs.size();
 
-      //Find the position
-      for (unsigned int j=0;j!=cohfreqs.size();j++)
-      {
-        const int pos = argclosest( m_elec_resp_freq, cohfreqs.at(j) );
-
-        log->debug("AddCoherentNoise: pos: {}", pos);
-
-        temp_amplitudes.at(pos) = cohampls.at(j);
-        temp_amplitudes.at(m_fft_length-pos) = cohampls.at(j); // << Not very elegant
+      std::vector<float> spec(nfreqs);
+      for (int ind=0; ind<nfreqs; ++ind){
+         spec[ind] = jamps[ind].asFloat();
       }
 
-      // Store the temporary amplitudes in the group
-      coherent_groups[group] = temp_amplitudes;
+      m_group_noise[igroup] = make_pair(wire_deltas, spec);
     }
 
-    log->debug("AddCoherentNoise: configuration done");
+    // TODO... interpolate spectra
+    // TODO... solidity checks
 
 }
 
-std::vector<float> Gen::AddCoherentNoise::get_phase( std::vector<float> ampls, IRandom::pointer rng)
-{
-
-  std::vector<float>  phase_groups;
-
-  for( float ampl : ampls )
-  {
-    // Don't bother randomizing zero amplitudes
-    if(ampl == 0) { phase_groups.push_back(0.0); continue; }
-
-    // Generate one random phase (in radians) uniformy from 0 to pi/2
-    float phase = rng->uniform(-3.1415926, 3.1415926);
-    phase_groups.push_back(phase);
-  }
-
-  return phase_groups;
-}
-
-bool Gen::AddCoherentNoise::operator()(const input_pointer& inframe, output_pointer& outframe)
+bool Gen::AddCoherentNoise::operator()(const input_pointer& inframe,
+                                                       output_pointer& outframe)
 {
     if (!inframe) {
         outframe = nullptr;
         return true;
     }
 
-    //initialize the phase groups: <<< THIS IS WRONG!
-    for(auto group : coherent_groups)
-    {
-      std::vector<float> new_phase;
-
-      for(int i=0; i<m_fft_length; i++ )
-      {
-        new_phase.push_back(m_rng->uniform(-3.1415926, 3.1415926));
-      }
-      phase_groups[group.first]=new_phase;
-    }
-
     ITrace::vector outtraces;
+
+    std::vector<float> random_phases(m_fft_length, 0);
+    std::vector<float> random_amplitudes(m_fft_length, 0);
+
+    // Set the iterator to the first entry of the map
+    noise_map_t::iterator m_group_noise_it = m_group_noise.begin();
+    auto group_noise = (*m_group_noise_it).second;
+    int wire_delta = group_noise.first;
+    std::vector<float> spec = group_noise.second;
+    int ch_count = 0;
+
     for (const auto& intrace : *inframe->traces())
     {
+
       int chid = intrace->channel();
 
-      // Loop over the various correlation groups
-      // If the channel is the new of the correlation group, make a new set of phases
-      // NB: this method assumes that channels are seen in order
+      // It should never happen
+      if( random_phases.size() != spec.size() ){
+        random_phases.resize(spec.size());
+      }
 
-      //Create an zero waveform
-      Waveform::realseq_t wave(m_nsamples, 0.0);
+      if( random_amplitudes.size() != spec.size() ){
+        random_amplitudes.resize(spec.size());
+      }
 
-      for(auto group : coherent_groups)
+      // Check if we have exausted the correlation group
+      if( ch_count == wire_delta ){
+        for(int i=0; i<int(spec.size()); i++){
+          random_amplitudes[i] = 0.9 + 2*m_fluctuation*m_rng->uniform(0, 1);
+          random_phases[i] = m_rng->uniform(0, 2*3.1415926);
+        }
+
+        // Move the iterator forward of one if we reach the end of the possible
+        // groups, then start from the beginning again
+        ++m_group_noise_it;
+        if( m_group_noise_it == m_group_noise.end() ){
+          m_group_noise_it = m_group_noise.begin();
+        }
+        // This condition resets also the channel count
+        ch_count=0;
+      }
+      else{
+        ch_count++;
+      }
+
+
+      auto group_noise = (*m_group_noise_it).second;
+      wire_delta = group_noise.first;
+      spec = group_noise.second;
+
+
+      // Create the ampls vector and multiply for the phase
+      WireCell::Waveform::compseq_t noise_freq(spec.size(),0);
+
+      for (int i=0;i<int(spec.size());i++)
       {
+        const double amplitude = spec[i];
 
-        int groupid = group.first;
-        std::vector<float> ampls = group.second;
+        // Define theta and radius of the complex number
+        float theta = random_phases[i];
+        float rad = amplitude*random_amplitudes[i];
 
-        // Get a new phase for that group if the correlation sequence is exausted
-        if( chid % groupid == 0 )
-        {
-          phase_groups[groupid] = get_phase(ampls, m_rng);
-        }
+        // Define the complex number
+        complex<float> tc( rad*cos(theta), rad*sin(theta) );
+        noise_freq[i] = tc;
+      }
 
-        // Create the ampls vector and multiply for the phase
-        WireCell::Waveform::compseq_t noise_freq(ampls.size(),0);
-
-        for (int i=0;i<int(ampls.size());i++)
-        {
-          const double amplitude = ampls.at(i) * sqrt(2./3.1415926);// / units::mV;
-          noise_freq.at(i).real( amplitude );
-          noise_freq.at(i).imag( amplitude) ;
-
-          double freq = m_elec_resp_freq.at(i);
-          double theta = -freq*m_fft_length*phase_groups[groupid].at(i); //complex rotation angle
-
-          // Perform the phase rotation: noise_freq*(cos(theta)+ i*sin(theta))
-          std::complex<double> rotation( cos(theta), sin(theta) );
-          noise_freq.at(i) = multiply(noise_freq.at(i), rotation );
-        }
-
-        log->debug("AddCoherentNoise: noise_freq.size() {}", noise_freq.size());
-
-        Waveform::realseq_t wave_temp = WireCell::Waveform::idft(noise_freq);
-
-        //normalize the waveform ( maybe this is not necessary with appropriate rescaling )
-        std::transform(wave_temp.begin(), wave_temp.end(), wave_temp.begin(),
-                     [ & ](float x) { return x*m_normalization ; });
-
-        for(auto w : wave_temp)
-        {
-          log->debug("AddCoherentNoise: ww {}", w);
-        }
+      Waveform::realseq_t wave = WireCell::Waveform::idft(noise_freq);
 
 
-        log->debug("AddCoherentNoise: wave_temp.size() {}", wave_temp.size());
-        log->debug("AddCoherentNoise: m_nsamples {}", m_nsamples);
-
-        wave_temp.resize(m_nsamples,0);
-
-
-        // Add the correlated waveforms to the original empty signal
-        Waveform::increase(wave, wave_temp);
-
-      } // end group
-
-      log->debug("AddCoherentNoise: wave.size() {}", wave.size());
-
-      // Add the signal (be careful to double counting with the incoherent noise)
+      // Add signal (be careful to double counting with the incoherent noise)
       Waveform::increase(wave, intrace->charge());
       auto trace = make_shared<SimpleTrace>(chid, intrace->tbin(), wave);
       outtraces.push_back(trace);
 
-    } // end channels
+  } // end channels
 
 
   outframe = make_shared<SimpleFrame>(inframe->ident(), inframe->time(),
-                                        outtraces, inframe->tick());
+                                                    outtraces, inframe->tick());
   return true;
+
 }
