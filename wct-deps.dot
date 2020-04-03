@@ -12,8 +12,10 @@ digraph deps {
 	"WireCellIface";
 	"WireCellRoot";
 	"WireCellGen";
+	"WireCellSig";
 	"WireCellHio";
 	"WireCellUtil";
+	"WireCellSig" -> "WireCellAux"[color="black"];
 	"WireCellApps" -> "FFTWTHREADS"[color="black"];
 	"WireCellZio" -> "LIBTORCH"[color="gray",constraint=false];
 	"WireCellRess" -> "ZLIB"[color="black"];
