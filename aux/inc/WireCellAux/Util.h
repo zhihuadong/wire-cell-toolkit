@@ -21,7 +21,7 @@ namespace Aux
 std::string dump(const ITensor::pointer iten);
 
 template<typename ElementType>
-Eigen::Array<ElementType, Eigen::Dynamic, Eigen::Dynamic> itensor_to_eigen_array(const ITensor::pointer iten)
+inline Eigen::Array<ElementType, Eigen::Dynamic, Eigen::Dynamic> itensor_to_eigen_array(const ITensor::pointer iten)
 {
     if (!iten)
     {
@@ -42,7 +42,7 @@ Eigen::Array<ElementType, Eigen::Dynamic, Eigen::Dynamic> itensor_to_eigen_array
 }
 
 template<typename ElementType>
-ITensor::pointer eigen_array_to_itensor(const Eigen::Array<ElementType, Eigen::Dynamic, Eigen::Dynamic> & arr)
+inline ITensor::pointer eigen_array_to_itensor(const Eigen::Array<ElementType, Eigen::Dynamic, Eigen::Dynamic> & arr)
 {
     std::vector<size_t> shape = {(size_t)arr.rows(), (size_t)arr.cols()};
     SimpleTensor<ElementType> *st = new SimpleTensor<ElementType>(shape);
