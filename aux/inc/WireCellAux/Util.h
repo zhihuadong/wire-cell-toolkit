@@ -33,7 +33,6 @@ inline Eigen::Array<ElementType, Eigen::Dynamic, Eigen::Dynamic> itensor_to_eige
         THROW(ValueError() << errmsg{"iten->shape().size()!=2"});
     }
 
-    // TODO figure out which is which
     auto nrows = iten->shape()[0];
     auto ncols = iten->shape()[1];
     Eigen::Map< const Eigen::Array<ElementType, Eigen::Dynamic, Eigen::Dynamic> > arr((const ElementType *)iten->data(), nrows, ncols);
