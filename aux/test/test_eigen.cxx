@@ -34,10 +34,11 @@ std::string dump(const ITensor::pointer iten)
 void test_translation() {
     typedef float TestType;
 
-    Eigen::Array<TestType, Eigen::Dynamic, Eigen::Dynamic> iarr = Eigen::Array<TestType, Eigen::Dynamic, Eigen::Dynamic>::Random(2, 3);
-    // Eigen::Array<TestType, 2, 3> iarr;
-    // iarr << 1, 2, 3,
-    //         4, 5, 6;
+    // Eigen::Array<TestType, Eigen::Dynamic, Eigen::Dynamic> iarr =
+    // Eigen::Array<TestType, Eigen::Dynamic, Eigen::Dynamic>::Random(2, 3);
+    Eigen::Array<TestType, 2, 3> iarr;
+    iarr << 1, 2, 3,
+            4, 5, 6;
     std::cout << iarr << "\n";
 
     auto iten = Aux::eigen_array_to_itensor<TestType>(iarr);
@@ -45,8 +46,12 @@ void test_translation() {
 
     auto oarr = Aux::itensor_to_eigen_array<TestType>(iten);
     std::cout << oarr << "\n";
+    // Assert(iarr.isApprox(oarr));
 
-    Assert(iarr.isApprox(oarr));
+    // Eigen::Map copies?
+    // oarr(0,0) = 42;
+    // std::cout << oarr << "\n";
+    // std::cout << dump<TestType>(iten) << "\n";
 }
 void test_speed(const int nloop=1) {
     typedef float TestType;
