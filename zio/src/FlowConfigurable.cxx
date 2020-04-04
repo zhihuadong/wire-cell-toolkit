@@ -175,37 +175,62 @@ bool Zio::FlowConfigurable::pre_flow()
         // server.  It'll fall over if multiple clients try to
         // connect.  But it allows some testing with a simpler graph.
         l->debug("node {}: serverish BOT recv", nick);
-        bool ok = m_flow->recv_bot(msg, m_timeout);
-        if (!ok) {
-            l->warn("node {}: serverish BOT recv timeout ({})",
-                    nick, m_timeout);
+        auto mtype = m_flow->recv_bot(msg, m_timeout);
+        if (mtype == zio::flow::BOT) {
+            l->debug("node {}: serverish BOT send", nick);
+            m_flow->send_bot(msg);
+        }
+        else if (mtype == zio::flow::timeout) {
+            l->warn("node {}: serverish BOT recv timeout", nick);
             m_flow = nullptr;
             return false;
         }
-        l->debug("node {}: serverish BOT send", nick);
-        m_flow->send_bot(msg);
+        else if (mtype == zio::flow::EOT) {
+            l->warn("node {}: serverish BOT recv EOT", nick);
+            mtype = m_flow->finish(msg, m_timeout);
+            m_flow = nullptr;
+            return false;
+        }
     }
     else {                      // client
         l->debug("node {}: clientish BOT send", nick);
         m_flow->send_bot(msg);
         l->debug("node {}: clientish BOT recv", nick);
-        bool ok = m_flow->recv_bot(msg, m_timeout);
-        if (!ok) {
+        auto mtype = m_flow->recv_bot(msg, m_timeout);
+        if (mtype == zio::flow::BOT) {
+            l->debug("node {}: clientish ready", nick);
+        }
+        else if (mtype == zio::flow::timeout) {
             l->warn("node {}: clientish BOT recv timeout ({})",
                     nick, m_timeout);
             m_flow = nullptr;
             return false;
         }
+        else if (mtype == zio::flow::EOT) {
+            l->warn("node {}: clientish BOT recv EOT", nick);
+            mtype = m_flow->finish(msg, m_timeout);
+            m_flow = nullptr;
+            return false;
+        }
     }
 
-    if (m_direction == "extract") {
-        l->debug("node {}: slurp pay for {}", nick, m_direction);
-        m_flow->slurp_pay(0);
-    }
-    else {                      // inject
-        l->debug("node {}: flush pay for {}", nick, m_direction);
-        m_flow->flush_pay();
-    }
+    // if (m_direction == "extract") {
+    //     zio::Message msg;
+    //     auto mtype = m_flow->recv_pay(msg, 0);
+    //     if (mtype == zio::flow::EOT) {
+    //         l->warn("node {}: extract PAY recv EOT", nick);
+    //         m_flow->send_eot(msg);
+    //         m_flow = nullptr;
+    //         return false;
+    //     }
+    //     else if (mtype == zio::flow::PAY) {
+    //         l->debug("node {}: slurp pay for {} (got {})", nick, m_direction, mtype);
+    //     }
+    // }
+    // else {                      // inject
+    //     int pay = m_flow->flush_pay();
+    //     l->debug("node {}: flush pay for {} (sent {})", nick, m_direction, pay);
+    // }
 
     return true;
 }
@@ -215,11 +240,8 @@ void Zio::FlowConfigurable::finalize()
     l->debug("node {}: FINALIZE", nick);
     if (m_flow) {
         zio::Message msg;
-        l->debug("node {}: send EOT", nick);
-        m_flow->send_eot(msg);
-        l->debug("node {}: recv EOT", nick);
-        m_flow->recv_eot(msg, m_timeout);
+        m_flow->close(msg, m_timeout);
+        m_flow = nullptr;
     }
     m_node.offline();
-    m_flow = nullptr;
 }

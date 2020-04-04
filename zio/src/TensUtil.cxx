@@ -72,7 +72,7 @@ ITensorSet::pointer Zio::unpack(const zio::Message& zmsg)
 
     for(auto jten : label[zio::tens::form]["tensors"]) {
 
-        log->debug("jten: {}", jten.dump());
+        // log->debug("jten: {}", jten.dump());
 
         auto md = jten["metadata"];
         std::vector<size_t> shape = jten["shape"].get<std::vector<size_t>>();

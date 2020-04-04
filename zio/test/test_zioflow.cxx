@@ -56,78 +56,100 @@ void middleman(zio::socket_t& link)
     auto iport = node.port("takes", ZMQ_SERVER);
     auto oport = node.port("gives", ZMQ_SERVER);
     // server/client can't to inproc, "@" is "abstract namespace" and Linux-only
-    iport->bind("ipc://@test_zioflow_take");
-    oport->bind("ipc://@test_zioflow_give");
+    iport->bind();
+    oport->bind();
     zio::flow::Flow iflow(iport), oflow(oport);
     node.online();
 
     zio::debug("[middleman]: online");
 
-    zio::poller_t<> poller;
-    poller.add(iport->socket(), zio::event_flags::pollin);
-    poller.add(oport->socket(), zio::event_flags::pollin);
-    poller.add(link, zio::event_flags::pollin);
+    zio::poller_t<> ipoll, opoll, lpoll;
+    ipoll.add(iport->socket(), zio::event_flags::pollin);
+    opoll.add(oport->socket(), zio::event_flags::pollin);
+    lpoll.add(link, zio::event_flags::pollin);
 
-    
+
     zio::debug("[middleman]: recv bot from giver"); 
     {   // say hi to input
         zio::Message bot;
-        iflow.recv_bot(bot);
+        auto mtype = iflow.recv_bot(bot);
+        assert (mtype == zio::flow::BOT);
+        zio::debug("[middleman]: giver BOT: {}", bot.label());
         auto fobj = bot.label_object();
         fobj["direction"] = "inject";
+        bot.set_label_object(fobj);
         iflow.send_bot(bot);
+        iflow.flush_pay();
     }
-    iflow.flush_pay();
 
     zio::debug("[middleman]: recv bot from taker"); 
     {   // say hi to output
         zio::Message bot;
-        oflow.recv_bot(bot);
+        auto mtype = oflow.recv_bot(bot);
+        assert(mtype == zio::flow::BOT);
+        zio::debug("[middleman]: taker BOT: {}", bot.label());
         auto fobj = bot.label_object();
         fobj["direction"] = "extract";
+        bot.set_label_object(fobj);
         oflow.send_bot(bot);
     }
 
     const auto wait = std::chrono::milliseconds{1000};
 
-    zio::debug("[middleman]: starting loop"); 
+    zio::debug("[middleman]: starting loop with timeout {}", wait.count()); 
+
+    std::vector<zio::poller_event<>> events(1);
 
     while (true) {
-        std::vector<zio::poller_event<>> events(3);
-        int nevents = poller.wait_all(events, wait);
-        for (int iev=0; iev<nevents; ++iev) {
-            if (events[iev].socket == iport->socket()) {
-                zio::Message dat;
-                if (! iflow.get(dat)) {
-                    zio::error("[middleman]: take interupted");
-                    iflow.send_eot(dat);
-                    goto bail;
-                }
 
-                zio::info("[middleman]: #{}:\n{}",
-                          dat.seqno(), dat.label());
+        if (lpoll.wait_all(events, std::chrono::milliseconds{0})) {
+            zio::info("[middleman]: link hit");
+            zio::Message eot;
+            iflow.close(eot);
+            oflow.close(eot);
+            break;
+        }
+        
+        if (opoll.wait_all(events, wait)) {
+            zio::Message msg;
+            auto mtype = oflow.recv(msg);
+            zio::debug("[middleman]: oport hit {}", zio::flow::name(mtype));
+                
+            if (mtype == zio::flow::EOT) {
+                oflow.finish(msg);
+                iflow.close(msg);
+                break;
+            }
+        }
 
-                if (! oflow.put(dat)) {
-                    zio::error("[middleman]: give interupted");
-                    oflow.send_eot(dat);
-                }
-                continue;
+        iflow.flush_pay();
+        if (ipoll.wait_all(events, wait)) {
+            zio::Message msg;
+            auto mtype = iflow.recv(msg);
+            zio::debug("[middleman]: iport hit {}", zio::flow::name(mtype));
+                
+            if (mtype == zio::flow::EOT) {
+                iflow.send_eot(msg);
+                oflow.close(msg);
+                break;
             }
 
-            // it's the link telling us to quit, we initiate end of
-            // transmission
-            {
-                zio::Message eot;
-                iflow.send_eot(eot);
-                oflow.send_eot(eot);
-                oflow.recv_eot(eot);
-                iflow.recv_eot(eot);
+            if (mtype == zio::flow::DAT) {
+                mtype = oflow.put(msg);
+                if (mtype == zio::flow::EOT) {
+                    zio::debug("[middleman]: EOT on DAT forward");
+                    zio::Message eot;
+                    oflow.send_eot(eot);
+                    iflow.close(eot);
+                    break;
+                }
             }
-            goto bail;
         }
     }
-  bail:
+
     link.send(msg_done, zio::send_flags::none);    
+    zio::info("[middleman]: going offline");
+    node.offline();
 }
 
 void giver(zio::socket_t& link)
@@ -139,19 +161,22 @@ void giver(zio::socket_t& link)
     cfg["verbose"] = 0;
     cfg["nodename"] = "giver";
     cfg["portname"] = "give";
+    cfg["timeout"] = 5000;
     cfg["connects"][0]["nodename"] = "middleman";
     cfg["connects"][0]["portname"] = "takes";
     sink.configure(cfg);
 
     for (int ind=0; ind<10; ++ind) {
         zio::info("[giver]: pretending work");
-        sleep(1);
+        zio::sleep_ms(zio::time_unit_t{100});
         auto ts = make_tensor_set<int>();
+        assert(ts);
         bool ok = sink(ts);
         if (!ok) {
             zio::info("[giver]: failed to give");
             break;
         }
+        zio::info("[giver]: sunk ITensor");
 
         zio::message_t msg;     // check for term
         auto res = link.recv(msg, zio::recv_flags::dontwait);
@@ -178,6 +203,7 @@ void taker(zio::socket_t& link)
     cfg["verbose"] = 0;
     cfg["nodename"] = "taker";
     cfg["portname"] = "take";
+    cfg["timeout"] = 5000;
     cfg["connects"][0]["nodename"] = "middleman";
     cfg["connects"][0]["portname"] = "gives";
     src.configure(cfg);
@@ -224,16 +250,21 @@ int main()
     {
         auto res = g.link().recv(msg, zio::recv_flags::none);
         Assert(res);
+        log->info("giver returned");
     }
     {
         auto res = t.link().recv(msg, zio::recv_flags::none);
         Assert(res);
+        log->info("taker returned");
     }
     {
+        log->info("shutdown middleman");
         auto sres = mm.link().send(msg_term, zio::send_flags::none);
         Assert(sres);
+        log->info("wait for middleman");
         auto rres = mm.link().recv(msg_term, zio::recv_flags::none);
         Assert(rres);
+        log->info("middleman returned");
     }
 
     return 0;

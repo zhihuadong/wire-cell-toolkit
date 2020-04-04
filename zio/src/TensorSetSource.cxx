@@ -22,8 +22,8 @@ bool Zio::TensorSetSource::operator()(ITensorSet::pointer &out)
     }
 
     zio::Message msg;
-    bool ok = m_flow->get(msg, m_timeout);
-    if (!ok) {
+    auto mtype = m_flow->recv_dat(msg, m_timeout);
+    if (mtype == zio::flow::EOT) {
         zio::Message eot;
         m_flow->send_eot(eot);
         m_flow = nullptr;

@@ -37,11 +37,13 @@ bool Zio::TensorSetSink::operator()(const ITensorSet::pointer &in)
             return false;
         }
         m_had_eos = true;
+        l->debug("TensorSetSink: send empty message as EOS");
         zio::Message msg("FLOW"); // send empty as EOS
-        bool ok = m_flow->put(msg);
-        if (!ok) {
+        auto mtype = m_flow->put(msg);
+        if (mtype == zio::flow::EOT) {
+            l->debug("TensorSetSink: interupted EOS, assume EOT");
             zio::Message eot;
-            m_flow->send_eot(eot);
+            m_flow->close(eot);
             m_flow = nullptr;
             return false;
         }
@@ -51,8 +53,9 @@ bool Zio::TensorSetSink::operator()(const ITensorSet::pointer &in)
     m_had_eos = false;
     zio::Message msg = Zio::pack(in);
 
-    bool ok = m_flow->put(msg);
-    if (!ok) {                  // got eot from remote
+    auto mtype = m_flow->put(msg);
+    if (mtype == zio::flow::EOT) {
+        l->debug("TensorSetSink: EOT instead of DAT");
         zio::Message eot;
         m_flow->send_eot(eot);
         m_flow = nullptr;
