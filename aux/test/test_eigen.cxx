@@ -42,11 +42,11 @@ void test_translation() {
     std::cout << iarr << "\n";
 
     auto iten = Aux::eigen_array_to_itensor<TestType>(iarr);
-    std::cout << dump<TestType>(iten) << "\n";
+    std::cout << Aux::dump<TestType>(iten) << "\n";
 
     auto oarr = Aux::itensor_to_eigen_array<TestType>(iten);
     std::cout << oarr << "\n";
-    // Assert(iarr.isApprox(oarr));
+    Assert(iarr.isApprox(oarr));
 
     // Eigen::Map copies?
     // oarr(0,0) = 42;
