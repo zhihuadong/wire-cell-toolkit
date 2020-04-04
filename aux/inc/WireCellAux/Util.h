@@ -21,7 +21,7 @@ namespace Aux
 {
 
 template <typename ElementType>
-std::string dump(const WireCell::ITensor::pointer iten, std::vector<size_t> loc, const size_t limit = 10) {
+inline std::string dump(const WireCell::ITensor::pointer iten, std::vector<size_t> loc, const size_t limit = 10) {
     std::stringstream ss;
     auto shape = iten->shape();
     if (shape.size() > loc.size()) {
