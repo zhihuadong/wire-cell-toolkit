@@ -37,7 +37,7 @@ int main()
     std::cout << "\nspecify limit 4/dim (default 10): \n";
     std::cout << Aux::dump<float>(st, 4) << "\n";
 
-    std::cout << "\npartial print {0, 1, : , :}\n";
+    std::cout << "\npartial print {0, 1, : , :} (not fully polished yet)\n";
     std::cout << Aux::dump<float>(st, {0, 1}) << "\n";
 
     return 0;
