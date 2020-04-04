@@ -8,29 +8,6 @@ typedef std::chrono::high_resolution_clock Clock;
 
 using namespace WireCell;
 
-namespace
-{
-template <typename ElementType>
-std::string dump(const ITensor::pointer iten)
-{
-    std::stringstream ss;
-    ss << "ITensor: \n";
-    Json::FastWriter jwriter;
-    for (size_t i1 = 0; i1 < iten->shape()[1]; ++i1)
-    {
-        for (size_t i0 = 0; i0 < iten->shape()[0]; ++i0)
-        {
-            size_t ind = i1 * iten->shape()[0] + i0;
-            auto data = (const ElementType *)iten->data();
-            ss << data[ind] << " ";
-        }
-        ss << "\n";
-    }
-
-    return ss.str();
-}
-} // namespace
-
 void test_translation() {
     typedef float TestType;
 
