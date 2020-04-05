@@ -135,7 +135,7 @@ bool Gen::AddCoherentNoise::operator()(const input_pointer& inframe,
       }
 
       // Check if we have exausted the correlation group
-      if( ch_count == wire_delta ){
+      if( ch_count == wire_delta-1 ){
         for(int i=0; i<int(spec.size()); i++){
           random_amplitudes[i] = 0.9 + 2*m_fluctuation*m_rng->uniform(0, 1);
           random_phases[i] = m_rng->uniform(0, 2*3.1415926);

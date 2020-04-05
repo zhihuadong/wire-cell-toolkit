@@ -132,7 +132,7 @@ local fansel = g.pnode({
     },
 }, nin=1, nout=nanodes, uses=tools.anodes);
 
-local magoutput = 'icarus-noise-check.root';
+local magoutput = 'icarus-incoherent-noise-check.root';
 local magnify = import 'pgrapher/experiment/icarus/magnify-sinks.jsonnet';
 local magnifyio = magnify(tools, magoutput);
 
@@ -200,7 +200,8 @@ local fanpipe = g.intern(innodes=[fansel],
 local sink = sim.frame_sink;
 
 
-local graph = g.pipeline([depos, drifter, bagger, sim.analog, noise, coherent_noise ,digitizer, fanpipe, retagger, sink]); //both
+//local graph = g.pipeline([depos, drifter, bagger, sim.analog, noise, coherent_noise ,digitizer, fanpipe, retagger, sink]); //both
+local graph = g.pipeline([depos, drifter, bagger, sim.analog, noise ,digitizer, fanpipe, retagger, sink]); //both
 
 
 local app = {
