@@ -95,8 +95,8 @@ void Gen::AddCoherentNoise::configure(const WireCell::Configuration& cfg)
       m_group_noise[igroup] = make_pair(wire_deltas, spec);
     }
 
-    // TODO... interpolate spectra
-    // TODO... solidity checks
+    // TODO: [ascarpel] We assume the spectra are well prepared and compatible
+    // with a given detector geometry. Make sure this is the case
 
 }
 
@@ -110,9 +110,6 @@ bool Gen::AddCoherentNoise::operator()(const input_pointer& inframe,
 
     ITrace::vector outtraces;
 
-    std::vector<float> random_phases(m_fft_length, 0);
-    std::vector<float> random_amplitudes(m_fft_length, 0);
-
     // Set the iterator to the first entry of the map
     noise_map_t::iterator m_group_noise_it = m_group_noise.begin();
     auto group_noise = (*m_group_noise_it).second;
@@ -120,12 +117,21 @@ bool Gen::AddCoherentNoise::operator()(const input_pointer& inframe,
     std::vector<float> spec = group_noise.second;
     int ch_count = 0;
 
+    for(auto a : spec)
+    {
+      std::cout << a << std::endl;
+    }
+
+    std::vector<float> random_phases(spec.size(), 0);
+    std::vector<float> random_amplitudes(spec.size(), 0);
+
     for (const auto& intrace : *inframe->traces())
     {
 
       int chid = intrace->channel();
 
-      // It should never happen
+      // It should never happen but in case the spec arrays have differnt
+      // lengths it might be useful
       if( random_phases.size() != spec.size() ){
         random_phases.resize(spec.size());
       }
@@ -133,32 +139,6 @@ bool Gen::AddCoherentNoise::operator()(const input_pointer& inframe,
       if( random_amplitudes.size() != spec.size() ){
         random_amplitudes.resize(spec.size());
       }
-
-      // Check if we have exausted the correlation group
-      if( ch_count == wire_delta-1 ){
-        for(int i=0; i<int(spec.size()); i++){
-          random_amplitudes[i] = 0.9 + 2*m_fluctuation*m_rng->uniform(0, 1);
-          random_phases[i] = m_rng->uniform(0, 2*3.1415926);
-        }
-
-        // Move the iterator forward of one if we reach the end of the possible
-        // groups, then start from the beginning again
-        ++m_group_noise_it;
-        if( m_group_noise_it == m_group_noise.end() ){
-          m_group_noise_it = m_group_noise.begin();
-        }
-        // This condition resets also the channel count
-        ch_count=0;
-      }
-      else{
-        ch_count++;
-      }
-
-
-      auto group_noise = (*m_group_noise_it).second;
-      wire_delta = group_noise.first;
-      spec = group_noise.second;
-
 
       // Create the ampls vector and multiply for the phase
       WireCell::Waveform::compseq_t noise_freq(spec.size(),0);
@@ -178,11 +158,34 @@ bool Gen::AddCoherentNoise::operator()(const input_pointer& inframe,
 
       Waveform::realseq_t wave = WireCell::Waveform::idft(noise_freq);
 
-
       // Add signal (be careful to double counting with the incoherent noise)
       Waveform::increase(wave, intrace->charge());
       auto trace = make_shared<SimpleTrace>(chid, intrace->tbin(), wave);
       outtraces.push_back(trace);
+
+      // Move the couter forward and check if the correlation group is over
+      ch_count++;
+      if( ch_count == wire_delta ){
+        for(int i=0; i<int(spec.size()); i++){
+          random_amplitudes[i] = 0.9 + 2*m_fluctuation*m_rng->uniform(0, 1);
+          random_phases[i] = m_rng->uniform(0, 2*3.1415926);
+        }
+
+        // Move the iterator forward of one. If we crawled over all possible
+        // groups, then start from the beginning again
+        ++m_group_noise_it;
+        if( m_group_noise_it == m_group_noise.end() ){
+          m_group_noise_it = m_group_noise.begin();
+        }
+
+        // This condition resets also the channel count...
+        ch_count=0;
+
+        // ... and assigns new values to spec and wire_delta
+        auto group_noise = (*m_group_noise_it).second;
+        wire_delta = group_noise.first;
+        spec = group_noise.second;
+      }
 
   } // end channels
 
