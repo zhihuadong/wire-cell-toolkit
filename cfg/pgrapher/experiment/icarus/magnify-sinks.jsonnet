@@ -66,9 +66,9 @@ function(tools, outputfile) {
       data: {
         output_filename: outputfile,
         root_file_mode: 'UPDATE',
-        frames: ['tight_lf%d' %n, 'loose_lf%d' %n, 'cleanup_roi%d' %n,
-                 'break_roi_1st%d' %n, 'break_roi_2nd%d' %n,
-                 'shrink_roi%d' %n, 'extend_roi%d' %n],
+        frames: ['tight_lf%d' % tools.anodes[n].data.ident, 'loose_lf%d' % tools.anodes[n].data.ident, 'cleanup_roi%d' % tools.anodes[n].data.ident,
+                 'break_roi_1st%d' % tools.anodes[n].data.ident, 'break_roi_2nd%d' % tools.anodes[n].data.ident,
+                 'shrink_roi%d' % tools.anodes[n].data.ident, 'extend_roi%d' % tools.anodes[n].data.ident],
         trace_has_tag: true,
         anode: wc.tn(tools.anodes[n]),
       },

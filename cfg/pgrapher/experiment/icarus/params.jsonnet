@@ -131,6 +131,7 @@ base {
     },
 
     daq: super.daq {
+        tick: 0.4*wc.us,
         nticks: 4096,
     },
 
@@ -158,7 +159,7 @@ base {
         // The "absolute" time (ie, in G4 time) that the lower edge of
         // of final readout tick #0 should correspond to.  This is a
         // "fixed" notion.
-        local tick0_time = -250*wc.us,
+        local tick0_time = -340*wc.us, // TriggerOffsetTPC from detectorclocks_icarus.fcl
 
         // Open the ductor's gate a bit early.
         local response_time_offset = $.det.response_plane / $.lar.drift_speed,
@@ -184,8 +185,9 @@ base {
 
         fields: [
             // "garfield-1d-3planes-21wires-6impacts-dune-v1.json.bz2",
-            "garfield-1d-boundary-path-rev-dune.json.bz2",
+            // "garfield-1d-boundary-path-rev-dune.json.bz2",
             // "garfield-1d-boundary-path-rev-dune-no-grid.json.bz2",
+            "garfield-icarus-fnal-commissioning.json.bz2",
         ],
 
         // fixme: this is for microboone and probably bogus for

@@ -32,7 +32,7 @@ physics :{
 
             inputers: ["wclsSimDepoSource:electron"]
             outputers: [
-            //   "wclsSimChannelSink:postdrift",
+               "wclsSimChannelSink:postdrift",
                "wclsFrameSaver:simdigits"
             //   ,"wclsFrameSaver:nfdigits",
             //   "wclsFrameSaver:spsignals",
