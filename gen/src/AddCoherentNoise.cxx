@@ -117,11 +117,6 @@ bool Gen::AddCoherentNoise::operator()(const input_pointer& inframe,
     std::vector<float> spec = group_noise.second;
     int ch_count = 0;
 
-    for(auto a : spec)
-    {
-      std::cout << a << std::endl;
-    }
-
     std::vector<float> random_phases(spec.size(), 0);
     std::vector<float> random_amplitudes(spec.size(), 0);
 
