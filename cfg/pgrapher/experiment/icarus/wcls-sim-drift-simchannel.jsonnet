@@ -111,28 +111,29 @@ local sp_maker = import 'pgrapher/experiment/icarus/sp.jsonnet';
 local sp = sp_maker(params, tools);
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
-// local rng = tools.random;
-// local wcls_simchannel_sink = g.pnode({
-//   type: 'wclsSimChannelSink',
-//   name: 'postdrift',
-//   data: {
-//     artlabel: 'simpleSC',  // where to save in art::Event
-//     anodes_tn: [wc.tn(anode) for anode in tools.anodes],
-//     rng: wc.tn(rng),
-//     tick: 0.5 * wc.us,
-//     start_time: -0.25 * wc.ms,
-//     readout_time: self.tick * 6000,
-//     nsigma: 3.0,
-//     drift_speed: params.lar.drift_speed,
-//     u_to_rp: 90.58 * wc.mm,
-//     v_to_rp: 95.29 * wc.mm,
-//     y_to_rp: 100 * wc.mm,
-//     u_time_offset: 0.0 * wc.us,
-//     v_time_offset: 0.0 * wc.us,
-//     y_time_offset: 0.0 * wc.us,
-//     use_energy: true,
-//   },
-// }, nin=1, nout=1, uses=tools.anodes);
+local rng = tools.random;
+local wcls_simchannel_sink = g.pnode({
+  type: 'wclsSimChannelSink',
+  name: 'postdrift',
+  data: {
+    artlabel: 'simpleSC',  // where to save in art::Event
+    anodes_tn: [wc.tn(anode) for anode in tools.anodes],
+    rng: wc.tn(rng),
+    tick: params.daq.tick,
+    start_time: -0.34 * wc.ms, // TriggerOffsetTPC from detectorclocks_icarus.fcl
+    readout_time: params.daq.readout_time,
+    nsigma: 3.0,
+    drift_speed: params.lar.drift_speed,
+    u_to_rp: 100 * wc.mm,
+    v_to_rp: 100 * wc.mm,
+    y_to_rp: 100 * wc.mm,
+    u_time_offset: 0.0 * wc.us,
+    v_time_offset: 0.0 * wc.us,
+    y_time_offset: 0.0 * wc.us,
+    g4_ref_time: -1150 * wc.us, // G4RefTime from detectorclocks_icarus.fcl
+    use_energy: true,
+  },
+}, nin=1, nout=1, uses=tools.anodes);
 
 local make_noise_model = function(anode, csdb=null) {
     type: "EmpiricalNoiseModel",
@@ -219,8 +220,7 @@ local sink = sim.frame_sink;
 //     },
 //   }, nin=1, nout=1);
 
-// local graph = g.pipeline([wcls_input.depos, drifter, wcls_simchannel_sink, bagger, bi_manifold, retagger, wcls_output.sim_digits, sink]);
-local graph = g.pipeline([wcls_input.depos, drifter, bagger, pipe_reducer, retagger, wcls_output.sim_digits, sink]);
+local graph = g.pipeline([wcls_input.depos, drifter,  wcls_simchannel_sink, bagger, pipe_reducer, retagger, wcls_output.sim_digits, sink]);
 
 local app = {
   type: 'Pgrapher',

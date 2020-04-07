@@ -7,9 +7,11 @@ digraph deps {
 	"WireCellPgraph";
 	"WireCellRess";
 	"WireCellRoot";
-	"WireCellSigProc";
-	"WireCellSio";
+	"WireCellGen";
+	"WireCellSig";
+	"WireCellHio";
 	"WireCellUtil";
+	"WireCellSig" -> "WireCellAux"[color="black"];
 	"WireCellApps" -> "FFTWTHREADS"[color="black"];
 	"WireCellApps" -> "WireCellIface"[color="black"];
 	"WireCellAux" -> "WireCellIface"[color="black"];

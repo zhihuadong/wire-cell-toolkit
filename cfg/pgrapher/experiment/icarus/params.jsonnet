@@ -5,12 +5,34 @@ local wc = import "wirecell.jsonnet";
 local base = import "pgrapher/common/params.jsonnet";
 
 base {
-    det: {
 
-        // Each wires gets identified with the same number that identifies it in
-        // the geometry files. The horizontal induction is split in two, both
-        // sides are enumerated by s, while n counts the physical anodes.
-        // NOTE:the actual physical volumes in ICARUS are only 4
+    det : {
+
+        // define the 4 APAs.  This must use the coordinate system
+        // defined by the wire geometry file.
+        //
+        // The "faces" is consumed by, at least, the Drifter and
+        // AnodePlane.  The "wires" number is used to set
+        // AnodePlane.ident used to lookup the anode in WireSchema.
+        // It corresponds to the anode number.
+        //
+        // Also see:
+        //   lar -c dump_icarus_geometry.fcl
+        //   wirecell-util wire-volumes icarus-wires-dualanode.json.bz2
+        // to help with defining these parameters.
+
+
+        // The "response" plane is where the field response functions
+        // start.  Garfield calcualtions start somewhere relative to
+        // something, here's where that is made concrete.  This MUST
+        // match what field response functions also used.
+        response_plane: 10*wc.cm, // relative to collection wires
+
+
+        // Each wire gets identified with the id number in the geometry
+        // file. The horizontal induction is split into two, both
+        // sides are enumerated by "s", while "n" counts the physical anodes.
+        // NOTE: the actual physical volumes in ICARUS are only 4
 
         local xanode = [-369.33*wc.cm, -71.1*wc.cm, 71.1*wc.cm, 369.33*wc.cm],
         local offset_response = [if a%2==0 then +10*wc.cm else -10*wc.cm for a in std.range(0,3)],
@@ -49,41 +71,24 @@ base {
         }
     },
 
-    daq : super.daq{
-
-        // ICARUS has a sampling frequency at 0.25 MHz
-        tick: 0.4*wc.us,
-        nticks: 4096, //two drift times
-
-        readout_time: self.tick*self.nticks,
-        nreadouts: 1,
-
-        start_time: 0.0*wc.s,
-        stop_time: self.start_time + self.nreadouts*self.readout_time,
-
-        //first_frame_number: 1, // <<< I DON'T UNDERSTAND IT, keep the standard
+    daq: super.daq {
+        tick: 0.4*wc.us, // 2.5 MHz
+        nticks: 4096,
     },
 
     adc: super.adc {
+        // estimated from ADC values. FIXME: accurate voltage setting?
+        baselines: [1003*wc.millivolt,1003*wc.millivolt,508*wc.millivolt],
 
-        //don't know this information (keep null)
-        baselines: [10*wc.millivolt,10*wc.millivolt, 10*wc.millivolt],
-
-        // From ICARUS papers: https://iopscience.iop.org/article/10.1088/1748-0221/13/12/P12007/pdf
-
-        resolution: 12, // #bit
-
+        // From ICARUS paper: https://iopscience.iop.org/article/10.1088/1748-0221/13/12/P12007/pdf
         //check (values taken from the FE calibration shown in pg. 7 of the paper)
         fullscale: [0.8*wc.millivolt, 3.3*wc.volt],
     },
 
     elec: super.elec {
 
-        //FIXME: same values as PDSP
-
-        gain : 14.0*wc.mV/wc.fC,
-
-        shaping : 2.2*wc.us,
+        // later defined in simparams.jsonnet
+    },
 
         postgain: 1.0,
 
@@ -94,9 +99,10 @@ base {
         // For running in LArSoft, the simulation must be in fixed time mode.
         fixed: true,
 
-        // ductor logic adapted from PDSP
-        // Assume 1.28 m of drift (coherent with the sampling time and window chosen)
-        local tick0_time = -820*wc.us,
+        // The "absolute" time (ie, in G4 time) that the lower edge of
+        // of final readout tick #0 should correspond to.  This is a
+        // "fixed" notion.
+        local tick0_time = -340*wc.us, // TriggerOffsetTPC from detectorclocks_icarus.fcl
 
         local response_time_offset = 0.0*wc.us,  // modify to add a delay
         local response_nticks = wc.roundToInt(response_time_offset / $.daq.tick),
@@ -119,11 +125,10 @@ base {
 
     },
 
-    files : {
-
+    files: {
         wires: "icarus-wires-dualanode.json.bz2",
 
-        fields: ["garfield-1d-boundary-path-rev-dune.json.bz2"],
+        fields: ["garfield-icarus-fnal-commissioning.json.bz2"],
 
         noise: "sbn_fd_incoherent_noise.json.bz2",
         coherent_noise: "sbn_fd_coherent_noise.json.bz2",
