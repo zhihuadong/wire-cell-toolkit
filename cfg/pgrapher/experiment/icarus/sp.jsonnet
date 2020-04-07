@@ -10,7 +10,7 @@ function(params, tools, override = {}) {
 
   local pc = tools.perchanresp_nameuses,
 
-  // pDSP needs a per-anode sigproc
+  // ICARUS needs a per-anode sigproc
   make_sigproc(anode, name=null):: g.pnode({
     type: 'OmnibusSigProc',
     name:
