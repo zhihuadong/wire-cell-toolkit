@@ -90,9 +90,6 @@ base {
         // later defined in simparams.jsonnet
     },
 
-        postgain: 1.0,
-
-    },
 
     sim : super.sim {
 
