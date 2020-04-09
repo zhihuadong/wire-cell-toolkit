@@ -5,7 +5,6 @@ local wc = import "wirecell.jsonnet";
 local base = import "pgrapher/common/params.jsonnet";
 
 base {
-
     det : {
 
         // define the 4 APAs.  This must use the coordinate system
@@ -90,8 +89,7 @@ base {
         // later defined in simparams.jsonnet
     },
 
-
-    sim : super.sim {
+    sim: super.sim {
 
         // For running in LArSoft, the simulation must be in fixed time mode.
         fixed: true,
@@ -117,9 +115,6 @@ base {
             tbin: response_nticks,
             nticks: $.daq.nticks,
         }
-
-
-
     },
 
     files: {
