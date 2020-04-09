@@ -52,8 +52,8 @@ local chndb = [{
   uses: [tools.anodes[n], tools.field],  // pnode extension
 } for n in anode_iota];
 
-// local nf_maker = import 'pgrapher/experiment/pdsp/nf.jsonnet';
-// local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
+local nf_maker = import 'pgrapher/experiment/icarus/nf.jsonnet';
+local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
 local sp_maker = import 'pgrapher/experiment/icarus/sp.jsonnet';
 local sp = sp_maker(params, tools);
@@ -155,8 +155,8 @@ local pipelines = [
         chsel[n],
         magnifyio.orig_pipe[n],
 
-        // nf_pipes[n],
-        // magnifyio.raw_pipe[n],
+        nf_pipes[n],
+        magnifyio.raw_pipe[n],
 
         sp_pipes[n],
         magnifyio.decon_pipe[n],
@@ -167,7 +167,38 @@ local pipelines = [
     for n in anode_iota
     ];
 
-local fanpipe = f.fanpipe('FrameFanout', pipelines, 'FrameFanin', 'sn_mag_nf');
+// local fanpipe = f.fanpipe('FrameFanout', pipelines, 'FrameFanin', 'sn_mag_nf');
+local fanout_tag_rules = [ 
+          {
+            frame: {
+              '.*': 'orig%d' % tools.anodes[n].data.ident,
+            },
+            trace: {
+              // fake doing Nmult SP pipelines
+              //orig: ['wiener', 'gauss'],
+              //'.*': 'orig',
+            },
+          }
+          for n in std.range(0, std.length(tools.anodes) - 1)
+        ];
+
+local anode_ident = [tools.anodes[n].data.ident for n in std.range(0, std.length(tools.anodes) - 1)];
+local fanin_tag_rules = [
+          {
+            frame: {
+              //['number%d' % n]: ['output%d' % n, 'output'],
+              '.*': 'framefanin',
+            },
+            trace: {
+              ['gauss%d'%ind]:'gauss%d'%ind,
+              ['wiener%d'%ind]:'wiener%d'%ind,
+              ['threshold%d'%ind]:'threshold%d'%ind,
+            },
+
+          }
+          for ind in anode_ident
+        ];
+local fanpipe = util.fanpipe('FrameFanout', pipelines, 'FrameFanin', 'nfsp', [], fanout_tag_rules, fanin_tag_rules);
 
 // local fanin = g.pnode({
 //     type: 'FrameFanin',
@@ -216,7 +247,6 @@ local retagger = g.pnode({
 //local frameio = io.numpy.frames(output);
 local sink = sim.frame_sink;
 
-// local graph = g.pipeline([depos, drifter, bagger, sim.analog, noise, digitizer, fanpipe, retagger, sink]);
 local graph = g.pipeline([depos, drifter, bagger, pipe_reducer, fanpipe, retagger, sink]);
 
 
