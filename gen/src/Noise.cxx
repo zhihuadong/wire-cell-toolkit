@@ -2,16 +2,12 @@
 
 #include "Noise.h"
 
-#include "WireCellUtil/Logging.h"
-
 using namespace WireCell;
 
 Waveform::realseq_t Gen::Noise::generate_waveform(const std::vector<float>& spec,
                                                   IRandom::pointer rng,
                                                   double replace)
 {
-
-    Log::logptr_t log(Log::logger("sim"));
 
     // reuse randomes a bit to optimize speed.
     static std::vector<double> random_real_part;
