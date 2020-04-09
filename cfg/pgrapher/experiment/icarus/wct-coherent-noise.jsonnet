@@ -52,8 +52,8 @@ local chndb = [{
   uses: [tools.anodes[n], tools.field],  // pnode extension
 } for n in anode_iota];
 
-// local nf_maker = import 'pgrapher/experiment/pdsp/nf.jsonnet';
-// local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
+local nf_maker = import 'pgrapher/experiment/icarus/nf.jsonnet';
+local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
 local sp_maker = import 'pgrapher/experiment/icarus/sp.jsonnet';
 local sp = sp_maker(params, tools);
@@ -81,18 +81,16 @@ local make_noise_model = function(anode, csdb=null) {
     uses: [anode] + if std.type(csdb) == "null" then [] else [csdb],
 };
 local noise_model = make_noise_model(mega_anode);
-
 local add_noise = function(model, n) g.pnode({
     type: "AddNoise",
     name: "addnoise%d-" %n + model.name,
     data: {
         rng: wc.tn(tools.random),
         model: wc.tn(model),
-        nsamples: params.daq.nticks,
+  nsamples: params.daq.nticks,
         replacement_percentage: 0.02, // random optimization
     }}, nin=1, nout=1, uses=[model]);
 local noises = [add_noise(noise_model, n) for n in std.range(0,3)];
-
 
 local add_coherent_noise = function(n) g.pnode({
       type: "AddCoherentNoise",
@@ -130,12 +128,12 @@ local frame_summers = [
         },
     }, nin=2, nout=1) for n in std.range(0, 3)];
 
-local actpipes = [g.pipeline([noises[n], coherent_noises[n], digitizers[n]], name="noise-digitizer%d" %n) for n in std.range(0,3)];
+local actpipes = [g.pipeline([noises[n], coherent_noises[n] ,digitizers[n]], name="noise-digitizer%d" %n) for n in std.range(0,3)];
 local util = import 'pgrapher/experiment/icarus/funcs.jsonnet';
 local pipe_reducer = util.fansummer('DepoSetFanout', analog_pipes, frame_summers, actpipes, 'FrameFanin');
 
 
-local magoutput = 'icarus-coherent-noise-check.root';
+local magoutput = 'icarus-coherent_noise-check.root';
 local magnify = import 'pgrapher/experiment/icarus/magnify-sinks.jsonnet';
 local magnifyio = magnify(tools, magoutput);
 
@@ -170,8 +168,8 @@ local pipelines = [
         chsel[n],
         magnifyio.orig_pipe[n],
 
-        // nf_pipes[n],
-        // magnifyio.raw_pipe[n],
+        nf_pipes[n],
+        magnifyio.raw_pipe[n],
 
         sp_pipes[n],
         magnifyio.decon_pipe[n],
@@ -182,7 +180,38 @@ local pipelines = [
     for n in anode_iota
     ];
 
-local fanpipe = f.fanpipe('FrameFanout', pipelines, 'FrameFanin', 'sn_mag_nf');
+// local fanpipe = f.fanpipe('FrameFanout', pipelines, 'FrameFanin', 'sn_mag_nf');
+local fanout_tag_rules = [
+          {
+            frame: {
+              '.*': 'orig%d' % tools.anodes[n].data.ident,
+            },
+            trace: {
+              // fake doing Nmult SP pipelines
+              //orig: ['wiener', 'gauss'],
+              //'.*': 'orig',
+            },
+          }
+          for n in std.range(0, std.length(tools.anodes) - 1)
+        ];
+
+local anode_ident = [tools.anodes[n].data.ident for n in std.range(0, std.length(tools.anodes) - 1)];
+local fanin_tag_rules = [
+          {
+            frame: {
+              //['number%d' % n]: ['output%d' % n, 'output'],
+              '.*': 'framefanin',
+            },
+            trace: {
+              ['gauss%d'%ind]:'gauss%d'%ind,
+              ['wiener%d'%ind]:'wiener%d'%ind,
+              ['threshold%d'%ind]:'threshold%d'%ind,
+            },
+
+          }
+          for ind in anode_ident
+        ];
+local fanpipe = util.fanpipe('FrameFanout', pipelines, 'FrameFanin', 'nfsp', [], fanout_tag_rules, fanin_tag_rules);
 
 // local fanin = g.pnode({
 //     type: 'FrameFanin',
@@ -232,6 +261,7 @@ local retagger = g.pnode({
 local sink = sim.frame_sink;
 
 local graph = g.pipeline([depos, drifter, bagger, pipe_reducer, fanpipe, retagger, sink]);
+
 
 local app = {
   type: 'Pgrapher',
