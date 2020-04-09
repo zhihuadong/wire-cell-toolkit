@@ -126,7 +126,9 @@ base {
         noise: "sbn_fd_incoherent_noise.json.bz2",
         coherent_noise: "sbn_fd_coherent_noise.json.bz2",
 
+
         chresp: null
     },
 
 }
+
