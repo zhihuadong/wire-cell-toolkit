@@ -85,13 +85,13 @@ base {
     },
 
     elec: super.elec {
-
         // later defined in simparams.jsonnet
     },
 
+
     sim: super.sim {
 
-        // For running in LArSoft, the simulation must be in fixed time mode.
+        // For running in LArSoft, the simulation must be in fixed time mode. 
         fixed: true,
 
         // The "absolute" time (ie, in G4 time) that the lower edge of
@@ -99,9 +99,9 @@ base {
         // "fixed" notion.
         local tick0_time = -340*wc.us, // TriggerOffsetTPC from detectorclocks_icarus.fcl
 
+        // Open the ductor's gate a bit early.
         local response_time_offset = $.det.response_plane / $.lar.drift_speed,
         local response_nticks = wc.roundToInt(response_time_offset / $.daq.tick),
-
 
         ductor : {
             nticks: $.daq.nticks + response_nticks,
@@ -109,12 +109,13 @@ base {
             start_time: tick0_time - response_time_offset,
         },
 
-       // To counter the enlarged duration of the ductor, a Reframer
+        // To counter the enlarged duration of the ductor, a Reframer
         // chops off the little early, extra time.  Note, tags depend on how 
         reframer: {
             tbin: response_nticks,
             nticks: $.daq.nticks,
         }
+        
     },
 
     files: {
