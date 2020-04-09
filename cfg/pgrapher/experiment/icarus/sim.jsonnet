@@ -48,7 +48,7 @@ function(params, tools) {
             anode: wc.tn(anode),
             chanstat: if std.type(csdb) == "null" then "" else wc.tn(csdb),
             spectra_file: params.files.noise,
-            nsamples: 2048,
+            nsamples: params.daq.nticks,
             period: params.daq.tick,
             wire_length_scale: 1.0*wc.cm, // optimization binning
         },
@@ -63,12 +63,12 @@ function(params, tools) {
         data: {
             rng: wc.tn(tools.random),
             model: wc.tn(model),
-	          nsamples: 2048,
+   	    nsamples: params.daq.nticks,
             replacement_percentage: 0.02, // random optimization
         }}, nin=1, nout=1, uses=[model]),
 
     local noises = [add_noise(model) for model in noise_models],
-
+    
     local outtags = ["orig%d"%n for n in std.range(0, nanodes-1)],
 
     ret : {
