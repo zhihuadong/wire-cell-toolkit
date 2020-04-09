@@ -101,7 +101,7 @@ base {
         // "fixed" notion.
         local tick0_time = -340*wc.us, // TriggerOffsetTPC from detectorclocks_icarus.fcl
 
-        local response_time_offset = 0.0*wc.us,  // modify to add a delay
+        local response_time_offset = $.det.response_plane / $.lar.drift_speed,
         local response_nticks = wc.roundToInt(response_time_offset / $.daq.tick),
 
 
@@ -111,14 +111,14 @@ base {
             start_time: tick0_time - response_time_offset,
         },
 
-        // If a ductor's time acceptance is increased then a Reframer
-        // can be used to chop off the early excess to meet readout
-        // assumptions.  Depending on the form of the ductor, the
-        // reframer will likely need it's "tags" configured.
-        // reframer: {
-        //    tbin: $.elec.fields.nticks,
-        //    nticks: $.daq.nticks,
-        // }
+       // To counter the enlarged duration of the ductor, a Reframer
+        // chops off the little early, extra time.  Note, tags depend on how 
+        reframer: {
+            tbin: response_nticks,
+            nticks: $.daq.nticks,
+        }
+
+
 
     },
 
