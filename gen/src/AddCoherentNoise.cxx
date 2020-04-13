@@ -78,7 +78,7 @@ void Gen::AddCoherentNoise::configure(const WireCell::Configuration& cfg)
     auto jdat = Persist::load(m_spectra_file);
     const int ngroups = jdat.size();
 
-    for(int igroup=0; igroup<ngroups; igroup++)
+    for(const int igroup=0; igroup<ngroups; igroup++)
     {
       auto jentry = jdat[igroup];
       int wire_deltas = jentry["wire-delta"].asInt();
@@ -138,7 +138,7 @@ bool Gen::AddCoherentNoise::operator()(const input_pointer& inframe,
       // Create the ampls vector and multiply for the phase
       WireCell::Waveform::compseq_t noise_freq(spec.size(),0);
 
-      for (int i=0;i<int(spec.size());i++)
+      for (size_t i=0;i<spec.size();i++)
       {
         const double amplitude = spec[i];
 
@@ -161,7 +161,7 @@ bool Gen::AddCoherentNoise::operator()(const input_pointer& inframe,
       // Move the couter forward and check if the correlation group is over
       ch_count++;
       if( ch_count == wire_delta ){
-        for(int i=0; i<int(spec.size()); i++){
+        for(size_t i=0; i<spec.size(); i++){
           random_amplitudes[i] = 0.9 + 2*m_fluctuation*m_rng->uniform(0, 1);
           random_phases[i] = m_rng->uniform(0, 2*3.1415926);
         }
