@@ -8,9 +8,9 @@
 #include <cstdlib>              // for getenv, see get_path()
 
 
-#include <boost/iostreams/copy.hpp>
-#include <boost/iostreams/filter/bzip2.hpp>
-#include <boost/iostreams/device/file.hpp>
+#include <boost/iostreams/copy.hpp> 
+#include <boost/iostreams/filter/bzip2.hpp> 
+#include <boost/iostreams/device/file.hpp> 
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/filesystem.hpp>
 
@@ -136,14 +136,14 @@ Json::Value WireCell::Persist::load(const std::string& filename,
 
     // use jsoncpp file interface
     std::fstream fp(fname.c_str(), std::ios::binary|std::ios::in);
-    boost::iostreams::filtering_stream<boost::iostreams::input> infilt;
+    boost::iostreams::filtering_stream<boost::iostreams::input> infilt;	
     if (ext == ".bz2" ) {
         info("loading compressed json file: {}", fname);
 	infilt.push(boost::iostreams::bzip2_decompressor());
     }
     infilt.push(fp);
     std::string text;
-    Json::Value jroot;
+    Json::Value jroot;    
     infilt >> jroot;
     //return update(jroot, extvar); fixme
     return jroot;
@@ -247,8 +247,8 @@ WireCell::Persist::Parser::Parser(const std::vector<std::string>& load_paths,
         m_jsonnet.bindExtCodeVar(vv.first, vv.second);
     }
 }
-
-
+            
+            
 
 
 ///
@@ -296,14 +296,14 @@ Json::Value WireCell::Persist::Parser::load(const std::string& filename)
 
     // use jsoncpp file interface
     std::fstream fp(fname.c_str(), std::ios::binary|std::ios::in);
-    boost::iostreams::filtering_stream<boost::iostreams::input> infilt;
+    boost::iostreams::filtering_stream<boost::iostreams::input> infilt;	
     if (ext == ".bz2" ) {
 	info("loading compressed json file: {}", fname);
 	infilt.push(boost::iostreams::bzip2_decompressor());
     }
     infilt.push(fp);
     std::string text;
-    Json::Value jroot;
+    Json::Value jroot;    
     infilt >> jroot;
     //return update(jroot, extvar); fixme
     return jroot;
