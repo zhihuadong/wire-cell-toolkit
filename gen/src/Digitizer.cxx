@@ -102,7 +102,8 @@ bool Gen::Digitizer::operator()(const input_pointer& vframe, output_pointer& adc
         return true;
     }
 
-    // fixme: maybe make this honor a tag
+
+    // fixme: maybe make this honor a tag 
     auto vtraces = FrameTools::untagged_traces(vframe);
     if (vtraces.empty()) {
         log->error("Gen::Digitizer: no traces in input frame {}", vframe->ident());
@@ -115,7 +116,7 @@ bool Gen::Digitizer::operator()(const input_pointer& vframe, output_pointer& adc
     auto chbeg = channels.begin();
     auto chend = std::unique(chbeg, channels.end());
     auto tbinmm = FrameTools::tbin_range(vtraces);
-
+    
     const size_t ncols = tbinmm.second-tbinmm.first;
     const size_t nrows = std::distance(chbeg, chend);
 
