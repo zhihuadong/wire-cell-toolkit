@@ -77,7 +77,6 @@ void Gen::PlaneImpactResponse::configure(const WireCell::Configuration& cfg)
     
     m_long.clear();
     auto jfilts1 = cfg["long_responses"];
-
     if (!jfilts1.isNull() and !jfilts1.empty()) {
         for (auto jfn: jfilts1) {
             auto tn = jfn.asString();

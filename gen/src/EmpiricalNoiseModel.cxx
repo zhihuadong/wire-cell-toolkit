@@ -15,7 +15,7 @@
 WIRECELL_FACTORY(EmpiricalNoiseModel, WireCell::Gen::EmpiricalNoiseModel,
                  WireCell::IChannelSpectrum, WireCell::IConfigurable)
 
-
+ 
 using namespace WireCell;
 
 Gen::EmpiricalNoiseModel::EmpiricalNoiseModel(const std::string& spectra_file,
@@ -51,16 +51,16 @@ Gen::EmpiricalNoiseModel::~EmpiricalNoiseModel()
 
 void Gen::EmpiricalNoiseModel::gen_elec_resp_default(){
   // double shaping[5]={1,1.1,2,2.2,3}; // us
-
-  // calculate the frequencies ...
+  
+  // calculate the frequencies ... 
   m_elec_resp_freq.resize(m_fft_length,0);
   for (unsigned int i=0;i!=m_elec_resp_freq.size();i++){
     if (i<=m_elec_resp_freq.size()/2.){
-      m_elec_resp_freq.at(i) = i / (m_elec_resp_freq.size() *1.0) * 1./m_period ; // the second half is useless ...
+      m_elec_resp_freq.at(i) = i / (m_elec_resp_freq.size() *1.0) * 1./m_period ; // the second half is useless ... 
     }else{
-      m_elec_resp_freq.at(i) = (m_elec_resp_freq.size()-i) / (m_elec_resp_freq.size() *1.0) * 1./m_period ; // the second half is useless ...
+      m_elec_resp_freq.at(i) = (m_elec_resp_freq.size()-i) / (m_elec_resp_freq.size() *1.0) * 1./m_period ; // the second half is useless ... 
     }
-
+      
     // if (m_elec_resp_freq.at(i) > 1./m_period / 2.){
     //   m_elec_resp_freq.resize(i);
     //   break;
@@ -84,8 +84,8 @@ WireCell::Configuration Gen::EmpiricalNoiseModel::default_configuration() const
     /// The file holding the spectral data
     cfg["spectra_file"] = m_spectra_file;
     cfg["nsamples"] = m_nsamples;          // number of samples up to Nyquist frequency
-    cfg["period"] = m_period;
-    cfg["wire_length_scale"] = m_wlres;    //
+    cfg["period"] = m_period; 
+    cfg["wire_length_scale"] = m_wlres;    // 
     // cfg["time_scale"] = m_tres;
     // cfg["gain_scale"] = m_gres;
     // cfg["freq_scale"] = m_fres;
@@ -96,19 +96,20 @@ WireCell::Configuration Gen::EmpiricalNoiseModel::default_configuration() const
 
 void Gen::EmpiricalNoiseModel::resample(NoiseSpectrum& spectrum) const
 {
+  
     if (spectrum.nsamples == m_fft_length && spectrum.period == m_period) {
         return;
     }
-
-    // scale the amplitude ...
+    
+    // scale the amplitude ... 
     double scale = sqrt(m_fft_length/(spectrum.nsamples*1.0) * spectrum.period / (m_period*1.0));
     spectrum.constant *= scale;
     for (unsigned int ind = 0; ind!=spectrum.amps.size(); ind++){
       spectrum.amps[ind] *= scale;
     }
-
-    // interpolate ...
-
+    
+    // interpolate ... 
+    
     amplitude_t temp_amplitudes(m_fft_length,0);
     int count_low  = 0;
     int count_high = 1;
@@ -116,16 +117,16 @@ void Gen::EmpiricalNoiseModel::resample(NoiseSpectrum& spectrum) const
     for (int i=0;i!=m_fft_length;i++){
       double frequency = m_elec_resp_freq.at(i);
       if (frequency <= spectrum.freqs[0]){
-	       count_low = 0;
-     	   count_high = 1;
-     	   mu = 0;
+	count_low = 0;
+     	count_high = 1;
+     	mu = 0;
       }else if (frequency >= spectrum.freqs.back()){
-     	  count_low = spectrum.freqs.size()-2;
-     	  count_high = spectrum.freqs.size()-1;
-     	  mu = 1;
+     	count_low = spectrum.freqs.size()-2;
+     	count_high = spectrum.freqs.size()-1;
+     	mu = 1;
       }else{
      	for (unsigned int j=0;j!=spectrum.freqs.size();j++){
-	       if (frequency>spectrum.freqs.at(j)){
+	  if (frequency>spectrum.freqs.at(j)){
 	    count_low = j;
 	    count_high = j+1;
 	  }else{
@@ -134,15 +135,15 @@ void Gen::EmpiricalNoiseModel::resample(NoiseSpectrum& spectrum) const
      	}
      	mu = (frequency - spectrum.freqs.at(count_low)) / (spectrum.freqs.at(count_high)-spectrum.freqs.at(count_low));
       }
-
-
+      
+      
       temp_amplitudes.at(i) = (1-mu) * spectrum.amps[count_low] + mu * spectrum.amps[count_high];
-
+      
     }
 
     spectrum.amps = temp_amplitudes;
     spectrum.amps.push_back(spectrum.constant);
-
+    
     return;
 }
 
@@ -156,8 +157,10 @@ void Gen::EmpiricalNoiseModel::configure(const WireCell::Configuration& cfg)
 	m_chanstat = Factory::find_tn<IChannelStatus>(m_chanstat_tn);
     }
 
-    m_spectra_file = get(cfg, "spectra_file", m_spectra_file);
+    log->debug("EmpiricalNoiseModel: using anode {}, chanstat {}", m_anode_tn, m_chanstat_tn);
 
+    m_spectra_file = get(cfg, "spectra_file", m_spectra_file);
+        
     m_nsamples = get(cfg, "nsamples", m_nsamples);
     m_fft_length = fft_best_length(m_nsamples);
     //m_fft_length = m_nsamples;
@@ -176,24 +179,24 @@ void Gen::EmpiricalNoiseModel::configure(const WireCell::Configuration& cfg)
     m_spectral_data.clear();
 
     gen_elec_resp_default();
-
+    
     for (int ientry=0; ientry<nentries; ++ientry) {
         auto jentry = jdat[ientry];
         NoiseSpectrum *nsptr = new NoiseSpectrum();
 
         nsptr->plane = jentry["plane"].asInt();
         nsptr->nsamples = jentry["nsamples"].asInt();
-        nsptr->period = jentry["period"].asFloat();// * m_tres;
-        nsptr->gain = jentry["gain"].asFloat();// *m_gres;
-        nsptr->shaping = jentry["shaping"].asFloat();// * m_tres;
-        nsptr->wirelen = jentry["wirelen"].asFloat();// * m_wlres;
+        nsptr->period = jentry["period"].asFloat();// * m_tres;  
+        nsptr->gain = jentry["gain"].asFloat();// *m_gres;    
+        nsptr->shaping = jentry["shaping"].asFloat();// * m_tres; 
+        nsptr->wirelen = jentry["wirelen"].asFloat();// * m_wlres; 
         nsptr->constant = jentry["const"].asFloat();
 
         auto jfreqs = jentry["freqs"];
         const int nfreqs = jfreqs.size();
         nsptr->freqs.resize(nfreqs, 0.0);
         for (int ind=0; ind<nfreqs; ++ind) {
-	         nsptr->freqs[ind] = jfreqs[ind].asFloat();// * m_fres;
+	  nsptr->freqs[ind] = jfreqs[ind].asFloat();// * m_fres;
         }
         auto jamps = jentry["amps"];
         const int namps = jamps.size();
@@ -201,13 +204,12 @@ void Gen::EmpiricalNoiseModel::configure(const WireCell::Configuration& cfg)
         for (int ind=0; ind<namps; ++ind) {
             nsptr->amps[ind] = jamps[ind].asFloat();
         }
-	// put the constant term at the end of the amplitude ...
+	// put the constant term at the end of the amplitude ... 
 	// nsptr->amps[namps] = nsptr->constant;
-
+	
         resample(*nsptr);
-
         m_spectral_data[nsptr->plane].push_back(nsptr); // assumes ordered by wire length!
-    }
+    }        
 }
 
 
@@ -219,6 +221,8 @@ IChannelSpectrum::amplitude_t Gen::EmpiricalNoiseModel::interpolate(int iplane, 
     }
 
     const auto& spectra = it->second;
+
+    
 
     // Linearly interpolate spectral data to wire length.
 
@@ -248,7 +252,7 @@ IChannelSpectrum::amplitude_t Gen::EmpiricalNoiseModel::interpolate(int iplane, 
 
         const int nsamp = lo->amps.size();
         amplitude_t amp(nsamp);
-        for (int isamp=0; isamp<nsamp; ++isamp) { // regular amplitude ...
+        for (int isamp=0; isamp<nsamp; ++isamp) { // regular amplitude ... 
             amp[isamp] = lo->amps[isamp]*(1-mu) + hi->amps[isamp]*mu;
         }
 	// amp[nsamp] = lo->constant*(1-mu) + hi->constant*mu; // do the constant term ...
@@ -261,7 +265,7 @@ IChannelSpectrum::amplitude_t Gen::EmpiricalNoiseModel::interpolate(int iplane, 
 
 const std::vector<float>& Gen::EmpiricalNoiseModel::freq() const
 {
-  // assume frequency is universal ...
+  // assume frequency is universal ... 
   const int iplane = 0;
   auto it = m_spectral_data.find(iplane);
   const auto& spectra = it->second;
@@ -317,18 +321,18 @@ const IChannelSpectrum::amplitude_t& Gen::EmpiricalNoiseModel::operator()(int ch
     auto& amp_cache = m_amp_cache.at(iplane);
     auto lenamp = amp_cache.find(ilen);
     if (lenamp == amp_cache.end()) {
-      auto amp = interpolate(iplane, ilen*m_wlres); // interpolate ...
+      auto amp = interpolate(iplane, ilen*m_wlres); // interpolate ... 
       amp_cache[ilen] = amp;
     }
     lenamp = amp_cache.find(ilen);
-
-    // prepare to scale ...
+    
+    // prepare to scale ... 
     double db_gain = gain(chid);
     double db_shaping = shaping_time(chid);
 
     // get channel gain
-    //float ch_gain = 14 * units::mV/units::fC, ch_shaping = 2.0 * units::us;
-
+    //float ch_gain = 14 * units::mV/units::fC, ch_shaping = 2.0 * units::us; 
+    
     double ch_gain = db_gain, ch_shaping = db_shaping;
     if (m_chanstat) {		// allow for deviation from nominal
 	ch_gain = m_chanstat->preamp_gain(chid);
@@ -340,16 +344,16 @@ const IChannelSpectrum::amplitude_t& Gen::EmpiricalNoiseModel::operator()(int ch
     //    amplitude_t comb_amp;
     comb_amp = lenamp->second;
     comb_amp.pop_back();
-
+    
     if (fabs(ch_gain - db_gain ) > 0.01 * ch_gain){
-      // scale the amplitude, not the constant term ...
+      // scale the amplitude, not the constant term ...  
       for (int i=0;i!=nbin;i++){
 	comb_amp.at(i) *= ch_gain/db_gain;
       }
     }
-
+    
     if (fabs(ch_shaping-db_shaping) > 0.01*ch_shaping){
-      // scale the amplitude by different shaping time ...
+      // scale the amplitude by different shaping time ...   
       int nconfig = ch_shaping/units::us/0.1;
       auto resp1 = m_elec_resp_cache.find(nconfig);
       if (resp1 == m_elec_resp_cache.end()){
@@ -364,7 +368,7 @@ const IChannelSpectrum::amplitude_t& Gen::EmpiricalNoiseModel::operator()(int ch
 
       }
       resp1 = m_elec_resp_cache.find(nconfig);
-
+      
       nconfig = db_shaping/units::us/0.1;
       auto resp2 = m_elec_resp_cache.find(nconfig);
       if (resp2 == m_elec_resp_cache.end()){
@@ -377,18 +381,21 @@ const IChannelSpectrum::amplitude_t& Gen::EmpiricalNoiseModel::operator()(int ch
 	m_elec_resp_cache[nconfig] = ele_resp_amp;
       }
       resp2 = m_elec_resp_cache.find(nconfig);
-
+      
       for (int i=0;i!=nbin;i++){
 	comb_amp.at(i) *= resp1->second.at(i)/resp2->second.at(i);
       }
-
+      
     }
-
-
-    // add the constant terms ...
+    
+    
+    // add the constant terms ... 
     for (int i=0;i!=nbin;i++){
       comb_amp.at(i) = sqrt(pow(comb_amp.at(i),2) + pow(constant,2)); // units still in mV
     }
 
     return comb_amp;
 }
+
+
+

@@ -78,7 +78,7 @@ void Gen::AddCoherentNoise::configure(const WireCell::Configuration& cfg)
     auto jdat = Persist::load(m_spectra_file);
     const int ngroups = jdat.size();
 
-    for(const int igroup=0; igroup<ngroups; igroup++)
+    for(int igroup=0; igroup<ngroups; igroup++)
     {
       auto jentry = jdat[igroup];
       int wire_deltas = jentry["wire-delta"].asInt();
