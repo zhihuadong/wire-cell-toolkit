@@ -5,7 +5,6 @@ local wc = import "wirecell.jsonnet";
 local base = import "pgrapher/common/params.jsonnet";
 
 base {
-
     det : {
 
         // define the 4 APAs.  This must use the coordinate system
@@ -86,14 +85,13 @@ base {
     },
 
     elec: super.elec {
-
         // later defined in simparams.jsonnet
     },
 
 
-    sim : super.sim {
+    sim: super.sim {
 
-        // For running in LArSoft, the simulation must be in fixed time mode.
+        // For running in LArSoft, the simulation must be in fixed time mode. 
         fixed: true,
 
         // The "absolute" time (ie, in G4 time) that the lower edge of
@@ -101,9 +99,9 @@ base {
         // "fixed" notion.
         local tick0_time = -340*wc.us, // TriggerOffsetTPC from detectorclocks_icarus.fcl
 
-        local response_time_offset = 0.0*wc.us,  // modify to add a delay
+        // Open the ductor's gate a bit early.
+        local response_time_offset = $.det.response_plane / $.lar.drift_speed,
         local response_nticks = wc.roundToInt(response_time_offset / $.daq.tick),
-
 
         ductor : {
             nticks: $.daq.nticks + response_nticks,
@@ -111,15 +109,13 @@ base {
             start_time: tick0_time - response_time_offset,
         },
 
-        // If a ductor's time acceptance is increased then a Reframer
-        // can be used to chop off the early excess to meet readout
-        // assumptions.  Depending on the form of the ductor, the
-        // reframer will likely need it's "tags" configured.
-        // reframer: {
-        //    tbin: $.elec.fields.nticks,
-        //    nticks: $.daq.nticks,
-        // }
-
+        // To counter the enlarged duration of the ductor, a Reframer
+        // chops off the little early, extra time.  Note, tags depend on how 
+        reframer: {
+            tbin: response_nticks,
+            nticks: $.daq.nticks,
+        }
+        
     },
 
     files: {
@@ -130,7 +126,9 @@ base {
         noise: "sbn_fd_incoherent_noise.json.bz2",
         coherent_noise: "sbn_fd_coherent_noise.json.bz2",
 
-        chresp: null
+
+        chresp: null,
     },
 
 }
+
