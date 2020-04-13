@@ -11,8 +11,8 @@ digraph deps {
 	"WireCellSigProc";
 	"WireCellSio";
 	"WireCellUtil";
-	"WireCellApps" -> "WireCellIface"[color="black"];
 	"WireCellApps" -> "FFTWTHREADS"[color="black"];
+	"WireCellApps" -> "WireCellIface"[color="black"];
 	"WireCellAux" -> "WireCellIface"[color="black"];
 	"WireCellAux" -> "WireCellUtil"[color="gray",constraint=false];
 	"WireCellGen" -> "WireCellIface"[color="black"];
@@ -23,18 +23,18 @@ digraph deps {
 	"WireCellRess" -> "ZLIB"[color="black"];
 	"WireCellRoot" -> "WireCellIface"[color="black"];
 	"WireCellRoot" -> "ROOTSYS"[color="black"];
-	"WireCellRoot" -> "WireCellSigProc"[color="gray",constraint=false];
 	"WireCellRoot" -> "WireCellGen"[color="gray",constraint=false];
+	"WireCellRoot" -> "WireCellSigProc"[color="gray",constraint=false];
 	"WireCellSig" -> "WireCellAux"[color="black"];
 	"WireCellSigProc" -> "WireCellIface"[color="black"];
 	"WireCellSio" -> "WireCellIface"[color="black"];
+	"WireCellUtil" -> "WireCellRess"[color="black"];
 	"WireCellUtil" -> "EIGEN"[color="black"];
+	"WireCellUtil" -> "ZLIB"[color="black"];
+	"WireCellUtil" -> "SPDLOG"[color="black"];
 	"WireCellUtil" -> "FFTW"[color="black"];
 	"WireCellUtil" -> "BOOST"[color="black"];
-	"WireCellUtil" -> "ZLIB"[color="black"];
-	"WireCellUtil" -> "JSONCPP"[color="black"];
 	"WireCellUtil" -> "JSONNET"[color="black"];
-	"WireCellUtil" -> "WireCellRess"[color="black"];
-	"WireCellUtil" -> "SPDLOG"[color="black"];
 	"WireCellUtil" -> "DYNAMO"[color="black"];
+	"WireCellUtil" -> "JSONCPP"[color="black"];
 }
