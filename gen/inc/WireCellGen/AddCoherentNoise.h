@@ -39,7 +39,7 @@ namespace WireCell {
               IRandom::pointer m_rng;
 
               std::string m_spectra_file, m_rng_tn;
-	            int m_nsamples;
+	      int m_nsamples;
               double m_fluctuation;
               double m_period;
               double m_normalization;
