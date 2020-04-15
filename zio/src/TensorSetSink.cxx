@@ -28,39 +28,70 @@ bool Zio::TensorSetSink::operator()(const ITensorSet::pointer &in)
 {
     pre_flow();
     if (!m_flow) {
+        l->debug("[TensorSetSink {}:{}] no flow",
+                 m_node.nick(), m_portname);                
         return false;
     }
 
     if (!in) {  // eos
+        l->debug("[TensorSetSink {}:{}] got EOS",
+                 m_node.nick(), m_portname);                
         if (m_had_eos) {
             finalize();
             return false;
         }
         m_had_eos = true;
-        l->debug("TensorSetSink: send empty message as EOS");
-        zio::Message msg("FLOW"); // send empty as EOS
-        auto mtype = m_flow->put(msg);
-        if (mtype == zio::flow::EOT) {
-            l->debug("TensorSetSink: interupted EOS, assume EOT");
-            zio::Message eot;
-            m_flow->close(eot);
+        l->debug("[TensorSetSink {}:{}] send empty message as EOS",
+                 m_node.nick(), m_portname);                
+        zio::Message eos("FLOW"); // send empty DAT as WCT EOS
+        bool noto;
+        try {
+            noto = m_flow->put(eos);
+        }
+        catch (zio::flow::end_of_transmission) {
+            l->debug("[TensorSetSink {}:{}] receive EOT on flow put EOS",
+                     m_node.nick(), m_portname);
+
+            m_flow->eotack();
             m_flow = nullptr;
             return false;
         }
+        if (!noto) { // timeout
+            l->warn("[TensorSetSink {}:{}] timeout on flow put EOS",
+                    m_node.nick(), m_portname);
+            finalize();
+            return false;
+        }
+
         return true;
     }
 
     m_had_eos = false;
     zio::Message msg = Zio::pack(in);
 
-    auto mtype = m_flow->put(msg);
-    if (mtype == zio::flow::EOT) {
-        l->debug("TensorSetSink: EOT instead of DAT");
-        zio::Message eot;
-        m_flow->send_eot(eot);
+    l->debug("[TensorSetSink {}:{}] putting DAT",
+             m_node.nick(), m_portname);
+
+    bool noto;
+    try {
+        noto = m_flow->put(msg);
+    }
+    catch (zio::flow::end_of_transmission) {
+        l->debug("[TensorSetSink {}:{}] got EOT on flow put DAT",
+                 m_node.nick(), m_portname);
+        m_flow->eotack();
         m_flow = nullptr;
         return false;
     }
+    if (!noto) { // timeout
+        l->warn("[TensorSetSink {}:{}] timeout on flow put",
+                m_node.nick(), m_portname);
+        finalize();
+        return false;
+    }
+    l->debug("[TensorSetSink {}:{}] sent tensor as DAT",
+             m_node.nick(), m_portname);                
+
     return true;
 }
 

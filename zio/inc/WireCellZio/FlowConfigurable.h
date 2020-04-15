@@ -36,7 +36,6 @@ namespace WireCell {
             virtual void finalize();
 
         protected:
-            int m_timeout{1000}, m_credit{10};
             std::string m_portname{"flow"}, m_direction{"extract"}, m_bot_label{""};
             zio::Node m_node;
             zio::level::MessageLevel m_level{zio::level::info};
@@ -46,7 +45,7 @@ namespace WireCell {
             Log::logptr_t l;
 
             /// Subclass may use this for all but BOT.
-            typedef std::unique_ptr<zio::flow::Flow> flowptr_t;
+            typedef std::unique_ptr<zio::Flow> flowptr_t;
             flowptr_t m_flow;
 
             /// Called at end of configure.  Subclass may implement.

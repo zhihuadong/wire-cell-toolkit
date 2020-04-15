@@ -26,20 +26,20 @@ digraph deps {
 	"WireCellTbb" -> "WireCellIface"[color="black"];
 	"WireCellTbb" -> "TBB"[color="black"];
 	"WireCellTbb" -> "PTHREAD"[color="gray",constraint=false];
-	"WireCellUtil" -> "ZLIB"[color="black"];
-	"WireCellUtil" -> "EIGEN"[color="black"];
-	"WireCellUtil" -> "SPDLOG"[color="black"];
-	"WireCellUtil" -> "BOOST"[color="black"];
-	"WireCellUtil" -> "WireCellRess"[color="black"];
 	"WireCellUtil" -> "JSONNET"[color="black"];
+	"WireCellUtil" -> "SPDLOG"[color="black"];
+	"WireCellUtil" -> "EIGEN"[color="black"];
+	"WireCellUtil" -> "WireCellRess"[color="black"];
+	"WireCellUtil" -> "FFTW"[color="black"];
+	"WireCellUtil" -> "ZLIB"[color="black"];
 	"WireCellUtil" -> "DYNAMO"[color="black"];
 	"WireCellUtil" -> "JSONCPP"[color="black"];
-	"WireCellUtil" -> "FFTW"[color="black"];
+	"WireCellUtil" -> "BOOST"[color="black"];
 	"WireCellZio" -> "WireCellAux"[color="black"];
+	"WireCellZio" -> "ZYRE"[color="black"];
 	"WireCellZio" -> "ZMQ"[color="black"];
+	"WireCellZio" -> "ZIO"[color="black"];
 	"WireCellZio" -> "WireCellIface"[color="black"];
 	"WireCellZio" -> "CZMQ"[color="black"];
-	"WireCellZio" -> "ZIO"[color="black"];
-	"WireCellZio" -> "ZYRE"[color="black"];
 	"WireCellZio" -> "LIBTORCH"[color="gray",constraint=false];
 }

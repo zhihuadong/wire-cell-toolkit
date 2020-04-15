@@ -23,7 +23,7 @@ WireCell::Configuration Zio::FlowConfigurable::default_configuration() const
 {
     Configuration cfg;
     // zmq
-    cfg["timeout"] = m_timeout;
+    cfg["timeout"] = 1000;      // ms
     cfg["binds"] = Json::arrayValue;
     cfg["connects"] = Json::arrayValue;
     cfg["stype"] = m_stype;
@@ -36,7 +36,7 @@ WireCell::Configuration Zio::FlowConfigurable::default_configuration() const
     cfg["origin"] = (Json::UInt64)m_node.origin();
     cfg["level"] = (int)m_level;
     // flow
-    cfg["credit"] = m_credit;
+    cfg["credit"] = 10;
     // zdb
     cfg["attributes"] = Json::objectValue;
 
@@ -47,12 +47,20 @@ WireCell::Configuration Zio::FlowConfigurable::default_configuration() const
 
 void Zio::FlowConfigurable::configure(const WireCell::Configuration& cfg)
 {
-    m_timeout = get<int>(cfg, "timeout", m_timeout);
     const std::string nick = get<std::string>(cfg, "nodename", m_node.nick());
+
+    bool ok = user_configure(cfg);
+    if (!ok) {
+        l->critical("node {}: configuration failed", nick);
+        THROW(ValueError() << errmsg{"configuration failed for " + nick});
+    }
+
+    zio::timeout_t timeout(get<int>(cfg, "timeout", 1000));
+    int cred = get<int>(cfg, "credit", 10);
+
     m_node.set_nick(nick);
     m_node.set_origin(get(cfg, "origin",  (Json::UInt64)m_node.origin()));
     m_portname = get<std::string>(cfg, "portname", m_portname);
-    m_credit = get<int>(cfg, "credit", m_credit);
     m_level = (zio::level::MessageLevel)get<int>(cfg, "level", (int)m_level);
     m_stype = get<int>(cfg, "stype", m_stype);
     if (! (m_stype == ZMQ_CLIENT or m_stype == ZMQ_SERVER)) {
@@ -120,27 +128,18 @@ void Zio::FlowConfigurable::configure(const WireCell::Configuration& cfg)
         m_headers[key] = val.asString();
     }
 
-    zio::json fobj = {
-        {"flow", "BOT"},
-        {"direction",m_direction},
-        {"credit",m_credit},
-    };
-    for (auto key : cfg["attributes"].getMemberNames()) {
-        auto val = cfg["attributes"][key];
-        fobj[key] = val.asString();
+    zio::flow::direction_e dir;
+    if (m_direction == "inject") { dir = zio::flow::direction_e::inject; }
+    else if (m_direction == "extract") { dir = zio::flow::direction_e::extract; }
+    else {
+        THROW(RuntimeError() << errmsg{"unknown flow direction: " + m_direction});
     }
-    m_bot_label = fobj.dump();
 
-    m_flow = std::make_unique<zio::flow::Flow>(port);
+    m_flow = std::make_unique<zio::Flow>(port, dir, cred, timeout);
     if (!m_flow) {
         THROW(RuntimeError() << errmsg{"failed to make flow"});
     }
 
-    bool ok = user_configure(cfg);
-    if (!ok) {
-        l->critical("node {}: configuration failed", nick);
-        THROW(ValueError() << errmsg{"configuration failed"});
-    }
 
     l->debug("{}: going online with headers:", nick);
     for (const auto& hh : m_headers) {
@@ -154,93 +153,33 @@ void Zio::FlowConfigurable::configure(const WireCell::Configuration& cfg)
         THROW(ValueError() << errmsg{"online failed"});
     }
     post_configure();
+
+    zio::json fobj;
+    for (auto key : cfg["attributes"].getMemberNames()) {
+        auto val = cfg["attributes"][key];
+        fobj[key] = val.asString();
+    }
+    zio::Message msg;
+    msg.set_label_object(fobj);
+    bool noto = m_flow->bot(msg);
+    if (!noto) {
+        THROW(RuntimeError() << errmsg{"timeout in BOT " + m_portname});
+    }        
 }
 
 
 
 bool Zio::FlowConfigurable::pre_flow()
 {
-    if (m_did_bot) {
-        return true;
-    }
-    m_did_bot = true;           // call once
-
-    const std::string nick = m_node.nick();
-
-    zio::Message msg("FLOW");
-    msg.set_label(m_bot_label);
-
-    if (m_stype == ZMQ_SERVER) {
-        // This strains the flow protocol a bit to pretend to be a
-        // server.  It'll fall over if multiple clients try to
-        // connect.  But it allows some testing with a simpler graph.
-        l->debug("node {}: serverish BOT recv", nick);
-        auto mtype = m_flow->recv_bot(msg, m_timeout);
-        if (mtype == zio::flow::BOT) {
-            l->debug("node {}: serverish BOT send", nick);
-            m_flow->send_bot(msg);
-        }
-        else if (mtype == zio::flow::timeout) {
-            l->warn("node {}: serverish BOT recv timeout", nick);
-            m_flow = nullptr;
-            return false;
-        }
-        else if (mtype == zio::flow::EOT) {
-            l->warn("node {}: serverish BOT recv EOT", nick);
-            mtype = m_flow->finish(msg, m_timeout);
-            m_flow = nullptr;
-            return false;
-        }
-    }
-    else {                      // client
-        l->debug("node {}: clientish BOT send", nick);
-        m_flow->send_bot(msg);
-        l->debug("node {}: clientish BOT recv", nick);
-        auto mtype = m_flow->recv_bot(msg, m_timeout);
-        if (mtype == zio::flow::BOT) {
-            l->debug("node {}: clientish ready", nick);
-        }
-        else if (mtype == zio::flow::timeout) {
-            l->warn("node {}: clientish BOT recv timeout ({})",
-                    nick, m_timeout);
-            m_flow = nullptr;
-            return false;
-        }
-        else if (mtype == zio::flow::EOT) {
-            l->warn("node {}: clientish BOT recv EOT", nick);
-            mtype = m_flow->finish(msg, m_timeout);
-            m_flow = nullptr;
-            return false;
-        }
-    }
-
-    // if (m_direction == "extract") {
-    //     zio::Message msg;
-    //     auto mtype = m_flow->recv_pay(msg, 0);
-    //     if (mtype == zio::flow::EOT) {
-    //         l->warn("node {}: extract PAY recv EOT", nick);
-    //         m_flow->send_eot(msg);
-    //         m_flow = nullptr;
-    //         return false;
-    //     }
-    //     else if (mtype == zio::flow::PAY) {
-    //         l->debug("node {}: slurp pay for {} (got {})", nick, m_direction, mtype);
-    //     }
-    // }
-    // else {                      // inject
-    //     int pay = m_flow->flush_pay();
-    //     l->debug("node {}: flush pay for {} (sent {})", nick, m_direction, pay);
-    // }
-
     return true;
 }
+
 void Zio::FlowConfigurable::finalize()
 {
     const std::string nick = m_node.nick();
     l->debug("node {}: FINALIZE", nick);
     if (m_flow) {
-        zio::Message msg;
-        m_flow->close(msg, m_timeout);
+        m_flow->eot();
         m_flow = nullptr;
     }
     m_node.offline();

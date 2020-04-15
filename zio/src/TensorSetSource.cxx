@@ -8,7 +8,9 @@ WIRECELL_FACTORY(ZioTensorSetSource, WireCell::Zio::TensorSetSource,
 
 using namespace WireCell;
 
-Zio::TensorSetSource::TensorSetSource() : FlowConfigurable("inject"), l(Log::logger("zio")), m_had_eos(false) {}
+Zio::TensorSetSource::TensorSetSource()
+    : FlowConfigurable("inject")
+    , l(Log::logger("zio")){}
 
 Zio::TensorSetSource::~TensorSetSource() {}
 
@@ -22,26 +24,29 @@ bool Zio::TensorSetSource::operator()(ITensorSet::pointer &out)
     }
 
     zio::Message msg;
-    auto mtype = m_flow->recv_dat(msg, m_timeout);
-    if (mtype == zio::flow::EOT) {
-        zio::Message eot;
-        m_flow->send_eot(eot);
+    bool noto;
+    try {
+        noto = m_flow->get(msg);
+    }
+    catch (zio::flow::end_of_transmission) {
+        l->debug("[TensorSetSource {}:{}] got EOT on flow get DAT",
+                 m_node.nick(), m_portname);
+        m_flow->eotack();
         m_flow = nullptr;
-        return false;           // timeout, eot or other error
+        return true;            // this counts as EOS
+    }
+    if (!noto) {                // fixme: maybe loop a few times before giving up?
+        l->warn("[TensorSetSource {}:{}] timeout on flow get",
+                m_node.nick(), m_portname);                
+        finalize();
+        return false;
     }
 
     const zio::multipart_t& pls = msg.payload();
     if (!pls.size()) {           // EOS
-        if (m_had_eos) {         // 2nd
-            finalize();
-            return false;
-        }
-        m_had_eos = true;
         return true;
     }
-    m_had_eos = false;
 
     out = Zio::unpack(msg);
-
     return true;
 }

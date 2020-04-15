@@ -49,6 +49,9 @@ ITensorSet::pointer make_tensor_set()
 
 void middleman(zio::socket_t& link)
 {
+    const int cred = 10;
+    zio::timeout_t timeout(5000);
+
     link.send(msg_ready, zio::send_flags::none); // ready
 
     zio::Node node("middleman");
@@ -58,95 +61,119 @@ void middleman(zio::socket_t& link)
     // server/client can't to inproc, "@" is "abstract namespace" and Linux-only
     iport->bind();
     oport->bind();
-    zio::flow::Flow iflow(iport), oflow(oport);
+    zio::Flow iflow(iport, zio::flow::direction_e::inject, cred, timeout);
+    zio::Flow oflow(oport, zio::flow::direction_e::extract, cred, timeout);
     node.online();
 
     zio::debug("[middleman]: online");
 
-    zio::poller_t<> ipoll, opoll, lpoll;
-    ipoll.add(iport->socket(), zio::event_flags::pollin);
-    opoll.add(oport->socket(), zio::event_flags::pollin);
-    lpoll.add(link, zio::event_flags::pollin);
+    zio::poller_t<> poller;
+    poller.add(iport->socket(), zio::event_flags::pollin);
+    poller.add(oport->socket(), zio::event_flags::pollin);
+    poller.add(link, zio::event_flags::pollin);
 
+    bool noto; // no timeout
 
-    zio::debug("[middleman]: recv bot from giver"); 
-    {   // say hi to input
-        zio::Message bot;
-        auto mtype = iflow.recv_bot(bot);
-        assert (mtype == zio::flow::BOT);
-        zio::debug("[middleman]: giver BOT: {}", bot.label());
-        auto fobj = bot.label_object();
-        fobj["direction"] = "inject";
-        bot.set_label_object(fobj);
-        iflow.send_bot(bot);
-        iflow.flush_pay();
+    zio::debug("[middleman]: bot handshake with {}", iport->name()); 
+    noto = iflow.bot();    // let EOT exception past
+    if (!noto) {
+        zio::debug("[middleman]: bot handshake timeout with {}", iport->name());
+        throw(std::runtime_error("unexpected bot handshake timeout with " + iport->name()));
     }
 
-    zio::debug("[middleman]: recv bot from taker"); 
-    {   // say hi to output
-        zio::Message bot;
-        auto mtype = oflow.recv_bot(bot);
-        assert(mtype == zio::flow::BOT);
-        zio::debug("[middleman]: taker BOT: {}", bot.label());
-        auto fobj = bot.label_object();
-        fobj["direction"] = "extract";
-        bot.set_label_object(fobj);
-        oflow.send_bot(bot);
+    zio::debug("[middleman]: bot handshake with {}", oport->name()); 
+    noto = oflow.bot();    // let EOT exception past
+    if (!noto) {
+        zio::debug("[middleman]: bot handshake timeout with {}", oport->name());
+        throw(std::runtime_error("unexpected bot handshake timeout with " + oport->name()));
     }
 
-    const auto wait = std::chrono::milliseconds{1000};
+    iflow.pay();                // flushes pay to giver client
+    oflow.pay();                // income pay from taker client, if any
+
+    // a short max wait on flow ports.  This makes the loop into a
+    // slow spin.  Efectively ping-ponging between iport/oport.  A
+    // more proper way is to put both in a common poll.
+    const auto wait = std::chrono::milliseconds{100};
 
     zio::debug("[middleman]: starting loop with timeout {}", wait.count()); 
 
-    std::vector<zio::poller_event<>> events(1);
+    std::vector<zio::poller_event<>> events(3);
 
-    while (true) {
+    bool keep_going = true;
+    while (keep_going) {
 
-        if (lpoll.wait_all(events, std::chrono::milliseconds{0})) {
-            zio::info("[middleman]: link hit");
-            zio::Message eot;
-            iflow.close(eot);
-            oflow.close(eot);
-            break;
-        }
-        
-        if (opoll.wait_all(events, wait)) {
-            zio::Message msg;
-            auto mtype = oflow.recv(msg);
-            zio::debug("[middleman]: oport hit {}", zio::flow::name(mtype));
-                
-            if (mtype == zio::flow::EOT) {
-                oflow.finish(msg);
-                iflow.close(msg);
-                break;
-            }
-        }
+        int nhits = poller.wait_all(events, wait);
 
-        iflow.flush_pay();
-        if (ipoll.wait_all(events, wait)) {
-            zio::Message msg;
-            auto mtype = iflow.recv(msg);
-            zio::debug("[middleman]: iport hit {}", zio::flow::name(mtype));
-                
-            if (mtype == zio::flow::EOT) {
-                iflow.send_eot(msg);
-                oflow.close(msg);
+        for (int ihit=0; ihit < nhits; ++ihit) {
+            if (events[ihit].socket == link) {
+                zio::info("[middleman]: link hit");
+                iflow.eot();
+                oflow.eot();
+                keep_going = false;
                 break;
             }
 
-            if (mtype == zio::flow::DAT) {
-                mtype = oflow.put(msg);
-                if (mtype == zio::flow::EOT) {
-                    zio::debug("[middleman]: EOT on DAT forward");
-                    zio::Message eot;
-                    oflow.send_eot(eot);
-                    iflow.close(eot);
+            if (events[ihit].socket == oport->socket()) {
+
+                zio::Message msg;
+                bool noto = oflow.recv(msg); // doesn't throw on EOT
+                assert(noto);                // poll assures
+                zio::debug("[middleman]: oport hit {}", msg.label());
+                
+                const zio::flow::Label lab(msg);
+                if (lab.msgtype() == zio::flow::msgtype_e::eot) {
+                    oflow.eotack(msg);
+                    iflow.eot(msg);
+                    keep_going = false;
                     break;
+                }
+                // otherwise, this must be pay, which should be
+                // processed correctly by recv().
+                assert(lab.msgtype() == zio::flow::msgtype_e::pay);
+
+            }
+
+            if (events[ihit].socket == iport->socket()) {
+
+                zio::Message msg;
+                bool noto = iflow.recv(msg); // doesn't throw on EOT
+                assert(noto);                // poll assures
+                zio::debug("[middleman]: iport hit {}", msg.label());
+                
+                const zio::flow::Label lab(msg);
+                if (lab.msgtype() == zio::flow::msgtype_e::eot) {
+                    zio::debug("[middleman]: EOT from {}", iport->name());
+                    iflow.eotack(msg);
+                    oflow.eot(msg);
+                    keep_going = false;
+                    break;
+                }
+
+                if (lab.msgtype() == zio::flow::msgtype_e::dat) {
+                    bool noto;
+                    try {
+                        noto = oflow.put(msg);
+                    }
+                    catch (zio::flow::end_of_transmission) {
+                        zio::debug("[middleman]: EOT from PUT with {}", iport->name());
+                        oflow.eotack();
+                        iflow.eot();
+                        keep_going = false;
+                        break;
+                    }
+                    if (!noto) {
+                        zio::debug("[middleman]: timeout from PUT with {}", iport->name());
+                        iflow.eot();
+                        oflow.eot();
+                        keep_going = false;
+                        break;
+                    }
+                    oflow.pay(); // flush pay
                 }
             }
         }
     }
-
     link.send(msg_done, zio::send_flags::none);    
     zio::info("[middleman]: going offline");
     node.offline();
@@ -160,7 +187,7 @@ void giver(zio::socket_t& link)
     auto cfg = sink.default_configuration();
     cfg["verbose"] = 0;
     cfg["nodename"] = "giver";
-    cfg["portname"] = "give";
+    cfg["portname"] = "givec";
     cfg["timeout"] = 5000;
     cfg["connects"][0]["nodename"] = "middleman";
     cfg["connects"][0]["portname"] = "takes";
@@ -202,7 +229,7 @@ void taker(zio::socket_t& link)
     auto cfg = src.default_configuration();
     cfg["verbose"] = 0;
     cfg["nodename"] = "taker";
-    cfg["portname"] = "take";
+    cfg["portname"] = "takec";
     cfg["timeout"] = 5000;
     cfg["connects"][0]["nodename"] = "middleman";
     cfg["connects"][0]["portname"] = "gives";
