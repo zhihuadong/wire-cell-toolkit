@@ -14,7 +14,6 @@
 
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/ITerminal.h"
-#include "WireCellUtil/Logging.h"
 #include "zio/node.hpp"
 #include "zio/flow.hpp"
 
@@ -41,8 +40,6 @@ namespace WireCell {
             zio::level::MessageLevel m_level{zio::level::info};
             int m_stype{ZMQ_CLIENT};
             zio::headerset_t m_headers{};
-
-            Log::logptr_t l;
 
             /// Subclass may use this for all but BOT.
             typedef std::unique_ptr<zio::Flow> flowptr_t;

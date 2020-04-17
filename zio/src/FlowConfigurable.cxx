@@ -1,4 +1,5 @@
 #include "WireCellUtil/Exceptions.h"
+#include "WireCellUtil/Logging.h"
 #include "WireCellZio/FlowConfigurable.h"
 
 #include <memory>
@@ -9,13 +10,11 @@ Zio::FlowConfigurable::FlowConfigurable(const std::string& direction,
                                         const std::string& nodename)
     : m_direction(direction)
     , m_node(nodename, (zio::origin_t)this)
-    , l(Log::logger("zio"))
 {
 }
 
 Zio::FlowConfigurable::~FlowConfigurable()
 {
-    l->info("FlowConfigurable destroying node");
     m_node.offline();
 }
 
@@ -47,11 +46,12 @@ WireCell::Configuration Zio::FlowConfigurable::default_configuration() const
 
 void Zio::FlowConfigurable::configure(const WireCell::Configuration& cfg)
 {
+    auto log = Log::logger("wctzio");
     const std::string nick = get<std::string>(cfg, "nodename", m_node.nick());
 
     bool ok = user_configure(cfg);
     if (!ok) {
-        l->critical("node {}: configuration failed", nick);
+        log->critical("node {}: configuration failed", nick);
         THROW(ValueError() << errmsg{"configuration failed for " + nick});
     }
 
@@ -64,7 +64,7 @@ void Zio::FlowConfigurable::configure(const WireCell::Configuration& cfg)
     m_level = (zio::level::MessageLevel)get<int>(cfg, "level", (int)m_level);
     m_stype = get<int>(cfg, "stype", m_stype);
     if (! (m_stype == ZMQ_CLIENT or m_stype == ZMQ_SERVER)) {
-        l->error("node {}: may only use CLIENT or SERVER stype, got {}",
+        log->error("node {}: may only use CLIENT or SERVER stype, got {}",
                  nick, m_stype);
         THROW(RuntimeError() << errmsg{"unsupported socket type"});
     }
@@ -73,7 +73,7 @@ void Zio::FlowConfigurable::configure(const WireCell::Configuration& cfg)
     if (! cfg["verbose"].empty()) {
         verbose = cfg["verbose"].asInt();
         if (verbose) {
-            l->debug("node {}: verbose", nick);
+            log->debug("node {}: verbose", nick);
             zsys_init();
             m_node.set_verbose(verbose);
         }
@@ -84,32 +84,32 @@ void Zio::FlowConfigurable::configure(const WireCell::Configuration& cfg)
     auto binds = cfg["binds"];
     auto connects = cfg["connects"];
     if (binds.empty() and connects.empty()) {
-        l->info("node {}: binding {} to ephemeral", nick, m_portname);
+        log->info("node {}: binding {} to ephemeral", nick, m_portname);
         port->bind();       // default: ephemeral bind
     }
     else {
         for (auto bind : binds) {
-            l->debug("node {}: bind: {}", nick, bind);
+            log->debug("node {}: bind: {}", nick, bind);
             if (bind.empty()) {
-                l->info("node {}: bind to ephemeral", nick);
+                log->info("node {}: bind to ephemeral", nick);
                 port->bind();
                 continue;
             }
             if (bind.isString()) {
-                l->info("node {}: bind to {}", nick, bind);
+                log->info("node {}: bind to {}", nick, bind);
                 port->bind(bind.asString());
                 continue;
             }
             if (bind.isObject()) {
-                l->info("node {}: bind to {}", nick, bind);
+                log->info("node {}: bind to {}", nick, bind);
                 port->bind(bind["host"].asString(), bind["tcpportnum"].asInt());
                 continue;
             }
-            l->error("node {}: unknown bind type {}", nick, bind);
+            log->error("node {}: unknown bind type {}", nick, bind);
             THROW(RuntimeError() << errmsg{"unknown bind type"});
         }
         for (auto conn : connects) {
-            l->debug("node {}: connect: {}", nick, conn);
+            log->debug("node {}: connect: {}", nick, conn);
             if (conn.isString()) {
                 port->connect(conn.asString());
                 continue;
@@ -118,7 +118,7 @@ void Zio::FlowConfigurable::configure(const WireCell::Configuration& cfg)
                 port->connect(conn["nodename"].asString(), conn["portname"].asString());
                 continue;
             }
-            l->error("node {}: unknown connect type {}", nick, conn);
+            log->error("node {}: unknown connect type {}", nick, conn);
             THROW(RuntimeError() << errmsg{"unknown connect type"});
         }
     }
@@ -141,15 +141,15 @@ void Zio::FlowConfigurable::configure(const WireCell::Configuration& cfg)
     }
 
 
-    l->debug("{}: going online with headers:", nick);
+    log->debug("{}: going online with headers:", nick);
     for (const auto& hh : m_headers) {
-        l->debug("\t{} = {}", hh.first, hh.second);
+        log->debug("\t{} = {}", hh.first, hh.second);
     }
     m_node.online(m_headers);
 
     ok = user_online();
     if (!ok) {
-        l->critical("node {}: failed to go online", nick);
+        log->critical("node {}: failed to go online", nick);
         THROW(ValueError() << errmsg{"online failed"});
     }
     post_configure();
@@ -177,7 +177,6 @@ bool Zio::FlowConfigurable::pre_flow()
 void Zio::FlowConfigurable::finalize()
 {
     const std::string nick = m_node.nick();
-    l->debug("node {}: FINALIZE", nick);
     if (m_flow) {
         m_flow->eot();
         m_flow = nullptr;

@@ -7,7 +7,6 @@
 
 #include "WireCellZio/FlowConfigurable.h"
 #include "WireCellIface/ITensorSetSink.h"
-#include "WireCellUtil/Logging.h"
 
 namespace WireCell
 {
@@ -23,7 +22,6 @@ public:
     virtual bool operator()(const ITensorSet::pointer &in);
 
 private:
-    Log::logptr_t l;
     bool m_had_eos;
 
     virtual void post_configure();

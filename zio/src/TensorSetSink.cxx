@@ -2,6 +2,7 @@
 #include "WireCellZio/FlowConfigurable.h"
 #include "WireCellZio/TensUtil.h"
 #include "WireCellUtil/NamedFactory.h"
+#include "WireCellUtil/Logging.h"
 
 WIRECELL_FACTORY(ZioTensorSetSink, WireCell::Zio::TensorSetSink,
                  WireCell::ITensorSetSink, WireCell::IConfigurable)
@@ -10,7 +11,6 @@ using namespace WireCell;
 
 Zio::TensorSetSink::TensorSetSink()
     : FlowConfigurable("extract"),
-      l(Log::logger("zio")),
       m_had_eos(false)
 {
 }
@@ -26,22 +26,24 @@ void Zio::TensorSetSink::post_configure()
 
 bool Zio::TensorSetSink::operator()(const ITensorSet::pointer &in)
 {
+    auto log = Log::logger("wctzio");
+
     pre_flow();
     if (!m_flow) {
-        l->debug("[TensorSetSink {}:{}] no flow",
+        log->debug("[TensorSetSink {}:{}] no flow",
                  m_node.nick(), m_portname);                
         return false;
     }
 
     if (!in) {  // eos
-        l->debug("[TensorSetSink {}:{}] got EOS",
+        log->debug("[TensorSetSink {}:{}] got EOS",
                  m_node.nick(), m_portname);                
         if (m_had_eos) {
             finalize();
             return false;
         }
         m_had_eos = true;
-        l->debug("[TensorSetSink {}:{}] send empty message as EOS",
+        log->debug("[TensorSetSink {}:{}] send empty message as EOS",
                  m_node.nick(), m_portname);                
         zio::Message eos("FLOW"); // send empty DAT as WCT EOS
         bool noto;
@@ -49,7 +51,7 @@ bool Zio::TensorSetSink::operator()(const ITensorSet::pointer &in)
             noto = m_flow->put(eos);
         }
         catch (zio::flow::end_of_transmission) {
-            l->debug("[TensorSetSink {}:{}] receive EOT on flow put EOS",
+            log->debug("[TensorSetSink {}:{}] receive EOT on flow put EOS",
                      m_node.nick(), m_portname);
 
             m_flow->eotack();
@@ -57,11 +59,13 @@ bool Zio::TensorSetSink::operator()(const ITensorSet::pointer &in)
             return false;
         }
         if (!noto) { // timeout
-            l->warn("[TensorSetSink {}:{}] timeout on flow put EOS",
+            log->warn("[TensorSetSink {}:{}] timeout on flow put EOS",
                     m_node.nick(), m_portname);
             finalize();
             return false;
         }
+        log->debug("[TensorSetSink {}:{}] sent EOS",
+                 m_node.nick(), m_portname);                
 
         return true;
     }
@@ -69,7 +73,7 @@ bool Zio::TensorSetSink::operator()(const ITensorSet::pointer &in)
     m_had_eos = false;
     zio::Message msg = Zio::pack(in);
 
-    l->debug("[TensorSetSink {}:{}] putting DAT",
+    log->debug("[TensorSetSink {}:{}] putting DAT",
              m_node.nick(), m_portname);
 
     bool noto;
@@ -77,19 +81,19 @@ bool Zio::TensorSetSink::operator()(const ITensorSet::pointer &in)
         noto = m_flow->put(msg);
     }
     catch (zio::flow::end_of_transmission) {
-        l->debug("[TensorSetSink {}:{}] got EOT on flow put DAT",
+        log->debug("[TensorSetSink {}:{}] got EOT on flow put DAT",
                  m_node.nick(), m_portname);
         m_flow->eotack();
         m_flow = nullptr;
         return false;
     }
     if (!noto) { // timeout
-        l->warn("[TensorSetSink {}:{}] timeout on flow put",
+        log->warn("[TensorSetSink {}:{}] timeout on flow put",
                 m_node.nick(), m_portname);
         finalize();
         return false;
     }
-    l->debug("[TensorSetSink {}:{}] sent tensor as DAT",
+    log->debug("[TensorSetSink {}:{}] sent tensor as DAT",
              m_node.nick(), m_portname);                
 
     return true;

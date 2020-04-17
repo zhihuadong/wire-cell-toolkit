@@ -7,7 +7,6 @@
 
 #include "WireCellZio/FlowConfigurable.h"
 #include "WireCellIface/ITensorSetSource.h"
-#include "WireCellUtil/Logging.h"
 
 namespace WireCell
 {
@@ -23,7 +22,6 @@ public:
     virtual bool operator()(ITensorSet::pointer &out);
 
 private:
-    Log::logptr_t l;
     bool m_had_eos;
     ITensorSet::vector m_tensors; // current set of depos
 };
