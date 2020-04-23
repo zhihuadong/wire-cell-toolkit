@@ -18,10 +18,14 @@ fi
 
 # take wire-cell from build
 czf=$blddir/zio/check_zioflow
-if [ ! -x $czf ] ; then
-    echo "No check program found: $czf"
-    exit -1
-fi
+for one in give take 
+do
+    
+    if [ ! -x ${czf}_${one} ] ; then
+        echo "No check program found: ${czf}_${one}"
+        exit -1
+    fi
+done
 
 tmpdir=$(mktemp -d /tmp/wct-issue54.XXXX)
 echo $tmpdir
@@ -32,14 +36,21 @@ if [ ! -f $cfg ] ; then
     exit -1
 fi
 
-cat <<EOF > $tmpdir/Procfile
-czf: $czf
-zio: zio flow-file-server -v debug -n zioflow -p flow $cfg
+cat <<EOF > $tmpdir/Procfile.give
+giv: ${czf}_give
+zio: zio flow-file-server -n zioflow -p flow $cfg
+EOF
+
+cat <<EOF > $tmpdir/Procfile.take
+tak: ${czf}_take
+zio: zio flow-file-server -n zioflow -p flow $cfg
 EOF
 
 set -x
 cd $tmpdir
-$topdir/util/scripts/shoreman 
+$topdir/util/scripts/shoreman Procfile.give
+
+$topdir/util/scripts/shoreman Procfile.take
 
 
 #rm -rf $tmpdir

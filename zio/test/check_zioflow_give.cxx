@@ -36,18 +36,8 @@ int main()
     g_cfg["connects"][0]["portname"] = mm_iport;
     g_cfg["attributes"]["stream"] = "check_zioflow";
 
-    Configuration t_cfg;
-    t_cfg["verbose"] = 0;
-    t_cfg["nodename"] = "taker";
-    t_cfg["portname"] = "takec";
-    t_cfg["timeout"] = 5000;
-    t_cfg["connects"][0]["nodename"] = mm_node;
-    t_cfg["connects"][0]["portname"] = mm_oport;
-    t_cfg["attributes"]["stream"] = "check_zioflow";
-    
     zio::context_t ctx;
     zio::zactor_t g(ctx, flow_giver, g_cfg);
-    //zio::zactor_t t(ctx, flow_taker, t_cfg);
 
     zio::message_t msg;
     {
@@ -55,11 +45,6 @@ int main()
         Assert(res);
         log->info("giver returned");
     }
-    // {
-    //     auto res = t.link().recv(msg, zio::recv_flags::none);
-    //     Assert(res);
-    //     log->info("taker returned");
-    // }
 
     return 0;
 }
