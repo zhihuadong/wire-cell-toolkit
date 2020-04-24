@@ -51,3 +51,4 @@ clusters-*.json
 *.zip
 data
 calgrind.*
+*.hdf
