@@ -142,8 +142,7 @@ local chsel = [
     type: 'ChannelSelector',
     name: 'chsel%d' % n,
     data: {
-      channels: std.range( 1056*(n%2) + 13312*(n-n%2)/2, 1056*(n%2+1) -1 + 13312*(n-n%2)/2 )
-      + std.range(1056*2 + 13312*(n-n%2)/2, 13312 - 1 + 13312*(n-n%2)/2),
+      channels: util.anode_channels(n),
       // tags: ['orig%d' % n], // traces tag
     },
   }, nin=1, nout=1)
