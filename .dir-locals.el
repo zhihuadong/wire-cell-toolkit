@@ -1,4 +1,8 @@
-(c-set-offset 'access-label -2)
-(c-set-offset 'inline-open 0)
-(c-set-offset 'case-label 4)
-(c-set-offset 'inlambda 0)
+((nil . ((fill-column . 80)))
+ (c++-mode . ((c-file-style . "stroustup")
+            (c-file-offsets
+             (access-label -2)
+             (inline-open 0)
+             (case-label 4)
+             (inlambda 0)))))
+
