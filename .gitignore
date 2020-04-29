@@ -52,3 +52,5 @@ clusters-*.json
 data
 calgrind.*
 *.hdf
+wct-deps.dot
+
