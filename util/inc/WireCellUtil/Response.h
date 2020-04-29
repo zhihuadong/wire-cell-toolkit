@@ -190,7 +190,7 @@ namespace WireCell {
 	    // Create warm electronics response function.  Gain is an
 	    // arbitrary scale, typically in [voltage/charge], and
 	    // shaping time in WCT system of units.
-	    WarmElec(double gain=14*units::mV/units::fC, double shaping=1.0*units::us);
+	    WarmElec(double gain=30*units::mV/units::fC, double shaping=1.3*units::us);
 	    virtual ~WarmElec();
 
 	    // Return the response at given time.  Time is in WCT
