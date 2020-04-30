@@ -368,12 +368,10 @@ bool Sig::Decon2DResponse::operator()(const ITensorSet::pointer &in, ITensorSet:
     log->trace("TRACE {}", __LINE__);
 
     // Eigen to TensorSet
-    // auto owf_ten = Aux::eigen_array_to_simple_tensor<std::complex<float> >(c_data);
+    auto owf_ten = Aux::eigen_array_to_simple_tensor<std::complex<float> >(c_data);
 
     // Debug: inverte fft and save out
-    c_data = Array::idft_cc(c_data, 1);
-    r_data = Array::idft_cr(c_data, 0);
-    auto owf_ten = Aux::eigen_array_to_simple_tensor<float>(r_data);
+    // auto owf_ten = Aux::eigen_array_to_simple_tensor<float>(r_data);
 
     // save back to ITensorSet
     ITensor::vector *itv = new ITensor::vector;
