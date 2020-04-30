@@ -6,9 +6,6 @@
 
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/ITensorSetFilter.h"
-// #include "WireCellIface/IAnodePlane.h"
-// #include "WireCellIface/IChannelResponse.h"
-// #include "WireCellIface/IFieldResponse.h"
 #include "WireCellUtil/Logging.h"
 
 namespace WireCell {
@@ -29,12 +26,6 @@ namespace WireCell {
 
             Log::logptr_t log;
             Configuration m_cfg;  /// copy of configuration
-
-            // IAnodePlane::pointer m_anode;
-
-            // IChannelResponse::pointer m_cresp;
-
-            // IFieldResponse::pointer m_fresp;
         };
     }  // namespace Sig
 }  // namespace WireCell

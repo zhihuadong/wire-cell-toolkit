@@ -35,28 +35,6 @@ Configuration Sig::Decon2DFilter::default_configuration() const
 void Sig::Decon2DFilter::configure(const WireCell::Configuration &cfg)
 {
     m_cfg = cfg;
-
-    // m_anode = Factory::find_tn<IAnodePlane>(get<std::string>(m_cfg, "anode", "Anode"));
-    // if (!m_anode) {
-    //     THROW(ValueError() << errmsg{"Sig::Decon2DFilter::configure !m_anode"});
-    // }
-
-    // auto cresp_n = get<std::string>(m_cfg, "per_chan_resp", "PerChannelResponse");
-    // if (!cresp_n.empty()) {
-    //     m_cresp = Factory::find_tn<IChannelResponse>(cresp_n);
-    //     if (!m_cresp) {
-    //         THROW(ValueError() << errmsg{"Sig::Decon2DFilter::configure !m_cresp"});
-    //     }
-    // }
-    // else {
-    //     m_cresp = nullptr;
-    //     log->warn("Sig::Decon2DFilter::configure No PerChannelResponse");
-    // }
-
-    // m_fresp = Factory::find_tn<IFieldResponse>(get<std::string>(m_cfg, "field_response", "FieldResponse"));
-    // if (!m_fresp) {
-    //     THROW(ValueError() << errmsg{"Sig::Decon2DFilter::configure !m_fresp"});
-    // }
 }
 
 namespace {
@@ -119,27 +97,11 @@ bool Sig::Decon2DFilter::operator()(const ITensorSet::pointer &in, ITensorSet::p
     const std::vector<std::string> filter_names{"Wire_ind", "Wire_ind", "Wire_col"};
 
     // bins
-    // double m_period = get(set_md, "tick", 0.5 * units::microsecond);
-    // int m_fft_nwires = nchans;
     int m_pad_nwires = 0;
-    // int m_fft_nticks = nticks;
-    // int m_pad_nticks = 0;
 
     // FIXME: figure this out
     int m_nwires = nchans;
     int m_nticks = nticks;
-
-    // time offset
-    // double m_fine_time_offset = get<double>(m_cfg, "ftoffset", 0.0 * units::microsecond);
-    // double m_coarse_time_offset = get<double>(m_cfg, "ctoffset", -8.0 * units::microsecond);
-    // auto fr = m_fresp->field_response();
-    // double m_intrinsic_time_offset = fr.origin / fr.speed;
-
-    // gain, shaping time, other applification factors
-    // double m_gain = get<double>(m_cfg, "gain", 14.0 * units::mV / units::fC);
-    // double m_shaping_time = get<double>(m_cfg, "shaping_time", 2.2 * units::microsecond);
-    // double m_inter_gain = get<double>(m_cfg, "inter_gain", 1.2);
-    // double m_ADC_mV = get<double>(m_cfg, "ADC_mV", 4096 / (2000. * units::mV));
 
     // TensorSet to Eigen
     WireCell::Array::array_xxc c_data = Aux::itensor_to_eigen_array<std::complex<float>>(iwf_ten);
@@ -170,9 +132,6 @@ bool Sig::Decon2DFilter::operator()(const ITensorSet::pointer &in, ITensorSet::p
     Sig::restore_baseline(r_data);
 
     // Eigen to TensorSet
-    // auto owf_ten = Aux::eigen_array_to_simple_tensor<std::complex<float> >(c_data);
-
-    // Debug: inverte fft and save out
     auto owf_ten = Aux::eigen_array_to_simple_tensor<float>(r_data);
 
     // save back to ITensorSet
