@@ -67,6 +67,6 @@ function(params, tools, override = {}) {
       process_planes: [0, util.anode_split(anode.data.ident)], // balance the left and right split
 
     } + override,
-  }, nin=1, nout=1, uses=[anode, tools.field] + pc.uses + spfilt),
+  }, nin=1, nout=1, uses=[anode, eresponse, tools.field] + pc.uses + spfilt),
 
 }
