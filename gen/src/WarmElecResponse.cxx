@@ -1,5 +1,6 @@
 #include "WireCellGen/WarmElecResponse.h"
 
+#include "WireCellUtil/FFTBestLength.h"
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/Response.h"
 
@@ -32,7 +33,11 @@ void Gen::WarmElecResponse::configure(const WireCell::Configuration& cfg)
     const int nbins = m_cfg["nticks"].asInt();
     const double t0 = waveform_start();
     const double tick = waveform_period();
-    Binning bins(nbins, t0, t0+nbins*tick);
+
+    // Choose the best bin-size for optimal performances
+    const int m_fft_nbins = fft_best_length(nbins);
+
+    Binning bins(nbins, t0, t0+  m_fft_nbins*tick);
     m_wave = we.generate(bins);
     Waveform::scale(m_wave, m_cfg["postgain"].asDouble());
 }
