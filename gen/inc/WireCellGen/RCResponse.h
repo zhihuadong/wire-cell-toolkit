@@ -7,6 +7,7 @@
 #include "WireCellIface/IWaveform.h"
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellUtil/Units.h"
+#include "WireCellUtil/Response.h"
 
 namespace WireCell {
     namespace Gen {
@@ -27,10 +28,13 @@ namespace WireCell {
             virtual double waveform_start() const;
             // The sampling period aka bin width
             virtual double waveform_period() const;
-            // The collection of samples 
+            // The collection of samples
             virtual const sequence_type& waveform_samples() const;
+            // The collection of samples rebinned
+            virtual sequence_type waveform_samples(const WireCell::Binning& tbins) const;
 
         private:
+            Response::SimpleRC *m_rc;
             Configuration m_cfg;
             sequence_type m_wave;
         };
@@ -38,4 +42,3 @@ namespace WireCell {
 }
 
 #endif
-

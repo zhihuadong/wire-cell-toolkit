@@ -1,6 +1,5 @@
 #include "WireCellGen/ColdElecResponse.h"
 
-#include "WireCellUtil/FFTBestLength.h"
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/Response.h"
 
@@ -29,16 +28,13 @@ void Gen::ColdElecResponse::configure(const WireCell::Configuration& cfg)
 {
     m_cfg = cfg;
 
-    Response::ColdElec ce(m_cfg["gain"].asDouble(), m_cfg["shaping"].asDouble());
+    m_coldresp = new Response::ColdElec( m_cfg["gain"].asDouble(), m_cfg["shaping"].asDouble());
+
     const int nbins = m_cfg["nticks"].asInt();
-
-    // Choose the best bin-size for optimal performances
-    const int m_fft_nbins = fft_best_length(nbins);
-
     const double t0 = waveform_start();
     const double tick = waveform_period();
-    Binning bins(nbins, t0, t0+m_fft_nbins*tick);
-    m_wave = ce.generate(bins);
+    Binning bins(nbins, t0, t0+nbins*tick);
+    m_wave = m_coldresp->generate(bins);
     Waveform::scale(m_wave, m_cfg["postgain"].asDouble());
 }
 
@@ -55,4 +51,11 @@ double Gen::ColdElecResponse::waveform_period() const
 const IWaveform::sequence_type& Gen::ColdElecResponse::waveform_samples() const
 {
     return m_wave;
+}
+
+IWaveform::sequence_type Gen::ColdElecResponse::waveform_samples(const WireCell::Binning& tbins) const
+{
+    sequence_type rebinned_wave = m_coldresp->generate(tbins);
+    Waveform::scale(rebinned_wave, m_cfg["postgain"].asDouble());
+    return rebinned_wave;
 }

@@ -778,7 +778,7 @@ void OmnibusSigProc::init_overall_response(IFrame::pointer frame)
   WireCell::Binning tbins(fine_nticks, 0, fine_nticks * fravg.period);
   //Response::ColdElec ce(m_gain, m_shaping_time);
   //auto ewave = ce.generate(tbins);
-  auto ewave = (*m_elecresponse).waveform_samples();
+  auto ewave = (*m_elecresponse).waveform_samples(tbins);
   Waveform::scale(ewave, m_inter_gain * m_ADC_mV  * (-1));
   elec = Waveform::dft(ewave);
 
@@ -944,7 +944,7 @@ void OmnibusSigProc::decon_2D_init(int plane){
     //Response::ColdElec ce(m_gain, m_shaping_time);
 
     //const auto ewave = ce.generate(tbins);
-    auto ewave = (*m_elecresponse).waveform_samples();
+    auto ewave = (*m_elecresponse).waveform_samples(tbins);
     const WireCell::Waveform::compseq_t elec = Waveform::dft(ewave);
 
     for (auto och : m_channel_range[plane]) {
