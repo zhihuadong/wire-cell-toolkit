@@ -29,7 +29,8 @@ local wc = import 'wirecell.jsonnet';
 local g = import 'pgraph.jsonnet';
 
 local raw_input_label = std.extVar('raw_input_label');  // eg "daq"
-
+local volume_label = std.extVar('tpc_volume_label');  // eg "",0,1,2,3
+local volume = if volume_label == '' then -1 else std.parseInt(volume_label);
 
 local data_params = import 'params.jsonnet';
 local simu_params = import 'simparams.jsonnet';
@@ -55,7 +56,7 @@ local sp_maker = import 'pgrapher/experiment/icarus/sp.jsonnet';
 local wcls_input = {
   adc_digits: g.pnode({
     type: 'wclsRawFrameSource',
-    name: '',
+    name: 'rfsrc%d' %volume, // to use multiple wirecell instances in a fhicl job
     data: {
       art_tag: raw_input_label,
       frame_tags: ['orig'],  // this is a WCT designator
@@ -72,7 +73,8 @@ local mega_anode = {
   type: 'MegaAnodePlane',
   name: 'meganodes',
   data: {
-    anodes_tn: [wc.tn(anode) for anode in tools.anodes],
+    anodes_tn: if volume != -1 then [wc.tn(a) for a in tools.anodes[2*volume:2*(volume+1)]] // single volume
+    else [wc.tn(anode) for anode in tools.anodes], // all volumes
   },
 };
 local wcls_output = {
@@ -100,7 +102,7 @@ local wcls_output = {
   // separation.  Both are used in downstream WC code.
   sp_signals: g.pnode({
     type: 'wclsFrameSaver',
-    name: 'spsaver',
+    name: 'spsaver%d' %volume, // to use multiple wirecell instances in a fhicl job
     data: {
       // anode: wc.tn(tools.anode),
       anode: wc.tn(mega_anode),
@@ -149,15 +151,15 @@ local magnifyio = magnify(tools, magoutput);
 local nfsp_pipes = [
   g.pipeline([
                chsel_pipes[n],
-               magnifyio.orig_pipe[n],
+               // magnifyio.orig_pipe[n],
 
                nf_pipes[n],
-               magnifyio.raw_pipe[n],
+               // magnifyio.raw_pipe[n],
 
                sp_pipes[n],
-               magnifyio.decon_pipe[n],
-               magnifyio.threshold_pipe[n],
-               magnifyio.debug_pipe[n], // use_roi_debug_mode: true in sp.jsonnet
+               // magnifyio.decon_pipe[n],
+               // magnifyio.threshold_pipe[n],
+               // magnifyio.debug_pipe[n], // use_roi_debug_mode: true in sp.jsonnet
              ],
              'nfsp_pipe_%d' % n)
   for n in std.range(0, std.length(tools.anodes) - 1)

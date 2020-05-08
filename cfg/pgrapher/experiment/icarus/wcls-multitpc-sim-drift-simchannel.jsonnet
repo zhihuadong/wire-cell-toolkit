@@ -44,6 +44,7 @@ local mega_anode = {
   },
 };
 
+// A ``duo'' anode consists of two ``splits''
 local duoanodes = [
 {
   type: 'MegaAnodePlane',
