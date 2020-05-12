@@ -85,7 +85,11 @@ base {
     },
 
     elec: super.elec {
-        // later defined in simparams.jsonnet
+        type: "WarmElecResponse",
+        gain: 30*wc.mV/wc.fC,
+        shaping: 1.3*wc.us,
+        postgain: 1.0,
+        start: 0,
     },
 
 

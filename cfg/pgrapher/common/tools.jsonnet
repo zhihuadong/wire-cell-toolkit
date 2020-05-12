@@ -60,7 +60,9 @@ function(params)
     },
 
     elec_resp : {
-        type: "ColdElecResponse",
+        type: if std.objectHas(params.elec, "type")
+              then params.elec.type
+              else "ColdElecResponse", // default
         data: sim_response_binning {
             shaping: params.elec.shaping,
             gain: params.elec.gain,

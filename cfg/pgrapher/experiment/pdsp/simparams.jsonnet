@@ -144,8 +144,8 @@ base {
   // place.  See the "scale" parameter of wcls.input.depos() defined
   // in pgrapher/common/ui/wcls/nodes.jsonnet.
   elec: super.elec {
-    postgain: 1.0,
-    shaping: 2.2 * wc.us,
+  //  postgain: 1.0,
+  //  shaping: 2.2 * wc.us,
   },
 
   sys_status: false,
