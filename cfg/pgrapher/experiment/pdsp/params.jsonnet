@@ -120,7 +120,8 @@ base {
     },
 
     elec: super.elec {
-
+        postgain: 1.0,
+        shaping: 2.2 * wc.us,
     },
 
 
