@@ -32,28 +32,7 @@ Configuration Sig::Decon2DFilter::default_configuration() const
     return cfg;
 }
 
-void Sig::Decon2DFilter::configure(const WireCell::Configuration &cfg)
-{
-    m_cfg = cfg;
-}
-
-namespace {
-    std::string dump(const ITensorSet::pointer &itens)
-    {
-        std::stringstream ss;
-        ss << "ITensorSet: ";
-        Json::FastWriter jwriter;
-        ss << itens->ident() << ", " << jwriter.write(itens->metadata());
-        for (auto iten : *itens->tensors()) {
-            ss << "shape: [";
-            for (auto l : iten->shape()) {
-                ss << l << " ";
-            }
-            ss << "]\n";
-        }
-        return ss.str();
-    }
-}  // namespace
+void Sig::Decon2DFilter::configure(const WireCell::Configuration &cfg) { m_cfg = cfg; }
 
 bool Sig::Decon2DFilter::operator()(const ITensorSet::pointer &in, ITensorSet::pointer &out)
 {
@@ -107,22 +86,26 @@ bool Sig::Decon2DFilter::operator()(const ITensorSet::pointer &in, ITensorSet::p
     WireCell::Array::array_xxc c_data = Aux::itensor_to_eigen_array<std::complex<float>>(iwf_ten);
     log->debug("c_data: {} {}", c_data.rows(), c_data.cols());
 
-    // apply software filter on time
-    Waveform::realseq_t roi_hf_filter_wf;
-
-    // FIXME: need to handle collection
-    auto ncr1 = Factory::find<IFilterWaveform>("HfFilter", "Wiener_tight_U");
-    roi_hf_filter_wf = ncr1->filter_waveform(c_data.cols());
-    auto ncr2 = Factory::find<IFilterWaveform>("LfFilter", "ROI_tight_lf");
-    auto temp_filter = ncr2->filter_waveform(c_data.cols());
-    for (size_t i = 0; i != roi_hf_filter_wf.size(); i++) {
-        roi_hf_filter_wf.at(i) *= temp_filter.at(i);
+    // make software filter on time
+    WireCell::Waveform::realseq_t filter(c_data.cols(), 1.);
+    for (auto icfg : m_cfg["filters"]) {
+        const std::string filter_tn = icfg.asString();
+        log->trace("filter_tn: {}", filter_tn);
+        auto fw = Factory::find_tn<IFilterWaveform>(filter_tn);
+        if (!fw) {
+            THROW(ValueError() << errmsg{"!fw"});
+        }
+        auto wave = fw->filter_waveform(c_data.cols());
+        for (size_t i = 0; i != wave.size(); i++) {
+            filter.at(i) *= wave.at(i);
+        }
     }
 
+    // apply filter
     Array::array_xxc c_data_afterfilter(c_data.rows(), c_data.cols());
     for (int irow = 0; irow < c_data.rows(); ++irow) {
         for (int icol = 0; icol < c_data.cols(); ++icol) {
-            c_data_afterfilter(irow, icol) = c_data(irow, icol) * roi_hf_filter_wf.at(icol);
+            c_data_afterfilter(irow, icol) = c_data(irow, icol) * filter.at(icol);
         }
     }
 
