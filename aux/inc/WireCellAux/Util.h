@@ -88,6 +88,24 @@ inline std::string dump(const ITensor::pointer iten, const size_t limit = 10)
     return ss.str();
 }
 
+inline std::string dump(const ITensorSet::pointer itens) {
+    std::stringstream ss;
+    ss << "ITensorSet: ";
+    Json::FastWriter jwriter;
+    ss << itens->ident() << ", " << jwriter.write(itens->metadata());
+    for (auto iten : *itens->tensors()) {
+        const auto& md = iten->metadata();
+        ss << "tag: " << md["tag"];
+        ss << ", type: " << md["type"];
+        ss << ", shape: [";
+        for(auto l : iten->shape()) {
+            ss << l << " ";
+        }
+        ss << "]\n";
+    }
+    return ss.str();
+}
+
 template<typename ElementType>
 inline Eigen::Array<ElementType, Eigen::Dynamic, Eigen::Dynamic> itensor_to_eigen_array(const ITensor::pointer iten)
 {
@@ -102,23 +120,30 @@ inline Eigen::Array<ElementType, Eigen::Dynamic, Eigen::Dynamic> itensor_to_eige
     }
     
     // Eigen storage is col major by default
-    auto nrows = iten->shape()[1];
-    auto ncols = iten->shape()[0];
+    auto nrows = iten->shape()[0];
+    auto ncols = iten->shape()[1];
     Eigen::Map< const Eigen::Array<ElementType, Eigen::Dynamic, Eigen::Dynamic> > arr((const ElementType *)iten->data(), nrows, ncols);
 
     return arr;
 }
 
 template<typename ElementType>
-inline ITensor::pointer eigen_array_to_itensor(const Eigen::Array<ElementType, Eigen::Dynamic, Eigen::Dynamic> & arr)
+inline SimpleTensor<ElementType>* eigen_array_to_simple_tensor(const Eigen::Array<ElementType, Eigen::Dynamic, Eigen::Dynamic> & arr)
 {
-    std::vector<size_t> shape = {(size_t)arr.cols(), (size_t)arr.rows()};
+    std::vector<size_t> shape = {(size_t)arr.rows(), (size_t)arr.cols()};
     SimpleTensor<ElementType> *st = new SimpleTensor<ElementType>(shape);
     auto dst = (ElementType *)st->data();
     auto src = (ElementType *)arr.data();
     size_t size = sizeof(ElementType) * arr.rows() * arr.cols();
     memcpy(dst, src, size);
 
+    return st;
+}
+
+template<typename ElementType>
+inline ITensor::pointer eigen_array_to_itensor(const Eigen::Array<ElementType, Eigen::Dynamic, Eigen::Dynamic> & arr)
+{
+    auto st = eigen_array_to_simple_tensor<ElementType>(arr);
     return ITensor::pointer(st);
 }
 
