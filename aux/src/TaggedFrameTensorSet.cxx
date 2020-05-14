@@ -2,6 +2,7 @@
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellAux/SimpleTensor.h"
 #include "WireCellAux/SimpleTensorSet.h"
+#include "WireCellAux/Util.h"
 #include "WireCellIface/FrameTools.h"
 #include "WireCellUtil/Logging.h"
 
@@ -158,8 +159,45 @@ bool Aux::TaggedFrameTensorSet::operator()(const input_pointer& in, output_point
 
     }
 
+    for(auto label_cmm : in->masks()) {
+        auto label = label_cmm.first;
+        log->trace("masks: {}", label);
+        auto cmm = label_cmm.second;
+        size_t nranges = 0;
+        for(auto ch_bl : cmm) {
+            nranges += ch_bl.second.size();
+        }
+        SimpleTensor<double>* ranges = new SimpleTensor<double>({nranges, 2});
+        Eigen::Map<Eigen::ArrayXXd> ranges_arr((double*)ranges->data(), nranges, 2);
+        SimpleTensor<double>* channels = new SimpleTensor<double>({nranges});
+        Eigen::Map<Eigen::ArrayXd> channels_arr((double*)channels->data(), nranges);
+
+        size_t ind = 0;
+        for(auto ch_bl : cmm) {
+            auto ch = ch_bl.first;
+            auto bl = ch_bl.second;
+            for(auto b : bl) {
+                ranges_arr(ind, 0) = b.first;
+                ranges_arr(ind, 1) = b.second;
+                channels_arr(ind) = ch;
+                ++ind;
+            }
+        }
+
+        auto& ranges_md = ranges->metadata();
+        ranges_md["tag"] = label;
+        ranges_md["type"] = "cmm_range";
+        itv->push_back(ITensor::pointer(ranges));
+
+        auto& channels_md = channels->metadata();
+        channels_md["tag"] = label;
+        channels_md["type"] = "cmm_channel";
+        itv->push_back(ITensor::pointer(channels));
+    }
+
     out = std::make_shared<SimpleTensorSet>(in->ident(), set_md,
                                             ITensor::shared_vector(itv));
+    log->trace(Aux::dump(out));
     return true;
 }
 

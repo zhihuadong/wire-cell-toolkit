@@ -88,6 +88,24 @@ inline std::string dump(const ITensor::pointer iten, const size_t limit = 10)
     return ss.str();
 }
 
+inline std::string dump(const ITensorSet::pointer itens) {
+    std::stringstream ss;
+    ss << "ITensorSet: ";
+    Json::FastWriter jwriter;
+    ss << itens->ident() << ", " << jwriter.write(itens->metadata());
+    for (auto iten : *itens->tensors()) {
+        const auto& md = iten->metadata();
+        ss << "tag: " << md["tag"];
+        ss << ", type: " << md["type"];
+        ss << ", shape: [";
+        for(auto l : iten->shape()) {
+            ss << l << " ";
+        }
+        ss << "]\n";
+    }
+    return ss.str();
+}
+
 template<typename ElementType>
 inline Eigen::Array<ElementType, Eigen::Dynamic, Eigen::Dynamic> itensor_to_eigen_array(const ITensor::pointer iten)
 {
