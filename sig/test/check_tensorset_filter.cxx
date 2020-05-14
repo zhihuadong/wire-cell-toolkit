@@ -4,6 +4,7 @@
 #include "WireCellAux/SimpleTensor.h"
 #include "WireCellUtil/Array.h"
 #include "WireCellUtil/Testing.h"
+#include "WireCellUtil/Logging.h"
 
 #include <iostream>
 #include <chrono>
@@ -37,6 +38,7 @@ void print(const ITensorSet::pointer itens)
 
 int main()
 {
+    Log::add_stdout(true, "debug");
     const int nloop = 1;
 
     auto iitens = gen_tensorset();
