@@ -63,11 +63,12 @@ bool Sig::Decon2DFilter::operator()(const ITensorSet::pointer &in, ITensorSet::p
     }
     Eigen::Map<const Eigen::ArrayXi> ch_arr((const int *) ch_ten->data(), nchans);
 
-    bool have_summary = true;
-    auto sum_ten = Aux::get_tens(in, tag, "summary");
-    if (!sum_ten) {
-        log->debug("Tensor->Frame: no optional summary tensor for tag {}", tag);
-        have_summary = false;
+    bool have_cmm = true;
+    auto cmm_range = Aux::get_tens(in, tag, "bad:cmm_range");
+    auto cmm_channel = Aux::get_tens(in, tag, "bad:cmm_channel");
+    if (!cmm_range or !cmm_channel) {
+        log->debug("Tensor->Frame: no optional cmm_range tensor for tag {}", tag);
+        have_cmm = false;
     }
 
     int iplane = get<int>(m_cfg, "iplane", 0);
@@ -114,6 +115,28 @@ bool Sig::Decon2DFilter::operator()(const ITensorSet::pointer &in, ITensorSet::p
     Array::array_xxf r_data = tm_r_data.block(m_pad_nwires, 0, m_nwires, m_nticks);
     Sig::restore_baseline(r_data);
 
+    // apply cmm
+    if(have_cmm) {
+        auto nranges = cmm_channel->shape()[0];
+        assert(nranges == cmm_range->shape()[0]);
+        assert(2 == cmm_range->shape()[1]);
+        Eigen::Map<Eigen::ArrayXXd> ranges_arr((double*)cmm_range->data(), nranges, 2);
+        Eigen::Map<Eigen::ArrayXd> channels_arr((double*)cmm_channel->data(), nranges);
+        for(size_t ind=0; ind<nranges; ++ind) {
+            auto ch = channels_arr(ind);
+            if(!(ch < r_data.rows())) {
+                continue;
+            }
+            auto tmin = ranges_arr(ind,0);
+            auto tmax = ranges_arr(ind,1);
+            log->trace("ch: {}, tmin: {}, tmax: {}", ch, tmin, tmax);
+            assert(tmin < tmax);
+            assert(tmax <= r_data.cols());
+            auto nbin = tmax - tmin;
+            r_data.row(ch).segment(tmin, nbin) = 0.;
+        }
+    }
+
     // Eigen to TensorSet
     auto owf_ten = Aux::eigen_array_to_simple_tensor<float>(r_data);
 
@@ -129,9 +152,6 @@ bool Sig::Decon2DFilter::operator()(const ITensorSet::pointer &in, ITensorSet::p
 
     // FIXME need to change ch_ten tag to outtag
     itv->push_back(ch_ten);
-    if (have_summary) {
-        itv->push_back(sum_ten);
-    }
 
     Configuration oset_md(in->metadata());
     oset_md["tags"] = Json::arrayValue;
