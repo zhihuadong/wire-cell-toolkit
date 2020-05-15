@@ -120,7 +120,7 @@ base {
     },
 
     elec: super.elec {
-        postgain: 1.0,
+        postgain: 1.166,
         shaping: 2.2 * wc.us,
     },
 
@@ -159,7 +159,8 @@ base {
 
         fields: [
             // "garfield-1d-3planes-21wires-6impacts-dune-v1.json.bz2",
-            "garfield-1d-boundary-path-rev-dune.json.bz2",
+            // "garfield-1d-boundary-path-rev-dune.json.bz2",
+            "dune-garfield-1d565.json.bz2",
             // "garfield-1d-boundary-path-rev-dune-no-grid.json.bz2",
         ],
 
