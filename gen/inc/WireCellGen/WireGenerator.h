@@ -16,14 +16,13 @@ namespace WireCell {
      */
 
     class WireGenerator : public IWireGenerator {
-    public:
-	WireGenerator();
-	virtual ~WireGenerator();
+       public:
+        WireGenerator();
+        virtual ~WireGenerator();
 
-	virtual bool operator()(const input_pointer& params, output_pointer& wires);
+        virtual bool operator()(const input_pointer& params, output_pointer& wires);
     };
 
-
-}
+}  // namespace WireCell
 
 #endif

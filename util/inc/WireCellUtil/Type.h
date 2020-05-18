@@ -17,12 +17,11 @@ namespace WireCell {
     std::string demangle(const std::string& name);
 
     template <class T>
-    std::string type(const T& t) {
-	return demangle(typeid(t).name());
+    std::string type(const T& t)
+    {
+        return demangle(typeid(t).name());
     }
-    
 
-}
-
+}  // namespace WireCell
 
 #endif

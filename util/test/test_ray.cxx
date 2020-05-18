@@ -7,9 +7,8 @@ using spdlog::info;
 
 int main()
 {
-
-    const Ray r1(Point(-1,-1,-1), Point(1,1,1));
-    const Ray r2(Point(0,0,0), Point(1,1,1));
+    const Ray r1(Point(-1, -1, -1), Point(1, 1, 1));
+    const Ray r2(Point(0, 0, 0), Point(1, 1, 1));
     info("Some rays: {}, {}", r1, r2);
 
     const Ray& rr1 = r1;

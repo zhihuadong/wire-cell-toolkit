@@ -9,19 +9,16 @@ namespace WireCell {
 
     /** A frame source is something that generates IFrames.
      */
-    class IFrameSource : public ISourceNode<IFrame>
-    {
-    public:
-	typedef std::shared_ptr<IFrameSource> pointer;
+    class IFrameSource : public ISourceNode<IFrame> {
+       public:
+        typedef std::shared_ptr<IFrameSource> pointer;
 
-	virtual ~IFrameSource() ;
+        virtual ~IFrameSource();
 
-	// supply:
-	// virtual bool operator()(IFrame::pointer& frame);
-
+        // supply:
+        // virtual bool operator()(IFrame::pointer& frame);
     };
 
-
-}
+}  // namespace WireCell
 
 #endif

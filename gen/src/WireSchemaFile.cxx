@@ -3,22 +3,16 @@
 #include "WireCellUtil/Exceptions.h"
 #include "WireCellUtil/NamedFactory.h"
 
-WIRECELL_FACTORY(WireSchemaFile,
-                 WireCell::Gen::WireSchemaFile,
-                 WireCell::IWireSchema, WireCell::IConfigurable)
-
+WIRECELL_FACTORY(WireSchemaFile, WireCell::Gen::WireSchemaFile, WireCell::IWireSchema, WireCell::IConfigurable)
 
 using namespace WireCell;
 
 Gen::WireSchemaFile::WireSchemaFile(const char* fname)
-    : m_fname(fname)
+  : m_fname(fname)
 {
 }
 
-Gen::WireSchemaFile::~WireSchemaFile()
-{
-}
-            
+Gen::WireSchemaFile::~WireSchemaFile() {}
 
 void Gen::WireSchemaFile::configure(const WireCell::Configuration& cfg)
 {
@@ -36,10 +30,4 @@ WireCell::Configuration Gen::WireSchemaFile::default_configuration() const
     return cfg;
 }
 
-
-const WireSchema::Store& Gen::WireSchemaFile::wire_schema_store() const
-{
-    return m_store;
-}
-            
-
+const WireSchema::Store& Gen::WireSchemaFile::wire_schema_store() const { return m_store; }

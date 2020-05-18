@@ -1,10 +1,10 @@
-/** BlobSolving takes in a cluster graph and produces another. 
+/** BlobSolving takes in a cluster graph and produces another.
  *
  * It is assumed that the graph is composed of s-nodes, b-nodes and m-nodes.
  *
  * A solution is performed on sets of b-nodes attached to an s-node
  * with weighting based on existence of (b-b) edges.
- */  
+ */
 #ifndef WIRECELL_BLOBSOLVING_H
 #define WIRECELL_BLOBSOLVING_H
 
@@ -15,10 +15,8 @@ namespace WireCell {
 
     namespace Img {
 
-
         class BlobSolving : public IClusterFilter, public IConfigurable {
-        public:
-            
+           public:
             BlobSolving();
             virtual ~BlobSolving();
 
@@ -27,14 +25,11 @@ namespace WireCell {
 
             virtual bool operator()(const input_pointer& in, output_pointer& out);
 
-        private:
-            
+           private:
         };
 
-    }  // Img
-    
+    }  // namespace Img
 
-}  // WireCell
-
+}  // namespace WireCell
 
 #endif /* WIRECELL_BLOBSOLVING_H */

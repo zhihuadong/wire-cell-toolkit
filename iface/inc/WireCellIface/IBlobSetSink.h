@@ -8,21 +8,16 @@ namespace WireCell {
 
     /** A blob set sink is a node that consumes IBlobSet objects.
      */
-    class IBlobSetSink : public ISinkNode<IBlobSet>
-    {
-    public:
-	virtual ~IBlobSetSink() ;
+    class IBlobSetSink : public ISinkNode<IBlobSet> {
+       public:
+        virtual ~IBlobSetSink();
 
-	virtual std::string signature() {
-	   return typeid(IBlobSetSink).name();
-	}
+        virtual std::string signature() { return typeid(IBlobSetSink).name(); }
 
-	// supply:
-	// virtual bool operator()(const IBlobSet::pointer& bs);
-
+        // supply:
+        // virtual bool operator()(const IBlobSet::pointer& bs);
     };
 
-
-}
+}  // namespace WireCell
 
 #endif

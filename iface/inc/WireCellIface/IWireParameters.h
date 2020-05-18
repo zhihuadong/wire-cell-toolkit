@@ -6,10 +6,9 @@
 #include "WireCellUtil/IComponent.h"
 #include "WireCellUtil/Point.h"
 
-
 namespace WireCell {
 
-// fixme: move this blah blah into the docs.
+    // fixme: move this blah blah into the docs.
 
     /** Interface by which parameters describing wire planes can be
      * accessed.
@@ -29,11 +28,11 @@ namespace WireCell {
      * - The perpendicular distances ("pitch") between adjacent wires
      * is regular.  The pitch direction points toward increasing wire
      * index and is take such that (Wire x Pitch) = X
-     * 
+     *
      * The above is sufficient to define the wire planes, but further
      * convention helps to conceptualize things.
      *
-     * U wires: 
+     * U wires:
      * - angle: [0, +90]
      * - points: (+Y,+Z)
      * - pitch:  (-Y,+Z)
@@ -50,12 +49,12 @@ namespace WireCell {
      * - points: +Y
      * - pitch:  +Z
      * - starts: -Z
-     * 
+     *
      * Given this, the wires planes are fully specified by four rays.
      *
      * \param bounds is a WireCell::Ray with its tail at the
      * negative-most corner and its head at the positive-most
-     * corner of a rectangular bounding box.  
+     * corner of a rectangular bounding box.
      *
      * \param U is a WireCell::Ray with direction giving the plane's
      * pitch and with endpoints on wires within the bounding box.
@@ -69,41 +68,44 @@ namespace WireCell {
     // fixme: this doesn't need to be so grand as to be an IComponent,
     // it is just to give an initial test vehicle.
     class IWireParameters : virtual public IComponent<IWireParameters> {
-    public:
-	virtual ~IWireParameters();
+       public:
+        virtual ~IWireParameters();
 
-	/** Provide access to the rays which were used to define the wires. */
+        /** Provide access to the rays which were used to define the wires. */
 
-	/// Defines a box that bounds the set of wires.
-	virtual const Ray& bounds() const = 0;
+        /// Defines a box that bounds the set of wires.
+        virtual const Ray& bounds() const = 0;
 
-	/// A ray going from the center of the first U wire to the
-	/// second and perpendicular to both.
-	virtual const Ray& pitchU() const = 0;
+        /// A ray going from the center of the first U wire to the
+        /// second and perpendicular to both.
+        virtual const Ray& pitchU() const = 0;
 
-	/// A ray going from the center of the first V wire to the
-	/// second and perpendicular to both.
-	virtual const Ray& pitchV() const = 0;
+        /// A ray going from the center of the first V wire to the
+        /// second and perpendicular to both.
+        virtual const Ray& pitchV() const = 0;
 
-	/// A ray going from the center of the first W wire to the
-	/// second and perpendicular to both.
-	virtual const Ray& pitchW() const = 0;
+        /// A ray going from the center of the first W wire to the
+        /// second and perpendicular to both.
+        virtual const Ray& pitchW() const = 0;
 
-	// helper to return the pitch based on dynamic layer value
-	virtual const Ray& pitch(WireCell::WirePlaneLayer_t layer) const {
-	    static Ray bogus;
-	    switch(layer) {
-	    case kUlayer: return pitchU();
-	    case kVlayer: return pitchV();
-	    case kWlayer: return pitchW();
-            case kUnknownLayer: return bogus;
-	    }
-	    return bogus;
-	}
-
+        // helper to return the pitch based on dynamic layer value
+        virtual const Ray& pitch(WireCell::WirePlaneLayer_t layer) const
+        {
+            static Ray bogus;
+            switch (layer) {
+            case kUlayer:
+                return pitchU();
+            case kVlayer:
+                return pitchV();
+            case kWlayer:
+                return pitchW();
+            case kUnknownLayer:
+                return bogus;
+            }
+            return bogus;
+        }
     };
 
-}
-
+}  // namespace WireCell
 
 #endif

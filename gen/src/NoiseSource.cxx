@@ -10,36 +10,31 @@
 
 #include <iostream>
 
-WIRECELL_FACTORY(NoiseSource, WireCell::Gen::NoiseSource,
-                 WireCell::IFrameSource, WireCell::IConfigurable)
+WIRECELL_FACTORY(NoiseSource, WireCell::Gen::NoiseSource, WireCell::IFrameSource, WireCell::IConfigurable)
 
 using namespace std;
 using namespace WireCell;
 
 Gen::NoiseSource::NoiseSource(const std::string& model, const std::string& anode, const std::string& rng)
-    : m_time(0.0*units::ns)
-    , m_stop(1.0*units::ms)
-    , m_readout(5.0*units::ms)
-    , m_tick(0.5*units::us)
-    , m_frame_count(0)
-    , m_anode_tn(anode)
-    , m_model_tn(model)
-    , m_rng_tn(rng)
-    , m_nsamples(9600)
-    , m_rep_percent(0.02) // replace 2% at a time
-    , m_eos(false)
+  : m_time(0.0 * units::ns)
+  , m_stop(1.0 * units::ms)
+  , m_readout(5.0 * units::ms)
+  , m_tick(0.5 * units::us)
+  , m_frame_count(0)
+  , m_anode_tn(anode)
+  , m_model_tn(model)
+  , m_rng_tn(rng)
+  , m_nsamples(9600)
+  , m_rep_percent(0.02)  // replace 2% at a time
+  , m_eos(false)
 {
-  // initialize the random number ...
-  //auto& spec = (*m_model)(0);
-  
-  // end initialization ..
-  
+    // initialize the random number ...
+    // auto& spec = (*m_model)(0);
+
+    // end initialization ..
 }
 
-
-Gen::NoiseSource::~NoiseSource()
-{
-}
+Gen::NoiseSource::~NoiseSource() {}
 
 WireCell::Configuration Gen::NoiseSource::default_configuration() const
 {
@@ -83,23 +78,18 @@ void Gen::NoiseSource::configure(const WireCell::Configuration& cfg)
     m_stop = get<double>(cfg, "stop_time", m_stop);
     m_tick = get<double>(cfg, "sample_period", m_tick);
     m_frame_count = get<int>(cfg, "first_frame_number", m_frame_count);
-    m_nsamples = get<int>(cfg,"m_nsamples",m_nsamples);
-    m_rep_percent = get<double>(cfg,"replacement_percentage",m_rep_percent);
-    
+    m_nsamples = get<int>(cfg, "m_nsamples", m_nsamples);
+    m_rep_percent = get<double>(cfg, "replacement_percentage", m_rep_percent);
+
     cerr << "Gen::NoiseSource: using IRandom: \"" << m_rng_tn << "\""
          << " IAnodePlane: \"" << m_anode_tn << "\""
          << " IChannelSpectrum: \"" << m_model_tn << "\""
-         << " readout time: " << m_readout/units::us << "us\n";
-
-
-    
+         << " readout time: " << m_readout / units::us << "us\n";
 }
-
-
 
 bool Gen::NoiseSource::operator()(IFrame::pointer& frame)
 {
-    if (m_eos) {                // This source does not restart.
+    if (m_eos) {  // This source does not restart.
         return false;
     }
 
@@ -113,20 +103,17 @@ bool Gen::NoiseSource::operator()(IFrame::pointer& frame)
     int nsamples = 0;
     for (auto chid : m_anode->channels()) {
         const auto& spec = (*m_model)(chid);
-	
-	Waveform::realseq_t noise = Gen::Noise::generate_waveform(spec, m_rng, m_rep_percent);
-	//	std::cout << noise.size() << " " << nsamples << std::endl;
-	noise.resize(m_nsamples,0);
+
+        Waveform::realseq_t noise = Gen::Noise::generate_waveform(spec, m_rng, m_rep_percent);
+        //	std::cout << noise.size() << " " << nsamples << std::endl;
+        noise.resize(m_nsamples, 0);
         auto trace = make_shared<SimpleTrace>(chid, tbin, noise);
         traces.push_back(trace);
         nsamples += noise.size();
     }
-    cerr << "Gen::NoiseSource: made " << traces.size() << " traces, "
-         << nsamples << " samples\n";
+    cerr << "Gen::NoiseSource: made " << traces.size() << " traces, " << nsamples << " samples\n";
     frame = make_shared<SimpleFrame>(m_frame_count, m_time, traces, m_tick);
     m_time += m_readout;
     ++m_frame_count;
     return true;
 }
-
-

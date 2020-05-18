@@ -11,11 +11,11 @@
 namespace WireCell {
 
     /** The Wire Cell Toolkit configuration layer uses Json::Value
-        objects for its transient data model.        
-     
+        objects for its transient data model.
+
         The Configuration type is a recursive in that one
         Configuration object may contain others.
-     
+
         The WCT assumes an Object Configuration Protocol is
         implemented by the "client" code that uses the toolkit.  See
         for example the reference implementation in the wire-cell
@@ -42,7 +42,7 @@ namespace WireCell {
          implementation file)
 
        - data :: an object which follows a schema which is specific to
-         each IConfigurable implementation.  
+         each IConfigurable implementation.
 
        - name :: an optional Instance Name.  If not given, the default instance of the type will be used.
      */
@@ -52,76 +52,80 @@ namespace WireCell {
     /// For persistence use WireCell::Persist::load() and
     /// WireCell::Persist::dump().
 
-
     /// The following functions provide some access methods which add
     /// some value beyond what Json::Value provides including some
     /// support for basic WCT types.
 
-    
     /// Convert a configuration value to a particular type.
-    template<typename T>
-    T convert(const Configuration& cfg, const T& def = T()) {
-	return def;
+    template <typename T>
+    T convert(const Configuration& cfg, const T& def = T())
+    {
+        return def;
     }
-    template<>
-    inline
-    bool convert<bool>(const Configuration& cfg, const bool& def) {
+    template <>
+    inline bool convert<bool>(const Configuration& cfg, const bool& def)
+    {
         if (cfg.isNull()) return def;
-	return cfg.asBool();
+        return cfg.asBool();
     }
-    template<>
-    inline
-    int convert<int>(const Configuration& cfg, const int& def) {
+    template <>
+    inline int convert<int>(const Configuration& cfg, const int& def)
+    {
         if (cfg.isNull()) return def;
-	return cfg.asInt();
+        return cfg.asInt();
     }
-    template<>
-    inline
-    float convert<float>(const Configuration& cfg, const float& def) {
+    template <>
+    inline float convert<float>(const Configuration& cfg, const float& def)
+    {
         if (cfg.isNull()) return def;
-	return cfg.asDouble();
+        return cfg.asDouble();
     }
-    template<>
-    inline
-    double convert<double>(const Configuration& cfg, const double& def) {
+    template <>
+    inline double convert<double>(const Configuration& cfg, const double& def)
+    {
         if (cfg.isNull()) return def;
-	return cfg.asDouble();
+        return cfg.asDouble();
     }
-    template<> 
-    inline
-    std::string convert<std::string>(const Configuration& cfg, const std::string& def) {
+    template <>
+    inline std::string convert<std::string>(const Configuration& cfg, const std::string& def)
+    {
         if (cfg.isNull()) return def;
-	return cfg.asString();
+        return cfg.asString();
     }
-    template<>
-    inline			// fixme: ignores default
-    std::vector<std::string> convert< std::vector<std::string> >(const Configuration& cfg, const std::vector<std::string>& def) {
-	std::vector<std::string> ret;
-	for (auto v : cfg) {
-	    ret.push_back(convert<std::string>(v));
-	}
-	return ret;
+    template <>
+    inline  // fixme: ignores default
+        std::vector<std::string>
+        convert<std::vector<std::string> >(const Configuration& cfg, const std::vector<std::string>& def)
+    {
+        std::vector<std::string> ret;
+        for (auto v : cfg) {
+            ret.push_back(convert<std::string>(v));
+        }
+        return ret;
     }
-    template<>
-    inline			// fixme: ignores default
-    std::vector<int> convert< std::vector<int> >(const Configuration& cfg, const std::vector<int>& def) {
-	std::vector<int> ret;
-	for (auto v : cfg) {
-	    ret.push_back(convert<int>(v));
-	}
-	return ret;
+    template <>
+    inline  // fixme: ignores default
+        std::vector<int>
+        convert<std::vector<int> >(const Configuration& cfg, const std::vector<int>& def)
+    {
+        std::vector<int> ret;
+        for (auto v : cfg) {
+            ret.push_back(convert<int>(v));
+        }
+        return ret;
     }
-    template<>
-    inline			// fixme: ignores default
-    std::vector<double> convert< std::vector<double> >(const Configuration& cfg, const std::vector<double>& def) {
-	std::vector<double> ret;
-	for (auto v : cfg) {
-	    ret.push_back(convert<double>(v));
-	}
-	return ret;
+    template <>
+    inline  // fixme: ignores default
+        std::vector<double>
+        convert<std::vector<double> >(const Configuration& cfg, const std::vector<double>& def)
+    {
+        std::vector<double> ret;
+        for (auto v : cfg) {
+            ret.push_back(convert<double>(v));
+        }
+        return ret;
     }
     // for Point and Ray converters, see Point.h
-
 
     /// Follow a dot.separated.path and return the branch there.
     Configuration branch(Configuration cfg, const std::string& dotpath);
@@ -134,35 +138,41 @@ namespace WireCell {
     Configuration append(Configuration& a, Configuration& b);
 
     /// Return dictionary in given list if it value at dotpath matches
-    template<typename T>
-    Configuration find(Configuration& lst, const std::string& dotpath, const T& val) {
-	for (auto ent : lst) {
-	    auto maybe = branch(ent, dotpath);
-	    if (maybe.isNull()) { continue; }
-	    if (convert<T>(maybe) == val) { return maybe; }
-	}
-	return Configuration();
+    template <typename T>
+    Configuration find(Configuration& lst, const std::string& dotpath, const T& val)
+    {
+        for (auto ent : lst) {
+            auto maybe = branch(ent, dotpath);
+            if (maybe.isNull()) {
+                continue;
+            }
+            if (convert<T>(maybe) == val) {
+                return maybe;
+            }
+        }
+        return Configuration();
     }
 
     /// Get value in configuration at the dotted path from or return default.
-    template<typename T>
-    T get(Configuration cfg, const std::string& dotpath, const T& def = T()) {
-	return convert(branch(cfg, dotpath), def);
+    template <typename T>
+    T get(Configuration cfg, const std::string& dotpath, const T& def = T())
+    {
+        return convert(branch(cfg, dotpath), def);
     }
 
     /// Put value in configuration at the dotted path.
-    template<typename T>
-    void put(Configuration& cfg, const std::string& dotpath, const T& val) {
-	Configuration* ptr = &cfg;
-	std::vector<std::string> path;
-	boost::algorithm::split(path, dotpath, boost::algorithm::is_any_of("."));
-	for (auto name : path) {
-	    ptr = &(*ptr)[name];
-	}
-	*ptr = val;
+    template <typename T>
+    void put(Configuration& cfg, const std::string& dotpath, const T& val)
+    {
+        Configuration* ptr = &cfg;
+        std::vector<std::string> path;
+        boost::algorithm::split(path, dotpath, boost::algorithm::is_any_of("."));
+        for (auto name : path) {
+            ptr = &(*ptr)[name];
+        }
+        *ptr = val;
     }
 
-
-} // namespace WireCell
+}  // namespace WireCell
 
 #endif

@@ -28,50 +28,45 @@ void test_read(const char* filename)
     auto& a0 = store1.anode(0);
     cerr << "Got anode 0 with " << store1.faces(a0).size() << " faces\n";
 
-
     const int bogusid = 0xdeadbeaf;
-    try{
+    try {
         store1.anode(bogusid);
-        cerr << "Unexpectedly got bogus anode ID  "<<bogusid<<"\n";
+        cerr << "Unexpectedly got bogus anode ID  " << bogusid << "\n";
         Assert(false);
     }
     catch (WireCell::Exception& e) {
-        cerr << "Correctly caught exception with unlikely anode id "<<bogusid<<":\n"
+        cerr << "Correctly caught exception with unlikely anode id " << bogusid << ":\n"
              << "----\n"
-             << e.what()
-             << "----\n";
+             << e.what() << "----\n";
     }
 
     for (const auto& anode : store1.anodes()) {
-        for (const auto& face: store1.faces(anode)) {
-            for (const auto& plane: store1.planes(face)) {
-
+        for (const auto& face : store1.faces(anode)) {
+            for (const auto& plane : store1.planes(face)) {
                 auto bb = store1.bounding_box(plane);
                 auto wp = store1.wire_pitch(plane);
                 auto ex = wp.first.cross(wp.second);
 
-                cerr <<  "anode:" << anode.ident
-                     << " face:" << face.ident
-                     << " plane:" << plane.ident << ":\n"
+                cerr << "anode:" << anode.ident << " face:" << face.ident << " plane:" << plane.ident << ":\n"
                      << "\tdrift: " << ex << "\n"
                      << "\twire:  " << wp.first << "\n"
                      << "\tpitch: " << wp.second << "\n"
-                     << "\tbb: " << bb.bounds()/units::cm << "cm\n";
+                     << "\tbb: " << bb.bounds() / units::cm << "cm\n";
             }
             auto wplane = store1.planes(face).back();
             auto wires = store1.wires(wplane);
             const double zmax = wires.back().head.z();
             const double zmin = wires.front().head.z();
-            const double dd = zmax-zmin;
+            const double dd = zmax - zmin;
             const int n = wires.size();
             cerr << "\tW plane: " << n << " wires, "
-                 << "["<<zmin/units::m<<","<<zmax/units::m<<"]m, "
-                 << "extent=" << dd/units::cm << "cm, pitch=" << dd/(n-1)/units::mm << "mm\n";
+                 << "[" << zmin / units::m << "," << zmax / units::m << "]m, "
+                 << "extent=" << dd / units::cm << "cm, pitch=" << dd / (n - 1) / units::mm << "mm\n";
         }
     }
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
     const char* filename = "microboone-celltree-wires-v2.1.json.bz2";
     if (argc > 1) {
@@ -80,5 +75,4 @@ int main(int argc, char *argv[])
     test_read(filename);
 
     return 0;
-
 }

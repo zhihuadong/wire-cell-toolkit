@@ -13,24 +13,20 @@ namespace WireCell {
      * of the samples and they are left up to the implementation. But,
      * they are typically either current or charge if only electric
      * field responses are applied or voltage if additionally an
-     * electronics response model is applied.  
+     * electronics response model is applied.
      *
      * Implementation may also apply digitization in which case the
      * floating point samples should be considered integer.
      * Digitization may also be implemented as an IFrameFilter.
      */
-    class IDuctor : public IQueuedoutNode<IDepo, IFrame>
-    {
-    public:
-	typedef std::shared_ptr<IDuctor> pointer;
+    class IDuctor : public IQueuedoutNode<IDepo, IFrame> {
+       public:
+        typedef std::shared_ptr<IDuctor> pointer;
 
-	virtual ~IDuctor() ;
+        virtual ~IDuctor();
 
-	virtual std::string signature() {
-	   return typeid(IDuctor).name();
-	}
+        virtual std::string signature() { return typeid(IDuctor).name(); }
     };
-}
-
+}  // namespace WireCell
 
 #endif

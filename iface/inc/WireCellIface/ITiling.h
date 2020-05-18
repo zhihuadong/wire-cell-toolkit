@@ -11,19 +11,16 @@
 namespace WireCell {
 
     class ITiling : public IFunctionNode<ISlice, IBlobSet> {
-    public:
-        
-	typedef std::shared_ptr<ITiling> pointer;
+       public:
+        typedef std::shared_ptr<ITiling> pointer;
 
-	virtual ~ITiling() ;
+        virtual ~ITiling();
 
-	virtual std::string signature() {
-	   return typeid(ITiling).name();
-	}
+        virtual std::string signature() { return typeid(ITiling).name(); }
 
-	// supply:
-	// virtual bool operator()(const input_pointer& in, output_pointer& out);
+        // supply:
+        // virtual bool operator()(const input_pointer& in, output_pointer& out);
     };
-}
+}  // namespace WireCell
 
 #endif

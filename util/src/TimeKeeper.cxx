@@ -5,14 +5,9 @@
 using namespace std;
 using namespace WireCell;
 
-TimeKeeper::TimeKeeper(const std::string& msg, ptime starting_time)
-{
-    m_events.push_back(event(starting_time, msg));
-}
+TimeKeeper::TimeKeeper(const std::string& msg, ptime starting_time) { m_events.push_back(event(starting_time, msg)); }
 
-TimeKeeper::~TimeKeeper()
-{
-}
+TimeKeeper::~TimeKeeper() {}
 
 std::string TimeKeeper::operator()(std::string msg, ptime now)
 {
@@ -20,27 +15,17 @@ std::string TimeKeeper::operator()(std::string msg, ptime now)
     return emit(-1);
 }
 
-boost::posix_time::ptime TimeKeeper::start_time() const
-{
-    return (*this)[0].first;
-}
-boost::posix_time::ptime TimeKeeper::last_time() const
-{
-    return (*this)[-1].first;
-}
-TimeKeeper::deltat TimeKeeper::last_duration() const
-{
-    return (*this)[-1].first - (*this)[-2].first;
-}
+boost::posix_time::ptime TimeKeeper::start_time() const { return (*this)[0].first; }
+boost::posix_time::ptime TimeKeeper::last_time() const { return (*this)[-1].first; }
+TimeKeeper::deltat TimeKeeper::last_duration() const { return (*this)[-1].first - (*this)[-2].first; }
 
-boost::posix_time::time_duration TimeKeeper::since(ptime now) const
-{
-    return now - start_time();
-}
+boost::posix_time::time_duration TimeKeeper::since(ptime now) const { return now - start_time(); }
 
 TimeKeeper::event TimeKeeper::operator[](int ind) const
 {
-    while (ind < 0) { ind += m_events.size();}
+    while (ind < 0) {
+        ind += m_events.size();
+    }
 
     return m_events[ind];
 }
@@ -48,17 +33,19 @@ TimeKeeper::event TimeKeeper::operator[](int ind) const
 std::string TimeKeeper::summary() const
 {
     stringstream ss;
-    for (size_t ind=0; ind<m_events.size(); ++ind) {
-	ss << this->emit(ind) << "\n";
+    for (size_t ind = 0; ind < m_events.size(); ++ind) {
+        ss << this->emit(ind) << "\n";
     }
     return ss.str();
 }
 
 std::string TimeKeeper::emit(int ind) const
 {
-    while (ind < 0) { ind += m_events.size();}
-    int prev_ind = ind-1;
-    if (prev_ind<0) prev_ind=0;
+    while (ind < 0) {
+        ind += m_events.size();
+    }
+    int prev_ind = ind - 1;
+    if (prev_ind < 0) prev_ind = 0;
     const event& prev = (*this)[prev_ind];
     const event& evt = (*this)[ind];
 
@@ -67,7 +54,6 @@ std::string TimeKeeper::emit(int ind) const
 
     stringstream ss;
     ss << "TICK: " << from_start.total_milliseconds() << " ms "
-       << "(this: " << from_last.total_milliseconds() << " ms) "
-       << evt.second;
+       << "(this: " << from_last.total_milliseconds() << " ms) " << evt.second;
     return ss.str();
 }

@@ -4,30 +4,28 @@
 #include "WireCellUtil/Waveform.h"
 #include "WireCellIface/IChannelFilter.h"
 
-namespace WireCell{
-    namespace SigProc{
-	namespace Derivations{
-	    
-	    /** Return a sequence of the median values, one for each channel signal.
+namespace WireCell {
+    namespace SigProc {
+        namespace Derivations {
 
-		fixme and warning: this ignores small and large signal
-		with fixed thresholds which need to be set as parameters.
-	    */
-	    WireCell::Waveform::realseq_t CalcMedian(const WireCell::IChannelFilter::channel_signals_t& chansig);
+            /** Return a sequence of the median values, one for each channel signal.
 
-	    /** Return the RMS of a signal
+                fixme and warning: this ignores small and large signal
+                with fixed thresholds which need to be set as parameters.
+            */
+            WireCell::Waveform::realseq_t CalcMedian(const WireCell::IChannelFilter::channel_signals_t& chansig);
 
-		fixme and warning: this ignores large signal with a fixed
-		threshold which needs to be set as parameters.
-	    */
-	    std::pair<double,double> CalcRMS(const WireCell::Waveform::realseq_t& signal);
-	}
-    }
-}
+            /** Return the RMS of a signal
 
+                fixme and warning: this ignores large signal with a fixed
+                threshold which needs to be set as parameters.
+            */
+            std::pair<double, double> CalcRMS(const WireCell::Waveform::realseq_t& signal);
+        }  // namespace Derivations
+    }      // namespace SigProc
+}  // namespace WireCell
 
 #endif
-
 
 // Local Variables:
 // mode: c++

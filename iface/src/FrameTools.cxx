@@ -10,7 +10,6 @@
 
 using namespace WireCell;
 
-
 int FrameTools::frmtcmp(IFrame::pointer frame, double time)
 {
     auto traces = frame->traces();
@@ -18,13 +17,13 @@ int FrameTools::frmtcmp(IFrame::pointer frame, double time)
 
     const double tref = frame->time();
     const double tick = frame->tick();
-    const double tmin = tref + tbin_mm.first*tick;  // low edge
-    const double tmax = tref + tbin_mm.second*tick; // high edge
+    const double tmin = tref + tbin_mm.first * tick;   // low edge
+    const double tmax = tref + tbin_mm.second * tick;  // high edge
 
-    if (tmax <= time) {         // high edge may be exactly equal to target time and frame does not span.
+    if (tmax <= time) {  // high edge may be exactly equal to target time and frame does not span.
         return -1;
     }
-    if (tmin >= time) {         // low edge may be exactly equal to target time and frame does not span.
+    if (tmin >= time) {  // low edge may be exactly equal to target time and frame does not span.
         return +1;
     }
     return 0;
@@ -43,11 +42,10 @@ std::pair<IFrame::pointer, IFrame::pointer> FrameTools::split(IFrame::pointer fr
     const double tref = frame->time();
     const double tick = frame->tick();
     const int ident = frame->ident();
-        
-    // Every tick equal or larger than this is in the second frame.
-    const double fnticks = (time - tref)/tick;
-    const int tbin_split = 0.5 + fnticks;
 
+    // Every tick equal or larger than this is in the second frame.
+    const double fnticks = (time - tref) / tick;
+    const int tbin_split = 0.5 + fnticks;
 
     ITrace::vector mtraces, ptraces;
     for (auto trace : (*frame->traces())) {
@@ -82,11 +80,6 @@ std::pair<IFrame::pointer, IFrame::pointer> FrameTools::split(IFrame::pointer fr
     return std::pair<IFrame::pointer, IFrame::pointer>(mframe, pframe);
 }
 
-
-
-
-
-
 ITrace::vector FrameTools::untagged_traces(IFrame::pointer frame)
 {
     auto traces = frame->traces();
@@ -111,7 +104,7 @@ ITrace::vector FrameTools::untagged_traces(IFrame::pointer frame)
 ITrace::vector FrameTools::tagged_traces(IFrame::pointer frame, IFrame::tag_t tag)
 {
     if (tag == "") {
-        return untagged_traces(frame); 
+        return untagged_traces(frame);
     }
     ITrace::vector ret;
     auto const& all_traces = frame->traces();
@@ -125,53 +118,46 @@ ITrace::vector FrameTools::tagged_traces(IFrame::pointer frame, IFrame::tag_t ta
     if (std::find(ftags.begin(), ftags.end(), tag) == ftags.end()) {
         return ret;
     }
-    return *all_traces;         // must make copy of shared pointers
+    return *all_traces;  // must make copy of shared pointers
 }
-
 
 FrameTools::channel_list FrameTools::channels(const ITrace::vector& traces)
 {
     const auto nchans = traces.size();
-    FrameTools::channel_list ret(nchans,0);
-    for (size_t ind=0; ind != nchans; ++ind) {
+    FrameTools::channel_list ret(nchans, 0);
+    for (size_t ind = 0; ind != nchans; ++ind) {
         ret[ind] = traces[ind]->channel();
     }
     return ret;
 }
 
-
-std::pair<int,int> FrameTools::tbin_range(const ITrace::vector& traces)
+std::pair<int, int> FrameTools::tbin_range(const ITrace::vector& traces)
 {
     const auto siz = traces.size();
     std::vector<int> tbins(siz), tlens(siz);
-    for (size_t ind=0; ind != siz; ++ind) {
+    for (size_t ind = 0; ind != siz; ++ind) {
         const auto trace = traces[ind];
         const int tbin = trace->tbin();
         tbins[ind] = tbin;
-        tlens[ind] = tbin+trace->charge().size();
+        tlens[ind] = tbin + trace->charge().size();
     }
-    return std::pair<int,int>(
-        *std::min_element(tbins.begin(), tbins.end()),
-        *std::max_element(tlens.begin(), tlens.end()));        
+    return std::pair<int, int>(*std::min_element(tbins.begin(), tbins.end()),
+                               *std::max_element(tlens.begin(), tlens.end()));
 }
 
-void FrameTools::fill(Array::array_xxf& array, 
-                      const ITrace::vector& traces, 
-                      channel_list::iterator chit, 
-                      channel_list::iterator chend, 
-                      int tbin)
+void FrameTools::fill(Array::array_xxf& array, const ITrace::vector& traces, channel_list::iterator chit,
+                      channel_list::iterator chend, int tbin)
 {
-    std::unordered_map<int,int> index;
+    std::unordered_map<int, int> index;
     // one col is one tick
     // one row is one channel
     // array is indexed in order: (irow, icol)
-    const int ncols = array.cols(); 
-    const int nrows = std::min((int)array.rows(), (int)std::distance(chit,chend));
+    const int ncols = array.cols();
+    const int nrows = std::min((int) array.rows(), (int) std::distance(chit, chend));
     for (int ind = 0; ind != nrows and chit != chend; ++ind, ++chit) {
         index[*chit] = ind;
     }
     for (const auto trace : traces) {
-
         // resolve which row a the channel is at
         const int ch = trace->channel();
         auto it = index.find(ch);
@@ -179,7 +165,7 @@ void FrameTools::fill(Array::array_xxf& array,
             continue;
         }
         const int irow = it->second;
-        
+
         const auto& charge = trace->charge();
         const int nticks = charge.size();
         const int dtbin = trace->tbin() - tbin;
@@ -190,15 +176,15 @@ void FrameTools::fill(Array::array_xxf& array,
         if (dtbin > 0) {
             icol0 = dtbin;
         }
-                
+
         const int ncols_left = ncols - icol0;
         const int nticks_left = nticks - itick0;
         if (ncols_left <= 0 or nticks_left <= 0) {
             continue;
         }
         const int nleft = std::min(ncols_left, nticks_left);
-        for (int ind=0; ind != nleft; ++ind) {
-            array(irow, icol0+ind) += charge.at(itick0 + ind);
+        for (int ind = 0; ind != nleft; ++ind) {
+            array(irow, icol0 + ind) += charge.at(itick0 + ind);
         }
     }
 }

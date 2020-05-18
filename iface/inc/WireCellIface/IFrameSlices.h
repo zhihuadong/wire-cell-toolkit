@@ -16,23 +16,18 @@ namespace WireCell {
      *
      * See also ISliceFrame which is a more monolithic but function node.
      */
-    class IFrameSlices : public IQueuedoutNode<IFrame,ISlice>
-    {
-    public:
-	typedef std::shared_ptr<IFrameSlices> pointer;
+    class IFrameSlices : public IQueuedoutNode<IFrame, ISlice> {
+       public:
+        typedef std::shared_ptr<IFrameSlices> pointer;
 
-	virtual ~IFrameSlices() ;
+        virtual ~IFrameSlices();
 
-	virtual std::string signature() {
-	   return typeid(IFrameSlices).name();
-	}
+        virtual std::string signature() { return typeid(IFrameSlices).name(); }
 
-	// supply:
-	// virtual bool operator()(const input_pointer& in, output_pointer& out);
-
+        // supply:
+        // virtual bool operator()(const input_pointer& in, output_pointer& out);
     };
 
-
-}
+}  // namespace WireCell
 
 #endif

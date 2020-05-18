@@ -29,26 +29,25 @@ int main(int argc, char* argv[])
             std::vector<float> originx;
             for (auto plane : face->planes()) {
                 cerr << "\tplane: " << plane->ident() << "\n";
-            
+
                 auto pimpos = plane->pimpos();
-                cerr << "\torigin: " << pimpos->origin()/units::mm << "mm\n";
-                for (int axis : {0,1,2}) {
-                    cerr << "\taxis " << axis << ": " << pimpos->axis(axis)/units::mm << "mm\n";
+                cerr << "\torigin: " << pimpos->origin() / units::mm << "mm\n";
+                for (int axis : {0, 1, 2}) {
+                    cerr << "\taxis " << axis << ": " << pimpos->axis(axis) / units::mm << "mm\n";
                 }
                 originx.push_back(pimpos->origin()[0]);
             }
 
-     
             float diff = std::abs(originx.front() - originx.back());
-            if (diff > 0.1*units::mm) {
-                cerr << "ERROR, field response and wire location data do not match: diff = " << diff/units::mm << "mm\n";
-                cerr << "front: " << originx.front()/units::mm << "mm, back=" << originx.back()/units::mm<<"mm out of " << originx.size() << endl;
+            if (diff > 0.1 * units::mm) {
+                cerr << "ERROR, field response and wire location data do not match: diff = " << diff / units::mm
+                     << "mm\n";
+                cerr << "front: " << originx.front() / units::mm << "mm, back=" << originx.back() / units::mm
+                     << "mm out of " << originx.size() << endl;
                 THROW(ValueError() << errmsg{"field response and wire location data do not match"});
             }
         }
     }
 
-    
     return 0;
-        
 }

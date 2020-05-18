@@ -10,23 +10,22 @@
 namespace WireCell {
     namespace Gen {
         class FrameSummer : public IFrameJoiner, public IConfigurable {
-        public:
+           public:
             FrameSummer();
             virtual ~FrameSummer();
-            
+
             // IJoinNode
-            virtual bool operator()(const input_tuple_type& intup,
-                                    output_pointer& out);
-            
+            virtual bool operator()(const input_tuple_type& intup, output_pointer& out);
+
             // IConfigurable
             virtual void configure(const WireCell::Configuration& config);
             virtual WireCell::Configuration default_configuration() const;
-        private:
+
+           private:
             double m_toffset;
             bool m_align;
-
         };
-    }
-}
+    }  // namespace Gen
+}  // namespace WireCell
 
 #endif

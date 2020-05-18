@@ -6,19 +6,16 @@
 
 namespace WireCell {
 
-    class IFrameSplitter : public ISplitNode<IFrame, std::tuple<IFrame,IFrame> > {
-    public:
+    class IFrameSplitter : public ISplitNode<IFrame, std::tuple<IFrame, IFrame> > {
+       public:
         typedef std::shared_ptr<IFrameSplitter> pointer;
-        virtual ~IFrameSplitter() ;
+        virtual ~IFrameSplitter();
 
-        virtual std::string signature() {
-            return typeid(IFrameSplitter).name();
-        }
+        virtual std::string signature() { return typeid(IFrameSplitter).name(); }
 
         // subclass supply:
         // 	virtual bool operator()(const input_pointer& in, output_tuple_type& out) = 0;
-            
     };
 
-}
+}  // namespace WireCell
 #endif

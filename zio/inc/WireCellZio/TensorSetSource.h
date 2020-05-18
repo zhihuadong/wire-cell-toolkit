@@ -8,23 +8,20 @@
 #include "WireCellZio/FlowConfigurable.h"
 #include "WireCellIface/ITensorSetSource.h"
 
-namespace WireCell
-{
-namespace Zio
-{
+namespace WireCell {
+    namespace Zio {
 
-class TensorSetSource : public ITensorSetSource, public FlowConfigurable
-{
-public:
-    TensorSetSource();
-    virtual ~TensorSetSource();
+        class TensorSetSource : public ITensorSetSource, public FlowConfigurable {
+           public:
+            TensorSetSource();
+            virtual ~TensorSetSource();
 
-    virtual bool operator()(ITensorSet::pointer &out);
+            virtual bool operator()(ITensorSet::pointer &out);
 
-private:
-    bool m_had_eos;
-    ITensorSet::vector m_tensors; // current set of depos
-};
-} // namespace Zio
-} // namespace WireCell
-#endif // WIRECELLZIO_ZIOTENSORSETSOURCE
+           private:
+            bool m_had_eos;
+            ITensorSet::vector m_tensors;  // current set of depos
+        };
+    }  // namespace Zio
+}  // namespace WireCell
+#endif  // WIRECELLZIO_ZIOTENSORSETSOURCE

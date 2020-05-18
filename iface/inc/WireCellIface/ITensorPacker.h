@@ -8,23 +8,20 @@
 #include <string>
 
 namespace WireCell {
-    /* 
+    /*
      * Pack ITensors into ITensorSet
      */
     class ITensorPacker : public IFaninNode<ITensor, ITensorSet, 0> {
-    public:
+       public:
+        virtual ~ITensorPacker();
 
-        virtual ~ITensorPacker() ;
-
-        virtual std::string signature() {
-           return typeid(ITensorPacker).name();
-        }
+        virtual std::string signature() { return typeid(ITensorPacker).name(); }
 
         // Subclass must implement:
-        virtual std::vector<std::string>  input_types() = 0;
+        virtual std::vector<std::string> input_types() = 0;
         // and the already abstract:
         // virtual bool operator()(const input_pointer& in, output_vector& outv);
     };
-}
+}  // namespace WireCell
 
 #endif

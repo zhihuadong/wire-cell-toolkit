@@ -8,23 +8,18 @@ namespace WireCell {
 
     /** A frame sink is something that generates IFrames.
      */
-    class IFrameSink : public ISinkNode<IFrame>
-    {
-    public:
-	typedef std::shared_ptr<IFrameSink> pointer;
+    class IFrameSink : public ISinkNode<IFrame> {
+       public:
+        typedef std::shared_ptr<IFrameSink> pointer;
 
-	virtual ~IFrameSink() ;
+        virtual ~IFrameSink();
 
-	virtual std::string signature() {
-	   return typeid(IFrameSink).name();
-	}
+        virtual std::string signature() { return typeid(IFrameSink).name(); }
 
-	// supply:
-	// virtual bool operator()(const IFrame::pointer& frame);
-
+        // supply:
+        // virtual bool operator()(const IFrame::pointer& frame);
     };
 
-
-}
+}  // namespace WireCell
 
 #endif

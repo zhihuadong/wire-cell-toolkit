@@ -13,16 +13,9 @@ namespace WireCell {
     namespace Gen {
 
         class ResponseSys : public IWaveform, public IConfigurable {
-        public:
-            ResponseSys(
-                       int nticks = 10000,
-                       double start = 0.0*units::us,
-                       double tick = 0.5*units::us,
-                       double magnitude = 1.0,
-                       double time_smear = 0.0*units::us,
-                       double offset = 0.0*units::us
-                       );
-
+           public:
+            ResponseSys(int nticks = 10000, double start = 0.0 * units::us, double tick = 0.5 * units::us,
+                        double magnitude = 1.0, double time_smear = 0.0 * units::us, double offset = 0.0 * units::us);
 
             // IConfigurable interface
             virtual void configure(const WireCell::Configuration& cfg);
@@ -37,12 +30,12 @@ namespace WireCell {
             // The collection of samples rebinned
             virtual sequence_type waveform_samples(const WireCell::Binning& tbins) const;
 
-        private:
+           private:
             Response::SysResp* m_sysresp;
             Configuration m_cfg;
             sequence_type m_wave;
         };
-    }
-}
+    }  // namespace Gen
+}  // namespace WireCell
 
 #endif

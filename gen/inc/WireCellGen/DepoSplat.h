@@ -14,19 +14,17 @@ namespace WireCell {
         // DepoSplat inherits from Ductor, replacing the heavy lifting
         // with some lightweight laziness.
         class DepoSplat : public Ductor {
-        public:
+           public:
             DepoSplat();
             virtual ~DepoSplat();
 
-        protected:
-            virtual ITrace::vector process_face(IAnodeFace::pointer face,
-                                                const IDepo::vector& depos);
+           protected:
+            virtual ITrace::vector process_face(IAnodeFace::pointer face, const IDepo::vector& depos);
 
             /// SPD logger
             Log::logptr_t l;
-
         };
-    }
-}
+    }  // namespace Gen
+}  // namespace WireCell
 
 #endif

@@ -5,26 +5,19 @@
 
 #include <boost/graph/graphviz.hpp>
 
-WIRECELL_FACTORY(BlobClustering, WireCell::Img::BlobClustering,
-                 WireCell::IClustering, WireCell::IConfigurable)
+WIRECELL_FACTORY(BlobClustering, WireCell::Img::BlobClustering, WireCell::IClustering, WireCell::IConfigurable)
 
 using namespace WireCell;
 
-
 Img::BlobClustering::BlobClustering()
-    : m_spans(1.0)
-    , m_last_bs(nullptr)
-    , l(Log::logger("img"))
+  : m_spans(1.0)
+  , m_last_bs(nullptr)
+  , l(Log::logger("img"))
 {
 }
-Img::BlobClustering::~BlobClustering()
-{
-}
+Img::BlobClustering::~BlobClustering() {}
 
-void Img::BlobClustering::configure(const WireCell::Configuration& cfg)
-{
-    m_spans = get(cfg, "spans", m_spans);
-}
+void Img::BlobClustering::configure(const WireCell::Configuration& cfg) { m_spans = get(cfg, "spans", m_spans); }
 
 WireCell::Configuration Img::BlobClustering::default_configuration() const
 {
@@ -45,26 +38,22 @@ void Img::BlobClustering::flush(output_queue& clusters)
     m_last_bs = nullptr;
 }
 
-void Img::BlobClustering::intern(const input_pointer& newbs)
-{
-    m_last_bs = newbs;
-}
+void Img::BlobClustering::intern(const input_pointer& newbs) { m_last_bs = newbs; }
 
 bool Img::BlobClustering::judge_gap(const input_pointer& newbs)
 {
-    const double epsilon = 1*units::ns;
+    const double epsilon = 1 * units::ns;
 
     if (m_spans <= epsilon) {
-        return false;           // never break on gap.
+        return false;  // never break on gap.
     }
 
     auto nslice = newbs->slice();
     auto oslice = m_last_bs->slice();
 
     const double dt = nslice->start() - oslice->start();
-    return std::abs(dt - m_spans*oslice->span()) > epsilon;
+    return std::abs(dt - m_spans * oslice->span()) > epsilon;
 }
-
 
 void Img::BlobClustering::add_slice(const ISlice::pointer& islice)
 {
@@ -100,10 +89,10 @@ void Img::BlobClustering::add_blobs(const input_pointer& newbs)
             const int num_nonplane_layers = 2;
             int iplane = strip.layer - num_nonplane_layers;
             if (iplane < 0) {
-                continue; 
+                continue;
             }
             const auto& wires = wire_planes[iplane]->wires();
-            for (int wip=strip.bounds.first; wip < strip.bounds.second and wip < int(wires.size()); ++wip) {
+            for (int wip = strip.bounds.first; wip < strip.bounds.second and wip < int(wires.size()); ++wip) {
                 auto iwire = wires[wip];
                 m_grind.edge(iblob, iwire);
             }
@@ -136,27 +125,25 @@ bool Img::BlobClustering::graph_bs(const input_pointer& newbs)
     const auto beg2 = blobs2.begin();
 
     auto assoc = [&](RayGrid::blobref_t& a, RayGrid::blobref_t& b) {
-                     int an = a - beg1;
-                     int bn = b - beg2;
-                     m_grind.edge(iblobs1[an], iblobs2[bn]);
-                 };
+        int an = a - beg1;
+        int bn = b - beg2;
+        m_grind.edge(iblobs1[an], iblobs2[bn]);
+    };
     RayGrid::associate(blobs1, blobs2, assoc);
-
-    
 
     return false;
 }
 
 bool Img::BlobClustering::operator()(const input_pointer& blobset, output_queue& clusters)
 {
-    if (!blobset) {             // eos
+    if (!blobset) {  // eos
         l->debug("BlobClustering: EOS");
         flush(clusters);
-        clusters.push_back(nullptr); // forward eos
+        clusters.push_back(nullptr);  // forward eos
         return true;
     }
 
-    SPDLOG_LOGGER_TRACE(l,"BlobClustering: got {} blobs", blobset->blobs().size());
+    SPDLOG_LOGGER_TRACE(l, "BlobClustering: got {} blobs", blobset->blobs().size());
 
     bool gap = graph_bs(blobset);
     if (gap) {
@@ -172,8 +159,7 @@ bool Img::BlobClustering::operator()(const input_pointer& blobset, output_queue&
 
     intern(blobset);
 
-    SPDLOG_LOGGER_TRACE(l,"BlobClustering: holding {}", boost::num_vertices(m_grind.graph()));
+    SPDLOG_LOGGER_TRACE(l, "BlobClustering: holding {}", boost::num_vertices(m_grind.graph()));
 
     return true;
 }
-

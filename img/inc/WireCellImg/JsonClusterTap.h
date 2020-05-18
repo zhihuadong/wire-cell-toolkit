@@ -7,14 +7,14 @@
  *
  * - vertices :: a list of graph vertices
  * - edges :: a list of graph edges
- * 
+ *
  * A vertex is represented as a JSON object with the following attributes
  * - ident :: an indexable ID number for the node, and referred to in "edges"
  * - type :: the letter "code" used in ICluster: one in "sbcwm"
- * - data :: an object holding information about the corresponding vertex object 
+ * - data :: an object holding information about the corresponding vertex object
  *
  * An edge is a pair of vertex ident numbers.
- * 
+ *
  */
 
 #ifndef WIRECELLIMG_JSONCLUSTERTAP
@@ -31,8 +31,8 @@ namespace WireCell {
 
     namespace Img {
 
-        class JsonClusterTap : public IClusterFilter , public IConfigurable {
-        public:
+        class JsonClusterTap : public IClusterFilter, public IConfigurable {
+           public:
             JsonClusterTap();
             virtual ~JsonClusterTap();
 
@@ -40,13 +40,14 @@ namespace WireCell {
             virtual WireCell::Configuration default_configuration() const;
 
             virtual bool operator()(const input_pointer& in, output_pointer& out);
-        private:
+
+           private:
             std::string m_filename;
             double m_drift_speed;
 
             Log::logptr_t log;
         };
-    }
-}
+    }  // namespace Img
+}  // namespace WireCell
 
 #endif

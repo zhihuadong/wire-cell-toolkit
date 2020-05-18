@@ -8,18 +8,18 @@
 namespace WireCellApps {
 
     class NodeDumper : public WireCell::IApplication, public WireCell::IConfigurable {
-	WireCell::Configuration m_cfg;
-    public:
-	NodeDumper();
-	virtual ~NodeDumper();
+        WireCell::Configuration m_cfg;
 
-	virtual void execute();
+       public:
+        NodeDumper();
+        virtual ~NodeDumper();
 
-	virtual void configure(const WireCell::Configuration& config);
-	virtual WireCell::Configuration default_configuration() const;
+        virtual void execute();
 
+        virtual void configure(const WireCell::Configuration& config);
+        virtual WireCell::Configuration default_configuration() const;
     };
 
-}
+}  // namespace WireCellApps
 
 #endif

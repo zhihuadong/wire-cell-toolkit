@@ -116,19 +116,19 @@ bool Sig::Decon2DFilter::operator()(const ITensorSet::pointer &in, ITensorSet::p
     Sig::restore_baseline(r_data);
 
     // apply cmm
-    if(have_cmm) {
+    if (have_cmm) {
         auto nranges = cmm_channel->shape()[0];
         assert(nranges == cmm_range->shape()[0]);
         assert(2 == cmm_range->shape()[1]);
-        Eigen::Map<Eigen::ArrayXXd> ranges_arr((double*)cmm_range->data(), nranges, 2);
-        Eigen::Map<Eigen::ArrayXd> channels_arr((double*)cmm_channel->data(), nranges);
-        for(size_t ind=0; ind<nranges; ++ind) {
+        Eigen::Map<Eigen::ArrayXXd> ranges_arr((double *) cmm_range->data(), nranges, 2);
+        Eigen::Map<Eigen::ArrayXd> channels_arr((double *) cmm_channel->data(), nranges);
+        for (size_t ind = 0; ind < nranges; ++ind) {
             auto ch = channels_arr(ind);
-            if(!(ch < r_data.rows())) {
+            if (!(ch < r_data.rows())) {
                 continue;
             }
-            auto tmin = ranges_arr(ind,0);
-            auto tmax = ranges_arr(ind,1);
+            auto tmin = ranges_arr(ind, 0);
+            auto tmax = ranges_arr(ind, 1);
             log->trace("ch: {}, tmin: {}, tmax: {}", ch, tmin, tmax);
             assert(tmin < tmax);
             assert(tmax <= r_data.cols());

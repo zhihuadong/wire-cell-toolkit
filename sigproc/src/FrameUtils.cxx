@@ -17,16 +17,16 @@ void wct::sigproc::dump_frame(WireCell::IFrame::pointer frame)
 
         auto mr = Waveform::mean_rms(charge);
         means.push_back(mr.first);
-        rmses.push_back(mr.second*mr.second);
+        rmses.push_back(mr.second * mr.second);
         const int nsamps = charge.size();
         lengths.push_back(nsamps);
         tbins.push_back(trace->tbin());
-        
+
         if (std::isnan(mr.second)) {
             std::cerr << "Frame: channel " << trace->channel() << " rms is NaN\n";
         }
 
-        for (int ind=0; ind<nsamps; ++ind) {
+        for (int ind = 0; ind < nsamps; ++ind) {
             float val = charge[ind];
             if (std::isnan(val)) {
                 std::cerr << "Frame: channel " << trace->channel() << " sample " << ind << " is NaN\n";
@@ -36,29 +36,24 @@ void wct::sigproc::dump_frame(WireCell::IFrame::pointer frame)
             }
         }
     }
-    double meanmean = Waveform::sum(means)/ntraces;
+    double meanmean = Waveform::sum(means) / ntraces;
     double totrms = sqrt(Waveform::sum(rmses));
-    double meanlen = Waveform::sum(lengths)/ntraces;
-    double meantbin = Waveform::sum(tbins)/ntraces;
+    double meanlen = Waveform::sum(lengths) / ntraces;
+    double meantbin = Waveform::sum(tbins) / ntraces;
     std::cerr << "Frame: " << ntraces << " traces,"
-              << " <mean>=" << meanmean
-              << " TotRMS=" << totrms
-              << " <tbin>=" << meantbin
-              << " <len>=" << meanlen
+              << " <mean>=" << meanmean << " TotRMS=" << totrms << " <tbin>=" << meantbin << " <len>=" << meanlen
               << std::endl;
     for (auto it : frame->masks()) {
         std::cerr << "\t" << it.first << " : " << it.second.size() << std::endl;
     }
 }
 
-
-void wct::sigproc::raster(WireCell::Array::array_xxf& block,
-                          WireCell::ITrace::vector traces,
+void wct::sigproc::raster(WireCell::Array::array_xxf& block, WireCell::ITrace::vector traces,
                           const std::vector<int>& channels)
 {
     const size_t nchannels = channels.size();
     std::unordered_map<int, size_t> ch2col;
-    for (size_t ind=0; ind<nchannels; ++ind) {
+    for (size_t ind = 0; ind < nchannels; ++ind) {
         ch2col[channels[ind]] = ind;
     }
 
@@ -66,10 +61,10 @@ void wct::sigproc::raster(WireCell::Array::array_xxf& block,
     for (auto trace : traces) {
         const auto& samples = trace->charge();
         const size_t nsamples = samples.size();
-        const size_t tbin = trace->tbin();        
+        const size_t tbin = trace->tbin();
 
-        if (tbin >= ncols) {	// underflow impossible as they are unsigned.
-            continue;           // trace is off screen
+        if (tbin >= ncols) {  // underflow impossible as they are unsigned.
+            continue;         // trace is off screen
         }
 
         // find the row to fill
@@ -79,12 +74,12 @@ void wct::sigproc::raster(WireCell::Array::array_xxf& block,
             continue;
         }
         const size_t irow = chit->second;
-        WireCell::Array::array_xf tofill(ncols-tbin);
-        const size_t maxbin = std::min(nsamples, ncols-tbin);
-        for (size_t bin=0; bin<maxbin; ++bin) {
+        WireCell::Array::array_xf tofill(ncols - tbin);
+        const size_t maxbin = std::min(nsamples, ncols - tbin);
+        for (size_t bin = 0; bin < maxbin; ++bin) {
             tofill[bin] = samples[bin];
         }
-        block.block(irow, tbin, 1, ncols-tbin).row(0) += tofill;
+        block.block(irow, tbin, 1, ncols - tbin).row(0) += tofill;
     }
 }
 
@@ -115,10 +110,8 @@ ITrace::vector wct::sigproc::tagged_traces(IFrame::pointer frame, IFrame::tag_t 
     if (std::find(ftags.begin(), ftags.end(), tag) == ftags.end()) {
         return ret;
     }
-    return *all_traces;		// must make copy
+    return *all_traces;  // must make copy
 }
-
-
 
 // Local Variables:
 // mode: c++

@@ -9,7 +9,7 @@
 #include <cstdlib>
 #include <string>
 
-#include "anode_loader.h" // ignore everything in this file
+#include "anode_loader.h"  // ignore everything in this file
 
 using namespace std;
 using namespace WireCell;
@@ -18,9 +18,8 @@ int main(int argc, char* argv[])
 {
     std::string detector = "uboone";
 
-
     // In the real WCT this is done by wire-cell and driven by user
-    // configuration.  
+    // configuration.
     auto anode_tns = anode_loader(detector);
 
     cerr << "Using AnodePlane: \"" << anode_tns[0] << "\"\n";
@@ -65,11 +64,8 @@ int main(int argc, char* argv[])
         for (auto v : amp) {
             tot += v;
         }
-        cerr << "ch:" << chid << " " << amp.size()
-             << " tot=" << tot
-             << endl;
+        cerr << "ch:" << chid << " " << amp.size() << " tot=" << tot << endl;
     }
-
 
     return 0;
 }

@@ -8,23 +8,20 @@
 #include <string>
 
 namespace WireCell {
-    /* 
+    /*
      * Unpack ITensorSet into tensors
      */
-    class ITensorSetUnpacker : public IFanoutNode<ITensorSet,ITensor,0> {
-    public:
+    class ITensorSetUnpacker : public IFanoutNode<ITensorSet, ITensor, 0> {
+       public:
+        virtual ~ITensorSetUnpacker();
 
-        virtual ~ITensorSetUnpacker() ;
-
-        virtual std::string signature() {
-           return typeid(ITensorSetUnpacker).name();
-        }
+        virtual std::string signature() { return typeid(ITensorSetUnpacker).name(); }
 
         // Subclass must implement:
-        virtual std::vector<std::string>  output_types() = 0;
+        virtual std::vector<std::string> output_types() = 0;
         // and the already abstract:
         // virtual bool operator()(const input_pointer& in, output_vector& outv);
     };
-}
+}  // namespace WireCell
 
 #endif

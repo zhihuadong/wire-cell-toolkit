@@ -1,5 +1,5 @@
 /* A blob reframer outputs a frame for each input cluster of blobs.
- * 
+ *
  * The output frame will only have samples which contribute to channel
  * and time regions covered by the blobs.  The output samples are
  * taken from the frame that is reached back via blob->slice->frame.
@@ -19,9 +19,8 @@ namespace WireCell {
     namespace Img {
 
         class BlobReframer : public IClusterFramer, public IConfigurable {
-        public:
-
-            BlobReframer(const std::string& frame_tag="reframe");
+           public:
+            BlobReframer(const std::string& frame_tag = "reframe");
             virtual ~BlobReframer();
 
             virtual void configure(const WireCell::Configuration& cfg);
@@ -29,14 +28,14 @@ namespace WireCell {
 
             virtual bool operator()(const input_pointer& in, output_pointer& out);
 
-        private:
+           private:
             int m_nticks;
             double m_period;
             std::string m_frame_tag;
 
             Log::logptr_t log;
         };
-    }
-}
+    }  // namespace Img
+}  // namespace WireCell
 
 #endif

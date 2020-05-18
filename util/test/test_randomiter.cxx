@@ -12,13 +12,16 @@ int main()
     typedef std::vector<value> container;
 
     container array(4);
-    array[0] = 1; array[1] = 2; array[2] = 3; array[3] = 4;
+    array[0] = 1;
+    array[1] = 2;
+    array[2] = 3;
+    array[3] = 4;
 
     typedef RandomIter<container, value> iterator;
 
-    iterator beg(array), end(true,array);
+    iterator beg(array), end(true, array);
     for (iterator it = beg; it != end; ++it) {
-	std::cout << *it << std::endl;
+        std::cout << *it << std::endl;
     }
 
     beg += 2;

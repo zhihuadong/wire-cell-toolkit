@@ -18,10 +18,10 @@
 "type":"truthDepo"
 }
 
-  The  "nq" and the non-array atributes are ignored.  
+  The  "nq" and the non-array atributes are ignored.
 
   The component is configured with a collection of input files.  These
-  may be compressed JSON or Jsonnet files.  
+  may be compressed JSON or Jsonnet files.
 
 
  */
@@ -36,8 +36,7 @@ namespace WireCell {
     namespace Sio {
 
         class BeeDepoSource : public IDepoSource, public IConfigurable {
-        public:
-        
+           public:
             BeeDepoSource();
             virtual ~BeeDepoSource();
 
@@ -48,16 +47,11 @@ namespace WireCell {
             virtual WireCell::Configuration default_configuration() const;
             virtual void configure(const WireCell::Configuration& config);
 
-
-        private:
-
+           private:
             std::vector<std::string> m_filenames;
             std::string m_policy;
-            IDepo::vector m_depos; // current set of depos
-
-
+            IDepo::vector m_depos;  // current set of depos
         };
-    }
-}
+    }  // namespace Sio
+}  // namespace WireCell
 #endif
-

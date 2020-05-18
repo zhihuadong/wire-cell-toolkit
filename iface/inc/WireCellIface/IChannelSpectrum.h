@@ -3,7 +3,7 @@
    function of frequency.
 
    An example implementation is a model of the noise on a given
-   channel.  
+   channel.
 
  */
 
@@ -15,9 +15,8 @@
 namespace WireCell {
 
     class IChannelSpectrum : virtual public IComponent<IChannelSpectrum> {
-    public:
-
-        virtual ~IChannelSpectrum() ;
+       public:
+        virtual ~IChannelSpectrum();
 
         /// The data type for frequency space amplitude (not power).
         /// It should be in units of [X]/[frequency] (equivalently
@@ -31,10 +30,7 @@ namespace WireCell {
         /// Binning should likely be coordinated with the rest of the
         /// application via the configuration.
         virtual const amplitude_t& operator()(int chid) const = 0;
-
-
     };
-}
-
+}  // namespace WireCell
 
 #endif

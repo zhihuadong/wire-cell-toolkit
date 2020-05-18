@@ -3,8 +3,7 @@
 #include "WireCellIface/INode.h"
 #include "WireCellUtil/NamedFactory.h"
 
-WIRECELL_FACTORY(Pgrapher, WireCell::Pgraph::Pgrapher,
-                 WireCell::IApplication, WireCell::IConfigurable)
+WIRECELL_FACTORY(Pgrapher, WireCell::Pgraph::Pgrapher, WireCell::IApplication, WireCell::IConfigurable)
 
 using WireCell::get;
 using namespace WireCell::Pgraph;
@@ -17,8 +16,7 @@ WireCell::Configuration Pgrapher::default_configuration() const
     return cfg;
 }
 
-static
-std::pair<WireCell::INode::pointer, int> get_node(WireCell::Configuration jone)
+static std::pair<WireCell::INode::pointer, int> get_node(WireCell::Configuration jone)
 {
     using namespace WireCell;
     std::string node = jone["node"].asString();
@@ -29,7 +27,7 @@ std::pair<WireCell::INode::pointer, int> get_node(WireCell::Configuration jone)
         THROW(ValueError() << errmsg{"failed to get node"});
     }
 
-    int port = get(jone,"port",0);
+    int port = get(jone, "port", 0);
     return std::make_pair(nptr, port);
 }
 
@@ -42,10 +40,9 @@ void Pgrapher::configure(const WireCell::Configuration& cfg)
         auto tail = get_node(jedge["tail"]);
         auto head = get_node(jedge["head"]);
 
-        SPDLOG_LOGGER_TRACE(l,"connecting: {}", jedge);
-        
-        bool ok = m_graph.connect(fac(tail.first),  fac(head.first),
-                                  tail.second, head.second);
+        SPDLOG_LOGGER_TRACE(l, "connecting: {}", jedge);
+
+        bool ok = m_graph.connect(fac(tail.first), fac(head.first), tail.second, head.second);
         if (!ok) {
             l->critical("failed to connect edge: {}", jedge);
             THROW(ValueError() << errmsg{"failed to connect edge"});
@@ -57,20 +54,14 @@ void Pgrapher::configure(const WireCell::Configuration& cfg)
     }
 }
 
-
-
 void Pgrapher::execute()
 {
     m_graph.execute();
     m_graph.print_timers();
 }
 
-
-
 Pgrapher::Pgrapher()
-    : l(Log::logger("pgraph"))
+  : l(Log::logger("pgraph"))
 {
 }
-Pgrapher::~Pgrapher()
-{
-}
+Pgrapher::~Pgrapher() {}

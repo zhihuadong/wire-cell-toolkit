@@ -10,21 +10,17 @@
 #include <tuple>
 #include <sstream>
 
-WIRECELL_FACTORY(NumpyFrameSaver, WireCell::Sio::NumpyFrameSaver,
-                 WireCell::IFrameFilter, WireCell::IConfigurable)
+WIRECELL_FACTORY(NumpyFrameSaver, WireCell::Sio::NumpyFrameSaver, WireCell::IFrameFilter, WireCell::IConfigurable)
 
 using namespace WireCell;
 
 Sio::NumpyFrameSaver::NumpyFrameSaver()
-    : m_save_count(0)
-    , l(Log::logger("io"))
+  : m_save_count(0)
+  , l(Log::logger("io"))
 {
 }
 
-Sio::NumpyFrameSaver::~NumpyFrameSaver()
-{
-}
-
+Sio::NumpyFrameSaver::~NumpyFrameSaver() {}
 
 WireCell::Configuration Sio::NumpyFrameSaver::default_configuration() const
 {
@@ -49,35 +45,30 @@ WireCell::Configuration Sio::NumpyFrameSaver::default_configuration() const
     // The frame tags to consider for saving.  If null or empty then all traces are used.
     cfg["frame_tags"] = Json::arrayValue;
     // The summary tags to consider for saving
-    //cfg["summary_tags"] = Json::arrayValue;    
+    // cfg["summary_tags"] = Json::arrayValue;
     // The channel mask maps to consider for saving
-    //cfg["chanmaskmaps"] = Json::arrayValue;
+    // cfg["chanmaskmaps"] = Json::arrayValue;
 
     // The output file name to write.  Only compressed (zipped) Numpy
     // files are supported.  Writing is always in "append" mode.  It's
     // up to the user to delete a previous instance of the file if
     // it's old contents are not wanted.
     cfg["filename"] = "wct-frame.npz";
-        
+
     return cfg;
 }
 
-void Sio::NumpyFrameSaver::configure(const WireCell::Configuration& config)
-{
-    m_cfg = config;
-}
+void Sio::NumpyFrameSaver::configure(const WireCell::Configuration& config) { m_cfg = config; }
 
-
-bool Sio::NumpyFrameSaver::operator()(const IFrame::pointer& inframe,
-                                 IFrame::pointer& outframe)
+bool Sio::NumpyFrameSaver::operator()(const IFrame::pointer& inframe, IFrame::pointer& outframe)
 {
     if (!inframe) {
         l->debug("NumpyFrameSaver: EOS");
         outframe = nullptr;
         return true;
     }
-    
-    outframe = inframe;         // pass through actual frame
+
+    outframe = inframe;  // pass through actual frame
 
     const std::string mode = "a";
 
@@ -92,15 +83,13 @@ bool Sio::NumpyFrameSaver::operator()(const IFrame::pointer& inframe,
     // one row is one channel, one column is a tick.
     // Numpy saves reversed dimensions: {ncols, nrows} aka {ntick, nchan} dimensions.
 
-
     if (m_cfg["frame_tags"].isNull() or m_cfg["frame_tags"].empty()) {
         m_cfg["frame_tags"][0] = "";
     }
 
-
     std::stringstream ss;
-    ss << "NumpyFrameSaver: see frame #" << inframe->ident()
-       << " with " << inframe->traces()->size() << " traces with frame tags:";
+    ss << "NumpyFrameSaver: see frame #" << inframe->ident() << " with " << inframe->traces()->size()
+       << " traces with frame tags:";
     for (auto t : inframe->frame_tags()) {
         ss << " \"" << t << "\"";
     }
@@ -109,11 +98,10 @@ bool Sio::NumpyFrameSaver::operator()(const IFrame::pointer& inframe,
         ss << " \"" << t << "\"";
     }
     ss << " looking for tags:";
-    for (auto jt: m_cfg["frame_tags"]) {
+    for (auto jt : m_cfg["frame_tags"]) {
         ss << " \"" << jt.asString() << "\"";
     }
     l->debug(ss.str());
-
 
     for (auto jtag : m_cfg["frame_tags"]) {
         const std::string tag = jtag.asString();
@@ -130,7 +118,7 @@ bool Sio::NumpyFrameSaver::operator()(const IFrame::pointer& inframe,
         auto tbinmm = FrameTools::tbin_range(traces);
 
         // fixme: may want to give user some config over tbin range to save.
-        const size_t ncols = tbinmm.second-tbinmm.first;
+        const size_t ncols = tbinmm.second - tbinmm.first;
         const size_t nrows = std::distance(chbeg, chend);
         l->debug("NumpyFrameSaver: saving ncols={} nrows={}", ncols, nrows);
 
@@ -138,7 +126,7 @@ bool Sio::NumpyFrameSaver::operator()(const IFrame::pointer& inframe,
         FrameTools::fill(arr, traces, channels.begin(), chend, tbinmm.first);
         arr = arr * scale + offset;
 
-        {                   // the 2D frame array
+        {  // the 2D frame array
             const std::string aname = String::format("frame_%s_%d", tag.c_str(), m_save_count);
             if (digitize) {
                 Array::array_xxs sarr = arr.cast<short>();
@@ -148,18 +136,18 @@ bool Sio::NumpyFrameSaver::operator()(const IFrame::pointer& inframe,
             else {
                 cnpy::npz_save(fname, aname, arr.data(), {ncols, nrows}, mode);
             }
-            l->debug("NumpyFrameSaver: saved {} with {} channels {} ticks @t={} ms qtot={}",
-                     aname, nrows, ncols, inframe->time() / units::ms, arr.sum());
+            l->debug("NumpyFrameSaver: saved {} with {} channels {} ticks @t={} ms qtot={}", aname, nrows, ncols,
+                     inframe->time() / units::ms, arr.sum());
         }
 
-        {                   // the channel array
+        {  // the channel array
             const std::string aname = String::format("channels_%s_%d", tag.c_str(), m_save_count);
             cnpy::npz_save(fname, aname, channels.data(), {nrows}, mode);
         }
 
-        {                   // the tick array
+        {  // the tick array
             const std::string aname = String::format("tickinfo_%s_%d", tag.c_str(), m_save_count);
-            const std::vector<double> tickinfo{inframe->time(), inframe->tick(), (double)tbinmm.first};
+            const std::vector<double> tickinfo{inframe->time(), inframe->tick(), (double) tbinmm.first};
             cnpy::npz_save(fname, aname, tickinfo.data(), {3}, mode);
         }
     }

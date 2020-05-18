@@ -5,10 +5,10 @@
 using spdlog::info;
 
 class Foo {
-public:
-    Foo() { info("Foo() at {:p}", (void*)this); }
-    virtual ~Foo() { info("~Foo() at {:p}", (void*)this); }
-    virtual void chirp() { info("Foo::chirp() at {:p}", (void*)this); }
+   public:
+    Foo() { info("Foo() at {:p}", (void*) this); }
+    virtual ~Foo() { info("~Foo() at {:p}", (void*) this); }
+    virtual void chirp() { info("Foo::chirp() at {:p}", (void*) this); }
 };
 
 typedef WireCell::Singleton<Foo> OnlyFoo;
@@ -27,5 +27,4 @@ int main()
 
     Foo* foo3 = &WireCell::Singleton<Foo>::Instance();
     Assert(foo3 == foo1);
-
 }
