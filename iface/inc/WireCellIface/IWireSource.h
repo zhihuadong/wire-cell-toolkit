@@ -8,18 +8,15 @@ namespace WireCell {
 
     /** Return a vector of wires.
      */
-    class IWireSource : public ISourceNode<IWire::vector>
-    {
-    public:
-	virtual ~IWireSource() ;
+    class IWireSource : public ISourceNode<IWire::vector> {
+       public:
+        virtual ~IWireSource();
 
-	virtual std::string signature() {
-	   return typeid(IWireSource).name();
-	}
-	// supply:
-	// virtual bool operator()(output_pointer& wires);
+        virtual std::string signature() { return typeid(IWireSource).name(); }
+        // supply:
+        // virtual bool operator()(output_pointer& wires);
     };
 
-}
+}  // namespace WireCell
 
 #endif

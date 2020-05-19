@@ -6,7 +6,6 @@
 #include "WireCellIface/IAnodePlane.h"
 #include "WireCellIface/IConfigurable.h"
 
-
 #include "TCanvas.h"
 #include "TGraph.h"
 #include "TStyle.h"
@@ -109,31 +108,26 @@ local wc = import "wirecell.jsonnet";
 
 )JSONNET";
 
-
-
 #include "anode_loader.h"
 using namespace WireCell;
 using namespace std;
 
-
 typedef std::vector<WireCell::IChannelNoiseDatabase::filter_t> filter_bag_t;
-
 
 void plot_spec(const filter_bag_t& specs, const std::string& name)
 {
     if (specs.empty()) {
-	cerr << "No specs for \"" << name << "\"\n";
-	return;
+        cerr << "No specs for \"" << name << "\"\n";
+        return;
     }
     cerr << "plot spec \"" << name << "\" size=" << specs.size() << endl;
-
 
     std::vector<TGraph*> graphs;
     std::vector<float> tmp;
     for (const auto& spec : specs) {
         TGraph* graph = new TGraph();
         graphs.push_back(graph);
-        for (size_t ind=0; ind< spec.size(); ++ind) {
+        for (size_t ind = 0; ind < spec.size(); ++ind) {
             double amp = std::abs(spec.at(ind));
             graph->SetPoint(ind, ind, amp);
             tmp.push_back(amp);
@@ -143,11 +137,11 @@ void plot_spec(const filter_bag_t& specs, const std::string& name)
     float ymin = *mme.first;
     float ymax = *mme.second;
 
-    const int ncolors=5;
-    int colors[ncolors] = {1,2,4,6,8};
-    for (size_t igraph = 0; igraph<graphs.size(); ++igraph) {
+    const int ncolors = 5;
+    int colors[ncolors] = {1, 2, 4, 6, 8};
+    for (size_t igraph = 0; igraph < graphs.size(); ++igraph) {
         TGraph* graph = graphs[igraph];
-        graph->SetLineColor(colors[igraph%ncolors]);
+        graph->SetLineColor(colors[igraph % ncolors]);
         graph->SetLineWidth(2);
 
         if (!igraph) {
@@ -166,7 +160,6 @@ void plot_spec(const filter_bag_t& specs, const std::string& name)
     }
 }
 
-
 int main(int argc, char* argv[])
 {
     /// User code should never do this.
@@ -181,11 +174,11 @@ int main(int argc, char* argv[])
             WireCell::Persist::externalvars_t extvar;
             extvar["detector"] = "uboone";
             cfg = Persist::load(argv[1], extvar);
-            if (cfg.isArray()) {	// probably a full configuration
+            if (cfg.isArray()) {  // probably a full configuration
                 for (auto jone : cfg) {
                     string the_type = jone["type"].asString();
                     if (the_type == "wclsChannelNoiseDB" || the_type == "OmniChannelNoiseDB") {
-                        //cerr << "Found my config\n" << jone << "\n";
+                        // cerr << "Found my config\n" << jone << "\n";
                         cfg = jone["data"];
                         break;
                     }
@@ -203,31 +196,33 @@ int main(int argc, char* argv[])
         cfg = update(def, cfg);
         icfg->configure(cfg);
     }
-    
+
     auto anode = Factory::find_tn<IAnodePlane>(anode_tns[0]);
     const int nchannels = anode->channels().size();
 
     auto idb = Factory::find_tn<IChannelNoiseDatabase>("OmniChannelNoiseDB");
 
     gStyle->SetOptStat(0);
-    TCanvas canvas("canvas","canvas",500,500);
+    TCanvas canvas("canvas", "canvas", 500, 500);
 
-    string pdfname = Form("%s.pdf",argv[0]);
+    string pdfname = Form("%s.pdf", argv[0]);
 
-    canvas.Print((pdfname+"[").c_str(),"pdf");
+    canvas.Print((pdfname + "[").c_str(), "pdf");
     canvas.SetGridx(1);
     canvas.SetGridy(1);
     double tick = idb->sample_time();
-    cerr << "tick = " << tick/units::us << " us.\n";
+    cerr << "tick = " << tick / units::us << " us.\n";
 
-    std::vector<std::string> scalar_names{
-        "nominal baseline", "gain correction", "response offset", "pad window front", "pad window back",
-            "min rms cut", "max rms cut", "rcrc sum", "config sum", "noise sum", "response sum"};
+    std::vector<std::string> scalar_names{"nominal baseline", "gain correction", "response offset", "pad window front",
+                                          "pad window back",  "min rms cut",     "max rms cut",     "rcrc sum",
+                                          "config sum",       "noise sum",       "response sum"};
 
     const int nscalars = 11;
     std::vector<TGraph*> scalars;
-    for (int ind=0; ind<11; ++ind) { scalars.push_back(new TGraph); }
-    for (int ch=0; ch<nchannels; ++ch) {
+    for (int ind = 0; ind < 11; ++ind) {
+        scalars.push_back(new TGraph);
+    }
+    for (int ch = 0; ch < nchannels; ++ch) {
         scalars[0]->SetPoint(ch, ch, idb->nominal_baseline(ch));
         scalars[1]->SetPoint(ch, ch, idb->gain_correction(ch));
         scalars[2]->SetPoint(ch, ch, idb->response_offset(ch));
@@ -236,14 +231,13 @@ int main(int argc, char* argv[])
         scalars[5]->SetPoint(ch, ch, idb->min_rms_cut(ch));
         scalars[6]->SetPoint(ch, ch, idb->max_rms_cut(ch));
 
-	scalars[7]->SetPoint(ch, ch,  std::abs(Waveform::sum(idb->rcrc(ch))));
-	scalars[8]->SetPoint(ch, ch,  std::abs(Waveform::sum(idb->config(ch))));
-	scalars[9]->SetPoint(ch, ch,  std::abs(Waveform::sum(idb->noise(ch))));
-	scalars[10]->SetPoint(ch, ch, std::abs(Waveform::sum(idb->response(ch))));
-
+        scalars[7]->SetPoint(ch, ch, std::abs(Waveform::sum(idb->rcrc(ch))));
+        scalars[8]->SetPoint(ch, ch, std::abs(Waveform::sum(idb->config(ch))));
+        scalars[9]->SetPoint(ch, ch, std::abs(Waveform::sum(idb->noise(ch))));
+        scalars[10]->SetPoint(ch, ch, std::abs(Waveform::sum(idb->response(ch))));
     }
 
-    for (size_t ind=0; ind<nscalars; ++ind) {
+    for (size_t ind = 0; ind < nscalars; ++ind) {
         TGraph* graph = scalars[ind];
         graph->SetName(scalar_names[ind].c_str());
         graph->SetLineColor(2);
@@ -256,8 +250,7 @@ int main(int argc, char* argv[])
         canvas.Print(pdfname.c_str(), "pdf");
     }
 
-    canvas.Print((pdfname+"]").c_str(), "pdf");
+    canvas.Print((pdfname + "]").c_str(), "pdf");
 
-    
     return 0;
 }

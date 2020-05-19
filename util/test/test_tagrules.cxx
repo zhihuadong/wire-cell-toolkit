@@ -49,23 +49,23 @@ int main(int argc, char* argv[])
     tagrules::tagset_t tags;
     Configuration cfg;
     if (argc == 2) {
-        cfg = Persist::load(argv[1]); // .jsonnet or .json file assumed
+        cfg = Persist::load(argv[1]);  // .jsonnet or .json file assumed
     }
     else {
         cfg = Persist::loads(jtext);
     }
     if (argc > 2) {
-        for (int ind=2; ind<argc; ++ind) {
+        for (int ind = 2; ind < argc; ++ind) {
             tags.insert(argv[ind]);
         }
     }
     else {
         tags.insert("tagXY");
-        tags.insert("tagXY");   // intenional duplicate
+        tags.insert("tagXY");  // intenional duplicate
         tags.insert("intagA");
-        tags.insert("dontmatchme"); // a tag that shouldn't be matched
+        tags.insert("dontmatchme");  // a tag that shouldn't be matched
         tags.insert("is-tagged2");
-    }        
+    }
 
     int iport = 0;
     for (auto jport : cfg) {
@@ -73,15 +73,15 @@ int main(int argc, char* argv[])
             auto jrules = jport[cat];
             auto rs = convert<tagrules::ruleset_t>(jrules);
             auto newtags = tagrules::transform(tags, rs);
-            std::cout << "port:"<<iport<<", categ:\""<<cat<<"\": have tags:[";
-            string comma="";
-            for (auto t: tags) {
+            std::cout << "port:" << iport << ", categ:\"" << cat << "\": have tags:[";
+            string comma = "";
+            for (auto t : tags) {
                 std::cout << comma << t;
                 comma = ", ";
             }
             std::cout << "], got tags: [";
-            comma="";
-            for (auto t: newtags) {
+            comma = "";
+            for (auto t : newtags) {
                 std::cout << comma << t;
                 comma = ", ";
             }
@@ -93,4 +93,3 @@ int main(int argc, char* argv[])
     }
     return 0;
 }
-

@@ -4,33 +4,30 @@
 #include <algorithm>
 #include <sstream>
 
-
 using namespace WireCell;
 using namespace WireCell::RayGrid;
 
 Activity::Activity(layer_index_t layer)
-    : m_span{}
-    , m_layer(layer)
-    , m_offset(0)
-    , m_threshold(0)
+  : m_span{}
+  , m_layer(layer)
+  , m_offset(0)
+  , m_threshold(0)
 {
 }
 
-Activity::Activity(layer_index_t layer, size_t span, double value,
-                   int offset, double threshold)
-    : m_span(span, value)
-    , m_layer(layer)
-    , m_offset(offset)
-    , m_threshold(threshold)
+Activity::Activity(layer_index_t layer, size_t span, double value, int offset, double threshold)
+  : m_span(span, value)
+  , m_layer(layer)
+  , m_offset(offset)
+  , m_threshold(threshold)
 {
 }
 
-Activity::Activity(layer_index_t layer, const range_t& span, int offset,
-                   double threshold)
-    : m_span{}
-    , m_layer(layer)
-    , m_offset(offset)
-    , m_threshold(threshold)
+Activity::Activity(layer_index_t layer, const range_t& span, int offset, double threshold)
+  : m_span{}
+  , m_layer(layer)
+  , m_offset(offset)
+  , m_threshold(threshold)
 {
     if (span.first == span.second) {
         return;
@@ -41,55 +38,40 @@ Activity::Activity(layer_index_t layer, const range_t& span, int offset,
         ++m_offset;
     }
     iterator_t e = span.second;
-    while (e > b and *(e-1) <= m_threshold) {
+    while (e > b and *(e - 1) <= m_threshold) {
         --e;
     }
-    m_span.insert(m_span.begin(), b,e);
+    m_span.insert(m_span.begin(), b, e);
 }
 
-Activity::iterator_t Activity::begin() const
-{
-    return m_span.begin();
-}
+Activity::iterator_t Activity::begin() const { return m_span.begin(); }
 
-Activity::iterator_t Activity::end() const
-{
-    return m_span.end();
-}
+Activity::iterator_t Activity::end() const { return m_span.end(); }
 
-bool Activity::empty() const 
-{
-    return m_span.empty();
-}
+bool Activity::empty() const { return m_span.empty(); }
 
-int Activity::pitch_index(const iterator_t& it) const
-{
-    return m_offset + it-m_span.begin();
-}
+int Activity::pitch_index(const iterator_t& it) const { return m_offset + it - m_span.begin(); }
 // Produce a subspan activity between pitch indices [pi1, pi2)
 Activity Activity::subspan(int abs_beg, int abs_end) const
 {
-    const int rel_beg = abs_beg-m_offset;
-    const int rel_end = abs_end-m_offset;
+    const int rel_beg = abs_beg - m_offset;
+    const int rel_end = abs_end - m_offset;
 
-    if (rel_beg < 0 or rel_beg >= rel_end or rel_end > (int)m_span.size()) {
-        spdlog::debug("activity::subspan bogus absolute:[{},{}] m_offset={} span.size={}",
-              abs_beg, abs_end, m_offset, m_span.size());
+    if (rel_beg < 0 or rel_beg >= rel_end or rel_end > (int) m_span.size()) {
+        spdlog::debug("activity::subspan bogus absolute:[{},{}] m_offset={} span.size={}", abs_beg, abs_end, m_offset,
+                      m_span.size());
         return Activity(m_layer);
     }
-    
-    return Activity(m_layer, {begin()+rel_beg, begin()+rel_end}, abs_beg);
+
+    return Activity(m_layer, {begin() + rel_beg, begin() + rel_end}, abs_beg);
 }
 
-
-Strip
-Activity::make_strip(const Activity::range_t& r) const
+Strip Activity::make_strip(const Activity::range_t& r) const
 {
-    return Strip{m_layer, std::make_pair(pitch_index(r.first),
-                                         pitch_index(r.second))};
+    return Strip{m_layer, std::make_pair(pitch_index(r.first), pitch_index(r.second))};
 }
 
-strips_t Activity::make_strips() const 
+strips_t Activity::make_strips() const
 {
     strips_t ret;
     for (const auto& ar : active_ranges()) {
@@ -97,7 +79,6 @@ strips_t Activity::make_strips() const
     }
     return ret;
 }
-
 
 Activity::ranges_t Activity::active_ranges() const
 {
@@ -126,33 +107,29 @@ Activity::ranges_t Activity::active_ranges() const
 
 /*********************************/
 
-static
-crossings_t find_corners(const Strip& one, const Strip& two)
+static crossings_t find_corners(const Strip& one, const Strip& two)
 {
     crossings_t ret;
 
     const auto a = one.addresses(), b = two.addresses();
 
-    ret.push_back(std::make_pair(a.first,  b.first));
-    ret.push_back(std::make_pair(a.first,  b.second));
+    ret.push_back(std::make_pair(a.first, b.first));
+    ret.push_back(std::make_pair(a.first, b.second));
     ret.push_back(std::make_pair(a.second, b.first));
     ret.push_back(std::make_pair(a.second, b.second));
     return ret;
 }
 
-
-
-
 void Blob::add(const Coordinates& coords, const Strip& strip)
 {
     const size_t nstrips = m_strips.size();
 
-    if (nstrips == 0) {         // special case
+    if (nstrips == 0) {  // special case
         m_strips.push_back(strip);
         return;
     }
 
-    if (nstrips == 1) {         // special case
+    if (nstrips == 1) {  // special case
         m_strips.push_back(strip);
         m_corners = find_corners(m_strips.front(), m_strips.back());
         return;
@@ -165,7 +142,6 @@ void Blob::add(const Coordinates& coords, const Strip& strip)
         const double pitch = coords.pitch_location(c.first, c.second, strip.layer);
         const int pind = coords.pitch_index(pitch, strip.layer);
 
-
         if (strip.in(pind)) {
             surviving.push_back(c);
         }
@@ -175,11 +151,12 @@ void Blob::add(const Coordinates& coords, const Strip& strip)
     for (size_t si1 = 0; si1 < nstrips; ++si1) {
         auto corners = find_corners(m_strips[si1], strip);
         for (const auto& c : corners) {
-
             // check each corner if inside all other strips
             bool miss = false;
             for (size_t si2 = 0; si2 < nstrips; ++si2) {
-                if (si1 == si2) { continue; }
+                if (si1 == si2) {
+                    continue;
+                }
                 const auto& s2 = m_strips[si2];
                 double pitch = coords.pitch_location(c.first, c.second, s2.layer);
                 const int pind = coords.pitch_index(pitch, s2.layer);
@@ -199,26 +176,19 @@ void Blob::add(const Coordinates& coords, const Strip& strip)
     m_strips.push_back(strip);
 }
 
-const crossings_t& Blob::corners() const
-{
-    return m_corners;
-}
-
-
+const crossings_t& Blob::corners() const { return m_corners; }
 
 Tiling::Tiling(const Coordinates& coords)
-    : m_coords(coords)
+  : m_coords(coords)
 {
 }
-
-
 
 blobs_t Tiling::operator()(const Activity& activity)
 {
     auto strips = activity.make_strips();
     const size_t nstrips = strips.size();
     blobs_t ret(nstrips);
-    for (size_t ind=0; ind<nstrips; ++ind) {
+    for (size_t ind = 0; ind < nstrips; ++ind) {
         ret[ind].add(m_coords, strips[ind]);
     }
     return ret;
@@ -253,8 +223,8 @@ Activity Tiling::projection(const Blob& blob, const Activity& activity)
     auto pend = pitches.end();
 
     const auto mm = std::minmax_element(pbeg, pend);
-    int pind1 = std::floor((*mm.first)/pitch_mag);
-    int pind2 = std::ceil((*mm.second)/pitch_mag);
+    int pind1 = std::floor((*mm.first) / pitch_mag);
+    int pind2 = std::ceil((*mm.second) / pitch_mag);
 
     const int apind1 = activity.pitch_index(activity.begin());
     const int apind2 = activity.pitch_index(activity.end());
@@ -265,11 +235,10 @@ Activity Tiling::projection(const Blob& blob, const Activity& activity)
 
     pind1 = std::max(pind1, activity.pitch_index(activity.begin()));
     pind2 = std::min(pind2, activity.pitch_index(activity.end()));
-    
+
     Activity ret = activity.subspan(pind1, pind2);
     return ret;
 }
-
 
 std::string Blob::as_string() const
 {
@@ -292,14 +261,13 @@ std::string Activity::as_string() const
 {
     std::stringstream ss;
     ss << *this << "\n";
-    for (auto strip: make_strips()) {
+    for (auto strip : make_strips()) {
         ss << "\t" << strip << "\n";
     }
     return ss.str();
 }
 
-blobs_t Tiling::operator()(const blobs_t& prior_blobs,
-                           const Activity& activity)
+blobs_t Tiling::operator()(const blobs_t& prior_blobs, const Activity& activity)
 {
     blobs_t ret;
 
@@ -310,7 +278,7 @@ blobs_t Tiling::operator()(const blobs_t& prior_blobs,
         }
         auto strips = proj.make_strips();
         for (auto strip : strips) {
-            Blob newblob = blob; // copy
+            Blob newblob = blob;  // copy
             newblob.add(m_coords, strip);
             if (newblob.corners().empty()) {
                 continue;
@@ -324,8 +292,7 @@ blobs_t Tiling::operator()(const blobs_t& prior_blobs,
 
 size_t WireCell::RayGrid::drop_invalid(blobs_t& blobs)
 {
-    const auto end = std::partition(blobs.begin(), blobs.end(),
-                                    [](const Blob& b) { return b.valid(); });
+    const auto end = std::partition(blobs.begin(), blobs.end(), [](const Blob& b) { return b.valid(); });
     const size_t dropped = blobs.end() - end;
     blobs.resize(end - blobs.begin());
     return dropped;
@@ -333,11 +300,10 @@ size_t WireCell::RayGrid::drop_invalid(blobs_t& blobs)
 
 void WireCell::RayGrid::prune(const Coordinates& coords, blobs_t& blobs)
 {
-    for (auto & blob: blobs) {
-
+    for (auto& blob : blobs) {
         auto& strips = blob.strips();
         const int nlayers = strips.size();
-        std::vector< std::vector<grid_index_t> > mms(nlayers);
+        std::vector<std::vector<grid_index_t> > mms(nlayers);
         for (const auto& corner : blob.corners()) {
             // fixme off by one bugs here?  Adding the two rays making
             // up a corner adds a pitch-bin-edge.  Adding the ray
@@ -349,18 +315,18 @@ void WireCell::RayGrid::prune(const Coordinates& coords, blobs_t& blobs)
             mms[corner.second.layer].push_back(corner.second.grid);
 
             // Check every layer not forming the corner
-            for (int layer=0; layer<nlayers; ++layer) {
+            for (int layer = 0; layer < nlayers; ++layer) {
                 if (corner.first.layer == layer or corner.second.layer == layer) {
                     continue;
                 }
                 const double ploc = coords.pitch_location(corner.first, corner.second, layer);
                 const int pind = coords.pitch_index(ploc, layer);
                 mms[layer].push_back(pind);
-                mms[layer].push_back(pind+1);
+                mms[layer].push_back(pind + 1);
             }
         }
 
-        for (int layer=0; layer<nlayers; ++layer) {
+        for (int layer = 0; layer < nlayers; ++layer) {
             auto mm = std::minmax_element(mms[layer].begin(), mms[layer].end());
             strips[layer].bounds.first = *mm.first;
             strips[layer].bounds.second = *mm.second;
@@ -389,4 +355,3 @@ blobs_t WireCell::RayGrid::make_blobs(const Coordinates& coords, const activitie
     prune(coords, blobs);
     return blobs;
 }
-

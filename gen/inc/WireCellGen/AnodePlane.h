@@ -16,16 +16,13 @@ namespace WireCell {
     namespace Gen {
 
         class AnodePlane : public IAnodePlane, public IConfigurable {
-        public:
-
+           public:
             AnodePlane();
             virtual ~AnodePlane() {}
-
 
             // IConfigurable interface
             virtual void configure(const WireCell::Configuration& config);
             virtual WireCell::Configuration default_configuration() const;
-
 
             /// IAnodePlane interface
             virtual int ident() const { return m_ident; }
@@ -37,8 +34,7 @@ namespace WireCell {
             virtual IChannel::pointer channel(int chident) const;
             virtual IWire::vector wires(int channel) const;
 
-        private:
-
+           private:
             int m_ident;
             IAnodeFace::vector m_faces;
 
@@ -48,9 +44,8 @@ namespace WireCell {
             std::unordered_map<int, IChannel::pointer> m_ichannels;
             Log::logptr_t l;
         };
-    }
+    }  // namespace Gen
 
-}
-
+}  // namespace WireCell
 
 #endif

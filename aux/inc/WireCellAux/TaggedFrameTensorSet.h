@@ -54,25 +54,22 @@ namespace WireCell {
          *
          * - tbin :: ("waveform" type) the time bin of the first column of the tensor
          * - pad :: the configured pad value
-         * 
+         *
          */
-        class TaggedFrameTensorSet
-            : public WireCell::IConfigurable
-            , public WireCell::IFrameTensorSet {
-        public:
+        class TaggedFrameTensorSet : public WireCell::IConfigurable, public WireCell::IFrameTensorSet {
+           public:
             TaggedFrameTensorSet();
             virtual ~TaggedFrameTensorSet();
 
             virtual bool operator()(const input_pointer& in, output_pointer& out);
-            
+
             virtual WireCell::Configuration default_configuration() const;
             virtual void configure(const WireCell::Configuration& config);
-        private:
+
+           private:
             WireCell::Configuration m_cfg;
         };
-    }
-}
+    }  // namespace Aux
+}  // namespace WireCell
 
 #endif
-
-

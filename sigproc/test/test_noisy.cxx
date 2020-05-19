@@ -6,7 +6,6 @@
 #include <iostream>
 #include <string>
 
-
 // provides vectors "horig" and "hfilt"
 // generate like:
 // $ dump-root-hist-to-waveform sigproc/test/example-chirp.root horig hfilt > sigproc/test/example-chirp.h
@@ -21,6 +20,6 @@ using namespace WireCell::SigProc;
 int main(int argc, char* argv[])
 {
     Microboone::SignalFilter(horig);
-    bool is_noisy = Microboone::NoisyFilterAlg(horig,0.7,10.0);
+    bool is_noisy = Microboone::NoisyFilterAlg(horig, 0.7, 10.0);
     Assert(is_noisy);
 }

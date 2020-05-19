@@ -4,20 +4,20 @@
 #include <iostream>
 using namespace WireCell;
 
-template<typename TYPE>
+template <typename TYPE>
 void by_type()
 {
     std::cout << "by_type<" << zio::tens::type_name(typeid(TYPE)) << sizeof(TYPE) << ">\n";
 
-    TYPE tensor[2][3][4] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23};
+    TYPE tensor[2][3][4] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
     const TYPE* tensor1 = (TYPE*) tensor;
-    std::vector<size_t> shape={2,3,4};
+    std::vector<size_t> shape = {2, 3, 4};
 
     zio::Message msg1(zio::tens::form);
 
     // Add an initial, unrelated message part just to make sure tens
     // respects the rules that tens parts aren't all parts.
-    msg1.add(zio::message_t((char*)nullptr,0));
+    msg1.add(zio::message_t((char*) nullptr, 0));
     assert(msg1.payload().size() == 1);
     zio::tens::append(msg1, tensor1, shape);
     assert(msg1.payload().size() == 2);
@@ -29,7 +29,6 @@ void by_type()
         lo1["TENS"]["tensors"][0]["metadata"]["extra"] = "hello world";
         msg1.set_label_object(lo1);
     }
-
 
     auto itens = Zio::unpack(msg1);
 
@@ -55,7 +54,7 @@ void by_type()
     // be identical.
     auto lo1 = msg1.label_object();
     auto lo2 = msg2.label_object();
-    Assert (lo2["TENS"]["tensors"][0]["part"].get<int>() == 0);
+    Assert(lo2["TENS"]["tensors"][0]["part"].get<int>() == 0);
     lo1["TENS"]["tensors"][0].erase("part");
     lo2["TENS"]["tensors"][0].erase("part");
     Assert(lo1 == lo2);

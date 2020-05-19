@@ -17,7 +17,7 @@
 
     local cosmics = { type:"TrackDepos", name:"cosmics", ...};
     [ // main configuration sequence which includes config for
-      // TrackDepos:cosmics, TrackDepos:beam, 
+      // TrackDepos:cosmics, TrackDepos:beam,
       // DepoJoiner (which may not yet exist) but not
       // DumpDepos as it is not a configurable....,
     cosmics, beam, ...,
@@ -42,7 +42,7 @@
 
     Note the port number need really only be specified in the second
     edge in order to send the data to port #1.  port #0 is default.
-    
+
     As when configuraing a component itself, the name need only be
     specified in an edge pair if not using the default (empty string).
 
@@ -58,9 +58,8 @@
 
 namespace WireCell {
     namespace Pgraph {
-        class Pgrapher :
-            public WireCell::IApplication, public WireCell::IConfigurable {
-        public:
+        class Pgrapher : public WireCell::IApplication, public WireCell::IConfigurable {
+           public:
             Pgrapher();
             virtual ~Pgrapher();
 
@@ -70,12 +69,12 @@ namespace WireCell {
             // IConfigurable
             virtual void configure(const WireCell::Configuration& config);
             virtual WireCell::Configuration default_configuration() const;
-        private:
+
+           private:
             Graph m_graph;
             Log::logptr_t l;
         };
-    }
-}
-
+    }  // namespace Pgraph
+}  // namespace WireCell
 
 #endif

@@ -1,15 +1,15 @@
 /* Note, this file should not be #include'd into WCT components
  * directly but may be included into tests.
 
-   Uniformly slice a frame by charge summation 
+   Uniformly slice a frame by charge summation
 
-   This file provides two variants.  
+   This file provides two variants.
 
    - SumSlicer :: a function node which produces an IFrameSlice
 
    - SumSlices :: a queuedout node which produces an ISlice
 
-   The two have trace-offs.  
+   The two have trace-offs.
 
    r: keeps context, makes DFP graph simpler, forces monolithic downstream/more memory/node
 
@@ -39,10 +39,10 @@ namespace WireCell {
         namespace Data {
             // ISlice class is held temporarily as concrete.
             class Slice;
-        }
+        }  // namespace Data
 
         class SumSliceBase : public IConfigurable {
-        public:
+           public:
             SumSliceBase();
             virtual ~SumSliceBase();
 
@@ -50,20 +50,18 @@ namespace WireCell {
             virtual void configure(const WireCell::Configuration& cfg);
             virtual WireCell::Configuration default_configuration() const;
 
-        protected:
-
+           protected:
             typedef std::map<size_t, Data::Slice*> slice_map_t;
             void slice(const IFrame::pointer& in, slice_map_t& sm);
 
-        private:
-
+           private:
             IAnodePlane::pointer m_anode;
             int m_tick_span;
             std::string m_tag;
         };
 
         class SumSlicer : public SumSliceBase, public IFrameSlicer {
-        public:
+           public:
             virtual ~SumSlicer();
 
             // IFrameSlicer
@@ -71,14 +69,13 @@ namespace WireCell {
         };
 
         class SumSlices : public SumSliceBase, public IFrameSlices {
-        public:
+           public:
             virtual ~SumSlices();
 
             // IFrameSlices
             virtual bool operator()(const input_pointer& depo, output_queue& slices);
-
         };
 
-    }
-}
+    }  // namespace Img
+}  // namespace WireCell
 #endif

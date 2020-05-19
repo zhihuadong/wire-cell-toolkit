@@ -10,21 +10,17 @@ namespace WireCell {
      * restriction on the number of inputs, if any, are left to the
      * implementation.
      */
-    class IClusterFanin : public IFaninNode<ICluster,ICluster,0> {
-    public:
+    class IClusterFanin : public IFaninNode<ICluster, ICluster, 0> {
+       public:
+        virtual ~IClusterFanin();
 
-        virtual ~IClusterFanin() ;
-
-        virtual std::string signature() {
-           return typeid(IClusterFanin).name();
-        }
+        virtual std::string signature() { return typeid(IClusterFanin).name(); }
 
         // Subclass must implement:
-        virtual std::vector<std::string>  input_types() = 0;
+        virtual std::vector<std::string> input_types() = 0;
         // and the already abstract:
-	// virtual bool operator()(const input_vector& invec, output_pointer& out) = 0;
+        // virtual bool operator()(const input_vector& invec, output_pointer& out) = 0;
     };
-}
+}  // namespace WireCell
 
 #endif
-

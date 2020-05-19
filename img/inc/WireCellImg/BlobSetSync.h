@@ -12,7 +12,7 @@ namespace WireCell {
     namespace Img {
 
         class BlobSetSync : public IBlobSetFanin, public IConfigurable {
-        public:
+           public:
             BlobSetSync();
             virtual ~BlobSetSync();
 
@@ -20,15 +20,14 @@ namespace WireCell {
             virtual void configure(const WireCell::Configuration& cfg);
             virtual WireCell::Configuration default_configuration() const;
 
-            virtual std::vector<std::string>  input_types();
+            virtual std::vector<std::string> input_types();
             virtual bool operator()(const input_vector& invec, output_pointer& out);
-            
-        private:
+
+           private:
             size_t m_multiplicity;
             Log::logptr_t l;
         };
-    }
-}
+    }  // namespace Img
+}  // namespace WireCell
 
 #endif
-

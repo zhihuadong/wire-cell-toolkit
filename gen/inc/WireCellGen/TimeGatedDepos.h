@@ -31,20 +31,20 @@ namespace WireCell {
            end of the gate is considered outside the gate.
          */
         class TimeGatedDepos : public IDrifter, public IConfigurable {
-        public:
+           public:
             TimeGatedDepos();
             virtual ~TimeGatedDepos();
             virtual bool operator()(const input_pointer& depo, output_queue& outq);
             virtual void configure(const WireCell::Configuration& config);
             virtual WireCell::Configuration default_configuration() const;
-        private:
-            
+
+           private:
             bool m_accept;
             double m_period;
             double m_start;
             double m_duration;
         };
-    }
-}
+    }  // namespace Gen
+}  // namespace WireCell
 
 #endif

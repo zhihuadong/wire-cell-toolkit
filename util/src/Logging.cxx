@@ -8,9 +8,7 @@
 
 using namespace WireCell;
 
-
-static
-Log::logptr_t wct_base_logger()
+static Log::logptr_t wct_base_logger()
 {
     const std::string name = "wct";
     static Log::logptr_t base_logger = nullptr;
@@ -30,7 +28,6 @@ Log::logptr_t wct_base_logger()
 
     return base_logger;
 }
-
 
 void Log::add_sink(Log::sinkptr_t sink, std::string level)
 {
@@ -70,12 +67,14 @@ void Log::add_stderr(bool color, std::string level)
 
 Log::logptr_t Log::logger(std::string name)
 {
-    wct_base_logger();          // make sure base logger is installed.
+    wct_base_logger();  // make sure base logger is installed.
     auto l = spdlog::get(name);
-    if (l) { return l; }
+    if (l) {
+        return l;
+    }
 
     auto& sinks = wct_base_logger()->sinks();
-    l = std::make_shared<spdlog::logger>(name,  sinks.begin(), sinks.end());
+    l = std::make_shared<spdlog::logger>(name, sinks.begin(), sinks.end());
 
     // peak under the hood of spdlog.  We want shared loggers to
     // get configured with the default level.

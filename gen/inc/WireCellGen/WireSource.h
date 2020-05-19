@@ -13,23 +13,22 @@ namespace WireCell {
      */
 
     class WireSource : public IWireSource, public IConfigurable {
-    public:
-	WireSource();
-	virtual ~WireSource();
+       public:
+        WireSource();
+        virtual ~WireSource();
 
-	virtual bool operator()(output_pointer& wires);
+        virtual bool operator()(output_pointer& wires);
 
-	/** Configurable interface.
-	 */
-	virtual void configure(const WireCell::Configuration& config);
-	virtual WireCell::Configuration default_configuration() const;
-	
-    private:
-	std::shared_ptr<WireParams> m_params;
-	WireGenerator m_wiregen;
+        /** Configurable interface.
+         */
+        virtual void configure(const WireCell::Configuration& config);
+        virtual WireCell::Configuration default_configuration() const;
+
+       private:
+        std::shared_ptr<WireParams> m_params;
+        WireGenerator m_wiregen;
     };
 
-
-}
+}  // namespace WireCell
 
 #endif

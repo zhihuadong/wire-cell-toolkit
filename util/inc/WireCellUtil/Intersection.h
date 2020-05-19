@@ -14,7 +14,7 @@ namespace WireCell {
      * \param bounds is a raw from opposite corners of the bounding box.
      *
      * \param point is a WireCell::Point from which a ray emanates.
-     * 
+     *
      * \param dir is a WireCell::Vector in the direction of the ray.
      *
      * \param hits is the returned intersection(s).
@@ -24,9 +24,7 @@ namespace WireCell {
      * is valid and 3 meaning both are.
      */
 
-    int hit_square(int axis0, const Ray& bounds,
-		   const Point& point, const Vector& dir,
-		   Ray& hits);
+    int hit_square(int axis0, const Ray& bounds, const Point& point, const Vector& dir, Ray& hits);
 
     /** Determine if a ray hits a rectangular box aligned with the
      * Cartesian axes.
@@ -35,6 +33,6 @@ namespace WireCell {
      */
     int box_intersection(const Ray& bounds, const Ray& ray, Ray& hits);
 
-}
+}  // namespace WireCell
 
 #endif

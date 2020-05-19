@@ -13,13 +13,10 @@
 #include <sstream>
 #include <iostream>
 
-WIRECELL_FACTORY(TimeGatedDepos, WireCell::Gen::TimeGatedDepos,
-                 WireCell::IDrifter, WireCell::IConfigurable)
+WIRECELL_FACTORY(TimeGatedDepos, WireCell::Gen::TimeGatedDepos, WireCell::IDrifter, WireCell::IConfigurable)
 
 using namespace std;
 using namespace WireCell;
-
-
 
 WireCell::Configuration Gen::TimeGatedDepos::default_configuration() const
 {
@@ -31,19 +28,15 @@ WireCell::Configuration Gen::TimeGatedDepos::default_configuration() const
     return cfg;
 }
 
-
-
 Gen::TimeGatedDepos::TimeGatedDepos()
-    : m_accept(true)
-    , m_period(0.0)
-    , m_start(0.0)
-    , m_duration(0.0)
+  : m_accept(true)
+  , m_period(0.0)
+  , m_start(0.0)
+  , m_duration(0.0)
 
 {
 }
-Gen::TimeGatedDepos::~TimeGatedDepos()
-{
-}
+Gen::TimeGatedDepos::~TimeGatedDepos() {}
 
 bool Gen::TimeGatedDepos::operator()(const input_pointer& depo, output_queue& outq)
 {
@@ -58,7 +51,7 @@ bool Gen::TimeGatedDepos::operator()(const input_pointer& depo, output_queue& ou
     if (ingate == m_accept) {
         outq.push_back(depo);
     }
-    return true;    
+    return true;
 }
 
 void Gen::TimeGatedDepos::configure(const WireCell::Configuration& cfg)

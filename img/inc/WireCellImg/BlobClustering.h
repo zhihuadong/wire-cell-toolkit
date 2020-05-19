@@ -7,7 +7,7 @@
     slice (including none) and that blob sets are delivered in time
     order.  Blobs in the set may span both faces of an anode plane.
     Gaps in time between blob sets will be determined by the set's
-    slice.  
+    slice.
 
     Clusters will not span a gap.  Likewise, when an EOS is
     encountered, all clusters are flushed to the output queue.  If the
@@ -38,16 +38,16 @@ namespace WireCell {
     namespace Img {
 
         class BlobClustering : public IClustering, public IConfigurable {
-        public:
+           public:
             BlobClustering();
             virtual ~BlobClustering();
 
             virtual void configure(const WireCell::Configuration& cfg);
             virtual WireCell::Configuration default_configuration() const;
 
-            virtual bool operator()(const input_pointer& blobset, output_queue& clusters) ;
+            virtual bool operator()(const input_pointer& blobset, output_queue& clusters);
 
-        private:
+           private:
             // User may configure how many slices can go missing
             // before breaking the clusters.  Default is 1.0, slices
             // must be adjacent in time or clusters will flush.
@@ -76,7 +76,7 @@ namespace WireCell {
 
             Log::logptr_t l;
         };
-    }
-}
+    }  // namespace Img
+}  // namespace WireCell
 
 #endif

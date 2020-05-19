@@ -14,21 +14,18 @@ namespace WireCell {
     namespace Img {
 
         class NaiveStriper : public ISliceStriper, public IConfigurable {
-        public:
+           public:
             virtual ~NaiveStriper();
 
             virtual void configure(const WireCell::Configuration& cfg);
             virtual WireCell::Configuration default_configuration() const;
 
             virtual bool operator()(const input_pointer& in, output_pointer& out);
-        private:
 
+           private:
             size_t m_gap;
-
         };
-    }
-}
-
+    }  // namespace Img
+}  // namespace WireCell
 
 #endif
-

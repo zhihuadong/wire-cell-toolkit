@@ -7,29 +7,24 @@
 #include "WireCellIface/ISlice.h"
 #include "WireCellIface/IFrame.h"
 
-
 #include "WireCellUtil/Units.h"
 #include "WireCellUtil/String.h"
 #include "WireCellUtil/NamedFactory.h"
 
 #include <fstream>
 
-WIRECELL_FACTORY(JsonClusterTap, WireCell::Img::JsonClusterTap,
-                 WireCell::IClusterFilter, WireCell::IConfigurable)
+WIRECELL_FACTORY(JsonClusterTap, WireCell::Img::JsonClusterTap, WireCell::IClusterFilter, WireCell::IConfigurable)
 
 using namespace WireCell;
 
-
 Img::JsonClusterTap::JsonClusterTap()
-    : m_filename("cluster-%03d.json")
-    , m_drift_speed(1.6*units::mm/units::us)
-    , log(Log::logger("io"))
+  : m_filename("cluster-%03d.json")
+  , m_drift_speed(1.6 * units::mm / units::us)
+  , log(Log::logger("io"))
 {
 }
 
-Img::JsonClusterTap::~JsonClusterTap()
-{
-}
+Img::JsonClusterTap::~JsonClusterTap() {}
 
 void Img::JsonClusterTap::configure(const WireCell::Configuration& cfg)
 {
@@ -47,25 +42,18 @@ WireCell::Configuration Img::JsonClusterTap::default_configuration() const
     return cfg;
 }
 
+static Json::Value size_stringer(const cluster_node_t& n) { return Json::nullValue; }
 
-static
-Json::Value size_stringer(const cluster_node_t& n)
-{
-    return Json::nullValue;
-}
-
-static
-Json::Value jpoint(const Point& p)
+static Json::Value jpoint(const Point& p)
 {
     Json::Value ret;
-    for (int ind=0; ind<3; ++ind) {
+    for (int ind = 0; ind < 3; ++ind) {
         ret[ind] = p[ind];
     }
     return ret;
 }
 
-static
-Json::Value  channel_jsoner(const cluster_node_t& n)
+static Json::Value channel_jsoner(const cluster_node_t& n)
 {
     IChannel::pointer ich = std::get<typename IChannel::pointer>(n.ptr);
     Json::Value ret = Json::objectValue;
@@ -75,8 +63,7 @@ Json::Value  channel_jsoner(const cluster_node_t& n)
     return ret;
 }
 
-static
-Json::Value  wire_jsoner(const cluster_node_t& n)
+static Json::Value wire_jsoner(const cluster_node_t& n)
 {
     IWire::pointer iwire = std::get<typename IWire::pointer>(n.ptr);
     Json::Value ret = Json::objectValue;
@@ -91,15 +78,17 @@ Json::Value  wire_jsoner(const cluster_node_t& n)
     return ret;
 }
 
-
 // this one needs extra info
 struct blob_jsoner {
-
     double drift_speed;
 
-    blob_jsoner(double ds) : drift_speed(ds) {}
+    blob_jsoner(double ds)
+      : drift_speed(ds)
+    {
+    }
 
-    Json::Value operator()(const cluster_node_t& n) {
+    Json::Value operator()(const cluster_node_t& n)
+    {
         IBlob::pointer iblob = std::get<typename IBlob::pointer>(n.ptr);
         IAnodeFace::pointer iface = iblob->face();
         IWirePlane::vector iplanes = iface->planes();
@@ -112,12 +101,12 @@ struct blob_jsoner {
         ISlice::pointer islice = iblob->slice();
         // set X based on time with knowledge of local drift
         // direction as given by the face.
-        double x0 = xplane + xsign * (islice->start() - 250.0*units::us) *drift_speed; // FIXME: -250us hardcoded
+        double x0 = xplane + xsign * (islice->start() - 250.0 * units::us) * drift_speed;  // FIXME: -250us hardcoded
 
         const auto& coords = iface->raygrid();
 
         Json::Value ret = Json::objectValue;
-        ret["span"] = islice->span()*drift_speed;
+        ret["span"] = islice->span() * drift_speed;
         ret["ident"] = iblob->ident();
         ret["value"] = iblob->value();
         ret["error"] = iblob->uncertainty();
@@ -156,7 +145,7 @@ struct blob_jsoner {
     }
 };
 
-Json::Value  slice_jsoner(const cluster_node_t& n)
+Json::Value slice_jsoner(const cluster_node_t& n)
 {
     ISlice::pointer islice = std::get<typename ISlice::pointer>(n.ptr);
     Json::Value ret = Json::objectValue;
@@ -173,19 +162,18 @@ Json::Value  slice_jsoner(const cluster_node_t& n)
     return ret;
 }
 
-Json::Value  measurement_jsoner(const cluster_node_t& n)
+Json::Value measurement_jsoner(const cluster_node_t& n)
 {
     IChannel::shared_vector ichv = std::get<IChannel::shared_vector>(n.ptr);
     Json::Value ret = Json::objectValue;
     Json::Value j = Json::arrayValue;
     for (auto ich : *ichv) {
         j.append(ich->ident());
-        ret["wpid"] = ich->planeid().ident(); // last one wins, but they should all be the same
+        ret["wpid"] = ich->planeid().ident();  // last one wins, but they should all be the same
     }
     ret["chids"] = j;
     return ret;
 }
-    
 
 bool Img::JsonClusterTap::operator()(const input_pointer& in, output_pointer& out)
 {
@@ -194,31 +182,22 @@ bool Img::JsonClusterTap::operator()(const input_pointer& in, output_pointer& ou
         return true;
     }
 
-    std::vector< std::function< Json::Value(const cluster_node_t& ptr) > > jsoners{
-        size_stringer,
-        channel_jsoner,
-        wire_jsoner,
-        blob_jsoner(m_drift_speed),
-        slice_jsoner,
-        measurement_jsoner
-    };
-    auto asjson = [&](const cluster_node_t& n) {
-                      return jsoners[n.ptr.index()](n);
-                  };
+    std::vector<std::function<Json::Value(const cluster_node_t& ptr)> > jsoners{
+        size_stringer, channel_jsoner, wire_jsoner, blob_jsoner(m_drift_speed), slice_jsoner, measurement_jsoner};
+    auto asjson = [&](const cluster_node_t& n) { return jsoners[n.ptr.index()](n); };
 
-
-/*
- * - vertices :: a list of graph vertices
- * - edges :: a list of graph edges
- * 
- * A vertex is represented as a JSON object with the following attributes
- * - ident :: an indexable ID number for the node, and referred to in "edges"
- * - type :: the letter "code" used in ICluster: one in "sbcwm"
- * - data :: an object holding information about the corresponding vertex object 
- *
- * An edge is a pair of vertex ident numbers.
- * 
-*/
+    /*
+     * - vertices :: a list of graph vertices
+     * - edges :: a list of graph edges
+     *
+     * A vertex is represented as a JSON object with the following attributes
+     * - ident :: an indexable ID number for the node, and referred to in "edges"
+     * - type :: the letter "code" used in ICluster: one in "sbcwm"
+     * - data :: an object holding information about the corresponding vertex object
+     *
+     * An edge is a pair of vertex ident numbers.
+     *
+     */
     const auto& gr = in->graph();
 
     Json::Value jvertices = Json::arrayValue;
@@ -229,18 +208,18 @@ bool Img::JsonClusterTap::operator()(const input_pointer& in, output_pointer& ou
             continue;
         }
         Json::Value jvtx = Json::objectValue;
-        jvtx["ident"] = (int)vtx;
+        jvtx["ident"] = (int) vtx;
         jvtx["type"] = String::format("%c", vobj.code());
         jvtx["data"] = asjson(vobj);
 
         jvertices.append(jvtx);
     }
-    
+
     Json::Value jedges = Json::arrayValue;
     for (auto eit : boost::make_iterator_range(boost::edges(gr))) {
         Json::Value jedge = Json::arrayValue;
         jedge[0] = (int) boost::source(eit, gr);
-        jedge[1] = (int)boost::target(eit, gr);
+        jedge[1] = (int) boost::target(eit, gr);
         jedges.append(jedge);
     }
 
@@ -263,4 +242,3 @@ bool Img::JsonClusterTap::operator()(const input_pointer& in, output_pointer& ou
 
     return true;
 }
-

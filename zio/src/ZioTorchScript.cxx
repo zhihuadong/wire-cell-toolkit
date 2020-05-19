@@ -14,12 +14,14 @@
 
 #include <thread>
 
-WIRECELL_FACTORY(ZioTorchScript, WireCell::Pytorch::ZioTorchScript,
-                 WireCell::ITensorSetFilter, WireCell::IConfigurable)
+WIRECELL_FACTORY(ZioTorchScript, WireCell::Pytorch::ZioTorchScript, WireCell::ITensorSetFilter, WireCell::IConfigurable)
 
 using namespace WireCell;
 
-Pytorch::ZioTorchScript::ZioTorchScript() : l(Log::logger("pytorch")) {}
+Pytorch::ZioTorchScript::ZioTorchScript()
+  : l(Log::logger("pytorch"))
+{
+}
 
 Configuration Pytorch::ZioTorchScript::default_configuration() const
 {
@@ -34,7 +36,7 @@ Configuration Pytorch::ZioTorchScript::default_configuration() const
     cfg["gpu"] = true;
 
     // if failed, wait this time and try again
-    cfg["wait_time"] = 500; // ms
+    cfg["wait_time"] = 500;  // ms
 
     // for debug
     cfg["nloop"] = 10;
@@ -42,43 +44,40 @@ Configuration Pytorch::ZioTorchScript::default_configuration() const
     return cfg;
 }
 
-void Pytorch::ZioTorchScript::configure(const WireCell::Configuration &cfg)
-{
-    m_cfg = cfg;
-}
+void Pytorch::ZioTorchScript::configure(const WireCell::Configuration &cfg) { m_cfg = cfg; }
 
-namespace
-{
-std::string dump(const zio::Message &msg) {
-    std::stringstream ss;
-    ss << "zio.Message: ";
-    ss << "ZIO" << msg.level() << msg.form() << msg.label();
-    ss << " + [0x" << msg.origin() << "," << msg.granule() << "," << msg.seqno() << "]";
-    ss << " + [" << msg.payload().str() << "]";
-    return ss.str();
-}
-std::string dump(const ITensorSet::pointer &itens) {
-    std::stringstream ss;
-    ss << "ITensorSet: ";
-    Json::FastWriter jwriter;
-    ss << itens->ident() << ", " << jwriter.write(itens->metadata());
-    for (auto iten : *itens->tensors()) {
-        ss << "shape: [";
-        for(auto l : iten->shape()) {
-            ss << l << " ";
-        }
-        ss << "]\n";
+namespace {
+    std::string dump(const zio::Message &msg)
+    {
+        std::stringstream ss;
+        ss << "zio.Message: ";
+        ss << "ZIO" << msg.level() << msg.form() << msg.label();
+        ss << " + [0x" << msg.origin() << "," << msg.granule() << "," << msg.seqno() << "]";
+        ss << " + [" << msg.payload().str() << "]";
+        return ss.str();
     }
-    return ss.str();
-}
-} // namespace
+    std::string dump(const ITensorSet::pointer &itens)
+    {
+        std::stringstream ss;
+        ss << "ITensorSet: ";
+        Json::FastWriter jwriter;
+        ss << itens->ident() << ", " << jwriter.write(itens->metadata());
+        for (auto iten : *itens->tensors()) {
+            ss << "shape: [";
+            for (auto l : iten->shape()) {
+                ss << l << " ";
+            }
+            ss << "]\n";
+        }
+        return ss.str();
+    }
+}  // namespace
 
-bool Pytorch::ZioTorchScript::operator()(const ITensorSet::pointer& in, ITensorSet::pointer& out)
+bool Pytorch::ZioTorchScript::operator()(const ITensorSet::pointer &in, ITensorSet::pointer &out)
 {
     l->debug("ZioTorchScript::forward");
 
-    if (!in)
-    {
+    if (!in) {
         out = nullptr;
         return true;
     }
@@ -92,10 +91,8 @@ bool Pytorch::ZioTorchScript::operator()(const ITensorSet::pointer& in, ITensorS
 
     // for(int iloop=0; iloop<m_cfg["nloop"].asInt();++iloop) {
     bool success = false;
-    while (!success)
-    {
-        try
-        {
+    while (!success) {
+        try {
             auto msg = Zio::pack(in);
             zmq::multipart_t mmsg(msg.toparts());
             m_client.send(get<std::string>(m_cfg, "service", "torch:dnnroi"), mmsg);
@@ -103,11 +100,10 @@ bool Pytorch::ZioTorchScript::operator()(const ITensorSet::pointer& in, ITensorS
             m_client.recv(mmsg);
             msg.fromparts(mmsg);
             out = Zio::unpack(msg);
-            
+
             success = true;
         }
-        catch (...)
-        {
+        catch (...) {
             std::this_thread::sleep_for(std::chrono::milliseconds(wait_time));
             thread_wait_time += wait_time;
         }

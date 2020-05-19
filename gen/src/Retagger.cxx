@@ -2,22 +2,17 @@
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellIface/SimpleFrame.h"
 
-WIRECELL_FACTORY(Retagger, WireCell::Gen::Retagger,
-                 WireCell::IFrameFilter, WireCell::IConfigurable)
+WIRECELL_FACTORY(Retagger, WireCell::Gen::Retagger, WireCell::IFrameFilter, WireCell::IConfigurable)
 
 using namespace WireCell;
 
-Gen::Retagger::Retagger()
-{
-}
+Gen::Retagger::Retagger() {}
 
-Gen::Retagger::~Retagger()
-{
-}
-        
+Gen::Retagger::~Retagger() {}
+
 void Gen::Retagger::configure(const WireCell::Configuration& cfg)
 {
-    // frame/trace/merge tagging.  
+    // frame/trace/merge tagging.
     m_trctx.configure(cfg["tag_rules"]);
 }
 
@@ -32,9 +27,8 @@ bool Gen::Retagger::operator()(const input_pointer& inframe, output_pointer& out
 {
     outframe = nullptr;
     if (!inframe) {
-        return true;            // eos
+        return true;  // eos
     }
-        
 
     // Basic frame data is just shunted across.
     auto sfout = new SimpleFrame(inframe->ident(), inframe->time(), *inframe->traces(), inframe->tick());
@@ -67,7 +61,7 @@ bool Gen::Retagger::operator()(const input_pointer& inframe, output_pointer& out
     //
     // merge
     typedef std::tuple<tagrules::tag_t, IFrame::trace_list_t, IFrame::trace_summary_t> tag_trace_list_summary_t;
-    typedef std::vector< tag_trace_list_summary_t > ttls_stash_t;
+    typedef std::vector<tag_trace_list_summary_t> ttls_stash_t;
     typedef std::unordered_map<std::string, ttls_stash_t> ttls_stash_map_t;
     ttls_stash_map_t stashmap;
     for (auto inttag : inframe->trace_tags()) {
@@ -79,13 +73,13 @@ bool Gen::Retagger::operator()(const input_pointer& inframe, output_pointer& out
         const auto& traces = inframe->tagged_traces(inttag);
         const auto& summary = inframe->trace_summary(inttag);
         for (auto otag : touttags) {
-	  stashmap[otag].push_back(std::make_tuple(inttag, traces, summary));
+            stashmap[otag].push_back(std::make_tuple(inttag, traces, summary));
         }
     }
     for (auto it : stashmap) {
         auto& otag = it.first;
         auto& stashv = it.second;
-        size_t ntraces = 0, nsummary=0;
+        size_t ntraces = 0, nsummary = 0;
         // If at least one summary is not empty we must assure output
         // summary is aligned with output trace index vector.
         // Otherwise, we assume input plays by the rules and keeps
@@ -100,7 +94,7 @@ bool Gen::Retagger::operator()(const input_pointer& inframe, output_pointer& out
         if (nsummary > 0) {
             osummary.reserve(ntraces);
         }
-        for (auto& ttls : stashv) { // one more time
+        for (auto& ttls : stashv) {  // one more time
             auto& traces = get<1>(ttls);
             otraces.insert(otraces.end(), traces.begin(), traces.end());
 
@@ -111,22 +105,20 @@ bool Gen::Retagger::operator()(const input_pointer& inframe, output_pointer& out
             }
             auto& summary = get<2>(ttls);
             if (summary.empty()) {
-                for (size_t ind=0; ind<traces.size(); ++ind) {
-                    summary.push_back(0); // zero pad to cover missing summary and keep alignment with traces.
+                for (size_t ind = 0; ind < traces.size(); ++ind) {
+                    summary.push_back(0);  // zero pad to cover missing summary and keep alignment with traces.
                 }
             }
             else {
                 osummary.insert(osummary.end(), summary.begin(), summary.end());
             }
         }
-        std::cerr << "Retagger: tagging trace set: " << otag
-                 << " with " << otraces.size() << " traces, " << osummary.size() << " summary\n";
-                 
+        std::cerr << "Retagger: tagging trace set: " << otag << " with " << otraces.size() << " traces, "
+                  << osummary.size() << " summary\n";
+
         sfout->tag_traces(otag, otraces, osummary);
     }
-
 
     outframe = IFrame::pointer(sfout);
     return true;
 }
-

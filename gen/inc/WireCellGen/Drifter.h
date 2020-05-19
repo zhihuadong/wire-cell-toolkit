@@ -7,7 +7,6 @@
 #include "WireCellUtil/Units.h"
 #include "WireCellUtil/Logging.h"
 
-
 #include <set>
 
 namespace WireCell {
@@ -25,12 +24,12 @@ namespace WireCell {
          * specified with the "xregions" list.  Each list is an object
          * fully specified with a "cathode" an "anode" and a
          * "response" attribute giving X locations in the same
-         * coordinate system as depos of three planes.  
+         * coordinate system as depos of three planes.
          *
          * - cathode :: a plane which bounds the maximum possible drift.
          * - anode :: a plane which bounds the minimum possible drift.
          * - response :: a plane to which all depositions are drifted.
-         * 
+         *
          * If "anode" is not given then its value is take to be that of
          * "response" and vice versa and at least one must be specified.
          * A "cathode" value must be specified.
@@ -45,11 +44,11 @@ namespace WireCell {
          * ANTI-DRIFTED to the "response" plane.  Ie, it will be
          * "BACKED UP" in space an time as if it had be produced
          * earlier and at the response plane.
-         * 
+         *
          * Input depositions must be ordered in absolute time (their
          * current time) and output depositions are produced ordered
          * by their time after being drifted to the response plane.
-         * 
+         *
          * Diffusion and absorption effects and also, optionally,
          * fluctuations are applied.  Fano factor and Recombination
          * are not applied in this component (see IRecombinationModel
@@ -62,17 +61,17 @@ namespace WireCell {
          * location of the response plane *realtive* to the wire
          * planes can be found using:
          *
-         * $ wriecell-sigproc response-info garfield-1d-3planes-21wires-6impacts-dune-v1.json.bz2 
+         * $ wriecell-sigproc response-info garfield-1d-3planes-21wires-6impacts-dune-v1.json.bz2
          * origin:10.00 cm, period:0.10 us, tstart:0.00 us, speed:1.60 mm/us, axis:(1.00,0.00,0.00)
          *    plane:0, location:9.4200mm, pitch:4.7100mm
-	 *    plane:1, location:4.7100mm, pitch:4.7100mm
+         *    plane:1, location:4.7100mm, pitch:4.7100mm
          *    plane:2, location:0.0000mm, pitch:4.7100mm
-         * 
+         *
          * Here, "origin" gives the location of the response plane.
          * The location of the wire planes according to wire geometry
          * can be similarly dumped.
          *
-         * $ wirecell-util wires-info protodune-wires-larsoft-v3.json.bz2 
+         * $ wirecell-util wires-info protodune-wires-larsoft-v3.json.bz2
          * anode:0 face:0 X=[-3584.63,-3584.63]mm Y=[6066.70,6066.70]mm Z=[7.92,7.92]mm
          *     0: x=-3584.63mm dx=9.5250mm
          *     1: x=-3589.39mm dx=4.7620mm
@@ -82,7 +81,7 @@ namespace WireCell {
          *     0: x=3584.63mm dx=-9.5250mm
          *     1: x=3589.39mm dx=-4.7620mm
          *     2: x=3594.16mm dx=0.0000mm
-         * 
+         *
          * Note, as can see, these two sources of information may not
          * be consistent w.r.t. the inter-plane separation distance
          * (4.71mm and 4.76mm, respectively).  This mismatch will
@@ -94,13 +93,13 @@ namespace WireCell {
          * locations are:
          *
          *    x = -3594.16mm + 10cm
-         * 
+         *
          * and
          *
          *    x = +3594.16mm - 10cm
          */
         class Drifter : public IDrifter, public IConfigurable {
-        public:
+           public:
             Drifter();
             virtual ~Drifter();
 
@@ -110,7 +109,6 @@ namespace WireCell {
             /// WireCell::IConfigurable interface.
             virtual void configure(const WireCell::Configuration& config);
             virtual WireCell::Configuration default_configuration() const;
-
 
             // Implementation methods.
 
@@ -126,12 +124,9 @@ namespace WireCell {
 
             // Reset lifetime e.g. based on a larsoft database.
             // Detailed implementation in a subclass.
-            virtual void set_lifetime(double lifetime_to_set){
-                m_lifetime = lifetime_to_set;
-            };
+            virtual void set_lifetime(double lifetime_to_set) { m_lifetime = lifetime_to_set; };
 
-        private:
-
+           private:
             IRandom::pointer m_rng;
             std::string m_rng_tn;
 
@@ -140,16 +135,15 @@ namespace WireCell {
             double m_DL, m_DT;
 
             // Electron absorption lifetime.
-            double m_lifetime;          
+            double m_lifetime;
 
             // If true, fluctuate by number of absorbed electrons.
             bool m_fluctuate;
 
-            double m_speed;   // drift speeds
-            double m_toffset; // time offset
+            double m_speed;    // drift speeds
+            double m_toffset;  // time offset
 
             int n_dropped, n_drifted;
-
 
             // keep the depos sorted by time
             struct DepoTimeCompare {
@@ -161,30 +155,35 @@ namespace WireCell {
                 Xregion(Configuration cfg);
                 double anode, response, cathode;
                 typedef std::set<IDepo::pointer, DepoTimeCompare> ordered_depos_t;
-                ordered_depos_t depos; // buffer depos
+                ordered_depos_t depos;  // buffer depos
 
                 bool inside_bulk(double x) const;
                 bool inside_response(double x) const;
-
             };
-            std::vector<Xregion> m_xregions;  
+            std::vector<Xregion> m_xregions;
 
             struct IsInsideBulk {
                 const input_pointer& depo;
-                IsInsideBulk(const input_pointer& depo) : depo(depo) {}
+                IsInsideBulk(const input_pointer& depo)
+                  : depo(depo)
+                {
+                }
                 bool operator()(const Xregion& xr) const { return xr.inside_bulk(depo->pos().x()); }
             };
             struct IsInsideResp {
                 const input_pointer& depo;
-                IsInsideResp(const input_pointer& depo) : depo(depo) {}
+                IsInsideResp(const input_pointer& depo)
+                  : depo(depo)
+                {
+                }
                 bool operator()(const Xregion& xr) const { return xr.inside_response(depo->pos().x()); }
             };
 
             Log::logptr_t l;
-        };                      // Drifter
+        };  // Drifter
 
-    }
+    }  // namespace Gen
 
-}
+}  // namespace WireCell
 
 #endif

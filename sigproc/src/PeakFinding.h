@@ -4,52 +4,49 @@
 #include "WireCellUtil/Waveform.h"
 #include "WireCellUtil/Logging.h"
 
-namespace WireCell{
-  namespace SigProc{
+namespace WireCell {
+    namespace SigProc {
 
-    class PeakFinding {
-    public:
-      PeakFinding(int fMaxPeaks = 200,
-		  double sigma = 1, double threshold = 0.05,
-		  bool backgroundRemove = false,int deconIterations =3 ,
-		  bool markov = true, int averWindow = 3);
-      ~PeakFinding();
+        class PeakFinding {
+           public:
+            PeakFinding(int fMaxPeaks = 200, double sigma = 1, double threshold = 0.05, bool backgroundRemove = false,
+                        int deconIterations = 3, bool markov = true, int averWindow = 3);
+            ~PeakFinding();
 
-      int find_peak(Waveform::realseq_t& signal);
+            int find_peak(Waveform::realseq_t& signal);
 
-      void Clear();
+            void Clear();
 
-      int GetNPeaks(){return npeaks;};
-      double* GetPositionX(){return fPositionX;};
-      double* GetPositionY(){return fPositionY;};
-      
-      
-    private:
-      int fMaxPeaks;
-      double sigma;
-      double threshold;
-      bool backgroundRemove;
-      int deconIterations;
-      bool markov;
-      int averWindow;
+            int GetNPeaks() { return npeaks; };
+            double* GetPositionX() { return fPositionX; };
+            double* GetPositionY() { return fPositionY; };
 
-      // data ... 
-      double* source;
-      int ssize;
+           private:
+            int fMaxPeaks;
+            double sigma;
+            double threshold;
+            bool backgroundRemove;
+            int deconIterations;
+            bool markov;
+            int averWindow;
 
-      double *destVector;
-      double *fPositionX;
-      double *fPositionY;
+            // data ...
+            double* source;
+            int ssize;
 
-      int npeaks;
-      
-      // actual search function ... 
-      int SearchHighRes();
+            double* destVector;
+            double* fPositionX;
+            double* fPositionY;
 
-      Log::logptr_t log;
-    };
-  } 
-}
+            int npeaks;
+
+            // actual search function ...
+            int SearchHighRes();
+
+            Log::logptr_t log;
+        };
+    }  // namespace SigProc
+}  // namespace WireCell
 #endif
 
 // Local Variables:

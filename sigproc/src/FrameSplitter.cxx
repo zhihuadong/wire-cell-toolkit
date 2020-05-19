@@ -5,18 +5,12 @@
 
 #include <iostream>
 
-WIRECELL_FACTORY(FrameSplitter, WireCell::SigProc::FrameSplitter,
-                 WireCell::IFrameSplitter)
-
+WIRECELL_FACTORY(FrameSplitter, WireCell::SigProc::FrameSplitter, WireCell::IFrameSplitter)
 
 using namespace WireCell::SigProc;
 
-FrameSplitter::FrameSplitter()
-{
-}
-FrameSplitter::~FrameSplitter()
-{
-}
+FrameSplitter::FrameSplitter() {}
+FrameSplitter::~FrameSplitter() {}
 
 bool FrameSplitter::operator()(const input_pointer& in, output_tuple_type& out)
 {
@@ -24,7 +18,7 @@ bool FrameSplitter::operator()(const input_pointer& in, output_tuple_type& out)
         std::cerr << "FrameSplitter: passing on EOS\n";
     }
     else {
-        std::cerr << "FrameSplitter: passing on frame: "<<in->ident()<<":";
+        std::cerr << "FrameSplitter: passing on frame: " << in->ident() << ":";
         for (auto tag : in->trace_tags()) {
             auto tt = FrameTools::tagged_traces(in, tag);
             std::cerr << " " << tag << "[" << tt.size() << "]";

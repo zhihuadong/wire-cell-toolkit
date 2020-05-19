@@ -2,23 +2,23 @@
 #include "WireCellImg/ImgData.h"
 #include "WireCellUtil/NamedFactory.h"
 
-#include "WireCellIface/FrameTools.h" // fixme: *still* need to move this out of iface...
+#include "WireCellIface/FrameTools.h"  // fixme: *still* need to move this out of iface...
 
+WIRECELL_FACTORY(SumSlicer, WireCell::Img::SumSlicer, WireCell::IFrameSlicer, WireCell::IConfigurable)
 
-WIRECELL_FACTORY(SumSlicer, WireCell::Img::SumSlicer,
-                 WireCell::IFrameSlicer, WireCell::IConfigurable)
-
-WIRECELL_FACTORY(SumSlices, WireCell::Img::SumSlices,
-                 WireCell::IFrameSlices, WireCell::IConfigurable)
+WIRECELL_FACTORY(SumSlices, WireCell::Img::SumSlices, WireCell::IFrameSlices, WireCell::IConfigurable)
 
 using namespace std;
 using namespace WireCell;
 
-
-Img::SumSliceBase::SumSliceBase() : m_tick_span(4) , m_tag("") { }
-Img::SumSliceBase::~SumSliceBase() { }
-Img::SumSlicer::~SumSlicer() { }
-Img::SumSlices::~SumSlices() { }
+Img::SumSliceBase::SumSliceBase()
+  : m_tick_span(4)
+  , m_tag("")
+{
+}
+Img::SumSliceBase::~SumSliceBase() {}
+Img::SumSlicer::~SumSlicer() {}
+Img::SumSlices::~SumSlices() {}
 
 WireCell::Configuration Img::SumSliceBase::default_configuration() const
 {
@@ -36,14 +36,12 @@ WireCell::Configuration Img::SumSliceBase::default_configuration() const
     return cfg;
 }
 
-
 void Img::SumSliceBase::configure(const WireCell::Configuration& cfg)
 {
-    m_anode = Factory::find_tn<IAnodePlane>(cfg["anode"].asString()); // throws
+    m_anode = Factory::find_tn<IAnodePlane>(cfg["anode"].asString());  // throws
     m_tick_span = get(cfg, "tick_span", m_tick_span);
     m_tag = get<std::string>(cfg, "tag", m_tag);
 }
-
 
 void Img::SumSliceBase::slice(const IFrame::pointer& in, slice_map_t& svcmap)
 {
@@ -56,15 +54,15 @@ void Img::SumSliceBase::slice(const IFrame::pointer& in, slice_map_t& svcmap)
         IChannel::pointer ich = m_anode->channel(chid);
         const auto& charge = trace->charge();
         const size_t nq = charge.size();
-        for (size_t qind=0; qind != nq; ++qind) {
+        for (size_t qind = 0; qind != nq; ++qind) {
             const auto q = charge[qind];
             if (q == 0.0) {
                 continue;
             }
-            size_t slicebin = (tbin+qind)/m_tick_span;
+            size_t slicebin = (tbin + qind) / m_tick_span;
             auto s = svcmap[slicebin];
             if (!s) {
-                const double start = slicebin * span; // thus relative to slice frame's time.
+                const double start = slicebin * span;  // thus relative to slice frame's time.
                 svcmap[slicebin] = s = new Img::Data::Slice(in, slicebin, start, span);
             }
             s->sum(ich, q);
@@ -72,12 +70,11 @@ void Img::SumSliceBase::slice(const IFrame::pointer& in, slice_map_t& svcmap)
     }
 }
 
-
 bool Img::SumSlicer::operator()(const input_pointer& in, output_pointer& out)
 {
     out = nullptr;
     if (!in) {
-        return true;            // eos
+        return true;  // eos
     }
 
     // Slices will be sparse in general.  Index by a "slice bin" number
@@ -95,13 +92,11 @@ bool Img::SumSlicer::operator()(const input_pointer& in, output_pointer& out)
     return true;
 }
 
-
-
 bool Img::SumSlices::operator()(const input_pointer& in, output_queue& slices)
 {
     if (!in) {
         slices.push_back(nullptr);
-        return true;            // eos
+        return true;  // eos
     }
 
     // Slices will be sparse in general.  Index by a "slice bin" number
@@ -111,7 +106,7 @@ bool Img::SumSlices::operator()(const input_pointer& in, output_queue& slices)
     // intern
     for (auto sit : svcmap) {
         auto s = sit.second;
-        
+
         /// debug
         double qtot = 0;
         for (const auto& a : s->activity()) {
@@ -123,4 +118,3 @@ bool Img::SumSlices::operator()(const input_pointer& in, output_queue& slices)
 
     return true;
 }
-

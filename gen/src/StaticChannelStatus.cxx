@@ -2,29 +2,24 @@
 
 #include "WireCellUtil/NamedFactory.h"
 
-
-WIRECELL_FACTORY(StaticChannelStatus, WireCell::Gen::StaticChannelStatus,
-                 WireCell::IChannelStatus, WireCell::IConfigurable)
+WIRECELL_FACTORY(StaticChannelStatus, WireCell::Gen::StaticChannelStatus, WireCell::IChannelStatus,
+                 WireCell::IConfigurable)
 
 using namespace WireCell;
 
-Gen::StaticChannelStatus::StaticChannelStatus(double nominal_gain,
-                                              double nominal_shaping,
+Gen::StaticChannelStatus::StaticChannelStatus(double nominal_gain, double nominal_shaping,
                                               channel_status_map_t deviants)
-    : m_nominal_gain(nominal_gain)
-    , m_nominal_shaping(nominal_shaping)
-    , m_deviants(deviants)
+  : m_nominal_gain(nominal_gain)
+  , m_nominal_shaping(nominal_shaping)
+  , m_deviants(deviants)
 {
 }
 
-Gen::StaticChannelStatus::~StaticChannelStatus()
-{
-}
-
+Gen::StaticChannelStatus::~StaticChannelStatus() {}
 
 WireCell::Configuration Gen::StaticChannelStatus::default_configuration() const
 {
-    Configuration cfg;          // load hard-coded defaults
+    Configuration cfg;  // load hard-coded defaults
     cfg["nominal_gain"] = m_nominal_gain;
     cfg["nominal_shaping"] = m_nominal_shaping;
     cfg["deviants"] = Json::arrayValue;
@@ -38,7 +33,6 @@ WireCell::Configuration Gen::StaticChannelStatus::default_configuration() const
     return cfg;
 }
 
-
 void Gen::StaticChannelStatus::configure(const WireCell::Configuration& cfg)
 {
     // let user override any defaults
@@ -50,14 +44,12 @@ void Gen::StaticChannelStatus::configure(const WireCell::Configuration& cfg)
         return;
     }
     for (auto jone : jdev) {
-        const int chid = jone["chid"].asInt(); // must supply
+        const int chid = jone["chid"].asInt();  // must supply
         const double gain = get(jone, "gain", m_nominal_gain);
         const double shaping = get(jone, "shaping", m_nominal_shaping);
         m_deviants[chid] = ChannelStatus(gain, shaping);
     }
 }
-
-
 
 double Gen::StaticChannelStatus::preamp_gain(int chid) const
 {
@@ -75,4 +67,3 @@ double Gen::StaticChannelStatus::preamp_shaping(int chid) const
     }
     return it->second.shaping;
 }
-

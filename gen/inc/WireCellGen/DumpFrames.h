@@ -8,18 +8,17 @@ namespace WireCell {
     namespace Gen {
 
         class DumpFrames : public IFrameSink {
-        public:
+           public:
             DumpFrames();
             virtual ~DumpFrames();
 
             /// Do something thrilling with a frame.
             virtual bool operator()(const IFrame::pointer& frame);
-        private:
+
+           private:
             Log::logptr_t log;
-
         };
-    }
-}
-
+    }  // namespace Gen
+}  // namespace WireCell
 
 #endif

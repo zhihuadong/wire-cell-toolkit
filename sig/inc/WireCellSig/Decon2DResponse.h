@@ -26,7 +26,7 @@ namespace WireCell {
             virtual bool operator()(const ITensorSet::pointer& in, ITensorSet::pointer& out);
 
            private:
-            std::vector<Waveform::realseq_t> init_overall_response(const ITensorSet::pointer &in) const;
+            std::vector<Waveform::realseq_t> init_overall_response(const ITensorSet::pointer& in) const;
 
             Log::logptr_t log;
             Configuration m_cfg;  /// copy of configuration

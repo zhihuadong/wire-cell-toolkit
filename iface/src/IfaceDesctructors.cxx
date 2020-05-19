@@ -90,10 +90,9 @@
 #include "WireCellIface/SimpleWire.h"
 #include "WireCellIface/SimpleBlob.h"
 
-
 using namespace WireCell;
 
-IWireParameters::~IWireParameters() { }
+IWireParameters::~IWireParameters() {}
 IAnodeFace::~IAnodeFace() {}
 IAnodePlane::~IAnodePlane() {}
 IApplication::~IApplication() {}
@@ -147,11 +146,11 @@ IFrameSplitter::~IFrameSplitter() {}
 IFunctionNodeBase::~IFunctionNodeBase() {}
 IHydraNodeBase::~IHydraNodeBase() {}
 IJoinNodeBase::~IJoinNodeBase() {}
-INode::~INode(){}
+INode::~INode() {}
 IImpactResponse::~IImpactResponse() {}
 IPlaneImpactResponse::~IPlaneImpactResponse() {}
 IPointFieldSink::~IPointFieldSink() {}
-IProcessor::~IProcessor() { }
+IProcessor::~IProcessor() {}
 IQueuedoutNodeBase::~IQueuedoutNodeBase() {}
 IRandom::~IRandom() {}
 IRecombinationModel::~IRecombinationModel() {}

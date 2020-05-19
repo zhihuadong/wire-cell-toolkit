@@ -8,14 +8,15 @@ namespace WireCell {
 
     namespace Aux {
 
-        template<typename ElementType>
+        template <typename ElementType>
         class SimpleTensor : public WireCell::ITensor {
-        public:
+           public:
             typedef ElementType element_t;
 
-            SimpleTensor(const shape_t& shape) {
+            SimpleTensor(const shape_t& shape)
+            {
                 size_t nbytes = element_size();
-                for (const auto& s: shape) {
+                for (const auto& s : shape) {
                     nbytes *= s;
                 }
                 m_store.resize(nbytes);
@@ -36,36 +37,23 @@ namespace WireCell {
             std::vector<std::byte>& store() { return m_store; }
             Configuration& metadata() { return m_md; }
 
-
             // ITensor const interface.
-            virtual const std::type_info& element_type() const {
-                return typeid(element_t);
-            }
-            virtual size_t element_size() const {
-                return sizeof(element_t);
-            }
+            virtual const std::type_info& element_type() const { return typeid(element_t); }
+            virtual size_t element_size() const { return sizeof(element_t); }
 
-            virtual shape_t shape() const {
-                return m_shape;
-            }
+            virtual shape_t shape() const { return m_shape; }
 
-            virtual const std::byte* data() const {
-                return m_store.data();
-            }
-            virtual size_t size() const {
-                return m_store.size();
-            }
+            virtual const std::byte* data() const { return m_store.data(); }
+            virtual size_t size() const { return m_store.size(); }
 
-            virtual Configuration metadata() const {
-                return m_md;
-            }
+            virtual Configuration metadata() const { return m_md; }
 
-        private:
+           private:
             std::vector<std::byte> m_store;
             std::vector<size_t> m_shape;
             Configuration m_md;
         };
-    }
-}
+    }  // namespace Aux
+}  // namespace WireCell
 
 #endif

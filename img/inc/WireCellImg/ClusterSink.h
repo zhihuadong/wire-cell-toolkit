@@ -10,7 +10,7 @@ namespace WireCell {
     namespace Img {
 
         class ClusterSink : public IClusterSink, public IConfigurable {
-        public:
+           public:
             ClusterSink();
             virtual ~ClusterSink();
 
@@ -18,10 +18,11 @@ namespace WireCell {
             virtual WireCell::Configuration default_configuration() const;
 
             virtual bool operator()(const ICluster::pointer& cluster);
-        private:
+
+           private:
             std::string m_filename;
             std::string m_node_types;
         };
-    }
-}
+    }  // namespace Img
+}  // namespace WireCell
 #endif

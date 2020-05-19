@@ -7,13 +7,13 @@
 namespace WireCell {
 
     class IRandom : public IComponent<IRandom> {
-    public:
-        virtual ~IRandom() ;
+       public:
+        virtual ~IRandom();
 
         /// Sample a binomial distribution
         virtual int binomial(int max, double prob) = 0;
 
-        /// Sample a Poisson distribution. 
+        /// Sample a Poisson distribution.
         virtual int poisson(double mean) = 0;
 
         /// Sample a normal distribution.
@@ -27,9 +27,8 @@ namespace WireCell {
 
         /// Sample a uniform integer range.
         virtual int range(int first, int last) = 0;
-
     };
 
-}
+}  // namespace WireCell
 
 #endif

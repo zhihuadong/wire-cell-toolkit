@@ -6,11 +6,9 @@
 
 #include <string>
 
-WIRECELL_FACTORY(FrameMerger, WireCell::SigProc::FrameMerger,
-                 WireCell::IFrameJoiner, WireCell::IConfigurable)
+WIRECELL_FACTORY(FrameMerger, WireCell::SigProc::FrameMerger, WireCell::IFrameJoiner, WireCell::IConfigurable)
 
 using namespace WireCell;
-
 
 Configuration SigProc::FrameMerger::default_configuration() const
 {
@@ -29,7 +27,7 @@ Configuration SigProc::FrameMerger::default_configuration() const
     cfg["mergemap"] = Json::arrayValue;
 
     // The rule determins the algorithm employed in the merge.
-    // 
+    //
     // - replace :: the last trace encountered for a given channel is output.
     //   The traces from frame 1 will take precedence over any from frame 2.
     //
@@ -41,13 +39,9 @@ Configuration SigProc::FrameMerger::default_configuration() const
     return cfg;
 }
 
-void SigProc::FrameMerger::configure(const Configuration& cfg)
-{
-    m_cfg = cfg;
-}
+void SigProc::FrameMerger::configure(const Configuration& cfg) { m_cfg = cfg; }
 
-bool SigProc::FrameMerger::operator()(const input_tuple_type& intup,
-                                      output_pointer& out)
+bool SigProc::FrameMerger::operator()(const input_tuple_type& intup, output_pointer& out)
 {
     out = nullptr;
 
@@ -58,7 +52,6 @@ bool SigProc::FrameMerger::operator()(const input_tuple_type& intup,
         return true;
     }
 
-
     auto jmergemap = m_cfg["mergemap"];
     const int nsets = jmergemap.size();
 
@@ -68,44 +61,40 @@ bool SigProc::FrameMerger::operator()(const input_tuple_type& intup,
     if (!nsets) {
         tracesv1.push_back(FrameTools::untagged_traces(one));
         tracesv2.push_back(FrameTools::untagged_traces(two));
-        std::cerr << "FrameMerger: see frame: "<<one->ident()<<" no tags, whole frame\n";
+        std::cerr << "FrameMerger: see frame: " << one->ident() << " no tags, whole frame\n";
     }
     else {
-        std::cerr << "FrameMerger: see frame: "<<one->ident()<<" with tags:\n";
-        for (int ind=0; ind<nsets; ++ind) {
+        std::cerr << "FrameMerger: see frame: " << one->ident() << " with tags:\n";
+        for (int ind = 0; ind < nsets; ++ind) {
             auto jtags = jmergemap[ind];
             std::string tag1 = jtags[0].asString();
             std::string tag2 = jtags[1].asString();
             std::string tag3 = jtags[2].asString();
             tracesv1.push_back(FrameTools::tagged_traces(one, tag1));
             tracesv2.push_back(FrameTools::tagged_traces(two, tag2));
-            std::cerr << "\ttags: "
-                      << tag1 << "[" << tracesv1.back().size() << "]"
-                      << " + "
-                      << tag2 << "[" << tracesv2.back().size() << "]"
-                      << " -> " << tag3
-                      << "\n";
+            std::cerr << "\ttags: " << tag1 << "[" << tracesv1.back().size() << "]"
+                      << " + " << tag2 << "[" << tracesv2.back().size() << "]"
+                      << " -> " << tag3 << "\n";
         }
     }
-        
+
     ITrace::vector out_traces;
     std::vector<IFrame::trace_list_t> tagged_trace_indices;
-    
+
     // apply rule, collect info for tags even if we may not be
     // configured to honor them.
 
-    auto rule = get<std::string>(m_cfg, "rule"); 
+    auto rule = get<std::string>(m_cfg, "rule");
     if (rule == "replace") {
-
-        for (size_t ind=0; ind<tracesv1.size(); ++ind) {
+        for (size_t ind = 0; ind < tracesv1.size(); ++ind) {
             auto& traces1 = tracesv1[ind];
             auto& traces2 = tracesv2[ind];
-            
+
             std::unordered_map<int, ITrace::pointer> ch2tr;
             for (auto trace : traces2) {
                 ch2tr[trace->channel()] = trace;
             }
-            for (auto trace : traces1) { // now replace any from frame 1
+            for (auto trace : traces1) {  // now replace any from frame 1
                 ch2tr[trace->channel()] = trace;
             }
 
@@ -115,19 +104,19 @@ bool SigProc::FrameMerger::operator()(const input_tuple_type& intup,
                 out_traces.push_back(chtr.second);
             }
             tagged_trace_indices.push_back(tl);
-        }            
+        }
     }
     if (rule == "include") {
-        for (size_t ind=0; ind<tracesv1.size(); ++ind) {
+        for (size_t ind = 0; ind < tracesv1.size(); ++ind) {
             auto& traces1 = tracesv1[ind];
             auto& traces2 = tracesv2[ind];
 
             IFrame::trace_list_t tl;
-            for (size_t trind=0; trind < traces1.size(); ++trind) {
+            for (size_t trind = 0; trind < traces1.size(); ++trind) {
                 tl.push_back(out_traces.size());
                 out_traces.push_back(traces1[trind]);
             }
-            for (size_t trind=0; trind < traces2.size(); ++trind) {
+            for (size_t trind = 0; trind < traces2.size(); ++trind) {
                 tl.push_back(out_traces.size());
                 out_traces.push_back(traces2[trind]);
             }
@@ -137,7 +126,7 @@ bool SigProc::FrameMerger::operator()(const input_tuple_type& intup,
 
     auto sf = new SimpleFrame(two->ident(), two->time(), out_traces, two->tick());
     if (nsets) {
-        for (int ind=0; ind<nsets; ++ind) {
+        for (int ind = 0; ind < nsets; ++ind) {
             std::string otag = jmergemap[ind][2].asString();
             sf->tag_traces(otag, tagged_trace_indices[ind]);
         }
@@ -146,11 +135,6 @@ bool SigProc::FrameMerger::operator()(const input_tuple_type& intup,
     return true;
 }
 
+SigProc::FrameMerger::FrameMerger() {}
 
-SigProc::FrameMerger::FrameMerger()
-{
-}
-
-SigProc::FrameMerger::~FrameMerger()
-{
-}
+SigProc::FrameMerger::~FrameMerger() {}

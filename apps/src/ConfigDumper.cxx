@@ -5,9 +5,7 @@
 #include "WireCellUtil/ConfigManager.h"
 #include "WireCellUtil/Logging.h"
 
-WIRECELL_FACTORY(ConfigDumper, WireCellApps::ConfigDumper,
-                 WireCell::IApplication, WireCell::IConfigurable)
-
+WIRECELL_FACTORY(ConfigDumper, WireCellApps::ConfigDumper, WireCell::IApplication, WireCell::IConfigurable)
 
 using spdlog::info;
 using spdlog::warn;
@@ -16,20 +14,14 @@ using namespace std;
 using namespace WireCell;
 using namespace WireCellApps;
 
-
 ConfigDumper::ConfigDumper()
-    : m_cfg(default_configuration())
+  : m_cfg(default_configuration())
 {
 }
 
-ConfigDumper::~ConfigDumper()
-{
-}
+ConfigDumper::~ConfigDumper() {}
 
-void ConfigDumper::configure(const Configuration& config)
-{
-    m_cfg = config;
-}
+void ConfigDumper::configure(const Configuration& config) { m_cfg = config; }
 
 WireCell::Configuration ConfigDumper::default_configuration() const
 {
@@ -54,23 +46,21 @@ void ConfigDumper::execute()
     }
 
     for (auto c : comps) {
+        string type, name;
+        tie(type, name) = String::parse_pair(convert<string>(c));
 
-	string type, name;
-	tie(type,name) = String::parse_pair(convert<string>(c));
-
-	Configuration cfg;
-	try {
-	    auto cfgobj = Factory::lookup<IConfigurable>(type,name);
-	    cfg = cfgobj->default_configuration();
-	}
-	catch (FactoryException& fe) {
-            warn("failed lookup component: \"{}\":\"{}\"",  type, name);
-	    ++nfailed;
-	    continue;
-	}
-	cm.add(cfg, type, name);
+        Configuration cfg;
+        try {
+            auto cfgobj = Factory::lookup<IConfigurable>(type, name);
+            cfg = cfgobj->default_configuration();
+        }
+        catch (FactoryException& fe) {
+            warn("failed lookup component: \"{}\":\"{}\"", type, name);
+            ++nfailed;
+            continue;
+        }
+        cm.add(cfg, type, name);
     }
 
     Persist::dump(get<string>(m_cfg, "filename"), cm.all());
 }
-

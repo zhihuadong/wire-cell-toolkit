@@ -6,7 +6,6 @@
 #include "WireCellIface/IDrifter.h"
 #include "WireCellIface/IDuctor.h"
 
-
 namespace WireCell {
     namespace Gen {
 
@@ -24,11 +23,9 @@ namespace WireCell {
          * the caller to limit this set accordingly.
          */
         class DepoFramer : public IDepoFramer, public IConfigurable {
-        public:
-            DepoFramer(const std::string& drifter = "Drifter",
-                       const std::string& ductor = "Ductor");
+           public:
+            DepoFramer(const std::string& drifter = "Drifter", const std::string& ductor = "Ductor");
             virtual ~DepoFramer();
-
 
             // IDepoFramer interface
             virtual bool operator()(const input_pointer& in, output_pointer& out);
@@ -37,12 +34,12 @@ namespace WireCell {
             virtual void configure(const WireCell::Configuration& config);
             virtual WireCell::Configuration default_configuration() const;
 
-        private:
+           private:
             std::string m_drifter_tn, m_ductor_tn;
             IDrifter::pointer m_drifter;
             IDuctor::pointer m_ductor;
         };
-    }
-}
+    }  // namespace Gen
+}  // namespace WireCell
 
 #endif

@@ -16,16 +16,14 @@
 
 namespace WireCell {
 
-    class IWireSchema : public IComponent<IWireSchema>
-    {
-    public:
-
-        virtual ~IWireSchema() ;
+    class IWireSchema : public IComponent<IWireSchema> {
+       public:
+        virtual ~IWireSchema();
 
         /// Return the field response data
         virtual const WireSchema::Store& wire_schema_store() const = 0;
     };
 
-}
+}  // namespace WireCell
 
 #endif

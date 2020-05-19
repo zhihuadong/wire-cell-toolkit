@@ -32,7 +32,6 @@ void RayGrid::Grouping::add(char ntype, ident_t chid, std::vector<ident_t> wids,
     }
 }
 
-
 RayGrid::Grouping::clusterset_t RayGrid::Grouping::clusters()
 {
     clusterset_t ret;
@@ -58,7 +57,6 @@ RayGrid::Grouping::clusterset_t RayGrid::Grouping::clusters()
 //
 // Solving
 //
-
 
 RayGrid::Solving::vertex_t RayGrid::Solving::source_node(ident_t sid, float value, float weight)
 {
@@ -110,16 +108,14 @@ void RayGrid::Solving::add(const Grouping::clusterset_t& cset)
             // require at least one measurement and one source.
             continue;
         }
-        auto mnode = measurement_node(total_value, total_weight/nms);
+        auto mnode = measurement_node(total_value, total_weight / nms);
         for (auto snode : snodes) {
             boost::add_edge(mnode, snode, m_graph);
         }
     }
 }
 
-
-void RayGrid::Solving::solve_one(solution_t& answer,
-                                 const std::vector<vertex_t>& sources,
+void RayGrid::Solving::solve_one(solution_t& answer, const std::vector<vertex_t>& sources,
                                  const std::vector<vertex_t>& measures)
 {
     // convert source nodes and their edge end mnodes to m vector and G matrix
@@ -128,12 +124,12 @@ void RayGrid::Solving::solve_one(solution_t& answer,
     Ress::vector_t weight = Ress::vector_t::Zero(sources.size());
     Ress::matrix_t geom = Ress::matrix_t::Zero(measures.size(), sources.size());
     std::unordered_map<vertex_t, size_t> sv2ind, mv2ind;
-    for (size_t mind=0; mind<measures.size(); ++mind) {
+    for (size_t mind = 0; mind < measures.size(); ++mind) {
         vertex_t mvtx = measures[mind];
         mv2ind[mvtx] = mind;
         meas(mind) = m_graph[mvtx].value;
     }
-    for (size_t sind=0; sind<sources.size(); ++sind) {
+    for (size_t sind = 0; sind < sources.size(); ++sind) {
         vertex_t svtx = sources[sind];
         sv2ind[svtx] = sind;
         init(sind) = m_graph[svtx].value;
@@ -157,18 +153,16 @@ void RayGrid::Solving::solve_one(solution_t& answer,
     }
 }
 
-RayGrid::Solving::solution_t
-RayGrid::Solving::solve()
+RayGrid::Solving::solution_t RayGrid::Solving::solve()
 {
     std::unordered_map<vertex_t, int> probs;
     int nprobs = boost::connected_components(m_graph, boost::make_assoc_property_map(probs));
-
 
     solution_t answer;
     if (!nprobs) {
         return answer;
     }
-    
+
     struct SMVecs {
         std::vector<vertex_t> sources, measures;
     };
@@ -187,5 +181,4 @@ RayGrid::Solving::solve()
         solve_one(answer, sit.second.sources, sit.second.measures);
     }
     return answer;
-
 }

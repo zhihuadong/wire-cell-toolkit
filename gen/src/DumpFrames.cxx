@@ -7,15 +7,11 @@ WIRECELL_FACTORY(DumpFrames, WireCell::Gen::DumpFrames, WireCell::IFrameSink)
 using namespace WireCell;
 
 Gen::DumpFrames::DumpFrames()
-    : log(Log::logger("glue"))
+  : log(Log::logger("glue"))
 {
 }
 
-
-Gen::DumpFrames::~DumpFrames()
-{
-}
-
+Gen::DumpFrames::~DumpFrames() {}
 
 bool Gen::DumpFrames::operator()(const IFrame::pointer& frame)
 {
@@ -25,11 +21,9 @@ bool Gen::DumpFrames::operator()(const IFrame::pointer& frame)
     }
     auto traces = frame->traces();
     const int ntraces = traces->size();
-    
+
     std::stringstream ss;
-    ss << "sink frame: #" << frame->ident()
-       << " @" << frame->time()/units::ms
-       << " with " << ntraces << " traces";
+    ss << "sink frame: #" << frame->ident() << " @" << frame->time() / units::ms << " with " << ntraces << " traces";
     {
         std::string comma = "";
         ss << ", frame tags:[";
@@ -51,4 +45,3 @@ bool Gen::DumpFrames::operator()(const IFrame::pointer& frame)
     log->debug(ss.str());
     return true;
 }
-

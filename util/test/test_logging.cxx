@@ -49,19 +49,17 @@ int main(int argc, char* argv[])
     s->debug("debug other logger");
     spdlog::debug("debug default logger");
 
-
-    //SPDLOG_LOGGER_DEBUG(l, "log from debug CPP macro");
-    //SPDLOG_LOGGER_TRACE(l, "log from trace CPP macro, should not see by default");
+    // SPDLOG_LOGGER_DEBUG(l, "log from debug CPP macro");
+    // SPDLOG_LOGGER_TRACE(l, "log from trace CPP macro, should not see by default");
 
     auto t0 = std::chrono::high_resolution_clock::now();
     const int nlookups = 100000;
-    for (int count=0; count < nlookups; ++count) {
+    for (int count = 0; count < nlookups; ++count) {
         auto l = Log::logger("lookup");
     }
     auto t1 = std::chrono::high_resolution_clock::now();
-    auto us = std::chrono::duration_cast<std::chrono::microseconds>(t1-t0);
-    spdlog::info("{} in {} us, {:.3f} MHz",
-                 nlookups, us.count(), double(nlookups)/us.count());
+    auto us = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0);
+    spdlog::info("{} in {} us, {:.3f} MHz", nlookups, us.count(), double(nlookups) / us.count());
 
     return 0;
 }

@@ -17,9 +17,8 @@ namespace WireCell {
     namespace Gen {
 
         class AddCoherentNoise : public IFrameFilter, public IConfigurable {
-        public:
-            AddCoherentNoise(const std::string& model = "",
-                             const std::string& rng="Random");
+           public:
+            AddCoherentNoise(const std::string& model = "", const std::string& rng = "Random");
 
             virtual ~AddCoherentNoise();
 
@@ -33,26 +32,26 @@ namespace WireCell {
             void gen_elec_resp_default();
             size_t argclosest(std::vector<float> const& vec, float value);
 
-        private:
-              typedef std::map<int, std::pair<int, std::vector<float>> > noise_map_t;
+           private:
+            typedef std::map<int, std::pair<int, std::vector<float>>> noise_map_t;
 
-              IRandom::pointer m_rng;
+            IRandom::pointer m_rng;
 
-              std::string m_spectra_file, m_rng_tn;
-	      int m_nsamples;
-              double m_fluctuation;
-              double m_period;
-              double m_normalization;
+            std::string m_spectra_file, m_rng_tn;
+            int m_nsamples;
+            double m_fluctuation;
+            double m_period;
+            double m_normalization;
 
-              int m_fft_length;
+            int m_fft_length;
 
-              noise_map_t m_group_noise;
+            noise_map_t m_group_noise;
 
-              Waveform::realseq_t m_elec_resp_freq;
+            Waveform::realseq_t m_elec_resp_freq;
 
-              Log::logptr_t log;
-	     };
-    }
-}
+            Log::logptr_t log;
+        };
+    }  // namespace Gen
+}  // namespace WireCell
 
 #endif

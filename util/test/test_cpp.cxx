@@ -11,7 +11,7 @@ struct Person {
 
 void fill_people(std::vector<Person>& people)
 {
-    Person guy{"Joe", 1}, gal{"Jane", 2}; // fancy initializing    
+    Person guy{"Joe", 1}, gal{"Jane", 2};  // fancy initializing
     people.push_back(std::move(guy));
     people.push_back(std::move(gal));
 }
@@ -22,6 +22,6 @@ int main()
     fill_people(people);
 
     for (auto peep : people) {
-	std::cout << " #" << peep.id << ": " << peep.name << std::endl;
+        std::cout << " #" << peep.id << ": " << peep.name << std::endl;
     }
 }

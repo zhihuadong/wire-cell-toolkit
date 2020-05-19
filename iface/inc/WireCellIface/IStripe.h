@@ -10,7 +10,7 @@
 
 namespace WireCell {
 
-    /** An interface to information about a "stripe" of channels.  
+    /** An interface to information about a "stripe" of channels.
      *
      * A stripe is an ordered and "contiguous" set of channels.
      *
@@ -25,25 +25,22 @@ namespace WireCell {
      * IBlob to refer to a contiguous region on a single face).
      */
     class IStripe : public IData<IStripe> {
-    public:
-	
-	virtual ~IStripe() ;
+       public:
+        virtual ~IStripe();
 
         typedef float value_t;
 
         /// A sample is a channel's value in the time slice.
-	typedef std::pair<IChannel::pointer, value_t> pair_t;
+        typedef std::pair<IChannel::pointer, value_t> pair_t;
         typedef std::vector<pair_t> vector_t;
 
         /// An identifier for this stripe.
-        virtual int ident() const = 0; 
+        virtual int ident() const = 0;
 
         /// the contiguous, ordered, per channel values.
         virtual vector_t values() const = 0;
-
     };
 
-
-}
+}  // namespace WireCell
 
 #endif

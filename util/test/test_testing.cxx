@@ -14,7 +14,7 @@ int main(int argc, char** argv)
     AssertMsg(argc == 1, "In general, tests should not be called with arguments.");
     Assert(argc == 1);
 
-    try {   // normally, one wouldn't catch assertion errors in tests.
+    try {  // normally, one wouldn't catch assertion errors in tests.
         AssertMsg(false, "this assert should be caught");
     }
     catch (AssertionError& e) {

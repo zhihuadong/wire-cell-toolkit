@@ -16,22 +16,17 @@
 
 #include <string>
 
-WIRECELL_FACTORY(AnodePlane, WireCell::Gen::AnodePlane,
-                 WireCell::IAnodePlane, WireCell::IConfigurable)
-
+WIRECELL_FACTORY(AnodePlane, WireCell::Gen::AnodePlane, WireCell::IAnodePlane, WireCell::IConfigurable)
 
 using namespace WireCell;
 using namespace std;
 using WireCell::String::format;
 
-
 Gen::AnodePlane::AnodePlane()
-    : m_ident(0)
-    , l(Log::logger("geom"))
+  : m_ident(0)
+  , l(Log::logger("geom"))
 {
 }
-
-
 
 const int default_nimpacts = 10;
 
@@ -77,7 +72,6 @@ WireCell::Configuration Gen::AnodePlane::default_configuration() const
 }
 
 struct channel_wire_collector_t {
-
     // To deal with wrapped wires we need to temporarily hold on to
     // channels in their concrete form, indexec by chanel ident.  This
     // struct explicitly does NOT free its new channels as it is
@@ -85,7 +79,8 @@ struct channel_wire_collector_t {
     std::unordered_map<int, SimpleChannel*> chid2sch;
 
     // Only call ONCE per iwire.
-    void operator()(IWire::pointer iwire) {
+    void operator()(IWire::pointer iwire)
+    {
         const int chid = iwire->channel();
         SimpleChannel* sc = nullptr;
         auto it = chid2sch.find(chid);
@@ -99,11 +94,8 @@ struct channel_wire_collector_t {
         sc->add(iwire);
     }
 
-    SimpleChannel* operator()(int chid) {
-        return chid2sch[chid];
-    }
+    SimpleChannel* operator()(int chid) { return chid2sch[chid]; }
 };
-
 
 void Gen::AnodePlane::configure(const WireCell::Configuration& cfg)
 {
@@ -118,7 +110,7 @@ void Gen::AnodePlane::configure(const WireCell::Configuration& cfg)
     }
 
     // AnodePlane used to have the mistake of tight coupling with
-    // field response functions.  
+    // field response functions.
     if (!cfg["fields"].isNull() or !cfg["field_response"].isNull()) {
         l->warn("AnodePlane does not require any field response functions.");
     }
@@ -126,12 +118,10 @@ void Gen::AnodePlane::configure(const WireCell::Configuration& cfg)
     auto jfaces = cfg["faces"];
     if (jfaces.isNull() or jfaces.empty() or (jfaces[0].isNull() and jfaces[1].isNull())) {
         l->critical("at least two faces need to be defined, got:\n{}", jfaces);
-        THROW(ValueError() << errmsg{"AnodePlane: error in configuration"});        
+        THROW(ValueError() << errmsg{"AnodePlane: error in configuration"});
     }
 
-
     const int nimpacts = get<int>(cfg, "nimpacts", default_nimpacts);
-
 
     // get wire schema
     const string ws_name = get<string>(cfg, "wire_schema");
@@ -139,7 +129,7 @@ void Gen::AnodePlane::configure(const WireCell::Configuration& cfg)
         l->critical("\"wire_schema\" parameter must specify an IWireSchema component");
         THROW(ValueError() << errmsg{"\"wire_schema\" parameter must specify an IWireSchema component"});
     }
-    auto iws = Factory::find_tn<IWireSchema>(ws_name); // throws if not found
+    auto iws = Factory::find_tn<IWireSchema>(ws_name);  // throws if not found
     const WireSchema::Store& ws_store = iws->wire_schema_store();
 
     // keep track which channels we know about in this anode.
@@ -149,19 +139,19 @@ void Gen::AnodePlane::configure(const WireCell::Configuration& cfg)
 
     std::vector<WireSchema::Face> ws_faces = ws_store.faces(ws_anode);
     const size_t nfaces = ws_faces.size();
-    
+
     channel_wire_collector_t chwcollector;
 
     m_faces.resize(nfaces);
     // note, WireSchema requires front/back face ordering in an anode
-    for (size_t iface=0; iface<nfaces; ++iface) { 
+    for (size_t iface = 0; iface < nfaces; ++iface) {
         const auto& ws_face = ws_faces[iface];
         std::vector<WireSchema::Plane> ws_planes = ws_store.planes(ws_face);
         const size_t nplanes = ws_planes.size();
-        
+
         // location of imaginary boundary planes
         bool sensitive_face = true;
-        auto jface = jfaces[(int)iface];
+        auto jface = jfaces[(int) iface];
         if (jface.isNull()) {
             sensitive_face = false;
             l->debug("anode {} face {} is not sensitive", m_ident, iface);
@@ -169,13 +159,13 @@ void Gen::AnodePlane::configure(const WireCell::Configuration& cfg)
         const double response_x = jface["response"].asDouble();
         const double anode_x = get(jface, "anode", response_x);
         const double cathode_x = jface["cathode"].asDouble();
-        l->debug("AnodePlane: X planes: \"cathode\"@ {}m, \"response\"@{}m, \"anode\"@{}m",
-                cathode_x / units::m, response_x / units::m, anode_x/units::m);
+        l->debug("AnodePlane: X planes: \"cathode\"@ {}m, \"response\"@{}m, \"anode\"@{}m", cathode_x / units::m,
+                 response_x / units::m, anode_x / units::m);
 
         IWirePlane::vector planes(nplanes);
         // note, WireSchema requires U/V/W plane ordering in a face.
-        std::vector<BoundingBox> bbvols; // sensitive volume for all planes
-        for (size_t iplane=0; iplane<nplanes; ++iplane) { 
+        std::vector<BoundingBox> bbvols;  // sensitive volume for all planes
+        for (size_t iplane = 0; iplane < nplanes; ++iplane) {
             const auto& ws_plane = ws_planes[iplane];
 
             WirePlaneId wire_plane_id(iplane2layer[iplane], iface, m_ident);
@@ -196,33 +186,30 @@ void Gen::AnodePlane::configure(const WireCell::Configuration& cfg)
             IWire::vector wires(nwires);
 
             // note, WireSchema requires wire-in-plane ordering
-            for (size_t iwire=0; iwire<nwires; ++iwire) {
+            for (size_t iwire = 0; iwire < nwires; ++iwire) {
                 const auto& ws_wire = ws_wires[iwire];
                 const int chanid = plane_chans[iwire];
-                    
+
                 Ray ray(ws_wire.tail, ws_wire.head);
-                auto iwireptr = make_shared<SimpleWire>(wire_plane_id, ws_wire.ident,
-                                                        iwire, chanid, ray,
-                                                        ws_wire.segment);
+                auto iwireptr =
+                    make_shared<SimpleWire>(wire_plane_id, ws_wire.ident, iwire, chanid, ray, ws_wire.segment);
                 wires[iwire] = iwireptr;
                 m_c2wires[chanid].push_back(iwireptr);
                 m_c2wpid[chanid] = wire_plane_id.ident();
                 chwcollector(iwireptr);
-            } // wire
+            }  // wire
 
             const BoundingBox bb = ws_store.bounding_box(ws_plane);
             const Ray bb_ray = bb.bounds();
-            const Vector plane_center = 0.5*(bb_ray.first + bb_ray.second);
+            const Vector plane_center = 0.5 * (bb_ray.first + bb_ray.second);
 
             const double pitchmin = wire_pitch_dirs.second.dot(wires[0]->center() - plane_center);
-            const double pitchmax = wire_pitch_dirs.second.dot(wires[nwires-1]->center() - plane_center);
+            const double pitchmax = wire_pitch_dirs.second.dot(wires[nwires - 1]->center() - plane_center);
             const Vector pimpos_origin(response_x, plane_center.y(), plane_center.z());
 
-            l->debug("AnodePlane: face:{}, plane:{}, origin:{} mm",
-                     iface, iplane, pimpos_origin/units::mm);
+            l->debug("AnodePlane: face:{}, plane:{}, origin:{} mm", iface, iplane, pimpos_origin / units::mm);
 
-            Pimpos* pimpos = new Pimpos(nwires, pitchmin, pitchmax,
-                                        wire_pitch_dirs.first, wire_pitch_dirs.second,
+            Pimpos* pimpos = new Pimpos(nwires, pitchmin, pitchmax, wire_pitch_dirs.first, wire_pitch_dirs.second,
                                         pimpos_origin, nimpacts);
 
             IChannel::vector plane_channels;
@@ -240,11 +227,11 @@ void Gen::AnodePlane::configure(const WireCell::Configuration& cfg)
                     plane_channels.push_back(ich);
                 }
             }
-            sort(wires.begin(), wires.end(), IWireCompareIndex()); // redundant?
+            sort(wires.begin(), wires.end(), IWireCompareIndex());  // redundant?
             planes[iplane] = make_shared<WirePlane>(ws_plane.ident, pimpos, wires, plane_channels);
 
             // // Last iteration, use W plane to define volume
-            // if (iplane == nplanes-1) { 
+            // if (iplane == nplanes-1) {
             //     const double mean_pitch = (pitchmax - pitchmin) / (nwires-1);
             //     BoundingBox sensvol;
             //     if (sensitive_face) {
@@ -256,7 +243,7 @@ void Gen::AnodePlane::configure(const WireCell::Configuration& cfg)
             //         Point p2(cathode_x, v2.y(), std::max(v1.z(), v2.z()) + 0.5*mean_pitch);
             //         sensvol(p2);
             //     }
-                
+
             //     l->debug("AnodePlane: face:{} with {} planes and sensvol: {}",
             //              ws_face.ident, planes.size(), sensvol.bounds());
 
@@ -264,7 +251,7 @@ void Gen::AnodePlane::configure(const WireCell::Configuration& cfg)
             // }
 
             // compute sensitive volume for this plane
-            const double mean_pitch = (pitchmax - pitchmin) / (nwires-1);
+            const double mean_pitch = (pitchmax - pitchmin) / (nwires - 1);
             if (sensitive_face) {
                 auto v1 = bb_ray.first;
                 auto v2 = bb_ray.second;
@@ -272,44 +259,41 @@ void Gen::AnodePlane::configure(const WireCell::Configuration& cfg)
                 Point pext;
                 // Enlarge to anode/cathode planes in X and by 1/2 pitch in Y or Z.
                 auto pitch_dir = wire_pitch_dirs.second;
-                if (std::fabs(pitch_dir.z())>0.999) // parallel to z. FIXME: probably need a better comparison
-                    pext = Point(0, 0, 0.5*mean_pitch); // 1/2 pitch extension in Z
-                else if (std::fabs(pitch_dir.y())>0.999)
-                    pext = Point(0, 0.5*mean_pitch, 0);
+                if (std::fabs(pitch_dir.z()) > 0.999)      // parallel to z. FIXME: probably need a better comparison
+                    pext = Point(0, 0, 0.5 * mean_pitch);  // 1/2 pitch extension in Z
+                else if (std::fabs(pitch_dir.y()) > 0.999)
+                    pext = Point(0, 0.5 * mean_pitch, 0);
 
-                Point p1(  anode_x, std::min(v1.y(), v2.y()), std::min(v1.z(), v2.z()));
-                p1 += pext*(-1.0);
+                Point p1(anode_x, std::min(v1.y(), v2.y()), std::min(v1.z(), v2.z()));
+                p1 += pext * (-1.0);
                 bb(p1);
                 Point p2(cathode_x, std::max(v1.y(), v2.y()), std::max(v1.z(), v2.z()));
                 p2 += pext;
                 bb(p2);
                 bbvols.push_back(bb);
             }
-        } // plane
+        }  // plane
 
         // intersection of sensitive volumes from all planes
         BoundingBox sensvol;
         if (not bbvols.empty()) {
             Ray r1 = bbvols.at(0).bounds();
-            for(auto& bb: bbvols) {
+            for (auto& bb : bbvols) {
                 r1 = WireCell::box_intersect(r1, bb.bounds());
             }
             sensvol(r1);
         }
-                
-        l->debug("AnodePlane: face:{} with {} planes and sensvol: {}",
-                 ws_face.ident, planes.size(), sensvol.bounds());
+
+        l->debug("AnodePlane: face:{} with {} planes and sensvol: {}", ws_face.ident, planes.size(), sensvol.bounds());
 
         m_faces[iface] = make_shared<AnodeFace>(ws_face.ident, planes, sensvol);
-    } // face
+    }  // face
 
     // remove any duplicate channels
     std::sort(m_channels.begin(), m_channels.end());
     auto chend = std::unique(m_channels.begin(), m_channels.end());
-    m_channels.resize( std::distance(m_channels.begin(), chend) );
-
+    m_channels.resize(std::distance(m_channels.begin(), chend));
 }
-
 
 IAnodeFace::pointer Gen::AnodePlane::face(int ident) const
 {
@@ -321,7 +305,6 @@ IAnodeFace::pointer Gen::AnodePlane::face(int ident) const
     return nullptr;
 }
 
- 
 WirePlaneId Gen::AnodePlane::resolve(int channel) const
 {
     const WirePlaneId bogus(0xFFFFFFFF);
@@ -342,10 +325,7 @@ IChannel::pointer Gen::AnodePlane::channel(int chident) const
     return it->second;
 }
 
-std::vector<int> Gen::AnodePlane::channels() const
-{
-    return m_channels;
-}
+std::vector<int> Gen::AnodePlane::channels() const { return m_channels; }
 
 IWire::vector Gen::AnodePlane::wires(int channel) const
 {

@@ -20,23 +20,18 @@ namespace WireCell {
      * are expected produce an ISliceFrame which spans the same time
      * as the input IFrame.
      */
-    class IFrameSlicer : public IFunctionNode<IFrame,ISliceFrame>
-    {
-    public:
-	typedef std::shared_ptr<IFrameSlicer> pointer;
+    class IFrameSlicer : public IFunctionNode<IFrame, ISliceFrame> {
+       public:
+        typedef std::shared_ptr<IFrameSlicer> pointer;
 
-	virtual ~IFrameSlicer() ;
+        virtual ~IFrameSlicer();
 
-	virtual std::string signature() {
-	   return typeid(IFrameSlicer).name();
-	}
+        virtual std::string signature() { return typeid(IFrameSlicer).name(); }
 
-	// supply:
-	// virtual bool operator()(const input_pointer& in, output_pointer& out);
-
+        // supply:
+        // virtual bool operator()(const input_pointer& in, output_pointer& out);
     };
 
-
-}
+}  // namespace WireCell
 
 #endif

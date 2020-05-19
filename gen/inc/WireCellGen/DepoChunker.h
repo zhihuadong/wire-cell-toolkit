@@ -24,7 +24,7 @@ namespace WireCell {
     namespace Gen {
 
         class DepoChunker : public IDepoCollector, public IConfigurable {
-        public:
+           public:
             DepoChunker();
             virtual ~DepoChunker();
 
@@ -34,20 +34,20 @@ namespace WireCell {
             // IConfigurable
             virtual void configure(const WireCell::Configuration& config);
             virtual WireCell::Configuration default_configuration() const;
-        private:
 
+           private:
             // Count how many we've produced, use this for the depo set ident.
             int m_count;
 
             // The current and starting acceptance time gates
-            std::pair<double,double> m_gate, m_starting_gate;
-            
+            std::pair<double, double> m_gate, m_starting_gate;
+
             // Temporary holding of accepted depos.
-            IDepo::vector m_depos;            
+            IDepo::vector m_depos;
 
             void emit(output_queue& out);
         };
-    }
-}
+    }  // namespace Gen
+}  // namespace WireCell
 
 #endif

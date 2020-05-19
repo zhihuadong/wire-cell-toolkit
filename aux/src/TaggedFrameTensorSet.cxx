@@ -8,8 +8,8 @@
 
 #include <unordered_set>
 
-WIRECELL_FACTORY(TaggedFrameTensorSet, WireCell::Aux::TaggedFrameTensorSet,
-                 WireCell::IFrameTensorSet, WireCell::IConfigurable)
+WIRECELL_FACTORY(TaggedFrameTensorSet, WireCell::Aux::TaggedFrameTensorSet, WireCell::IFrameTensorSet,
+                 WireCell::IConfigurable)
 
 using namespace WireCell;
 
@@ -21,18 +21,15 @@ WireCell::Configuration Aux::TaggedFrameTensorSet::default_configuration() const
     return cfg;
 }
 
-void Aux::TaggedFrameTensorSet::configure(const WireCell::Configuration& config)
-{
-    m_cfg = config;
-}
+void Aux::TaggedFrameTensorSet::configure(const WireCell::Configuration& config) { m_cfg = config; }
 
 bool Aux::TaggedFrameTensorSet::operator()(const input_pointer& in, output_pointer& out)
 {
     out = nullptr;
-    if (!in) {                  // pass on EOS
+    if (!in) {  // pass on EOS
         return true;
     }
-    
+
     auto log = Log::logger("tens");
 
     ITensor::vector* itv = new ITensor::vector;
@@ -59,13 +56,12 @@ bool Aux::TaggedFrameTensorSet::operator()(const input_pointer& in, output_point
             continue;
         }
         size_t ntraces = traces.size();
-        //log->debug("Frame->Tensor: {} traces for tag '{}'", ntraces, tag);
+        // log->debug("Frame->Tensor: {} traces for tag '{}'", ntraces, tag);
 
         float pad = get<float>(jten, "pad", 0.0);
 
         auto mm_tbin = FrameTools::tbin_range(traces);
         int tbin0 = mm_tbin.first;
-
 
         // traces may be degenerate/overlapping in channels and ticks.
         // Do a little dance to map chid to an index sorted by chid.
@@ -73,16 +69,16 @@ bool Aux::TaggedFrameTensorSet::operator()(const input_pointer& in, output_point
         for (const auto trace : traces) {
             uchid.push_back(trace->channel());
         }
-        //log->debug("Frame->Tensor: tag '{}': {} channels total, {} traces", tag, uchid.size(), ntraces);
+        // log->debug("Frame->Tensor: tag '{}': {} channels total, {} traces", tag, uchid.size(), ntraces);
 
         std::sort(uchid.begin(), uchid.end());
         std::vector<int>::iterator it = std::unique(uchid.begin(), uchid.end());
         const size_t nchans = std::distance(uchid.begin(), it);
-        //log->debug("Frame->Tensor: tag '{}': {} channels unique", tag, nchans);
+        // log->debug("Frame->Tensor: tag '{}': {} channels unique", tag, nchans);
         uchid.resize(nchans);
 
         // map channel ID to consecutive, sorted index
-        std::map<int,size_t> chid2ind;
+        std::map<int, size_t> chid2ind;
         for (auto chid : uchid) {
             size_t ind = chid2ind.size();
             chid2ind[chid] = ind;
@@ -90,14 +86,14 @@ bool Aux::TaggedFrameTensorSet::operator()(const input_pointer& in, output_point
 
         // "channels" tensor
         SimpleTensor<int>* cht = new SimpleTensor<int>({nchans});
-        Eigen::Map<Eigen::ArrayXi> charr((int*)cht->data(), nchans);
-        assert((size_t)charr.size() == nchans);
+        Eigen::Map<Eigen::ArrayXi> charr((int*) cht->data(), nchans);
+        assert((size_t) charr.size() == nchans);
         charr.setZero();
 
         // "summary" tensor, create but only fill and save if we have summary
         SimpleTensor<double>* sumt = new SimpleTensor<double>({nchans});
-        Eigen::Map<Eigen::ArrayXd> sumarr((double*)sumt->data(), nchans);
-        assert((size_t)sumarr.size() == nchans);
+        Eigen::Map<Eigen::ArrayXd> sumarr((double*) sumt->data(), nchans);
+        assert((size_t) sumarr.size() == nchans);
         sumarr.setZero();
 
         const auto& ts = in->trace_summary(tag);
@@ -108,10 +104,10 @@ bool Aux::TaggedFrameTensorSet::operator()(const input_pointer& in, output_point
 
         // "waveform" tensor
         SimpleTensor<float>* st = new SimpleTensor<float>(shape);
-        Eigen::Map<Eigen::ArrayXXf> arr((float*)st->data(), nchans, nticks);
+        Eigen::Map<Eigen::ArrayXXf> arr((float*) st->data(), nchans, nticks);
         arr.setConstant(pad);
 
-        for (size_t itr=0; itr<ntraces; ++itr) {
+        for (size_t itr = 0; itr < ntraces; ++itr) {
             auto trace = traces[itr];
             const auto& qarr = trace->charge();
             size_t nq = qarr.size();
@@ -120,18 +116,18 @@ bool Aux::TaggedFrameTensorSet::operator()(const input_pointer& in, output_point
             auto it = chid2ind.find(chid);
             assert(it != chid2ind.end());
             size_t chind = it->second;
-            assert(chind < (size_t)charr.size());
+            assert(chind < (size_t) charr.size());
 
-            //log->debug("itr: {}/{}, chid: {}, chind: {}", itr, ntraces, chid, chind);
+            // log->debug("itr: {}/{}, chid: {}, chind: {}", itr, ntraces, chid, chind);
             charr[chind] = chid;
             if (have_summary) {
                 sumarr[chind] += ts[itr];
             }
 
-            size_t tbini = trace->tbin() - tbin0; // where in output to lay-down charge.
+            size_t tbini = trace->tbin() - tbin0;  // where in output to lay-down charge.
             size_t tbinf = std::min(nticks, tbini + nq);
             size_t tbinn = tbinf - tbini;
-            
+
             Eigen::Map<const Eigen::ArrayXf> wave(qarr.data(), nq);
             arr.row(chind).segment(tbini, tbinn) += wave;
         }
@@ -156,24 +152,24 @@ bool Aux::TaggedFrameTensorSet::operator()(const input_pointer& in, output_point
         }
 
         // per tag cmm
-        for(auto label_cmm : in->masks()) {
+        for (auto label_cmm : in->masks()) {
             auto label = label_cmm.first;
             log->trace("masks: {}", label);
             auto cmm = label_cmm.second;
             size_t nranges = 0;
-            for(auto ch_bl : cmm) {
+            for (auto ch_bl : cmm) {
                 nranges += ch_bl.second.size();
             }
             SimpleTensor<double>* ranges = new SimpleTensor<double>({nranges, 2});
-            Eigen::Map<Eigen::ArrayXXd> ranges_arr((double*)ranges->data(), nranges, 2);
+            Eigen::Map<Eigen::ArrayXXd> ranges_arr((double*) ranges->data(), nranges, 2);
             SimpleTensor<double>* channels = new SimpleTensor<double>({nranges});
-            Eigen::Map<Eigen::ArrayXd> channels_arr((double*)channels->data(), nranges);
+            Eigen::Map<Eigen::ArrayXd> channels_arr((double*) channels->data(), nranges);
 
             size_t ind = 0;
-            for(auto ch_bl : cmm) {
+            for (auto ch_bl : cmm) {
                 auto ch = ch_bl.first;
                 auto bl = ch_bl.second;
-                for(auto b : bl) {
+                for (auto b : bl) {
                     ranges_arr(ind, 0) = b.first;
                     ranges_arr(ind, 1) = b.second;
                     channels_arr(ind) = ch;
@@ -193,23 +189,12 @@ bool Aux::TaggedFrameTensorSet::operator()(const input_pointer& in, output_point
         }
 
         set_md["tags"].append(tag);
-
     }
 
-    out = std::make_shared<SimpleTensorSet>(in->ident(), set_md,
-                                            ITensor::shared_vector(itv));
+    out = std::make_shared<SimpleTensorSet>(in->ident(), set_md, ITensor::shared_vector(itv));
     log->trace(Aux::dump(out));
     return true;
 }
 
-
-
-
-
-Aux::TaggedFrameTensorSet::TaggedFrameTensorSet()
-{
-}
-Aux::TaggedFrameTensorSet::~TaggedFrameTensorSet()
-{
-}
-
+Aux::TaggedFrameTensorSet::TaggedFrameTensorSet() {}
+Aux::TaggedFrameTensorSet::~TaggedFrameTensorSet() {}

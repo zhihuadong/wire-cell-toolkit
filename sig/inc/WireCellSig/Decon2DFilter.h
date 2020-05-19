@@ -23,7 +23,6 @@ namespace WireCell {
             virtual bool operator()(const ITensorSet::pointer& in, ITensorSet::pointer& out);
 
            private:
-
             Log::logptr_t log;
             Configuration m_cfg;  /// copy of configuration
         };

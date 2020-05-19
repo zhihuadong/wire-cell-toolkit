@@ -10,12 +10,12 @@ namespace WireCell {
 
         // Fan out 1 deposet to N set at construction or configuration time.
         class DepoSetFanout : public IDepoSetFanout, public IConfigurable {
-        public:
+           public:
             DepoSetFanout(size_t multiplicity = 0);
             virtual ~DepoSetFanout();
-            
+
             // INode, override because we get multiplicity at run time.
-            virtual std::vector<std::string>  output_types();
+            virtual std::vector<std::string> output_types();
 
             // IFanout
             virtual bool operator()(const input_pointer& in, output_vector& outv);
@@ -24,14 +24,12 @@ namespace WireCell {
             virtual void configure(const WireCell::Configuration& cfg);
             virtual WireCell::Configuration default_configuration() const;
 
-        private:
+           private:
             size_t m_multiplicity;
-            
+
             Log::logptr_t log;
         };
-    }
-}
-
+    }  // namespace Gen
+}  // namespace WireCell
 
 #endif
-

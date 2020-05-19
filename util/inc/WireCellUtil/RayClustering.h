@@ -15,12 +15,9 @@ namespace WireCell {
         typedef typename std::vector<blobvec_t> blobproj_t;
 
         struct blobref_hash {
-            size_t operator()(blobref_t blobref) const { 
-                return std::hash<int*>()((int*)&*blobref);
-            }
+            size_t operator()(blobref_t blobref) const { return std::hash<int*>()((int*) &*blobref); }
         };
         typedef typename std::unordered_set<blobref_t, blobref_hash> blobset_t;
-
 
         // project blobs along rays in layer
         blobproj_t projection(const blobvec_t& blobs, layer_index_t layer);
@@ -38,7 +35,6 @@ namespace WireCell {
         // Helper to make a vector of references from the backing vector.
         blobvec_t references(const blobs_t& blobs);
 
-
         // High level API.
 
         typedef std::function<void(blobref_t& a, blobref_t& b)> associator_t;
@@ -47,8 +43,8 @@ namespace WireCell {
         // mutually overlap.  The associator function will be called
         // with every pair of two overlapping blobs.
         void associate(const blobs_t& one, const blobs_t& two, associator_t func);
-        
-    }
-}    
+
+    }  // namespace RayGrid
+}  // namespace WireCell
 
 #endif

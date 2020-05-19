@@ -8,6 +8,5 @@ namespace WireCell {
 
         // Return a pointer to an ITensor in set by matching metadata attributes tag and type.
         ITensor::pointer get_tens(const ITensorSet::pointer& in, std::string tag, std::string type);
-    }
-}
-    
+    }  // namespace Aux
+}  // namespace WireCell

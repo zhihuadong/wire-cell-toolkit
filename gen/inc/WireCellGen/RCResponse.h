@@ -13,12 +13,9 @@ namespace WireCell {
     namespace Gen {
 
         class RCResponse : public IWaveform, public IConfigurable {
-        public:
-            RCResponse(int nticks = 10000,
-                       double t0 = 0,
-                       double width=1.0*units::ms,
-                       double tick = 0.5*units::us);
-
+           public:
+            RCResponse(int nticks = 10000, double t0 = 0, double width = 1.0 * units::ms,
+                       double tick = 0.5 * units::us);
 
             // IConfigurable interface
             virtual void configure(const WireCell::Configuration& cfg);
@@ -33,12 +30,12 @@ namespace WireCell {
             // The collection of samples rebinned
             virtual sequence_type waveform_samples(const WireCell::Binning& tbins) const;
 
-        private:
-            Response::SimpleRC *m_rc;
+           private:
+            Response::SimpleRC* m_rc;
             Configuration m_cfg;
             sequence_type m_wave;
         };
-    }
-}
+    }  // namespace Gen
+}  // namespace WireCell
 
 #endif
