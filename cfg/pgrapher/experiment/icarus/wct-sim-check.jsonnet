@@ -57,21 +57,7 @@ local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n
 
 local sp_maker = import 'pgrapher/experiment/icarus/sp.jsonnet';
 local sp = sp_maker(params, tools);
-
-// Add WarmElec response
-local eresponse = {
-    type: "WarmElecResponse",
-    name: "WarmElec",
-    data: {
-        gain: 30*wc.mV/wc.fC,
-        shaping: 1.3*wc.us,
-        postgain: 1,
-        start: 0,
-        tick: params.daq.tick,
-        nticks: params.daq.nticks,
-    },
-};
-local sp_pipes = [sp.make_sigproc(a, eresponse) for a in tools.anodes];
+local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
 
 // fixme: see https://github.com/WireCell/wire-cell-gen/issues/29
