@@ -76,8 +76,8 @@ base {
     },
 
     adc: super.adc {
-        // estimated from ADC values. FIXME: accurate voltage setting?
-        baselines: [1003*wc.millivolt,1003*wc.millivolt,508*wc.millivolt],
+        // fix baseline at 2048 (induction), 400 (collection)
+        baselines: [1650.0*wc.millivolt, 1650.0*wc.millivolt, 322.3*wc.millivolt],
 
         // From ICARUS paper: https://iopscience.iop.org/article/10.1088/1748-0221/13/12/P12007/pdf
         //check (values taken from the FE calibration shown in pg. 7 of the paper)
