@@ -172,6 +172,19 @@ local add_noise = function(model, n) g.pnode({
     }}, nin=1, nout=1, uses=[model]);
 local noises = [add_noise(noise_model, n) for n in std.range(0,3)];
 
+local add_coherent_noise = function(n) g.pnode({
+      type: "AddCoherentNoise",
+      name: "addcoherentnoise%d" %n,
+      data: {
+          spectra_file: params.files.coherent_noise,
+          rng: wc.tn(tools.random),
+          nsamples: params.daq.nticks,
+          random_fluctuation_amplitude: 0.1,
+          period: params.daq.tick,
+          normalization: 1
+      }}, nin=1, nout=1, uses=[]);
+local coherent_noises = [add_coherent_noise(n) for n in std.range(0,3)];
+
 // local digitizer = sim.digitizer(mega_anode, name="digitizer", tag="orig");
 local digitizers = [
     sim.digitizer(mega_anode, name="digitizer%d-" %n + mega_anode.name, tag="daq%d"%n)
@@ -207,7 +220,7 @@ local frame_summers = [
         },
     }, nin=2, nout=1) for n in std.range(0, 3)];
 
-local actpipes = [g.pipeline([noises[n], digitizers[n], /*retaggers[n],*/ wcls_output.sim_digits[n]], name="noise-digitizer%d" %n) for n in std.range(0,3)];
+local actpipes = [g.pipeline([noises[n], coherent_noises[n], digitizers[n], /*retaggers[n],*/ wcls_output.sim_digits[n]], name="noise-digitizer%d" %n) for n in std.range(0,3)];
 local util = import 'pgrapher/experiment/icarus/funcs.jsonnet';
 local outtags = ['orig%d' % n for n in std.range(0, 3)];
 local pipe_reducer = util.fansummer('DepoSetFanout', analog_pipes, frame_summers, actpipes, 'FrameFanin', 'fansummer', outtags);
