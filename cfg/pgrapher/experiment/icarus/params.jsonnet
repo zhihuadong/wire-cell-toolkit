@@ -86,7 +86,7 @@ base {
 
     elec: super.elec {
         type: "WarmElecResponse",
-        gain: 30*wc.mV/wc.fC,
+        gain: 17.8075*wc.mV/wc.fC, // 0.027 fC/(ADC*us)
         shaping: 1.3*wc.us,
         postgain: 1.0,
         start: 0,

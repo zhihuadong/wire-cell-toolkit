@@ -384,7 +384,9 @@ double Response::ColdElec::operator()(double time) const { return coldelec(time,
       2) From test pulse measurement with FLIC@CERN we have 0.027 fC/(ADC*us),
       therefore 0.027*6242 electrons/(ADC*us)
       3) From the paper is 0.8 mV/(ADC*us), thus gain is 2.7e-2/0.8 fC/mV
-        (A. Scarpelli)
+        (A. Scarpelli) --- misinterpretation? (W. Gu)
+        The integral of the warmelec is 29.84 mV*us/fC, therefore, the
+        gain factor is 17.8075. (W. Gu)
  */
 double Response::warmelec(double time, double gain, double shaping)
 {
