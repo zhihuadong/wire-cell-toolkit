@@ -8,7 +8,20 @@ local wc = import 'wirecell.jsonnet';
 
 local io = import 'pgrapher/common/fileio.jsonnet';
 local tools_maker = import 'pgrapher/common/tools.jsonnet';
-local params = import 'pgrapher/experiment/icarus/simparams.jsonnet';
+// local params = import 'pgrapher/experiment/icarus/simparams.jsonnet';
+local base = import 'pgrapher/experiment/icarus/simparams.jsonnet';
+local params = base {
+  lar: super.lar {
+    // Longitudinal diffusion constant
+    DL: std.extVar('DL') * wc.cm2 / wc.ns,
+    // Transverse diffusion constant
+    DT: std.extVar('DT') * wc.cm2 / wc.ns,
+    // Electron lifetime
+    lifetime: std.extVar('lifetime') * wc.us,
+    // Electron drift speed, assumes a certain applied E-field
+    // drift_speed: std.extVar('driftSpeed') * wc.mm / wc.us,
+  },
+};
 
 local tools = tools_maker(params);
 

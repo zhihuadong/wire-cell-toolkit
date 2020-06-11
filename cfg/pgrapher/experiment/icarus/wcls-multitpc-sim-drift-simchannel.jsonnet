@@ -8,7 +8,20 @@ local wc = import 'wirecell.jsonnet';
 
 local io = import 'pgrapher/common/fileio.jsonnet';
 local tools_maker = import 'pgrapher/common/tools.jsonnet';
-local params = import 'pgrapher/experiment/icarus/simparams.jsonnet';
+// local params = import 'pgrapher/experiment/icarus/simparams.jsonnet';
+local base = import 'pgrapher/experiment/icarus/simparams.jsonnet';
+local params = base {
+  lar: super.lar {
+    // Longitudinal diffusion constant
+    DL: std.extVar('DL') * wc.cm2 / wc.ns,
+    // Transverse diffusion constant
+    DT: std.extVar('DT') * wc.cm2 / wc.ns,
+    // Electron lifetime
+    lifetime: std.extVar('lifetime') * wc.us,
+    // Electron drift speed, assumes a certain applied E-field
+    // drift_speed: std.extVar('driftSpeed') * wc.mm / wc.us,
+  },
+};
 
 local tools = tools_maker(params);
 
@@ -220,7 +233,7 @@ local frame_summers = [
         },
     }, nin=2, nout=1) for n in std.range(0, 3)];
 
-local actpipes = [g.pipeline([noises[n], coherent_noises[n], digitizers[n], /*retaggers[n],*/ wcls_output.sim_digits[n]], name="noise-digitizer%d" %n) for n in std.range(0,3)];
+local actpipes = [g.pipeline([noises[n], /*coherent_noises[n],*/ digitizers[n], /*retaggers[n],*/ wcls_output.sim_digits[n]], name="noise-digitizer%d" %n) for n in std.range(0,3)];
 local util = import 'pgrapher/experiment/icarus/funcs.jsonnet';
 local outtags = ['orig%d' % n for n in std.range(0, 3)];
 local pipe_reducer = util.fansummer('DepoSetFanout', analog_pipes, frame_summers, actpipes, 'FrameFanin', 'fansummer', outtags);
