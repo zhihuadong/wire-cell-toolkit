@@ -1,2 +1,1 @@
-bld.install_files('${PREFIX}/share/wirecell',
-                  ['vector.jsonnet', 'wirecell.jsonnet'])
+bld.install_files('${PREFIX}/share/wirecell', bld.path.ant_glob("*.jsonnet"))
