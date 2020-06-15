@@ -1,1 +1,10 @@
-bld.install_files('${PREFIX}/share/wirecell', bld.path.ant_glob("*.jsonnet"))
+bld.install_files('${PREFIX}/share/wirecell',
+                  bld.path.ant_glob("*.jsonnet") +
+                  bld.path.ant_glob("pgrapher/common/**/*.jsonnet"),
+                  relative_trick=True)
+for exp in getattr(bld.options, 'install_config', "").split(','):
+    if exp == "all": exp = "*"
+    bld.install_files('${PREFIX}/share/wirecell',
+                      bld.path.ant_glob("pgrapher/experiment/%s/**/*.jsonnet" % exp) +
+                      bld.path.ant_glob("pgrapher/experiment/%s/**/*.fcl" % exp),
+                      relative_trick=True)

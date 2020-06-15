@@ -49,7 +49,6 @@ venv*
 clusters-*.dot
 clusters-*.json
 *.zip
-data
 calgrind.*
 *.hdf
 wct-deps.dot

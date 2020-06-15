@@ -26,3 +26,6 @@
 	path = wire-cell-tbb
 	url = git@github.com:WireCell/wire-cell-tbb.git
         update = merge
+[submodule "data"]
+	path = data
+	url = https://github.com/WireCell/wire-cell-data.git
