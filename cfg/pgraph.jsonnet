@@ -184,4 +184,66 @@ local wc = import "wirecell.jsonnet";
     // lists.
     uses(graph) :: wc.unique_list(self.resolve_uses(graph.uses)),
     
+
+    // Some utility functions to build fan-out/in subgraphs.
+    fan:: {
+        // Build a fanout-[pipelines]-fanin graph.  pipelines is a list of
+        // pnode objects, one for each spine of the fan.
+        pipe :: function(fout, pipelines, fin, name="fanpipe", outtags=[], tag_rules=[]) {
+
+            local fanmult = std.length(pipelines),
+
+            local fanout = $.pnode({
+                type: fout,
+                name: name,
+                data: {
+                    multiplicity: fanmult,
+                    tag_rules: tag_rules,
+                },
+            }, nin=1, nout=fanmult),
+
+
+            local fanin = $.pnode({
+                type: fin,
+                name: name,
+                data: {
+                    multiplicity: fanmult,
+                    tags: outtags,
+                },
+            }, nin=fanmult, nout=1),
+
+            ret: $.intern(innodes=[fanout],
+                          outnodes=[fanin],
+                          centernodes=pipelines,
+                          edges=
+                          [$.edge(fanout, pipelines[n], n, 0) for n in std.range(0, fanmult-1)] +
+                          [$.edge(pipelines[n], fanin, 0, n) for n in std.range(0, fanmult-1)],
+                          name=name),
+        }.ret,
+
+        // Build a fanout-[pipelines] graph where each pipe is self
+        // terminated.  pipelines is a list of pnode objects, one for each
+        // spine of the fan.
+        sink :: function(fout, pipelines, name="fansink", tag_rules=[]) {
+
+            local fanmult = std.length(pipelines),
+
+            local fanout = $.pnode({
+                type: fout,
+                name: name,
+                data: {
+                    multiplicity: fanmult,
+                    tag_rules: tag_rules,
+                },
+            }, nin=1, nout=fanmult),
+
+
+            ret: $.intern(innodes=[fanout],
+                          outnodes=[],
+                          centernodes=pipelines,
+                          edges=
+                          [$.edge(fanout, pipelines[n], n, 0) for n in std.range(0, fanmult-1)],
+                          name=name),
+        }.ret,
+    },                          // fan
 }
