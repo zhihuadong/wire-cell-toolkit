@@ -5,10 +5,10 @@
 #include "WireCellUtil/Binning.h"
 #include "WireCellUtil/Exceptions.h"
 
-// fixme: this needs to move out of iface!
-#include "WireCellIface/FrameTools.h"
 #include "WireCellIface/SimpleFrame.h"
 #include "WireCellIface/SimpleTrace.h"
+
+#include "WireCellAux/FrameTools.h"
 
 #include <vector>
 
@@ -231,7 +231,7 @@ void Gen::MultiDuctor::dump_frame(const IFrame::pointer frame, std::string msg)
         return;
     }
 
-    auto mm = FrameTools::tbin_range(*traces);
+    auto mm = aux::tbin_range(*traces);
     std::cerr << msg << " fid:" << frame->ident() << " #ch:" << traces->size() << " t:" << std::setprecision(12)
               << m_start_time / units::us << "us "
               << " tbins:[" << mm.first << "," << mm.second << "]\n";
@@ -296,7 +296,7 @@ void Gen::MultiDuctor::maybe_extract(const input_pointer& depo, output_queue& ou
             }
         }
 
-        int cmp = FrameTools::frmtcmp(frame, target_time);
+        int cmp = aux::frmtcmp(frame, target_time);
         // std::cerr << "Gen::MultiDuctor: checking to keep: "
         //           << std::setprecision(12)
         //           << "t_target=" << target_time/units::us << "us, "
@@ -313,7 +313,7 @@ void Gen::MultiDuctor::maybe_extract(const input_pointer& depo, output_queue& ou
         }
 
         // If cmp==0 above then both halves of the pair should hold a frame.
-        auto ff = FrameTools::split(frame, target_time);
+        auto ff = aux::split(frame, target_time);
         if (ff.first) {
             to_extract.push_back(ff.first);
             // dump_frame(ff.first, "Gen::MultiDuctor: to extract");

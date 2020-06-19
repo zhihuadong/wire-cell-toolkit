@@ -1,4 +1,1 @@
-bld.smplpkg('WireCellSigProc',
-            use='WireCellIface')
-            # use='WireCellIface WireCellUtil EIGEN',
-            # test_use='WireCellSst JSONCPP JSONNET BOOST')
+bld.smplpkg('WireCellSigProc', use='WireCellAux')

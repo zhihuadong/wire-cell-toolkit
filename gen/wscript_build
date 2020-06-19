@@ -1,5 +1,5 @@
 # -*- python -*-
-bld.smplpkg('WireCellGen', use='WireCellIface')
+bld.smplpkg('WireCellGen', use='WireCellAux')
 #            test_use='JSONCPP JSONNET BOOST')
 
 

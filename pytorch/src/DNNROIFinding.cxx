@@ -3,7 +3,7 @@
 #include "WireCellIface/ITrace.h"
 #include "WireCellIface/SimpleFrame.h"
 #include "WireCellIface/SimpleTrace.h"
-#include "WireCellIface/FrameTools.h"
+#include "WireCellAux/FrameTools.h"
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/Array.h"
 #include "WireCellUtil/Exceptions.h"
@@ -162,13 +162,13 @@ namespace {
         const size_t nrows = cend - cbeg + 1;
         Array::array_xxf arr = Array::array_xxf::Zero(nrows, ncols);
 
-        auto traces = FrameTools::tagged_traces(inframe, tag);
+        auto traces = aux::tagged_traces(inframe, tag);
         if (traces.empty()) {
             // std::cout << "[yuhw] frame " << inframe->frame_tags() << " has 0 " << tag << " traces!\n";
             return arr;
         }
 
-        FrameTools::fill(arr, traces, channels.begin() + win_cbeg, channels.begin() + win_cend, tick0);
+        aux::fill(arr, traces, channels.begin() + win_cbeg, channels.begin() + win_cend, tick0);
         arr = arr * scale + offset;
 
         return arr;

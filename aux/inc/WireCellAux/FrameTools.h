@@ -1,6 +1,4 @@
 /** Some tools that operate on frame-related interfaces.
-
-    fixme: this should probably go into some WireCellItools package.
  */
 
 #ifndef WIRECELL_FRAMETOOLS
@@ -10,7 +8,10 @@
 #include "WireCellUtil/Array.h"
 
 namespace WireCell {
-    namespace FrameTools {
+    namespace aux {
+
+        // Print some info to cerr about frame
+        void dump_frame(WireCell::IFrame::pointer frame);
 
         /// Return a vector of traces which have no trace tags.  Here,
         /// any frame tags are ignored.  Returned vector of traces has
@@ -86,7 +87,26 @@ namespace WireCell {
         /// have traces.
         std::pair<IFrame::pointer, IFrame::pointer> split(IFrame::pointer frame, double time);
 
-    }  // namespace FrameTools
+        // Raster a collection of traces into a 2D array block.  Each
+        // row corresponds to one channel as indicated by the channels
+        // vector.  The trace's tbin is used as an offset from column
+        // 0.  If the array block is undersized, missed samples will
+        // be quietly ignored.  Trace charge is added to any existing
+        // values in the array block.
+        void raster(WireCell::Array::array_xxf& block, WireCell::ITrace::vector traces,
+                    const std::vector<int>& channels);
+
+        /// Sum a vector of frames, returning a new one with the given
+        /// ident.  The start time of the new one will be the minimum
+        /// time of all frames.  The sample period (tick) of all
+        /// frames must be identical.  Traces on a common channel are
+        /// summed producing a single trace which covers a time domain
+        /// spanning the minimum and maximum tbin of all the traces in
+        /// the channel.  Zeros are padded for any intervening samples
+        /// outside of any individual trace.
+        IFrame::pointer sum(std::vector<IFrame::pointer> frames, int ident);
+
+    }  // namespace aux
 }  // namespace WireCell
 
 #endif

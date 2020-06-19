@@ -4,8 +4,7 @@
 #include "WireCellUtil/NamedFactory.h"
 // #include "WireCellUtil/ExecMon.h"
 
-#include "FrameUtils.h"
-using wct::sigproc::dump_frame;
+#include "WireCellAux/FrameTools.h"
 
 #include <iostream>
 
@@ -71,7 +70,7 @@ void SigProc::Omnibus::execute()
         else {
             std::cerr << "Omnibus: got input frame from " << m_input_tn << " with " << frame->traces()->size()
                       << " traces\n";
-            dump_frame(frame);
+            aux::dump_frame(frame);
         }
     }
 
@@ -100,7 +99,7 @@ void SigProc::Omnibus::execute()
 
         if (frame) {
             std::cerr << "Omnibus: got frame from " << tn << " with " << frame->traces()->size() << " traces\n";
-            dump_frame(frame);
+            aux::dump_frame(frame);
         }
     }
 

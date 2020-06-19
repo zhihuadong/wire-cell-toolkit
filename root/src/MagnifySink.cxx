@@ -8,7 +8,7 @@
 #include "TTree.h"
 
 #include "WireCellUtil/NamedFactory.h"
-#include "WireCellIface/FrameTools.h"
+#include "WireCellAux/FrameTools.h"
 
 #include <vector>
 #include <string>
@@ -114,26 +114,6 @@ string_set_t getset(const WireCell::Configuration& cfg)
     }
     return ret;
 }
-
-// fixme: this little helper is also in FrameUtil
-/*
-ITrace::vector get_tagged_traces(IFrame::pointer frame, IFrame::tag_t tag)
-{
-    ITrace::vector ret;
-    auto const& all_traces = frame->traces();
-    for (size_t index : frame->tagged_traces(tag)) {
-        ret.push_back(all_traces->at(index));
-    }
-    if (!ret.empty()) {
-        return ret;
-    }
-    auto ftags = frame->frame_tags();
-    if (std::find(ftags.begin(), ftags.end(), tag) == ftags.end()) {
-        return ret;
-    }
-    return *all_traces;		// must make copy
-}
-*/
 
 std::vector<WireCell::Binning> collate_byplane(const ITrace::vector& traces, const IAnodePlane::pointer anode,
                                                ITrace::vector byplane[])
@@ -351,7 +331,7 @@ bool Root::MagnifySink::operator()(const IFrame::pointer& frame, IFrame::pointer
             log->debug("MagnifySink: set desired trace tag to \"\" as cfg::trace_has_tag=false");
         }
 
-        ITrace::vector traces_byplane[3], traces = FrameTools::tagged_traces(frame, trace_tag);
+        ITrace::vector traces_byplane[3], traces = aux::tagged_traces(frame, trace_tag);
         if (traces.empty()) {
             log->warn("MagnifySink: no tagged traces for \"{}\"", tag);
             continue;
@@ -406,7 +386,7 @@ bool Root::MagnifySink::operator()(const IFrame::pointer& frame, IFrame::pointer
     // Handle any trace summaries
     for (auto tag : getset(m_cfg["summaries"])) {
         // auto traces = get_tagged_traces(frame, tag);
-        auto traces = FrameTools::tagged_traces(frame, tag);
+        auto traces = aux::tagged_traces(frame, tag);
         if (traces.empty()) {
             log->warn("MagnifySink: no traces tagged with \"{}\", skipping summary", tag);
             continue;
