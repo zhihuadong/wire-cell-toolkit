@@ -53,6 +53,18 @@ namespace WireCell {
         /// files (via std.extVar())
         void add_code(const std::string& name, const std::string& value);
 
+        /// Bind a "top level argument" to a string.  It only makes
+        /// sense to use this if the main Jsonnet file results in a
+        /// function with this argument.
+        void tla_var(const std::string& name, const std::string& value);
+
+        /// Bind a "top level argument" to some Jsonnet code.  It only
+        /// makes sense to use this if the main Jsonnet file results
+        /// in a function with this argument.
+        void tla_code(const std::string& name, const std::string& value);
+
+        // fixme: "jsonnet" CLI lets TLA code and strings also given in files....
+
         /// Add an element to the configuration path in which
         /// configuration files may be found.
         void add_path(const std::string& dirname);
@@ -82,7 +94,7 @@ namespace WireCell {
        private:
         ConfigManager m_cfgmgr;
         std::vector<std::string> m_plugins, m_apps, m_cfgfiles, m_load_path;
-        Persist::externalvars_t m_extvars, m_extcode;
+        Persist::externalvars_t m_extvars, m_extcode, m_tlavars, m_tlacode;
         Log::logptr_t l;
     };
 

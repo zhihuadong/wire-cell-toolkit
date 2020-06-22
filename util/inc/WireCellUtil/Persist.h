@@ -124,7 +124,8 @@ namespace WireCell {
             typedef std::vector<std::string> pathlist_t;
 
             Parser(const pathlist_t& load_paths = pathlist_t(), const externalvars_t& extvar = externalvars_t(),
-                   const externalvars_t& extcode = externalvars_t());
+                   const externalvars_t& extcode = externalvars_t(), const externalvars_t& tlavar = externalvars_t(),
+                   const externalvars_t& tlacode = externalvars_t());
 
             // Load a Jonnet file (or .json or .json.bz2) and return the Json object
             Json::Value load(const std::string& filename);

@@ -17,6 +17,7 @@
 #include <sstream>
 #include <fstream>
 
+using spdlog::debug;
 using spdlog::error;
 using spdlog::info;
 using namespace std;
@@ -207,16 +208,19 @@ std::string WireCell::Persist::evaluate_jsonnet_text(const std::string& text, co
 }
 
 WireCell::Persist::Parser::Parser(const std::vector<std::string>& load_paths, const externalvars_t& extvar,
-                                  const externalvars_t& extcode)
+                                  const externalvars_t& extcode, const externalvars_t& tlavar,
+                                  const externalvars_t& tlacode)
 {
     m_jsonnet.init();
 
     // Loading: 1) cwd, 2) passed in paths 3) environment
     m_load_paths.push_back(boost::filesystem::current_path());
     for (auto path : load_paths) {
+        debug("search path: {}", path);
         m_load_paths.push_back(boost::filesystem::path(path));
     }
     for (auto path : get_path()) {
+        debug("search path: {}", path);
         m_load_paths.push_back(boost::filesystem::path(path));
     }
     // load paths into jsonnet backwards to counteract its reverse ordering
@@ -231,6 +235,16 @@ WireCell::Persist::Parser::Parser(const std::vector<std::string>& load_paths, co
     // external code
     for (auto& vv : extcode) {
         m_jsonnet.bindExtCodeVar(vv.first, vv.second);
+    }
+
+    // top level argument string variables
+    for (auto& vv : tlavar) {
+        debug("tla: {} = \"{}\"", vv.first, vv.second);
+        m_jsonnet.bindTlaVar(vv.first, vv.second);
+    }
+    // top level argument code variables
+    for (auto& vv : tlacode) {
+        m_jsonnet.bindTlaCodeVar(vv.first, vv.second);
     }
 }
 
