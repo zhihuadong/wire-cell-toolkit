@@ -1,5 +1,7 @@
 #include "WireCellGen/Fourdee.h"
-#include "WireCellGen/FrameUtil.h"
+
+#include "WireCellAux/FrameTools.h"
+
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/ConfigManager.h"
 #include "WireCellUtil/ExecMon.h"
@@ -228,7 +230,7 @@ class NoiseAdderProc : public FilterProc {
         IFrame::pointer nframe;
         bool ok = (*noise_node)(nframe);
         if (!ok) return false;
-        nframe = Gen::sum(IFrame::vector{iframe, nframe}, iframe->ident());
+        nframe = aux::sum(IFrame::vector{iframe, nframe}, iframe->ident());
         boost::any anyout = nframe;
         oq.push(anyout);
         return true;
@@ -424,7 +426,7 @@ void Gen::Fourdee::execute_old()
                     if (noise) {
                         cerr << "noiseframe: ";
                         dump(noise);
-                        voltframe = Gen::sum(IFrame::vector{voltframe, noise}, voltframe->ident());
+                        voltframe = aux::sum(IFrame::vector{voltframe, noise}, voltframe->ident());
                         em("got noise");
                     }
                     else {

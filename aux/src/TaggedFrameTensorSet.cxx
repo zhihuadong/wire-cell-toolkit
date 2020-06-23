@@ -3,7 +3,7 @@
 #include "WireCellAux/SimpleTensor.h"
 #include "WireCellAux/SimpleTensorSet.h"
 #include "WireCellAux/Util.h"
-#include "WireCellIface/FrameTools.h"
+#include "WireCellAux/FrameTools.h"
 #include "WireCellUtil/Logging.h"
 
 #include <unordered_set>
@@ -50,7 +50,7 @@ bool Aux::TaggedFrameTensorSet::operator()(const input_pointer& in, output_point
             continue;
         }
 
-        auto traces = FrameTools::tagged_traces(in, tag);
+        auto traces = aux::tagged_traces(in, tag);
         if (traces.empty()) {
             log->warn("Frame->Tensor: no traces for tag '{}', skipping", tag);
             continue;
@@ -60,7 +60,7 @@ bool Aux::TaggedFrameTensorSet::operator()(const input_pointer& in, output_point
 
         float pad = get<float>(jten, "pad", 0.0);
 
-        auto mm_tbin = FrameTools::tbin_range(traces);
+        auto mm_tbin = aux::tbin_range(traces);
         int tbin0 = mm_tbin.first;
 
         // traces may be degenerate/overlapping in channels and ticks.

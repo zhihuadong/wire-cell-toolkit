@@ -1,6 +1,6 @@
 #include "WireCellSigProc/ChannelSelector.h"
 #include "WireCellIface/SimpleFrame.h"
-#include "WireCellIface/FrameTools.h"
+#include "WireCellAux/FrameTools.h"
 
 #include "WireCellUtil/NamedFactory.h"
 
@@ -71,7 +71,7 @@ bool ChannelSelector::operator()(const input_pointer& in, output_pointer& out)
 
     size_t ntags = m_tags.size();
     if (!ntags) {
-        tracesvin.push_back(FrameTools::untagged_traces(in));
+        tracesvin.push_back(aux::untagged_traces(in));
         log->debug("ChannelSelector: see frame: {} no tags, whole frame ({} traces out of {})", in->ident(),
                    tracesvin.back().size(), in->traces()->size());
         ntraces += tracesvin[0].size();
@@ -82,7 +82,7 @@ bool ChannelSelector::operator()(const input_pointer& in, output_pointer& out)
         ss << "ChannelSelector: see frame: " << in->ident() << " looking for " << ntags << " tags:";
         for (size_t ind = 0; ind < ntags; ++ind) {
             std::string tag = m_tags[ind];
-            tracesvin[ind] = FrameTools::tagged_traces(in, tag);
+            tracesvin[ind] = aux::tagged_traces(in, tag);
             ss << " " << tag << ":[" << tracesvin[ind].size() << " traces]";
             ntraces += tracesvin[ind].size();
         }

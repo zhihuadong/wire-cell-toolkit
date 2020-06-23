@@ -1,7 +1,7 @@
 #include "WireCellSio/NumpyDepoSaver.h"
 
-#include "WireCellIface/FrameTools.h"
 #include "WireCellUtil/NamedFactory.h"
+#include "WireCellUtil/Array.h"
 #include "WireCellUtil/cnpy.h"
 
 #include <string>

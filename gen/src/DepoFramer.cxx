@@ -1,5 +1,5 @@
 #include "WireCellGen/DepoFramer.h"
-#include "WireCellGen/FrameUtil.h"
+#include "WireCellAux/FrameTools.h"
 
 #include "WireCellUtil/NamedFactory.h"
 
@@ -65,7 +65,7 @@ bool Gen::DepoFramer::operator()(const input_pointer& in, output_pointer& out)
         }
     }
 
-    out = Gen::sum(partial_frames, ident);
+    out = aux::sum(partial_frames, ident);
 
     return true;
 }

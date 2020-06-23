@@ -1,4 +1,4 @@
-#include "WireCellGen/FrameUtil.h"
+#include "WireCellAux/FrameTools.h"
 #include "WireCellUtil/Testing.h"
 #include "WireCellUtil/Units.h"
 #include "WireCellIface/SimpleFrame.h"
@@ -33,7 +33,7 @@ int main()
     auto f2 = make_shared<SimpleFrame>(noise_frame_ident, noise_start_time, noise_traces, tick);
 
     const int summed_ident = 1;
-    auto f3 = Gen::sum({f1, f2}, summed_ident);
+    auto f3 = aux::sum({f1, f2}, summed_ident);
     Assert(f3);
     Assert(f3->ident() == summed_ident);
     Assert(f3->time() == noise_start_time);

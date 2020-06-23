@@ -1,5 +1,7 @@
 #include "WireCellGen/FrameSummer.h"
-#include "WireCellGen/FrameUtil.h"
+
+#include "WireCellAux/FrameTools.h"
+
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellIface/SimpleFrame.h"
 
@@ -51,7 +53,7 @@ bool Gen::FrameSummer::operator()(const input_tuple_type& intup, output_pointer&
     ITrace::vector out_traces(vtraces2->begin(), vtraces2->end());
     auto newtwo = std::make_shared<SimpleFrame>(two->ident(), t2, out_traces, two->tick());
 
-    out = Gen::sum(IFrame::vector{one, two}, one->ident());
+    out = aux::sum(IFrame::vector{one, two}, one->ident());
     return true;
 }
 

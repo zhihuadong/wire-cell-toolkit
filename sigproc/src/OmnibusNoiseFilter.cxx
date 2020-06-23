@@ -10,7 +10,7 @@
 #include "WireCellUtil/NamedFactory.h"
 // #include "WireCellUtil/ExecMon.h" // debugging
 
-#include "FrameUtils.h"  // fixme: needs to move to somewhere more useful.
+#include "WireCellAux/FrameTools.h"
 
 #include <unordered_map>
 
@@ -97,7 +97,7 @@ bool OmnibusNoiseFilter::operator()(const input_pointer& inframe, output_pointer
         return true;
     }
 
-    auto traces = wct::sigproc::tagged_traces(inframe, m_intag);
+    auto traces = aux::tagged_traces(inframe, m_intag);
     if (traces.empty()) {
         log->warn("OmnibusNoiseFilter: no traces for tag \"{}\", sending empty frame", m_intag);
         outframe = std::make_shared<SimpleFrame>(inframe->ident(), inframe->time(), std::make_shared<ITrace::vector>(),

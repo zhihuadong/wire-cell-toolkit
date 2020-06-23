@@ -2,7 +2,7 @@
 #include "WireCellImg/ImgData.h"
 #include "WireCellUtil/NamedFactory.h"
 
-#include "WireCellIface/FrameTools.h"  // fixme: *still* need to move this out of iface...
+#include "WireCellAux/FrameTools.h"
 
 WIRECELL_FACTORY(SumSlicer, WireCell::Img::SumSlicer, WireCell::IFrameSlicer, WireCell::IConfigurable)
 
@@ -48,7 +48,7 @@ void Img::SumSliceBase::slice(const IFrame::pointer& in, slice_map_t& svcmap)
     const double tick = in->tick();
     const double span = tick * m_tick_span;
 
-    for (auto trace : FrameTools::tagged_traces(in, m_tag)) {
+    for (auto trace : aux::tagged_traces(in, m_tag)) {
         const int tbin = trace->tbin();
         const int chid = trace->channel();
         IChannel::pointer ich = m_anode->channel(chid);

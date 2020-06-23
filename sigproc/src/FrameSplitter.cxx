@@ -1,7 +1,7 @@
 #include "WireCellSigProc/FrameSplitter.h"
 
 #include "WireCellUtil/NamedFactory.h"
-#include "WireCellIface/FrameTools.h"
+#include "WireCellAux/FrameTools.h"
 
 #include <iostream>
 
@@ -20,7 +20,7 @@ bool FrameSplitter::operator()(const input_pointer& in, output_tuple_type& out)
     else {
         std::cerr << "FrameSplitter: passing on frame: " << in->ident() << ":";
         for (auto tag : in->trace_tags()) {
-            auto tt = FrameTools::tagged_traces(in, tag);
+            auto tt = aux::tagged_traces(in, tag);
             std::cerr << " " << tag << "[" << tt.size() << "]";
         }
         std::cerr << std::endl;

@@ -3,7 +3,8 @@
 #include "WireCellIface/IWireSelectors.h"
 #include "WireCellIface/SimpleFrame.h"
 #include "WireCellIface/SimpleTrace.h"
-#include "WireCellIface/FrameTools.h"
+
+#include "WireCellAux/FrameTools.h"
 
 #include "WireCellUtil/Testing.h"
 #include "WireCellUtil/NamedFactory.h"
@@ -97,18 +98,18 @@ bool Gen::Digitizer::operator()(const input_pointer& vframe, output_pointer& adc
     }
 
     // fixme: maybe make this honor a tag
-    auto vtraces = FrameTools::untagged_traces(vframe);
+    auto vtraces = aux::untagged_traces(vframe);
     if (vtraces.empty()) {
         log->error("Gen::Digitizer: no traces in input frame {}", vframe->ident());
         return false;
     }
 
     // Get extent in channel and tbin
-    auto channels = FrameTools::channels(vtraces);
+    auto channels = aux::channels(vtraces);
     std::sort(channels.begin(), channels.end());
     auto chbeg = channels.begin();
     auto chend = std::unique(chbeg, channels.end());
-    auto tbinmm = FrameTools::tbin_range(vtraces);
+    auto tbinmm = aux::tbin_range(vtraces);
 
     const size_t ncols = tbinmm.second - tbinmm.first;
     const size_t nrows = std::distance(chbeg, chend);
@@ -116,7 +117,7 @@ bool Gen::Digitizer::operator()(const input_pointer& vframe, output_pointer& adc
     // make a dense array working space.  a row is one trace.  a
     // column is one tick.
     Array::array_xxf arr = Array::array_xxf::Zero(nrows, ncols);
-    FrameTools::fill(arr, vtraces, channels.begin(), chend, tbinmm.first);
+    aux::fill(arr, vtraces, channels.begin(), chend, tbinmm.first);
 
     ITrace::vector adctraces(nrows);
 

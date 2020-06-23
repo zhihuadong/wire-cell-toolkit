@@ -1,2 +1,1 @@
-bld.smplpkg('WireCellSig',
-            use='WireCellAux')
+bld.smplpkg('WireCellSig', use='WireCellAux')

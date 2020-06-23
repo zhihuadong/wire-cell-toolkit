@@ -1,8 +1,9 @@
 #include "WireCellSigProc/FrameMerger.h"
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellIface/SimpleFrame.h"
-#include "WireCellIface/FrameTools.h"
 #include "WireCellIface/ITrace.h"
+
+#include "WireCellAux/FrameTools.h"
 
 #include <string>
 
@@ -59,8 +60,8 @@ bool SigProc::FrameMerger::operator()(const input_tuple_type& intup, output_poin
     // with all traces or honoring tags.
     std::vector<ITrace::vector> tracesv1, tracesv2;
     if (!nsets) {
-        tracesv1.push_back(FrameTools::untagged_traces(one));
-        tracesv2.push_back(FrameTools::untagged_traces(two));
+        tracesv1.push_back(aux::untagged_traces(one));
+        tracesv2.push_back(aux::untagged_traces(two));
         std::cerr << "FrameMerger: see frame: " << one->ident() << " no tags, whole frame\n";
     }
     else {
@@ -70,8 +71,8 @@ bool SigProc::FrameMerger::operator()(const input_tuple_type& intup, output_poin
             std::string tag1 = jtags[0].asString();
             std::string tag2 = jtags[1].asString();
             std::string tag3 = jtags[2].asString();
-            tracesv1.push_back(FrameTools::tagged_traces(one, tag1));
-            tracesv2.push_back(FrameTools::tagged_traces(two, tag2));
+            tracesv1.push_back(aux::tagged_traces(one, tag1));
+            tracesv2.push_back(aux::tagged_traces(two, tag2));
             std::cerr << "\ttags: " << tag1 << "[" << tracesv1.back().size() << "]"
                       << " + " << tag2 << "[" << tracesv2.back().size() << "]"
                       << " -> " << tag3 << "\n";

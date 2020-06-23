@@ -1,6 +1,5 @@
 #include "WireCellSigProc/DBChannelSelector.h"
 #include "WireCellIface/SimpleFrame.h"
-#include "WireCellIface/FrameTools.h"
 #include "WireCellIface/IChannelNoiseDatabase.h"
 
 #include "WireCellUtil/NamedFactory.h"
