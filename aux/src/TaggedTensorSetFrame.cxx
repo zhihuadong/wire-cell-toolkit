@@ -19,26 +19,31 @@ WireCell::Configuration Aux::TaggedTensorSetFrame::default_configuration() const
 
 void Aux::TaggedTensorSetFrame::configure(const WireCell::Configuration& config)
 {
+    auto log = Log::logger("tens");
+
     m_tags.clear();
     for (auto jten : config["tensors"]) {
         // no tag means empty tag
-        m_tags.insert(get<std::string>(jten, "tag", ""));
+        auto tag = get<std::string>(jten, "tag", "");
+        log->debug("TaggedTensorSetFrame: look for tag: \"{}\"", tag);
+        m_tags.insert(tag);
     }
 }
 
 bool Aux::TaggedTensorSetFrame::operator()(const input_pointer& in, output_pointer& out)
 {
+    auto log = Log::logger("tens");
     out = nullptr;
     if (!in) {  // pass on EOS
+        log->debug("TaggedTensorSetFrame: EOS");
         return true;
     }
-
-    auto log = Log::logger("tens");
 
     auto traces = new std::vector<ITrace::pointer>;
 
     auto set_md = in->metadata();
     auto jtags = set_md["tags"];
+    int ident = get(set_md, "ident", 0);
 
     // Have to make a frame before setting its summaries
     struct SummaryCache {
@@ -51,6 +56,7 @@ bool Aux::TaggedTensorSetFrame::operator()(const input_pointer& in, output_point
 
     for (auto jtag : jtags) {
         std::string tag = jtag.asString();
+        log->debug("TaggedTensorSetFrame: check input tag: \"{}\"", tag);
         if (m_tags.find(tag) == m_tags.end()) {
             log->debug("Tensor->Frame: skipping unwanted tag {}", tag);
             continue;
@@ -77,7 +83,7 @@ bool Aux::TaggedTensorSetFrame::operator()(const input_pointer& in, output_point
         size_t nchans = wf_shape[0];
         size_t nticks = wf_shape[1];
         int tbin = get<int>(wf_ten->metadata(), "tbin", 0);
-        log->debug("Tensor->Frame: '{}': {} chans x {} ticks", tag, nchans, nticks);
+        log->debug("Tensor->Frame: #{} '{}': {} chans x {} ticks", ident, tag, nchans, nticks);
 
         Eigen::Map<const Eigen::ArrayXXf> wf_arr((const float*) wf_ten->data(), nchans, nticks);
         Eigen::Map<const Eigen::ArrayXi> ch_arr((const int*) ch_ten->data(), nchans);
@@ -110,8 +116,8 @@ bool Aux::TaggedTensorSetFrame::operator()(const input_pointer& in, output_point
         summaries.emplace_back(SummaryCache{tag, indices, summary});
     }
 
-    SimpleFrame* frame = new SimpleFrame(get(set_md, "ident", 0), get(set_md, "time", 0.0),
-                                         ITrace::shared_vector(traces), get(set_md, "tick", 0.5 * units::microsecond));
+    SimpleFrame* frame = new SimpleFrame(ident, get(set_md, "time", 0.0), ITrace::shared_vector(traces),
+                                         get(set_md, "tick", 0.5 * units::microsecond));
 
     for (auto& s : summaries) {
         frame->tag_traces(s.tag, s.indices, s.summary);

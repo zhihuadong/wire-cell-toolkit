@@ -44,20 +44,43 @@ Main::~Main() { finalize(); }
 
 int Main::cmdline(int argc, char* argv[])
 {
+    // clang-format off
     po::options_description desc("Options");
-    desc.add_options()("help,h", "wire-cell [options] [arguments]")(
-        "logsink,l", po::value<vector<string> >(),
-        "log sink, filename or 'stdout' or 'stderr', if added ':level' then set a log level for the sink")(
-        "loglevel,L", po::value<vector<string> >(),
-        "set lowest log level for a log in form 'name:level' or just 'level' for all (level one of "
-        "critical,error,warn,info,debug,trace)")("app,a", po::value<vector<string> >(),
-                                                 "application component to invoke")(
-        "config,c", po::value<vector<string> >(), "provide a configuration file")(
-        "plugin,p", po::value<vector<string> >(), "specify a plugin as name[:lib]")
-        //	("jsonpath,j", po::value< vector<string> >(),"specify a JSON path=value")
-        ("ext-str,V", po::value<vector<string> >(), "specify a Jsonnet external variable=value")(
-            "ext-code,C", po::value<vector<string> >(), "specify a Jsonnet external variable=code")(
-            "path,P", po::value<vector<string> >(), "add to JSON/Jsonnet search path");
+    desc.add_options()("help,h", "wire-cell [options] [arguments]")
+
+        ("logsink,l", po::value<vector<string> >(),
+         "set log sink as <filename> or 'stdout' or 'stderr', "
+         "a log level for the sink may be given by appending ':<level>'")
+
+        ("loglevel,L", po::value<vector<string> >(),
+         "set lowest log level for a log in form 'name:level' "
+         "or just give 'level' value for all "
+         "(level one of: critical,error,warn,info,debug,trace)")
+
+        ("app,a", po::value<vector<string> >(),
+         "application component to invoke")
+
+        ("config,c", po::value<vector<string> >(),
+         "provide a configuration file")
+        
+        ("plugin,p", po::value<vector<string> >(),
+         "specify a plugin as name[:lib]")
+        
+        ("ext-str,V", po::value<vector<string> >(),
+         "specify a Jsonnet external variable=<string>")
+        
+        ("ext-code,C", po::value<vector<string> >(),
+         "specify a Jsonnet external variable=<code>")
+        
+        ("tla-str,A", po::value<vector<string> >(),
+         "specify a Jsonnet top level arguments variable=<string>")
+        
+        ("tla-code", po::value<vector<string> >(),
+         "specify a Jsonnet top level arguments variable=<code>")
+        
+        ("path,P", po::value<vector<string> >(),
+         "add to JSON/Jsonnet search path");
+    // clang-format on
 
     po::variables_map opts;
     po::store(po::parse_command_line(argc, argv, desc), opts);
@@ -94,6 +117,21 @@ int Main::cmdline(int argc, char* argv[])
             add_code(vv[0], vv[1]);
         }
     }
+    // Add any top-level argument string values
+    if (opts.count("tla-str")) {
+        for (auto vev : opts["tla-str"].as<vector<string> >()) {
+            auto vv = String::split(vev, "=");
+            tla_var(vv[0], vv[1]);
+        }
+    }
+    // Add any top-level argument code
+    if (opts.count("tla-code")) {
+        for (auto vev : opts["tla-code"].as<vector<string> >()) {
+            auto vv = String::split(vev, "=");
+            tla_code(vv[0], vv[1]);
+        }
+    }
+
     // fixme: these aren't yet supported.
     // if (opts.count("jsonpath")) {
     //     jsonpath_vars = opts["jsonpath"].as< vector<string> >();
@@ -163,13 +201,17 @@ void Main::add_var(const std::string& name, const std::string& value) { m_extvar
 
 void Main::add_code(const std::string& name, const std::string& value) { m_extcode[name] = value; }
 
+void Main::tla_var(const std::string& name, const std::string& value) { m_tlavars[name] = value; }
+
+void Main::tla_code(const std::string& name, const std::string& value) { m_tlacode[name] = value; }
+
 void Main::add_path(const std::string& dirname) { m_load_path.push_back(dirname); }
 
 void Main::initialize()
 {
     for (auto filename : m_cfgfiles) {
         l->info("loading config file {} ...", filename);
-        Persist::Parser p(m_load_path, m_extvars, m_extcode);
+        Persist::Parser p(m_load_path, m_extvars, m_extcode, m_tlavars, m_tlacode);
         Json::Value one = p.load(filename);  // throws
         m_cfgmgr.extend(one);
         l->info("...done");
