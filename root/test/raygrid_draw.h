@@ -231,10 +231,15 @@ void draw_text(const Point& pt, const std::string text, int color, int align)
     l.SetTextColor(color);
     l.DrawLatex(pt.z(), pt.y(), text.c_str());
 }
-void draw_raygrid(Printer& print, const Coordinates& coords, const ray_pair_vector_t& raypairs)
+void draw_raygrid(Printer& print, const Coordinates& coords,
+                  const ray_pair_vector_t& raypairs, TH1F* frame=nullptr);
+void draw_raygrid(Printer& print, const Coordinates& coords,
+                  const ray_pair_vector_t& raypairs, TH1F* frame)
 {
-    auto* frame = print.canvas.DrawFrame(-110, 50 - 110, 110, 50 + 110);
-    frame->SetTitle("Ray Grid");
+    if (!frame) {
+        frame = print.canvas.DrawFrame(-110, 50 - 110, 110, 50 + 110);
+        frame->SetTitle("Ray Grid");
+    }
 
     info("got {} ray pairs", raypairs.size());
     std::vector<Point> centers0;
@@ -280,14 +285,14 @@ void draw_raygrid(Printer& print, const Coordinates& coords, const ray_pair_vect
     const double wpind = wpij / wpit.magnitude();
 
     draw_point(r00, 1, 24, 1);
-    draw_text(r00 + Point(0, 0, -15), "r^{01}_{00}");
-    draw_text(r00 + Point(0, 5, 5), "w^{01}", 2);
-    draw_text(r00 + Point(0, -15, 0), "w^{10}", 4);
+    draw_text(r00 + Point(0, 0, -10), "r^{01}_{00}");
+    draw_text(r00 + Point(0,  10, 0), "w^{01}", 2);
+    draw_text(r00 + Point(0, -10, 0), "w^{10}", 4);
 
     // draw_point(r01, 1, 24, 2);
     // draw_point(r10, 1, 24, 4);
     draw_point(rij, 1, 20, 1);
-    draw_text(rij + Point(0, 0, 5), "r^{01}_{ij}");
+    draw_text(rij + Point(0, 0, 10), "r^{01}_{ij}", 9); // purple?
 
     draw_ray(Ray(r00, centers0[0]), colors[0], 1.0);
     draw_ray(Ray(r00, centers0[1]), colors[1], 1.0);
@@ -295,7 +300,17 @@ void draw_raygrid(Printer& print, const Coordinates& coords, const ray_pair_vect
     draw_ray(Ray(r1n, centers1[0]), colors[0], 1.0);
     draw_ray(Ray(r0n, centers1[1]), colors[1], 1.0);
 
-    draw_text(centers0[0] + Point(0, 10, 0), "p^{0}", colors[0]);
+    draw_text(centers0[0] + Point(0,  10,   0), "p^{0}", colors[0]);
+    draw_text(centers0[1] + Point(0, -10,   0), "p^{1}", colors[1]);
+    draw_text(centers0[2] + Point(0,   0,  -5), "p^{2}", colors[2]);
+
+    // draw p^lmn_ij
+    Point ptail = rij, phead=rij;
+    ptail[2] = centers0[2][2];
+    ptail[1] += 5;
+    phead[1] += 5;
+    draw_arrow(Ray(ptail, phead), 9, 2.0, 0.01, ">");
+    draw_text(0.5*(phead+ptail) + Point(0,7,0), "p^{012}_{ij}", 9);
 
     draw_arrow(Ray(r00, r01), colors[0], 2.0, 0.01, ">");
     draw_arrow(Ray(r00, r10), colors[1], 2.0, 0.01, ">");
@@ -305,10 +320,13 @@ void draw_raygrid(Printer& print, const Coordinates& coords, const ray_pair_vect
     draw_arrow(Ray(r00, ri0), colors[1], 2.0, 0.01, ">");
     draw_arrow(Ray(ri0, rij), colors[0], 2.0, 0.01, ">");
 
-    draw_text(ri0 + Point(0, -10, -20), "iw^{10}", 4);
-    draw_text(0.5 * (ri0 + rij) + Point(0, -10, 0), "jw^{01}", 2);
+    draw_text(ri0 + Point(0, 0, -15), "iw^{10}", 4);
+    draw_text(0.5 * (ri0 + rij) + Point(0, 0, 20), "jw^{01}", 2);
 
-    draw_ray(Ray(wtail + wpind * wpit, whead + wpind * wpit), colors[2], 1.0);
+    Point lower(0,-10,0);
+    Point raise(0,+40,0);
+    draw_ray(Ray(raise + wtail + wpind * wpit,
+                 lower + whead + wpind * wpit), 9, 1.0);
 
     print();
 }
