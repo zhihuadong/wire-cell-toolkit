@@ -66,4 +66,10 @@ int main()
 
     type_repeater<3, std::string>::type ahahah("one", "two", "three");
     std::cerr << std::get<0>(ahahah) << " " << std::get<1>(ahahah) << " " << std::get<2>(ahahah) << "\n";
+
+    type_repeater<16, std::string>::type t16("0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f");
+    std::cerr << std::get<0>(t16) << " " << std::get<15>(t16) << "\n";
+                                             
+    //type_repeater<128, std::string>::type mongo;
+
 }
