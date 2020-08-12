@@ -79,7 +79,7 @@ function(params, tools)
             tick: params.daq.tick,
             nsigma: 3,
         },
-    }, nin=1, nout=1, uses=[anode] + pirs),
+    }, nin=1, nout=1, uses=[anode, tools.random] + pirs),
 
     // This may look similar to above but above is expected to diverge
     make_depozipper :: function(name, anode, pirs) g.pnode({
@@ -97,7 +97,7 @@ function(params, tools)
             tick: params.daq.tick,
             nsigma: 3,
         },
-    }, nin=1, nout=1, uses=[anode] + pirs),
+    }, nin=1, nout=1, uses=[anode, tools.random] + pirs),
 
     make_reframer :: function(name, anode, tags=[]) g.pnode({
         type: 'Reframer',
