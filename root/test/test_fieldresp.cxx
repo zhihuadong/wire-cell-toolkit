@@ -1,4 +1,5 @@
 #include "WireCellUtil/Testing.h"
+#include "WireCellUtil/Logging.h"
 
 /// needed to pretend like we are doing WCT internals
 #include "WireCellUtil/PluginManager.h"
@@ -13,9 +14,14 @@
 
 using namespace WireCell;
 using namespace std;
+using spdlog::debug;
+using spdlog::error;
 
 int main(int argc, char* argv[])
 {
+    Log::add_stdout(true, "debug");
+    Log::set_level("debug");
+
     std::string frfname = "ub-10-wnormed.json.bz2";
     if (argc > 1) {
         frfname = argv[1];
@@ -43,6 +49,21 @@ int main(int argc, char* argv[])
 
     cerr << "FR with " << fr.planes[0].paths.size() << " responses per plane\n";
     Assert(fr.planes[0].paths.size() == 21 * 6);
+
+    for (auto pr : fr.planes) {
+        const int n_per = 6;
+        const double imp_pitch = 2.0 * std::abs(pr.paths[n_per - 1].pitchpos - pr.paths[0].pitchpos);
+        debug("plane:{}, pitch:{:f}, pitchpos: front:{:f}, back:{:f}, imp-pitch:{:f}",
+              pr.planeid, pr.pitch,
+              pr.paths.front().pitchpos,
+              pr.paths.back().pitchpos,
+              imp_pitch
+            );
+        // for (auto path : pr.paths) {
+        //     debug("\tpitchpos:{}", path.pitchpos);
+        // }
+    }
+
 
     // Make a new data set which is the average FR
     Response::Schema::FieldResponse fravg = Response::wire_region_average(fr);

@@ -19,7 +19,7 @@ Gen::ImpactTransform::ImpactTransform(IPlaneImpactResponse::pointer pir, BinnedD
     // arrange the field response (210 in total, pitch_range/impact)
     // number of wires nwires ...
     m_num_group = std::round(m_pir->pitch() / m_pir->impact()) + 1;  // 11
-    m_num_pad_wire = std::round((m_pir->nwires() - 1) / 2.);         // 10
+    m_num_pad_wire = std::round((m_pir->nwires() - 1) / 2.);         // 10 for wires, 5 for PCB strips
 
     const auto pimpos = m_bd.pimpos();
     //  const int nsamples = m_bd.tbins().nbins();
@@ -27,8 +27,8 @@ Gen::ImpactTransform::ImpactTransform(IPlaneImpactResponse::pointer pir, BinnedD
     // const int nwires = rb.nbins();
 
     //
-
-    // std::cout << m_num_group << " " << m_num_pad_wire << std::endl;
+    
+    //std::cerr << "ImpactTransform: num_group:" << m_num_group << " num_pad_wire:" << m_num_pad_wire << std::endl;
     for (int i = 0; i != m_num_group; i++) {
         double rel_cen_imp_pos;
         if (i != m_num_group - 1) {
@@ -40,11 +40,16 @@ Gen::ImpactTransform::ImpactTransform(IPlaneImpactResponse::pointer pir, BinnedD
         m_vec_impact.push_back(std::round(rel_cen_imp_pos / m_pir->impact()));
         std::map<int, IImpactResponse::pointer> map_resp;  // already in freq domain
 
+        //std::cerr << "ImpactTransform: " << rel_cen_imp_pos << std::endl;
         for (int j = 0; j != m_pir->nwires(); j++) {
+            // std::cerr << "ImpactTransform: "
+            //           << i << " " << j << " "
+            //           << rel_cen_imp_pos - (j-m_num_pad_wire)*m_pir->pitch()<< " "
+            //           << std::endl;
+
             map_resp[j - m_num_pad_wire] = m_pir->closest(rel_cen_imp_pos - (j - m_num_pad_wire) * m_pir->pitch());
             Waveform::compseq_t response_spectrum = map_resp[j - m_num_pad_wire]->spectrum();
 
-            //	std::cout << i << " " << j << " " << rel_cen_imp_pos - (j-m_num_pad_wire)*m_pir->pitch()<< " " <<
             //response_spectrum.size() << std::endl;
         }
         // std::cout << m_vec_impact.back() << std::endl;
