@@ -178,6 +178,9 @@ void Gen::PlaneImpactResponse::build_responses()
     /// FIXME: this assumes detailed ordering of paths w/in one wire
     m_pitch = 2.0 * std::abs(pr.paths[n_per - 1].pitchpos - pr.paths[0].pitchpos);
 
+    // l->debug("PIR: plane:{}, npaths:{} n_wires:{} impact:{} half_extent:{} pitch:{}",
+    //          m_plane_ident, npaths, n_wires, m_impact, m_half_extent, m_pitch);
+
     // native response time binning
     const int rawresp_size = pr.paths[0].current.size();
     const double rawresp_min = fr.tstart;
@@ -191,6 +194,8 @@ void Gen::PlaneImpactResponse::build_responses()
         const Response::Schema::PathResponse& path = pr.paths[ipath];
         const int wirenum = int(ceil(path.pitchpos / pr.pitch));  // signed
         wire_to_ind[wirenum].push_back(ipath);
+        // l->debug("PIR: ipath:{}, wirenum:{} pitchpos:{}",
+        //          ipath, wirenum, path.pitchpos);
 
         // match response sampling to digi and zero-pad
         WireCell::Waveform::realseq_t wave(n_short_length, 0.0);
@@ -263,28 +268,34 @@ std::pair<int, int> Gen::PlaneImpactResponse::closest_wire_impact(double relpitc
     const double remainder_pitch = relpitch - relwire * m_pitch;
     const int impact_index = int(round(remainder_pitch / m_impact)) + nimp_per_wire() / 2;
 
+    // l->debug("PIR: relpitch:{} pitch:{} relwire:{} wire_index:{} remainder:{}",
+    //          relpitch, m_pitch, relwire, wire_index, remainder_pitch);
+
     return std::make_pair(wire_index, impact_index);
 }
 
 IImpactResponse::pointer Gen::PlaneImpactResponse::closest(double relpitch) const
 {
     if (relpitch < -m_half_extent || relpitch > m_half_extent) {
-        return nullptr;
+        l->error("PIR: closest relative pitch:{} outside of extent", relpitch);
+        THROW(ValueError() << errmsg{"relative pitch outside PIR extent"});
     }
     std::pair<int, int> wi = closest_wire_impact(relpitch);
     if (wi.first < 0 || wi.first >= (int) m_bywire.size()) {
-        l->debug("PIR: closest relative pitch:{} outside of wire range: {}", relpitch, wi.first);
-        return nullptr;
+        l->error("PIR: closest relative pitch:{} outside of wire range: {}, half extent:{}",
+                 relpitch, wi.first, m_half_extent);
+        THROW(ValueError() << errmsg{"relative pitch outside wire range"});
     }
     const std::vector<int>& region = m_bywire[wi.first];
     if (wi.second < 0 || wi.second >= (int) region.size()) {
-        l->debug("PIR: relative pitch:{} outside of impact range: {}", relpitch, wi.second);
-        return nullptr;
+        l->error("PIR: relative pitch:{} outside of impact range: {}, region size:{} nimperwire:{}",
+                 relpitch, wi.second, region.size(), nimp_per_wire());
+        THROW(ValueError() << errmsg{"relative pitch outside impact range"});
     }
     int irind = region[wi.second];
     if (irind < 0 || irind > (int) m_ir.size()) {
-        l->debug("PIR: relative pitch:{} no impact response for region: {}", relpitch, irind);
-        return nullptr;
+        l->error("PIR: relative pitch:{} no impact response for region: {}", relpitch, irind);
+        THROW(ValueError() << errmsg{"no impact response for region"});
     }
 
     return m_ir[irind];

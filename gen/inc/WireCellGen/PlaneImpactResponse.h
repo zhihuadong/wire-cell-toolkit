@@ -99,6 +99,7 @@ namespace WireCell {
             typedef std::vector<region_indices_t> wire_region_indicies_t;
             const wire_region_indicies_t& bywire_map() const { return m_bywire; }
             std::pair<int, int> closest_wire_impact(double relpitch) const;
+            const std::vector<IImpactResponse::pointer>& irs() const { return m_ir; }
 
            private:
             std::string m_frname;

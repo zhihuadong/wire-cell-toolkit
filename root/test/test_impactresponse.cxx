@@ -1,5 +1,6 @@
 #include "WireCellUtil/PluginManager.h"
 #include "WireCellUtil/NamedFactory.h"
+#include "WireCellUtil/Logging.h"
 
 #include "WireCellUtil/ExecMon.h"
 #include "WireCellUtil/Testing.h"
@@ -15,7 +16,6 @@
 #include "TStyle.h"
 #include "TFile.h"
 
-#include <iostream>
 #include <vector>
 #include <algorithm>
 
@@ -24,6 +24,9 @@
 using namespace WireCell;
 using namespace WireCell::Test;
 using namespace std;
+
+using spdlog::debug;
+using spdlog::error;
 
 void plot_time(MultiPdf& mpdf, IPlaneImpactResponse::pointer pir, int iplane, Binning tbins, const std::string& name,
                const std::string& title)
@@ -35,14 +38,15 @@ void plot_time(MultiPdf& mpdf, IPlaneImpactResponse::pointer pir, int iplane, Bi
     const double tmax = tbins.edge(ntbins);
 
     const int nwires = pir->nwires();
-    cerr << "Plane " << iplane << " with " << nwires << " wires\n";
 
     const char* uvw = "UVW";
 
     const double half_pitch = 0.5 * pir->pitch_range();
     const double impact_dist = pir->impact();
 
-    const double pmin = -36 * units::mm, pmax = 36 * units::mm;
+    //const double pmin = -36 * units::mm, pmax = 36 * units::mm;
+    const double pmin = -half_pitch;
+    const double pmax =  half_pitch;
     const int npbins = (pmax - pmin) / impact_dist;
 
     // dr:
@@ -54,7 +58,9 @@ void plot_time(MultiPdf& mpdf, IPlaneImpactResponse::pointer pir, int iplane, Bi
         zunitval = -units::eplus;
         zextent = vector<double>{0.3, 0.15, 0.6};
     }
-    std::cerr << "zunits: " << zunit << " tbinsize: " << tbins.binsize() / units::us << " us\n";
+    debug("Plane {}: nwires={}, half_pitch={:f} mm, impact_dist={:f} mm, zunit={} tbinsize={:f} us",
+          iplane, nwires, half_pitch/units::mm, impact_dist/units::mm,
+          zunit, tbins.binsize() / units::us);
 
     // they all suck.  black body sucks the least.
     set_palette(kBlackBody);
@@ -66,26 +72,36 @@ void plot_time(MultiPdf& mpdf, IPlaneImpactResponse::pointer pir, int iplane, Bi
     // set_palette();
     gStyle->SetOptStat(0);
     TH2F* hist =
-        new TH2F(Form("h%s_%c", name.c_str(), uvw[iplane]), Form("%s, 1e-/impact %c-plane", title.c_str(), uvw[iplane]),
-                 ntbins, tmin / units::us, tmax / units::us, npbins, pmin / units::mm, pmax / units::mm);
-    hist->SetXTitle("time (us)");
-    hist->SetYTitle("pitch (mm)");
+        new TH2F(Form("h%s_%c", name.c_str(), uvw[iplane]),
+                 Form("%s, 1e-/impact %c-plane", title.c_str(), uvw[iplane]),
+                 ntbins, tmin / units::us, tmax / units::us,
+                 npbins, pmin / units::mm, pmax / units::mm);
+    hist->SetXTitle("time [us]");
+    hist->SetYTitle("pitch [mm]");
     hist->SetZTitle(zunit.c_str());
 
     hist->GetZaxis()->SetRangeUser(-zextent[iplane], +zextent[iplane]);
 
     TH1F* htot = new TH1F(Form("htot%s_%c", name.c_str(), uvw[iplane]),
-                          Form("%s total, 1e-/impact %c-plane", title.c_str(), uvw[iplane]), npbins, pmin / units::mm,
+                          Form("%s total, 1e-/impact %c-plane",
+                               title.c_str(), uvw[iplane]), npbins, pmin / units::mm,
                           pmax / units::mm);
     htot->SetXTitle("pitch (mm)");
     htot->SetYTitle(Form("impact total [%s]", zunit.c_str()));
 
     for (double pitch = -half_pitch; pitch <= half_pitch; pitch += impact_dist) {
-        auto ir = pir->closest(pitch);
-        if (!ir) {
-            std::cerr << "No closest for pitch " << pitch << endl;
-            continue;
+        double eps = 0.0;
+        if (pitch == -half_pitch) {
+            eps = 1e-9;
         }
+        IImpactResponse::pointer ir;
+        //try {
+        ir = pir->closest(pitch+eps);
+        // }
+        // catch (const ValueError& e) {
+        //     error("No closest for pitch {} mm", pitch/units::mm);
+        //     continue;
+        // }
         auto spec = ir->spectrum();
         auto wave = Waveform::idft(spec);
         pitch += 0.001 * impact_dist;
@@ -126,6 +142,9 @@ void plot_time(MultiPdf& mpdf, IPlaneImpactResponse::pointer pir, int iplane, Bi
 
 int main(int argc, const char* argv[])
 {
+    Log::add_stdout(true, "debug");
+    Log::set_level("debug");
+
     PluginManager& pm = PluginManager::instance();
     pm.add("WireCellGen");
     pm.add("WireCellSigProc");
@@ -148,8 +167,8 @@ int main(int argc, const char* argv[])
     if (argc > 2) {
         out_basename = argv[2];
     }
-    cerr << "Using response file: " << response_file << endl;
-    cerr << "Writing to " << out_basename << endl;
+    debug("Using response file: {} plotting to {}",
+          response_file, out_basename);
 
     const std::string er_tn = "ColdElecResponse", rc_tn = "RCResponse";
 
@@ -159,7 +178,7 @@ int main(int argc, const char* argv[])
         cfg["gain"] = gain;
         cfg["shaping"] = shaping;
         cfg["nticks"] = nticks;
-        cerr << "Setting: " << cfg["nticks"].asInt() << " ticks\n";
+        debug("Setting: {} ticks", cfg["nticks"].asInt());
         cfg["tick"] = tick;
         cfg["start"] = t0;
         icfg->configure(cfg);
@@ -179,7 +198,8 @@ int main(int argc, const char* argv[])
         icfg->configure(cfg);
     }
 
-    std::vector<std::string> pir_tns{"PlaneImpactResponse:frU", "PlaneImpactResponse:frV", "PlaneImpactResponse:frW"};
+    std::vector<std::string> pir_tns{"PlaneImpactResponse:frU",
+        "PlaneImpactResponse:frV", "PlaneImpactResponse:frW"};
     {  // configure pirs, just FR
         for (int iplane = 0; iplane < 3; ++iplane) {
             auto icfg = Factory::lookup_tn<IConfigurable>(pir_tns[iplane]);
@@ -190,8 +210,8 @@ int main(int argc, const char* argv[])
             icfg->configure(cfg);
         }
     }
-    std::vector<std::string> pir_ele_tns{"PlaneImpactResponse:frerU", "PlaneImpactResponse:frerV",
-                                         "PlaneImpactResponse:frerW"};
+    std::vector<std::string> pir_ele_tns{"PlaneImpactResponse:frerU",
+        "PlaneImpactResponse:frerV", "PlaneImpactResponse:frerW"};
     {  // configure pirs, FR + ER + RCRC
         for (int iplane = 0; iplane < 3; ++iplane) {
             auto icfg = Factory::lookup_tn<IConfigurable>(pir_ele_tns[iplane]);
@@ -222,7 +242,7 @@ int main(int argc, const char* argv[])
 
     mpdf.close();
 
-    cerr << "Closing ROOT file: " << rootfile->GetName() << endl;
+    debug("Closing ROOT file: {}", rootfile->GetName());
     rootfile->Close();
 
     return 0;
