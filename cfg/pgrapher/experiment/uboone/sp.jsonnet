@@ -17,6 +17,8 @@ function(params, tools) {
             anode: wc.tn(tools.anode),
             field_response: wc.tn(tools.field),
             elecresponse: wc.tn(tools.elec_resp),
+            postgain: 1,  // default 1.2
+                          // see elec postgain in params.jsonnet
             per_chan_resp: wc.tn(tools.perchanresp),
 	    fft_flag: 0,   // 1 is faster but higher memory, 0 is slightly slower but lower memory
         }
@@ -27,6 +29,8 @@ local sigproc_uniform = g.pnode({
             anode: wc.tn(tools.anode),
             field_response: wc.tn(tools.field),
             elecresponse: wc.tn(tools.elec_resp),
+            postgain: 1,  // default 1.2
+                          // see elec postgain in params.jsonnet
             per_chan_resp: "",
             shaping: params.elec.shaping,
 	    fft_flag: 0,    // 1 is faster but higher memory, 0 is slightly slower but lower memory
