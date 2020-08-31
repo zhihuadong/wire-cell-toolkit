@@ -11,13 +11,14 @@ function(params, tools)
     // converters from data which is input to WCT
     input : {
         // Note: scale is -1 to correct a sign error in the SimDepoSource converter.
-        depos : function(name="deposource", model="", scale=-1.0, art_tag="plopper:bogus") g.pnode({
+        depos : function(name="deposource", model="", scale=-1.0, art_tag="plopper:bogus", assn_art_tag="") g.pnode({
             type: 'wclsSimDepoSource',
             name: name,
             data: {
                 model: model,
                 scale: scale,
                 art_tag: art_tag, //name of upstream art producer of depos "label:instance:processName"
+                assn_art_tag: assn_art_tag,
             },
         }, nin=0, nout=1),      // fixme: should add model to uses?
 
