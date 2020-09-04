@@ -163,7 +163,7 @@ local nf_pipes = [g.pipeline([obnf[n]], name='nf%d'%n) for n in std.range(0, std
 local sp = sp_maker(params, tools, { sparse: sigoutform == 'sparse' });
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
-local multimagnify = import 'pgrapher/experiment/pdsp/multimagnify.jsonnet';
+local multimagnify = import 'pgrapher/experiment/dune10kt-1x2x6/multimagnify.jsonnet';
 local magoutput = 'protodune-data-check.root';
 
 local rootfile_creation_frames = g.pnode({

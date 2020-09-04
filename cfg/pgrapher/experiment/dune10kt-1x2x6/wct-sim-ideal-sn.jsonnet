@@ -13,12 +13,12 @@ local f = import "pgrapher/common/funcs.jsonnet";
 local cli = import "pgrapher/ui/cli/nodes.jsonnet";
 
 local io = import "pgrapher/common/fileio.jsonnet";
-local params = import "pgrapher/experiment/pdsp/params.jsonnet";
+local params = import "pgrapher/experiment/dune10kt-1x2x6/params.jsonnet";
 local tools_maker = import "pgrapher/common/tools.jsonnet";
 
 local tools = tools_maker(params);
 
-local sim_maker = import "pgrapher/experiment/pdsp/sim.jsonnet";
+local sim_maker = import "pgrapher/experiment/dune10kt-1x2x6/sim.jsonnet";
 local sim = sim_maker(params, tools);
 
 local stubby = {
@@ -50,7 +50,7 @@ local tracklist = [
    //     ray: params.det.bounds,
    // },
 ];
-local output = "wct-pdsp-sim-ideal-sn.npz";
+local output = "wct-dune10kt-1x2x6-sim-ideal-sn.npz";
 
     
 //local depos = g.join_sources(g.pnode({type:"DepoMerger", name:"BlipTrackJoiner"}, nin=2, nout=1),
