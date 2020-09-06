@@ -12,6 +12,10 @@ function(params, tools, override = {}) {
 
   local pc = tools.perchanresp_nameuses,
 
+  local resolution = params.adc.resolution,
+  local fullscale = params.adc.fullscale[1] - params.adc.fullscale[0],
+  local ADC_mV_ratio = ((1 << resolution) - 1 ) / fullscale,
+
   // pDSP needs a per-anode sigproc
   make_sigproc(anode, name=null):: g.pnode({
     type: 'OmnibusSigProc',
@@ -21,16 +25,36 @@ function(params, tools, override = {}) {
       else name,
 
     data: {
-      // Many parameters omitted here.
+      /**  
+       *  Default SP parameters (till May 2019)
+       */
+      // anode: wc.tn(anode),
+      // field_response: wc.tn(tools.field),
+      // per_chan_resp: pc.name,
+      // fft_flag: 0,  // 1 is faster but higher memory, 0 is slightly slower but lower memory
+      // postgain: 1,  // default 1.2
+      // ADC_mV: 4096 / (1400.0 * wc.mV),  // default 4096/2000
+      // r_fake_signal_low_th: 400,  // default 500
+      // r_fake_signal_high_th: 800,  // default 1000
+      // r_fake_signal_low_th_ind_factor: 1.5,  // default 1
+      // r_fake_signal_high_th_ind_factor: 1.5,  // default 1
+      // troi_col_th_factor: 5.0,  // default 5
+      // troi_ind_th_factor: 3.5,  // default 3
+      // r_th_factor: 3.5,  // default 3
+
+      /**  
+       *  Optimized SP parameters (May 2019)
+       *  Associated tuning in sp-filters.jsonnet
+       */
       anode: wc.tn(anode),
       field_response: wc.tn(tools.field),
+      elecresponse : wc.tn(tools.elec_resp),
       ftoffset: 0.0, // default 0.0
       ctoffset: 1.0*wc.microsecond, // default -8.0
       per_chan_resp: pc.name,
       fft_flag: 0,  // 1 is faster but higher memory, 0 is slightly slower but lower memory
-      elecresponse : wc.tn(tools.elec_resp),
-      postgain: 1,  // default 1.2
-      ADC_mV: 4095 / (1400.0 * wc.mV),  // default 4096/2000
+      postgain: 1.0,  // default 1.2
+      ADC_mV: ADC_mV_ratio, // 4096 / (1400.0 * wc.mV), 
       troi_col_th_factor: 5.0,  // default 5
       troi_ind_th_factor: 3.0,  // default 3
       lroi_rebin: 6, // default 6
