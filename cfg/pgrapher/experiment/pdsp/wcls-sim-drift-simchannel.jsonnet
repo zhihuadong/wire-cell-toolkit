@@ -45,7 +45,7 @@ local output = 'wct-sim-ideal-sig.npz';
 local wcls_maker = import "pgrapher/ui/wcls/nodes.jsonnet";
 local wcls = wcls_maker(params, tools);
 local wcls_input = {
-    depos: wcls.input.depos(name="", art_tag="ionization"),
+    depos: wcls.input.depos(name="", art_tag="IonAndScint"),
     // depos: wcls.input.depos(name="electron", art_tag="IonAndScint"),  // default art_tag="blopper"
 };
 
@@ -60,36 +60,37 @@ local mega_anode = {
   },
 };
 local wcls_output = {
-    // ADC output from simulation
-    // sim_digits: wcls.output.digits(name="simdigits", tags=["orig"]),
-    sim_digits: g.pnode({
-      type: 'wclsFrameSaver',
-      name: 'simdigits',
-      data: {
-        // anode: wc.tn(tools.anode),
-        anode: wc.tn(mega_anode),
-        digitize: true,  // true means save as RawDigit, else recob::Wire
-        frame_tags: ['daq'],
-        // nticks: params.daq.nticks,
-        // chanmaskmaps: ['bad'],
-      },
-    }, nin=1, nout=1, uses=[mega_anode]),
+  // ADC output from simulation
+  // sim_digits: wcls.output.digits(name="simdigits", tags=["orig"]),
+  sim_digits: g.pnode({
+    type: 'wclsFrameSaver',
+    name: 'simdigits',
+    data: {
+      // anode: wc.tn(tools.anode),
+      anode: wc.tn(mega_anode),
+      digitize: true,  // true means save as RawDigit, else recob::Wire
+      frame_tags: ['daq'],
+      // nticks: params.daq.nticks,
+      // chanmaskmaps: ['bad'],
+      pedestal_mean: 'native',
+    },
+  }, nin=1, nout=1, uses=[mega_anode]),
 
-    // The noise filtered "ADC" values.  These are truncated for
-    // art::Event but left as floats for the WCT SP.  Note, the tag
-    // "raw" is somewhat historical as the output is not equivalent to
-    // "raw data".
-    nf_digits: wcls.output.digits(name="nfdigits", tags=["raw"]),
+  // The noise filtered "ADC" values.  These are truncated for
+  // art::Event but left as floats for the WCT SP.  Note, the tag
+  // "raw" is somewhat historical as the output is not equivalent to
+  // "raw data".
+  nf_digits: wcls.output.digits(name="nfdigits", tags=["raw"]),
 
-    // The output of signal processing.  Note, there are two signal
-    // sets each created with its own filter.  The "gauss" one is best
-    // for charge reconstruction, the "wiener" is best for S/N
-    // separation.  Both are used in downstream WC code.
-    sp_signals: wcls.output.signals(name="spsignals", tags=["gauss", "wiener"]),
+  // The output of signal processing.  Note, there are two signal
+  // sets each created with its own filter.  The "gauss" one is best
+  // for charge reconstruction, the "wiener" is best for S/N
+  // separation.  Both are used in downstream WC code.
+  sp_signals: wcls.output.signals(name="spsignals", tags=["gauss", "wiener"]),
 
-    // save "threshold" from normal decon for each channel noise
-    // used in imaging
-    sp_thresholds: wcls.output.thresholds(name="spthresholds", tags=["threshold"]),
+  // save "threshold" from normal decon for each channel noise
+  // used in imaging
+  sp_thresholds: wcls.output.thresholds(name="spthresholds", tags=["threshold"]),
 };
 
 //local deposio = io.numpy.depos(output);
@@ -153,7 +154,7 @@ local multipass = [
   g.pipeline([
                // wcls_simchannel_sink[n],
                sn_pipes[n],
-               // sinks.orig_pipe[n],             
+               // sinks.orig_pipe[n],
                // nf_pipes[n],
                // sp_pipes[n],
              ],

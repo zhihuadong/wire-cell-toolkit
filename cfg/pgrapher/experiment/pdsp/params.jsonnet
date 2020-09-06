@@ -5,6 +5,7 @@ local wc = import "wirecell.jsonnet";
 local base = import "pgrapher/common/params.jsonnet";
 
 base {
+    // This section will be overwritten in simparams.jsonnet
     det : {
 
         // define the 6 APAs.  This must use the coordinate system
@@ -131,7 +132,6 @@ base {
       shaping: 2.2 * wc.us,
     },
 
-
     sim: super.sim {
 
         // For running in LArSoft, the simulation must be in fixed time mode. 
@@ -168,7 +168,6 @@ base {
             // "garfield-1d-3planes-21wires-6impacts-dune-v1.json.bz2",
             // "garfield-1d-boundary-path-rev-dune.json.bz2",
             "dune-garfield-1d565.json.bz2",
-            // "garfield-1d-boundary-path-rev-dune-no-grid.json.bz2",
         ],
 
         // fixme: this is for microboone and probably bogus for

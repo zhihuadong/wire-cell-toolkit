@@ -1,3 +1,7 @@
+//
+// Warning: the offset value changed for the new field response,
+// please change accordingly in chndb-base.jsonnet
+//
 // Total field response
 // exported from FieldResponse, e.g., 
 // in OmnibusSigproc.cxx:

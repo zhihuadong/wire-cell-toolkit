@@ -48,7 +48,7 @@ function(params, tools, override = {}) {
        */
       anode: wc.tn(anode),
       field_response: wc.tn(tools.field),
-      elecresponse : wc.tn(tools.elec_resp),
+      elecresponse: wc.tn(tools.elec_resp),
       ftoffset: 0.0, // default 0.0
       ctoffset: 1.0*wc.microsecond, // default -8.0
       per_chan_resp: pc.name,
@@ -72,6 +72,7 @@ function(params, tools, override = {}) {
       r_low_peak_sep_threshold_pre: 1200, // default 1200
 
 
+      // frame tags
       wiener_tag: 'wiener%d' % anode.data.ident,
       wiener_threshold_tag: 'threshold%d' % anode.data.ident,
       decon_charge_tag: 'decon_charge%d' % anode.data.ident,
