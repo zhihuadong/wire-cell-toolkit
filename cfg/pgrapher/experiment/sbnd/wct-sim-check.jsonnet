@@ -20,27 +20,16 @@ local sim_maker = import 'pgrapher/experiment/sbnd/sim.jsonnet';
 local sim = sim_maker(params, tools);
 
 local stubby = {
-//  tail: wc.point( -1000.0, 0.0,    0.0, wc.mm),
-//  head: wc.point( -1000.0, 0.0, 5000.0, wc.mm),
-
-//    tail: wc.point(-2.0, -2.0, 0.0, wc.m),
-//    head: wc.point( 2.0,  2.0, 5.0, wc.m),
-
-    tail: wc.point(  0.0,  0.0, 2.5, wc.m),
-    head: wc.point(  2.0,  2.0, 5.0, wc.m),
+    tail: wc.point(-2.0, -2.0, 0.0, wc.m),
+    head: wc.point( 2.0,  2.0, 5.0, wc.m),
 };
-
-// local bounds = {
-//     tail: wc.point(-2.0, -2.0, 0.0, wc.m),
-//     head: wc.point(+2.0,  2.0, 5.0, wc.m),
-// }
 
 local tracklist = [
 
   {
     time: 0 * wc.us, 
     charge: -5000, // 5000 e/mm
-    ray: params.det.bounds,
+    ray: stubby, // params.det.bounds,
   },
 
 ];
