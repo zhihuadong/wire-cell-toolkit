@@ -41,8 +41,7 @@ local output = 'wct-sim-ideal-sig.npz';
 local wcls_maker = import "pgrapher/ui/wcls/nodes.jsonnet";
 local wcls = wcls_maker(params, tools);
 local wcls_input = {
-    depos: wcls.input.depos(name="", art_tag="largeant:TPCActive"),
-    // depos: wcls.input.depos(name="electron", art_tag="IonAndScint"),  // default art_tag="blopper"
+    depos: wcls.input.depos(name="", art_tag="ionization"),
 };
 
 // Collect all the wc/ls output converters for use below.  Note the
@@ -94,7 +93,7 @@ local drifter = sim.drifter;
 local bagger = sim.make_bagger();
 
 // signal plus noise pipelines
-//local sn_pipes = sim.signal_pipelines;
+// local sn_pipes = sim.signal_pipelines;
 local sn_pipes = sim.splusn_pipelines;
 
 local perfect = import 'pgrapher/experiment/sbnd/chndb-perfect.jsonnet';
