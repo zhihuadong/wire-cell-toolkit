@@ -80,14 +80,14 @@ base {
         baselines: [1650.0*wc.millivolt, 1650.0*wc.millivolt, 322.3*wc.millivolt],
 
         // From ICARUS paper: https://iopscience.iop.org/article/10.1088/1748-0221/13/12/P12007/pdf
-        //check (values taken from the FE calibration shown in pg. 7 of the paper)
-        fullscale: [0.8*wc.millivolt, 3.3*wc.volt],
+        // ADC full scale 3.3 volts, least bit 3300 mV/ 4095 ~ 0.8 mV
+        fullscale: [0.0*wc.volt, 3.3*wc.volt],
     },
 
     elec: super.elec {
         type: "WarmElecResponse",
-        gain: 17.8075*wc.mV/wc.fC, // 0.027 fC/(ADC*us)
-        shaping: 1.3*wc.us,
+        gain: 19.2855*wc.mV/wc.fC, // see Response::warmelec
+        shaping: 1.2*wc.us,
         postgain: 1.0,
         start: 0,
     },

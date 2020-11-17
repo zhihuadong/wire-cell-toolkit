@@ -366,27 +366,23 @@ double Response::ColdElec::operator()(double time) const { return coldelec(time,
 
   - from the article: arXiv:1805.03931 [physics.ins-det]
   - copy from ElectronicsResponseBesselApprox_tool.cc in icaruscode v08_50_00
+  - SPICE simulation (ADC dynamic range 0-3.3V)
+  qLSB (i.e. 1ADCxtick): 65e ~ 31mVxus/fC ~ 0.026fC/(ADCxus)
+  Qpeak: 181ADC / 100fC ~ 9.517mV/fC
+  - CERN test
+  qLSB: 69.2e ~ 29.11mVxus/fC ~ 0.0277fC/(ADCxus)
+  Qpeak: (4732/7.7)ADC/52.5fC = 9.433mV/fC
 
-  - This note from Filippo:
-    1) The following sets the ICARUS electronics response function in
-    time-space. Function comes from BNL SPICE simulation of ICARUS
-    electronics. SPICE gives the electronics transfer function in
-    frequency-space. The inverse laplace transform of that function
-    (in time-space) was calculated in Mathematica and is what is being
-    used below. Parameters Ao and To are cumulative gain/timing parameters
-    from the full (ASIC->Intermediate amp->Receiver->ADC) electronics chain.
-    They have been adjusted to make the SPICE simulation to match the
-    actual electronics response. Default params are Ao=1.4, To=0.5us.
-
-  - ICARUS Normalization are the following:
-      1) Field response is normalized to 1 electron. Shaping function written as
-      (t/tau)*exp(-t/tau) is normalized to 1.
-      2) From test pulse measurement with FLIC@CERN we have 0.027 fC/(ADC*us),
-      therefore 0.027*6242 electrons/(ADC*us)
-      3) From the paper is 0.8 mV/(ADC*us), thus gain is 2.7e-2/0.8 fC/mV
-        (A. Scarpelli) --- misinterpretation? (W. Gu)
-        The integral of the warmelec is 29.84 mV*us/fC, therefore, the
-        gain factor is 17.8075. (W. Gu)
+  (11.16.2020 W.Gu) The two results are roughly consistent, the measured result
+  is recommended in the icaruscode (FCperADCMicroS: 2.7e-2), while we recommend
+  the setting as follows.
+        gain : 19.2855 mV/fC
+        shaping : 1.2 microsecond
+  As this setting provides a better agreement for both Qpeak and qLSB. The
+  channel-to-channel variation can be calibrated in the future.
+  CAVEAT: Here, the "gain" does not mean the absolute amplitude as in the
+  ColdElectronics Reponse.
+  
  */
 double Response::warmelec(double time, double gain, double shaping)
 {
