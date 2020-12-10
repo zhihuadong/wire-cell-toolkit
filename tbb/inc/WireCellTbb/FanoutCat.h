@@ -73,13 +73,17 @@ namespace WireCellTbb {
         {
             int nout = wcnode->output_types().size();
             // an exhaustive switch to convert from run-time to compile-time types and enumerations.
-            Assert(nout > 0 && nout <= 6);  // fixme: exception instead?
+            Assert(nout > 0 && nout <= 10);  // fixme: exception instead?
             if (1 == nout) m_sender_ports = build_fanouter<1>(graph, wcnode, m_spliter, m_caller);
             if (2 == nout) m_sender_ports = build_fanouter<2>(graph, wcnode, m_spliter, m_caller);
             if (3 == nout) m_sender_ports = build_fanouter<3>(graph, wcnode, m_spliter, m_caller);
             if (4 == nout) m_sender_ports = build_fanouter<4>(graph, wcnode, m_spliter, m_caller);
             if (5 == nout) m_sender_ports = build_fanouter<5>(graph, wcnode, m_spliter, m_caller);
             if (6 == nout) m_sender_ports = build_fanouter<6>(graph, wcnode, m_spliter, m_caller);
+            if (7 == nout) m_sender_ports = build_fanouter<7>(graph, wcnode, m_spliter, m_caller);
+            if (8 == nout) m_sender_ports = build_fanouter<8>(graph, wcnode, m_spliter, m_caller);
+            if (9 == nout) m_sender_ports = build_fanouter<9>(graph, wcnode, m_spliter, m_caller);
+            if (10 == nout) m_sender_ports = build_fanouter<10>(graph, wcnode, m_spliter, m_caller);
         }
 
         virtual sender_port_vector sender_ports() { return m_sender_ports; }
