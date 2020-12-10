@@ -95,7 +95,7 @@ ITrace::vector Gen::DepoSplat::process_face(IAnodeFace::pointer face, const IDep
 
             if (tbeg > tend) continue;
 
-            if (tbeg < 0) continue;
+            if (pbeg > pend) continue;
 
             Gen::GausDesc time_desc(tcen, tsig);
             Gen::GausDesc pitch_desc(pcen, psig);
