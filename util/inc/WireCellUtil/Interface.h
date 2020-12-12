@@ -11,15 +11,13 @@ namespace WireCell {
      * See also WireCell::IComponent.
      */
     class Interface {
-    public:
-	// Interfaces are accessed by non-const shared pointers.
-	typedef std::shared_ptr<Interface> pointer;
+       public:
+        // Interfaces are accessed by non-const shared pointers.
+        typedef std::shared_ptr<Interface> pointer;
 
-	virtual ~Interface();
+        virtual ~Interface();
     };
 
-
-}
+}  // namespace WireCell
 
 #endif
-

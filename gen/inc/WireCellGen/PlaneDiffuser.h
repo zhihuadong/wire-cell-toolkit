@@ -11,11 +11,9 @@
 namespace WireCell {
 
     class PlaneDiffuser : public IDiffuser, public IConfigurable {
-    public:
-
+       public:
     };
 
-}
+}  // namespace WireCell
 
 #endif
-

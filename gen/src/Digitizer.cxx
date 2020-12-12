@@ -3,35 +3,31 @@
 #include "WireCellIface/IWireSelectors.h"
 #include "WireCellIface/SimpleFrame.h"
 #include "WireCellIface/SimpleTrace.h"
-#include "WireCellIface/FrameTools.h"
+
+#include "WireCellAux/FrameTools.h"
 
 #include "WireCellUtil/Testing.h"
 #include "WireCellUtil/NamedFactory.h"
 #include <sstream>
 
-WIRECELL_FACTORY(Digitizer, WireCell::Gen::Digitizer,
-                 WireCell::IFrameFilter, WireCell::IConfigurable)
+WIRECELL_FACTORY(Digitizer, WireCell::Gen::Digitizer, WireCell::IFrameFilter, WireCell::IConfigurable)
 
 using namespace std;
 using namespace WireCell;
 
-
-Gen::Digitizer::Digitizer(const std::string& anode,
-                          int resolution, double gain,
-                          std::vector<double> fullscale, std::vector<double> baselines)
-    : m_anode_tn(anode)
-    , m_resolution(resolution)
-    , m_gain(gain)
-    , m_fullscale(fullscale)
-    , m_baselines(baselines)
-    , m_frame_tag("")
-    , log(Log::logger("sim"))
+Gen::Digitizer::Digitizer(const std::string& anode, int resolution, double gain, std::vector<double> fullscale,
+                          std::vector<double> baselines)
+  : m_anode_tn(anode)
+  , m_resolution(resolution)
+  , m_gain(gain)
+  , m_fullscale(fullscale)
+  , m_baselines(baselines)
+  , m_frame_tag("")
+  , log(Log::logger("sim"))
 {
 }
 
-Gen::Digitizer::~Digitizer()
-{
-}
+Gen::Digitizer::~Digitizer() {}
 
 WireCell::Configuration Gen::Digitizer::default_configuration() const
 {
@@ -40,14 +36,14 @@ WireCell::Configuration Gen::Digitizer::default_configuration() const
 
     put(cfg, "resolution", m_resolution);
     put(cfg, "gain", m_gain);
-    Configuration fs(Json::arrayValue); // fixme: sure would be nice if we had some templated sugar for this
-    for (int ind=0; ind<2; ++ind) {
+    Configuration fs(Json::arrayValue);  // fixme: sure would be nice if we had some templated sugar for this
+    for (int ind = 0; ind < 2; ++ind) {
         fs[ind] = m_fullscale[ind];
     }
     cfg["fullscale"] = fs;
 
     Configuration bl(Json::arrayValue);
-    for (int ind=0; ind<3; ++ind) {
+    for (int ind = 0; ind < 3; ++ind) {
         bl[ind] = m_baselines[ind];
     }
     cfg["baselines"] = bl;
@@ -69,20 +65,19 @@ void Gen::Digitizer::configure(const Configuration& cfg)
 
     std::stringstream ss;
     ss << "Gen::Digitizer: "
-       << "tag=\""<<m_frame_tag << "\", "
-       << "resolution="<<m_resolution<<" bits, "
-       << "maxvalue=" << (1<<m_resolution) << " counts, "
+       << "tag=\"" << m_frame_tag << "\", "
+       << "resolution=" << m_resolution << " bits, "
+       << "maxvalue=" << (1 << m_resolution) << " counts, "
        << "gain=" << m_gain << ", "
-       << "fullscale=[" << m_fullscale[0]/units::mV << "," << m_fullscale[1]/units::mV << "] mV, "
-       << "baselines=[" << m_baselines[0]/units::mV << "," << m_baselines[1]/units::mV << "," << m_baselines[2]/units::mV << "] mV";
+       << "fullscale=[" << m_fullscale[0] / units::mV << "," << m_fullscale[1] / units::mV << "] mV, "
+       << "baselines=[" << m_baselines[0] / units::mV << "," << m_baselines[1] / units::mV << ","
+       << m_baselines[2] / units::mV << "] mV";
     log->debug(ss.str());
-
 }
-
 
 double Gen::Digitizer::digitize(double voltage)
 {
-    const int adcmaxval = (1<<m_resolution)-1;
+    const int adcmaxval = (1 << m_resolution) - 1;
 
     if (voltage <= m_fullscale[0]) {
         return 0;
@@ -90,44 +85,43 @@ double Gen::Digitizer::digitize(double voltage)
     if (voltage >= m_fullscale[1]) {
         return adcmaxval;
     }
-    const double relvoltage = (voltage - m_fullscale[0])/(m_fullscale[1] - m_fullscale[0]);
-    return relvoltage*adcmaxval;
+    const double relvoltage = (voltage - m_fullscale[0]) / (m_fullscale[1] - m_fullscale[0]);
+    return relvoltage * adcmaxval;
 }
 
 bool Gen::Digitizer::operator()(const input_pointer& vframe, output_pointer& adcframe)
 {
-    if (!vframe) {              // EOS
+    if (!vframe) {  // EOS
         log->debug("Gen::Digitizer: EOS");
         adcframe = nullptr;
         return true;
     }
 
-
-    // fixme: maybe make this honor a tag 
-    auto vtraces = FrameTools::untagged_traces(vframe);
+    // fixme: maybe make this honor a tag
+    auto vtraces = aux::untagged_traces(vframe);
     if (vtraces.empty()) {
         log->error("Gen::Digitizer: no traces in input frame {}", vframe->ident());
         return false;
     }
 
     // Get extent in channel and tbin
-    auto channels = FrameTools::channels(vtraces);
+    auto channels = aux::channels(vtraces);
     std::sort(channels.begin(), channels.end());
     auto chbeg = channels.begin();
     auto chend = std::unique(chbeg, channels.end());
-    auto tbinmm = FrameTools::tbin_range(vtraces);
-    
-    const size_t ncols = tbinmm.second-tbinmm.first;
+    auto tbinmm = aux::tbin_range(vtraces);
+
+    const size_t ncols = tbinmm.second - tbinmm.first;
     const size_t nrows = std::distance(chbeg, chend);
 
     // make a dense array working space.  a row is one trace.  a
     // column is one tick.
     Array::array_xxf arr = Array::array_xxf::Zero(nrows, ncols);
-    FrameTools::fill(arr, vtraces, channels.begin(), chend, tbinmm.first);
+    aux::fill(arr, vtraces, channels.begin(), chend, tbinmm.first);
 
     ITrace::vector adctraces(nrows);
 
-    for (size_t irow=0; irow < nrows; ++irow) {
+    for (size_t irow = 0; irow < nrows; ++irow) {
         int ch = channels[irow];
         WirePlaneId wpid = m_anode->resolve(ch);
         if (!wpid.valid()) {
@@ -137,15 +131,14 @@ bool Gen::Digitizer::operator()(const input_pointer& vframe, output_pointer& adc
         const float baseline = m_baselines[wpid.index()];
 
         ITrace::ChargeSequence adcwave(ncols);
-        for (size_t icol=0; icol < ncols; ++icol) {
-            double voltage = m_gain*arr(irow, icol) + baseline;
+        for (size_t icol = 0; icol < ncols; ++icol) {
+            double voltage = m_gain * arr(irow, icol) + baseline;
             const float adcf = digitize(voltage);
             adcwave[icol] = adcf;
         }
         adctraces[irow] = make_shared<SimpleTrace>(ch, tbinmm.first, adcwave);
     }
-    auto sframe = make_shared<SimpleFrame>(vframe->ident(), vframe->time(), adctraces,
-                                           vframe->tick(), vframe->masks());
+    auto sframe = make_shared<SimpleFrame>(vframe->ident(), vframe->time(), adctraces, vframe->tick(), vframe->masks());
     if (!m_frame_tag.empty()) {
         sframe->tag_frame(m_frame_tag);
     }

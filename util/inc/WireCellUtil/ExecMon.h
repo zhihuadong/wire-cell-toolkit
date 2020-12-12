@@ -19,23 +19,21 @@ namespace WireCell {
      *   info(em.summary());
      */
     class ExecMon {
-    public:
+       public:
+        ExecMon(const std::string& msg = "start",
+                TimeKeeper::ptime starting_time = boost::posix_time::microsec_clock::local_time());
+        ~ExecMon();
 
-	ExecMon(const std::string& msg = "start",
-		TimeKeeper::ptime starting_time = boost::posix_time::microsec_clock::local_time());
-	~ExecMon();
+        /// Record an event.
+        std::string operator()(std::string msg = "<tick>",
+                               TimeKeeper::ptime now = boost::posix_time::microsec_clock::local_time(),
+                               MemUsage::memusage mu = MemUsage::memusage(-1, -1));
 
-	/// Record an event.
-	std::string operator()(
-	    std::string msg = "<tick>",
-	    TimeKeeper::ptime now = boost::posix_time::microsec_clock::local_time(),
-	    MemUsage::memusage mu = MemUsage::memusage(-1,-1));
+        /// Return summary up to now.
+        std::string summary() const;
 
-	/// Return summary up to now.
-	std::string summary() const;
-
-	TimeKeeper tk;
-	MemUsage mu;
+        TimeKeeper tk;
+        MemUsage mu;
     };
-}
+}  // namespace WireCell
 #endif

@@ -14,10 +14,10 @@
 namespace WireCell {
 
     class IWaveform : IData<IWaveform> {
-    public:
+       public:
         typedef std::vector<float> sequence_type;
 
-        virtual ~IWaveform() ;
+        virtual ~IWaveform();
         // The starting point of the sampling
         virtual double waveform_start() const = 0;
         // The sampling period aka bin width
@@ -26,8 +26,7 @@ namespace WireCell {
         virtual const sequence_type& waveform_samples() const = 0;
         // The collection of samples rebinned
         virtual sequence_type waveform_samples(const WireCell::Binning& tbins) const = 0;
-
     };
-}
+}  // namespace WireCell
 
 #endif

@@ -7,19 +7,16 @@
 namespace WireCell {
     namespace Gen {
 
-    
         /** An ImpactZipper "zips" up through all the impact positions
          * along a wire plane convolving the response functions and
          * the local drifted charge distribution producing a waveform
          * on each central wire.
          */
-        class ImpactZipper
-        {
+        class ImpactZipper {
             IPlaneImpactResponse::pointer m_pir;
             BinnedDiffusion& m_bd;
 
-        public:
-
+           public:
             ImpactZipper(IPlaneImpactResponse::pointer pir, BinnedDiffusion& bd);
             virtual ~ImpactZipper();
 
@@ -31,12 +28,11 @@ namespace WireCell {
             /// then the waveforms are in units of voltage
             /// representing the sampling of the output of the FEE
             /// amplifiers.
- 
+
             // fixme: this should be a forward iterator so that it may cal bd.erase() safely to conserve memory
             Waveform::realseq_t waveform(int wire) const;
-
         };
 
-    }  // Gen
-}  // WireCell
+    }  // namespace Gen
+}  // namespace WireCell
 #endif /* WIRECELL_IMPACTZIPPER */

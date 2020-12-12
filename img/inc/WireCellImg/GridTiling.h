@@ -24,24 +24,22 @@ namespace WireCell {
     namespace Img {
 
         class GridTiling : public ITiling, public IConfigurable {
-        public:
+           public:
             GridTiling();
             virtual ~GridTiling();
             virtual void configure(const WireCell::Configuration& cfg);
             virtual WireCell::Configuration default_configuration() const;
 
-
             virtual bool operator()(const input_pointer& slice, output_pointer& blobset);
 
-        private:
-            
+           private:
             size_t m_blobs_seen;
             IAnodePlane::pointer m_anode;
             IAnodeFace::pointer m_face;
             double m_threshold;
             Log::logptr_t l;
         };
-    }
-}
+    }  // namespace Img
+}  // namespace WireCell
 
 #endif

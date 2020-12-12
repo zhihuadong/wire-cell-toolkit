@@ -7,22 +7,21 @@
 namespace WireCell {
     namespace Img {
 
-        class SlicesSink: public ISliceFrameSink , public IConfigurable {
-        public:
+        class SlicesSink : public ISliceFrameSink, public IConfigurable {
+           public:
             SlicesSink();
-            virtual ~SlicesSink() ;
+            virtual ~SlicesSink();
 
             // IConfigurable
             virtual void configure(const WireCell::Configuration& cfg);
             virtual WireCell::Configuration default_configuration() const;
 
-
             bool operator()(const ISliceFrame::pointer& sf);
 
-        private:
+           private:
             Configuration m_cfg;
         };
-    }
-}
+    }  // namespace Img
+}  // namespace WireCell
 
 #endif

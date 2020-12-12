@@ -1,4 +1,4 @@
-/// Test tensor -> flow -> tensor 
+/// Test tensor -> flow -> tensor
 
 #include "WireCellZio/TestHelpers.h"
 #include "WireCellUtil/Testing.h"
@@ -45,7 +45,6 @@ int main()
     t_cfg["connects"][0]["nodename"] = mm_cfg["nodename"];
     t_cfg["connects"][0]["portname"] = mm_cfg["oportname"];
 
-
     zio::context_t ctx;
     zio::zactor_t mm(ctx, flow_middleman, mm_cfg);
     zio::zactor_t g(ctx, flow_giver, g_cfg);
@@ -74,4 +73,3 @@ int main()
 
     return 0;
 }
-      

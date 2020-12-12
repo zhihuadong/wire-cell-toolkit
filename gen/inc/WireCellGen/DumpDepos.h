@@ -6,15 +6,15 @@
 namespace WireCell {
 
     class DumpDepos : public IDepoSink {
-    public:
+       public:
         DumpDepos();
         virtual ~DumpDepos();
-	virtual bool operator()(const IDepo::pointer& depo);
-    private:
-        int m_nin;
+        virtual bool operator()(const IDepo::pointer& depo);
 
+       private:
+        int m_nin;
     };
 
-}
+}  // namespace WireCell
 
 #endif

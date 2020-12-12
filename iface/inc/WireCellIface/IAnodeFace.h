@@ -2,17 +2,17 @@
    Provides information about an "anode face" which consists of a
    number of parallel wire planes, each consisting of a number of
    parallel wires.
-  
+
    Information includes:
- 
+
    - Internal geometry of the wires in their planes and how they
    relate to a coordinate system of the larger enclosing volume.
 
    - field response information
-  
+
    - wire/channel connectivity and numbering
- 
-  
+
+
  */
 
 #ifndef WIRECELLIFACES_IANODEFACE
@@ -26,8 +26,7 @@
 namespace WireCell {
 
     class IAnodeFace : public IComponent<IAnodeFace> {
-    public:
-
+       public:
         virtual ~IAnodeFace();
 
         /// Return the ident number of this face.
@@ -47,10 +46,8 @@ namespace WireCell {
         virtual BoundingBox sensitive() const = 0;
 
         /// Return a RayGrid::Coordinates corresponding to this face.
-        virtual const RayGrid::Coordinates& raygrid() const  = 0;
-
+        virtual const RayGrid::Coordinates& raygrid() const = 0;
     };
-}
+}  // namespace WireCell
 
 #endif
-

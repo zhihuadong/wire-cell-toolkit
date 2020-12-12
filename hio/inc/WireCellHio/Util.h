@@ -11,11 +11,11 @@
 #include <h5cpp/all>
 
 namespace WireCell {
-namespace Hio {
+    namespace Hio {
 
-extern std::mutex g_h5cpp_mutex;
+        extern std::mutex g_h5cpp_mutex;
 
-}; // namespace Hio
-} // namespace WireCell
+    };  // namespace Hio
+}  // namespace WireCell
 
-#endif // WIRECELLHIO_UTIL
+#endif  // WIRECELLHIO_UTIL

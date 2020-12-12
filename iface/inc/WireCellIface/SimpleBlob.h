@@ -1,5 +1,5 @@
 /** SimpleBlob
- */  
+ */
 #ifndef WIRECELL_SIMPLEBLOB
 #define WIRECELL_SIMPLEBLOB
 
@@ -9,30 +9,35 @@
 #include "WireCellIface/IAnodeFace.h"
 #include "WireCellUtil/RayGrid.h"
 
-namespace WireCell
-{
+namespace WireCell {
 
     class SimpleBlob : public IBlob {
-    public:
-        SimpleBlob(int ident, float value, float uncertainty, const RayGrid::Blob& shape,
-                   ISlice::pointer slice, IAnodeFace::pointer face)
-            : m_ident(ident), m_value(value), m_uncertainty(uncertainty), m_shape(shape)
-            , m_slice(slice), m_face(face) { }
+       public:
+        SimpleBlob(int ident, float value, float uncertainty, const RayGrid::Blob& shape, ISlice::pointer slice,
+                   IAnodeFace::pointer face)
+          : m_ident(ident)
+          , m_value(value)
+          , m_uncertainty(uncertainty)
+          , m_shape(shape)
+          , m_slice(slice)
+          , m_face(face)
+        {
+        }
         virtual ~SimpleBlob();
-        
+
         int ident() const { return m_ident; }
-    
+
         float value() const { return m_value; }
-    
+
         float uncertainty() const { return m_uncertainty; }
-    
+
         IAnodeFace::pointer face() const { return m_face; }
 
         ISlice::pointer slice() const { return m_slice; }
 
         const RayGrid::Blob& shape() const { return m_shape; }
 
-    private:
+       private:
         int m_ident;
         float m_value;
         float m_uncertainty;
@@ -41,13 +46,13 @@ namespace WireCell
         IAnodeFace::pointer m_face;
     };
 
-
-
     class SimpleBlobSet : public IBlobSet {
-    public:
+       public:
         SimpleBlobSet(int ident, const ISlice::pointer& slice)
-            : m_ident(ident)
-            , m_slice(slice) { }
+          : m_ident(ident)
+          , m_slice(slice)
+        {
+        }
         virtual ~SimpleBlobSet();
 
         virtual int ident() const { return m_ident; }
@@ -61,7 +66,6 @@ namespace WireCell
         IBlob::vector m_blobs;
     };
 
-
-}  // WireCell
+}  // namespace WireCell
 
 #endif /* WIRECELL_SIMPLEBLOB */

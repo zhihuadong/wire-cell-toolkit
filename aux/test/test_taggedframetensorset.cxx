@@ -20,23 +20,18 @@ int main()
     Log::set_level("debug");
     auto log = Log::logger("test");
 
-    const double tick = 0.5*units::us;
+    const double tick = 0.5 * units::us;
     // "Signal"
     const int signal_frame_ident = 100;
-    const double signal_start_time = 6*units::ms;
-    std::vector<float> signal{0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,0.0};
+    const double signal_start_time = 6 * units::ms;
+    std::vector<float> signal{0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 0.0};
 
     ITrace::vector signal_traces{
-        std::make_shared<SimpleTrace>(1, 10, signal),
-        std::make_shared<SimpleTrace>(1, 20, signal),
-        std::make_shared<SimpleTrace>(2, 30, signal),
-        std::make_shared<SimpleTrace>(2, 33, signal)};
-    auto iframe1 = std::make_shared<SimpleFrame>(signal_frame_ident,
-                                                 signal_start_time,
-                                                 signal_traces,
-                                                 tick);
+        std::make_shared<SimpleTrace>(1, 10, signal), std::make_shared<SimpleTrace>(1, 20, signal),
+        std::make_shared<SimpleTrace>(2, 30, signal), std::make_shared<SimpleTrace>(2, 33, signal)};
+    auto iframe1 = std::make_shared<SimpleFrame>(signal_frame_ident, signal_start_time, signal_traces, tick);
 
-    ITensorSet::pointer itensorset=nullptr;
+    ITensorSet::pointer itensorset = nullptr;
     Aux::TaggedFrameTensorSet tfts;
     auto cfg = tfts.default_configuration();
     cfg["tensors"][0]["tag"] = "";
@@ -50,7 +45,7 @@ int main()
     Assert(tens);
     Assert(tens->size() == 2);  // waveform+channels
 
-    for (int ind=0; ind<2; ++ind) {
+    for (int ind = 0; ind < 2; ++ind) {
         auto ten = tens->at(ind);
         log->debug("tens{} metadata: {}", ind, ten->metadata());
     }
@@ -71,7 +66,7 @@ int main()
 
         auto cht = Aux::get_tens(itensorset, tag, "channels");
         Assert(cht);
-        
+
         auto sumt = Aux::get_tens(itensorset, tag, "summary");
         Assert(sumt == nullptr);
 
@@ -82,29 +77,29 @@ int main()
         const int nticks = wf_shape[1];
         Assert(nchans == 2);
         log->debug("shape: {} x {}", nchans, nticks);
-    
+
         auto wf_md = wft->metadata();
         int tbin = wf_md["tbin"].asInt();
         Assert(tbin == 10);
 
         auto ch_shape = cht->shape();
         Assert(ch_shape.size() == 1);
-        Assert(nchans == (int)ch_shape[0]);
-        Eigen::Map<Eigen::ArrayXi> ch_arr((int*)cht->data(), nchans);
+        Assert(nchans == (int) ch_shape[0]);
+        Eigen::Map<Eigen::ArrayXi> ch_arr((int*) cht->data(), nchans);
         Assert(ch_arr[0] == 1);
         Assert(ch_arr[1] == 2);
 
-        Eigen::Map<Eigen::ArrayXXf> wf_arr((float*)wft->data(), nchans, nticks);
+        Eigen::Map<Eigen::ArrayXXf> wf_arr((float*) wft->data(), nchans, nticks);
         std::stringstream ss;
-        ss << "\nchannels:\ntick\t"; 
-        for (int ichan=0; ichan<nchans; ++ichan) {
+        ss << "\nchannels:\ntick\t";
+        for (int ichan = 0; ichan < nchans; ++ichan) {
             ss << ch_arr[ichan] << "\t";
         }
         ss << "\n";
-        
-        for (int itick=0; itick<nticks; ++itick) {
-            ss << tbin+itick;
-            for (int ichan=0; ichan<nchans; ++ichan) {
+
+        for (int itick = 0; itick < nticks; ++itick) {
+            ss << tbin + itick;
+            for (int ichan = 0; ichan < nchans; ++ichan) {
                 ss << "\t" << wf_arr(ichan, itick);
             }
             ss << "\n";
@@ -115,7 +110,7 @@ int main()
     //
     // Now convert back to an IFrame
     //
-    
+
     Aux::TaggedTensorSetFrame ttsf;
     cfg = ttsf.default_configuration();
     cfg["tensors"][0]["tag"] = "";
@@ -149,18 +144,17 @@ int main()
         auto traces = iframe2->traces();
 
         std::stringstream ss;
-        ss << "\nchannels:\ntick\t"; 
-        for (size_t ichan=0; ichan<nchans; ++ichan) {
+        ss << "\nchannels:\ntick\t";
+        for (size_t ichan = 0; ichan < nchans; ++ichan) {
             ss << traces->at(ichan)->channel() << "\t";
         }
         ss << "\n";
         Assert(nticks == 34);
-        for (size_t itick=0; itick<nticks; ++itick) {
+        for (size_t itick = 0; itick < nticks; ++itick) {
             for (size_t ich = 0; ich < nchans; ++ich) {
                 const auto& tr = traces->at(ich);
                 auto tbin = tr->tbin();
-                ss << tbin+itick
-                   << ":" << tr->charge()[itick] << " ";
+                ss << tbin + itick << ":" << tr->charge()[itick] << " ";
             }
             ss << "\n";
         }

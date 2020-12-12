@@ -17,8 +17,7 @@
 namespace WireCell {
 
     class IWirePlane : public IComponent<IWirePlane> {
-    public:
-
+       public:
         virtual ~IWirePlane();
 
         virtual int ident() const = 0;
@@ -33,10 +32,9 @@ namespace WireCell {
         /// (NOT their channel ident number).
         virtual const IChannel::vector& channels() const = 0;
 
-	/// The ID of the plane of wire zero.  This is just sugar.
-	virtual WirePlaneId planeid() const;
+        /// The ID of the plane of wire zero.  This is just sugar.
+        virtual WirePlaneId planeid() const;
     };
-}
+}  // namespace WireCell
 
 #endif
-

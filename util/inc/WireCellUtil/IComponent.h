@@ -25,21 +25,18 @@ namespace WireCell {
      * See WireCell::NamedFactory for one creation pattern that works
      * with IComponents.
      */
-    template<class Type>     // crtp
+    template <class Type>  // crtp
     class IComponent : virtual public Interface {
-    public:
-
-	/// Access subclass facet by pointer.
-	typedef std::shared_ptr<Type> pointer;
+       public:
+        /// Access subclass facet by pointer.
+        typedef std::shared_ptr<Type> pointer;
 
         /// Vector of shared pointers.
-	typedef std::vector<pointer> vector;
+        typedef std::vector<pointer> vector;
 
-	virtual ~IComponent() {};
+        virtual ~IComponent(){};
     };
 
-
-}
+}  // namespace WireCell
 
 #endif
-

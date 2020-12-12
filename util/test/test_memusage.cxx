@@ -10,21 +10,21 @@ using namespace WireCell;
 
 int* suck(MemUsage& mu, long siz)
 {
-    int *buf = new int[siz * 1024];
-    //sleep(1);
+    int* buf = new int[siz * 1024];
+    // sleep(1);
     {
-	stringstream ss;
-	ss << "newed " << siz << "K";
-	cout << ss.str() << " " << mu(ss.str()) << endl;
+        stringstream ss;
+        ss << "newed " << siz << "K";
+        cout << ss.str() << " " << mu(ss.str()) << endl;
     }
 
-    for (int ind=0; ind<siz; ++ind) {
-	buf[ind] = 0;
+    for (int ind = 0; ind < siz; ++ind) {
+        buf[ind] = 0;
     }
     {
-	stringstream ss;
-	ss << "accessed " << siz << "K";
-	cout << ss.str() << " " << mu(ss.str()) << endl;
+        stringstream ss;
+        ss << "accessed " << siz << "K";
+        cout << ss.str() << " " << mu(ss.str()) << endl;
     }
 
     return buf;
@@ -32,8 +32,8 @@ int* suck(MemUsage& mu, long siz)
 
 void blow(MemUsage& mu, int siz, int* buf)
 {
-    delete [] buf;
-    //sleep(1);
+    delete[] buf;
+    // sleep(1);
     stringstream ss;
     ss << "freed " << siz << "K";
     cout << ss.str() << " " << mu(ss.str()) << endl;
@@ -49,18 +49,17 @@ int main()
 
     long sizes[] = {10, 100, 1000, 10000, 100000, 1000000, -1};
     vector<int*> bufs;
-    
+
     int ind = 0;
     for (; sizes[ind] > 0; ++ind) {
-	int* buf = suck(mu, sizes[ind]);
-	bufs.push_back(buf);
+        int* buf = suck(mu, sizes[ind]);
+        bufs.push_back(buf);
     }
 
     for (--ind; ind >= 0; --ind) {
-	blow(mu, sizes[ind], bufs[ind]);
+        blow(mu, sizes[ind], bufs[ind]);
     }
 
     cout << "Summary:" << endl;
     cout << mu.summary() << endl;
-
 }

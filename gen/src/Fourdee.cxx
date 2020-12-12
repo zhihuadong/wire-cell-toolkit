@@ -1,31 +1,29 @@
 #include "WireCellGen/Fourdee.h"
-#include "WireCellGen/FrameUtil.h"
+
+#include "WireCellAux/FrameTools.h"
+
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/ConfigManager.h"
 #include "WireCellUtil/ExecMon.h"
 
 #include "WireCellGen/GenPipeline.h"
 
-WIRECELL_FACTORY(FourDee, WireCell::Gen::Fourdee,
-                 WireCell::IApplication, WireCell::IConfigurable)
+WIRECELL_FACTORY(FourDee, WireCell::Gen::Fourdee, WireCell::IApplication, WireCell::IConfigurable)
 
 using namespace std;
 using namespace WireCell;
 
-
 Gen::Fourdee::Fourdee()
-    : m_depos(nullptr)
-    , m_drifter(nullptr)
-    , m_ductor(nullptr)
-    , m_dissonance(nullptr)
-    , m_digitizer(nullptr)
-    , m_output(nullptr)
+  : m_depos(nullptr)
+  , m_drifter(nullptr)
+  , m_ductor(nullptr)
+  , m_dissonance(nullptr)
+  , m_digitizer(nullptr)
+  , m_output(nullptr)
 {
 }
 
-Gen::Fourdee::~Fourdee()
-{
-}
+Gen::Fourdee::~Fourdee() {}
 
 WireCell::Configuration Gen::Fourdee::default_configuration() const
 {
@@ -34,20 +32,19 @@ WireCell::Configuration Gen::Fourdee::default_configuration() const
     // the 4 d's and proof the developer can not count:
     put(cfg, "DepoSource", "TrackDepos");
     put(cfg, "DepoFilter", "");
-    put(cfg, "Drifter", "Drifter");      
-    put(cfg, "Ductor", "Ductor");        
+    put(cfg, "Drifter", "Drifter");
+    put(cfg, "Ductor", "Ductor");
     put(cfg, "Dissonance", "SilentNoise");
-    put(cfg, "Digitizer", "Digitizer");  
-    put(cfg, "Filter", "");  
-    put(cfg, "FrameSink", "DumpFrames"); 
+    put(cfg, "Digitizer", "Digitizer");
+    put(cfg, "Filter", "");
+    put(cfg, "FrameSink", "DumpFrames");
 
     return cfg;
 }
 
-
 void Gen::Fourdee::configure(const Configuration& thecfg)
 {
-    std::string tn="";
+    std::string tn = "";
     Configuration cfg = thecfg;
 
     cerr << "Gen::Fourdee:configure:\n";
@@ -74,9 +71,8 @@ void Gen::Fourdee::configure(const Configuration& thecfg)
     cerr << "\tDuctor: " << tn << endl;
     m_ductor = Factory::find_maybe_tn<IDuctor>(tn);
 
-        
-    tn = get<string>(cfg, "Dissonance","");
-    if (tn.empty()) {           // noise is optional
+    tn = get<string>(cfg, "Dissonance", "");
+    if (tn.empty()) {  // noise is optional
         m_dissonance = nullptr;
         cerr << "\tDissonance: none\n";
     }
@@ -85,8 +81,8 @@ void Gen::Fourdee::configure(const Configuration& thecfg)
         cerr << "\tDissonance: " << tn << endl;
     }
 
-    tn = get<string>(cfg, "Digitizer","");
-    if (tn.empty()) {           // digitizer is optional, voltage saved w.o. it.
+    tn = get<string>(cfg, "Digitizer", "");
+    if (tn.empty()) {  // digitizer is optional, voltage saved w.o. it.
         m_digitizer = nullptr;
         cerr << "\tDigitizer: none\n";
     }
@@ -95,8 +91,8 @@ void Gen::Fourdee::configure(const Configuration& thecfg)
         cerr << "\tDigitizer: " << tn << endl;
     }
 
-    tn = get<string>(cfg, "Filter","");
-    if (tn.empty()) {           // filter is optional
+    tn = get<string>(cfg, "Filter", "");
+    if (tn.empty()) {  // filter is optional
         m_filter = nullptr;
         cerr << "\tFilter: none\n";
     }
@@ -105,8 +101,8 @@ void Gen::Fourdee::configure(const Configuration& thecfg)
         cerr << "\tFilter: " << tn << endl;
     }
 
-    tn = get<string>(cfg, "FrameSink","");
-    if (tn.empty()) {           // sink is optional
+    tn = get<string>(cfg, "FrameSink", "");
+    if (tn.empty()) {  // sink is optional
         m_output = nullptr;
         cerr << "\tSink: none\n";
     }
@@ -116,7 +112,6 @@ void Gen::Fourdee::configure(const Configuration& thecfg)
     }
 }
 
-
 void dump(const IFrame::pointer frame)
 {
     if (!frame) {
@@ -124,11 +119,11 @@ void dump(const IFrame::pointer frame)
         return;
     }
 
-    for (auto tag: frame->frame_tags()) {
+    for (auto tag : frame->frame_tags()) {
         const auto& tlist = frame->tagged_traces(tag);
         cerr << "Fourdee: frame tag: " << tag << " with " << tlist.size() << " traces\n";
     }
-    for (auto tag: frame->trace_tags()) {
+    for (auto tag : frame->trace_tags()) {
         const auto& tlist = frame->tagged_traces(tag);
         cerr << "Fourdee: trace tag: " << tag << " with " << tlist.size() << " traces\n";
     }
@@ -145,20 +140,18 @@ void dump(const IFrame::pointer frame)
     for (auto trace : *traces) {
         const int tbin = trace->tbin();
         tbins.push_back(tbin);
-        tlens.push_back(tbin+trace->charge().size());
+        tlens.push_back(tbin + trace->charge().size());
     }
 
     int tmin = *(std::minmax_element(tbins.begin(), tbins.end()).first);
     int tmax = *(std::minmax_element(tlens.begin(), tlens.end()).second);
 
-    cerr << "frame: #" << frame->ident()
-         << " @" << frame->time()/units::ms
-         << "ms with " << ntraces << " traces, tbins in: "
-         << "[" << tmin << "," << tmax << "]"
-         << endl;
+    cerr << "frame: #" << frame->ident() << " @" << frame->time() / units::ms << "ms with " << ntraces
+         << " traces, tbins in: "
+         << "[" << tmin << "," << tmax << "]" << endl;
 }
 
-template<typename DEPOS>
+template <typename DEPOS>
 void dump(DEPOS& depos)
 {
     if (depos.empty() or (depos.size() == 1 and !depos[0])) {
@@ -166,7 +159,7 @@ void dump(DEPOS& depos)
         return;
     }
 
-    std::vector<double> t,x,y,z;
+    std::vector<double> t, x, y, z;
     double qtot = 0.0;
     double qorig = 0.0;
 
@@ -196,39 +189,38 @@ void dump(DEPOS& depos)
     const int ndepos = depos.size();
 
     std::cerr << "Gen::FourDee: drifted " << ndepos << ", extent:\n"
-              << "\tt in [ " << (*tmm.first)/units::us << "," << (*tmm.second)/units::us << "]us,\n"
-              << "\tx in [" << (*xmm.first)/units::mm << ","<<(*xmm.second)/units::mm<<"]mm,\n"
-              << "\ty in [" << (*ymm.first)/units::mm << ","<<(*ymm.second)/units::mm<<"]mm,\n"
-              << "\tz in [" << (*zmm.first)/units::mm << ","<<(*zmm.second)/units::mm<<"]mm,\n"
-              << "\tQtot=" << qtot/units::eplus << ", <Qtot>=" << qtot/ndepos/units::eplus << " "
-              << " Qorig=" << qorig/units::eplus
-              << ", <Qorig>=" << qorig/ndepos/units::eplus << " electrons" << std::endl;
-
-        
+              << "\tt in [ " << (*tmm.first) / units::us << "," << (*tmm.second) / units::us << "]us,\n"
+              << "\tx in [" << (*xmm.first) / units::mm << "," << (*xmm.second) / units::mm << "]mm,\n"
+              << "\ty in [" << (*ymm.first) / units::mm << "," << (*ymm.second) / units::mm << "]mm,\n"
+              << "\tz in [" << (*zmm.first) / units::mm << "," << (*zmm.second) / units::mm << "]mm,\n"
+              << "\tQtot=" << qtot / units::eplus << ", <Qtot>=" << qtot / ndepos / units::eplus << " "
+              << " Qorig=" << qorig / units::eplus << ", <Qorig>=" << qorig / ndepos / units::eplus << " electrons"
+              << std::endl;
 }
-
 
 // Implementation warning: this violates node and proc generality in
 // order to coerce a join into a linear pipeline.
 class NoiseAdderProc : public FilterProc {
-public:
-    NoiseAdderProc(IFrameSource::pointer nn) : noise_node(nn) {}
+   public:
+    NoiseAdderProc(IFrameSource::pointer nn)
+      : noise_node(nn)
+    {
+    }
     virtual ~NoiseAdderProc() {}
 
-    virtual Pipe& input_pipe() {
-        return iq; 
-    }
-    virtual Pipe& output_pipe() {
-        return oq; 
-    }
+    virtual Pipe& input_pipe() { return iq; }
+    virtual Pipe& output_pipe() { return oq; }
 
-    virtual bool operator()() {
-        if (iq.empty()) { return false; }
+    virtual bool operator()()
+    {
+        if (iq.empty()) {
+            return false;
+        }
 
         const IFrame::pointer iframe = boost::any_cast<const IFrame::pointer>(iq.front());
         iq.pop();
 
-        if (!iframe) {          // eos
+        if (!iframe) {  // eos
             std::cerr << "NoiseAdderProc eos\n";
             boost::any out = iframe;
             oq.push(out);
@@ -238,23 +230,21 @@ public:
         IFrame::pointer nframe;
         bool ok = (*noise_node)(nframe);
         if (!ok) return false;
-        nframe = Gen::sum(IFrame::vector{iframe,nframe}, iframe->ident());
+        nframe = aux::sum(IFrame::vector{iframe, nframe}, iframe->ident());
         boost::any anyout = nframe;
         oq.push(anyout);
-        return true;        
+        return true;
     }
 
-private:
+   private:
     Pipe iq, oq;
     IFrameSource::pointer noise_node;
-
 };
-
 
 void Gen::Fourdee::execute()
 {
     execute_new();
-    //execute_old();
+    // execute_old();
 }
 
 void Gen::Fourdee::execute_new()
@@ -264,8 +254,8 @@ void Gen::Fourdee::execute_new()
         return;
     }
 
-    if (!m_ductor and (m_digitizer or m_dissonance or m_digitizer or m_filter or m_output) ) {
-        std::cerr <<"Fourdee: a Ductor is required for subsequent pipeline stages\n";
+    if (!m_ductor and (m_digitizer or m_dissonance or m_digitizer or m_filter or m_output)) {
+        std::cerr << "Fourdee: a Ductor is required for subsequent pipeline stages\n";
         return;
     }
 
@@ -273,56 +263,54 @@ void Gen::Fourdee::execute_new()
     auto source = new SourceNodeProc(m_depos);
     Proc* last_proc = source;
 
-    if (m_drifter) {            // depo in, depo out
-        cerr << "Pipeline adding #"<<pipeline.size()<<": " << type(*m_drifter) << endl;
+    if (m_drifter) {  // depo in, depo out
+        cerr << "Pipeline adding #" << pipeline.size() << ": " << type(*m_drifter) << endl;
         auto proc = new QueuedNodeProc(m_drifter);
         last_proc = join(pipeline, last_proc, proc);
     }
-    if (m_depofilter) {         // depo in, depo out
-        cerr << "Pipeline adding #"<<pipeline.size()<<": " << type(*m_depofilter) << endl;
+    if (m_depofilter) {  // depo in, depo out
+        cerr << "Pipeline adding #" << pipeline.size() << ": " << type(*m_depofilter) << endl;
         auto proc = new FunctionNodeProc(m_depofilter);
         last_proc = join(pipeline, last_proc, proc);
     }
 
-    if (m_ductor) {             // depo in, zero or more frames out
-        cerr << "Pipeline adding #"<<pipeline.size()<<": " << type(*m_ductor) << endl;
+    if (m_ductor) {  // depo in, zero or more frames out
+        cerr << "Pipeline adding #" << pipeline.size() << ": " << type(*m_ductor) << endl;
         auto proc = new QueuedNodeProc(m_ductor);
         last_proc = join(pipeline, last_proc, proc);
     }
 
-    if (m_dissonance) {         // frame in, frame out
-        cerr << "Pipeline adding #"<<pipeline.size()<<": " << type(*m_dissonance) << endl;
+    if (m_dissonance) {  // frame in, frame out
+        cerr << "Pipeline adding #" << pipeline.size() << ": " << type(*m_dissonance) << endl;
         auto proc = new NoiseAdderProc(m_dissonance);
         last_proc = join(pipeline, last_proc, proc);
     }
 
-    if (m_digitizer) {          // frame in, frame out
-        cerr << "Pipeline adding #"<<pipeline.size()<<": " << type(*m_digitizer) << endl;
+    if (m_digitizer) {  // frame in, frame out
+        cerr << "Pipeline adding #" << pipeline.size() << ": " << type(*m_digitizer) << endl;
         auto proc = new FunctionNodeProc(m_digitizer);
         last_proc = join(pipeline, last_proc, proc);
     }
 
-    if (m_filter) {          // frame in, frame out
-        cerr << "Pipeline adding #"<<pipeline.size()<<": " << type(*m_filter) << endl;
+    if (m_filter) {  // frame in, frame out
+        cerr << "Pipeline adding #" << pipeline.size() << ": " << type(*m_filter) << endl;
         auto proc = new FunctionNodeProc(m_filter);
         last_proc = join(pipeline, last_proc, proc);
     }
 
-    if (m_output) {             // frame in, full stop.
-        cerr << "Pipeline adding #"<<pipeline.size()<<": " << type(*m_output) << endl;
+    if (m_output) {  // frame in, full stop.
+        cerr << "Pipeline adding #" << pipeline.size() << ": " << type(*m_output) << endl;
         auto proc = new SinkNodeProc(m_output);
         last_proc = join(pipeline, last_proc, proc);
     }
     else {
-        cerr << "Pipeline adding #"<<pipeline.size()<<": sink\n";
+        cerr << "Pipeline adding #" << pipeline.size() << ": sink\n";
         auto sink = new DropSinkProc;
         last_proc = join(pipeline, last_proc, sink);
     }
 
     // truly last proc needs to be added by hand.
     pipeline.push_back(last_proc);
-
-
 
     // A "drain end first" strategy gives attention to draining
     // queues the more toward the the end of the pipeline they are.
@@ -332,7 +320,7 @@ void Gen::Fourdee::execute_new()
     size_t pipelen = pipeline.size();
     while (true) {
         bool did_something = false;
-        for (size_t ind = pipelen-1; ind > 0; --ind) { // source has no input
+        for (size_t ind = pipelen - 1; ind > 0; --ind) {  // source has no input
             SinkProc* proc = dynamic_cast<SinkProc*>(pipeline[ind]);
             if (proc->input_pipe().empty()) {
                 continue;
@@ -342,7 +330,7 @@ void Gen::Fourdee::execute_new()
                 std::cerr << "Pipeline failed\n";
                 return;
             }
-            //std::cerr << "Executed process " << ind << std::endl;
+            // std::cerr << "Executed process " << ind << std::endl;
             did_something = true;
             break;
         }
@@ -352,11 +340,10 @@ void Gen::Fourdee::execute_new()
                 std::cerr << "Source empty\n";
                 return;
             }
-            //std::cerr << "Executed source\n";
+            // std::cerr << "Executed source\n";
         }
         // otherwise, go through pipeline again
     }
-
 }
 void Gen::Fourdee::execute_old()
 {
@@ -370,7 +357,7 @@ void Gen::Fourdee::execute_old()
 
     // here we make a manual pipeline.  In a "real" app this might be
     // a DFP executed by TBB.
-    int count=0;
+    int count = 0;
     int ndepos = 0;
     int ndrifted = 0;
     ExecMon em;
@@ -388,7 +375,7 @@ void Gen::Fourdee::execute_old()
         else {
             ++ndepos;
         }
-        //cerr << "Gen::FourDee: seen " << ndepos << " depos\n";
+        // cerr << "Gen::FourDee: seen " << ndepos << " depos\n";
 
         IDrifter::output_queue drifted;
         if (!(*m_drifter)(depo, drifted)) {
@@ -412,7 +399,7 @@ void Gen::Fourdee::execute_old()
         ndrifted += drifted.size();
         cerr << "Gen::FourDee: seen " << ndrifted << " drifted\n";
         dump(drifted);
-        
+
         for (auto drifted_depo : drifted) {
             IDuctor::output_queue frames;
             if (!(*m_ductor)(drifted_depo, frames)) {
@@ -439,7 +426,7 @@ void Gen::Fourdee::execute_old()
                     if (noise) {
                         cerr << "noiseframe: ";
                         dump(noise);
-                        voltframe = Gen::sum(IFrame::vector{voltframe,noise}, voltframe->ident());
+                        voltframe = aux::sum(IFrame::vector{voltframe, noise}, voltframe->ident());
                         em("got noise");
                     }
                     else {
@@ -482,7 +469,6 @@ void Gen::Fourdee::execute_old()
             }
         }
     }
-  bail:             // what's this weird syntax?  What is this, BASIC?
+bail:  // what's this weird syntax?  What is this, BASIC?
     cerr << em.summary() << endl;
 }
-

@@ -6,21 +6,18 @@
 
 #include "WireCellUtil/NamedFactory.h"
 
-WIRECELL_FACTORY(PerChannelResponse,
-                 WireCell::SigProc::PerChannelResponse,
-                 WireCell::IChannelResponse, WireCell::IConfigurable)
+WIRECELL_FACTORY(PerChannelResponse, WireCell::SigProc::PerChannelResponse, WireCell::IChannelResponse,
+                 WireCell::IConfigurable)
 
 using namespace WireCell;
 
 SigProc::PerChannelResponse::PerChannelResponse(const char* filename)
-    : m_filename(filename)
+  : m_filename(filename)
 {
 }
 
-SigProc::PerChannelResponse::~PerChannelResponse()
-{
-}
-                
+SigProc::PerChannelResponse::~PerChannelResponse() {}
+
 WireCell::Configuration SigProc::PerChannelResponse::default_configuration() const
 {
     Configuration cfg;
@@ -42,7 +39,7 @@ void SigProc::PerChannelResponse::configure(const WireCell::Configuration& cfg)
     if (jchannels.isNull()) {
         THROW(ValueError() << errmsg{"no channels given in file " + m_filename});
     }
-    
+
     for (auto jchresp : jchannels) {
         const int ch = jchresp[0].asInt();
         auto jresp = jchresp[1];
@@ -51,17 +48,15 @@ void SigProc::PerChannelResponse::configure(const WireCell::Configuration& cfg)
             THROW(ValueError() << errmsg{"zero length response in file " + m_filename});
         }
         Waveform::realseq_t resp(nsamp, 0);
-        for (int ind=0; ind<nsamp; ++ind) {
+        for (int ind = 0; ind < nsamp; ++ind) {
             resp[ind] = jresp[ind].asFloat();
         }
         m_cr[ch] = resp;
-        if (!m_bins.nbins()) {	// first time
-            m_bins = Binning(nsamp, t0, t0+nsamp*tick);
+        if (!m_bins.nbins()) {  // first time
+            m_bins = Binning(nsamp, t0, t0 + nsamp * tick);
         }
     }
-
 }
-
 
 const Waveform::realseq_t& SigProc::PerChannelResponse::channel_response(int channel_ident) const
 {
@@ -72,7 +67,4 @@ const Waveform::realseq_t& SigProc::PerChannelResponse::channel_response(int cha
     return it->second;
 }
 
-Binning SigProc::PerChannelResponse::channel_response_binning() const
-{
-    return m_bins;
-}
+Binning SigProc::PerChannelResponse::channel_response_binning() const { return m_bins; }

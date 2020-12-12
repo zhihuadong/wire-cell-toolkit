@@ -11,33 +11,29 @@
 namespace WireCell {
     namespace Gen {
 
-    
         /** An ImpactTransform transforms charge on impact positions
          * into waveforms via 2D FFT.
          */
-        class ImpactTransform
-        {
+        class ImpactTransform {
             IPlaneImpactResponse::pointer m_pir;
             BinnedDiffusion_transform& m_bd;
-	    
-	    int m_num_group;  // how many 2D convolution is needed
-	    int m_num_pad_wire; // how many wires are needed to pad on each side
-	    std::vector<std::map<int, IImpactResponse::pointer> > m_vec_map_resp;
-	    std::vector<std::vector<std::tuple<int,int,double> > > m_vec_vec_charge; // ch, time, charge
-	    //std::vector<Eigen::SparseMatrix<float>* > m_vec_spmatrix;
-	    
-	    
-	    std::vector<int> m_vec_impact;
-	    Array::array_xxf m_decon_data;
-	    int m_start_ch;
-	    int m_end_ch;
-	    int m_start_tick;
-	    int m_end_tick;
-	    
+
+            int m_num_group;     // how many 2D convolution is needed
+            int m_num_pad_wire;  // how many wires are needed to pad on each side
+            std::vector<std::map<int, IImpactResponse::pointer> > m_vec_map_resp;
+            std::vector<std::vector<std::tuple<int, int, double> > > m_vec_vec_charge;  // ch, time, charge
+            // std::vector<Eigen::SparseMatrix<float>* > m_vec_spmatrix;
+
+            std::vector<int> m_vec_impact;
+            Array::array_xxf m_decon_data;
+            int m_start_ch;
+            int m_end_ch;
+            int m_start_tick;
+            int m_end_tick;
+
             Log::logptr_t log;
 
-        public:
-
+           public:
             ImpactTransform(IPlaneImpactResponse::pointer pir, BinnedDiffusion_transform& bd);
             virtual ~ImpactTransform();
 
@@ -49,14 +45,11 @@ namespace WireCell {
             /// then the waveforms are in units of voltage
             /// representing the sampling of the output of the FEE
             /// amplifiers.
- 
+
             // fixme: this should be a forward iterator so that it may cal bd.erase() safely to conserve memory
             Waveform::realseq_t waveform(int wire) const;
-
-
-	    
         };
 
-    }  // Gen
-}  // WireCell
+    }  // namespace Gen
+}  // namespace WireCell
 #endif /* WIRECELL_IMPACTTRANSFORM */

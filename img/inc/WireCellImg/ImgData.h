@@ -19,19 +19,25 @@
 namespace WireCell {
     namespace Img {
         namespace Data {
-            
+
             class Slice : public ISlice {
                 IFrame::pointer m_frame;
                 map_t m_activity;
                 int m_ident;
                 double m_start, m_span;
-            public:
+
+               public:
                 Slice(const IFrame::pointer& frame, int ident, double start, double span)
-                    : m_frame(frame), m_ident(ident), m_start(start), m_span(span) {}
+                  : m_frame(frame)
+                  , m_ident(ident)
+                  , m_start(start)
+                  , m_span(span)
+                {
+                }
 
                 virtual ~Slice();
 
-                IFrame::pointer frame() const {return m_frame;}
+                IFrame::pointer frame() const { return m_frame; }
 
                 int ident() const { return m_ident; }
                 double start() const { return m_start; }
@@ -49,9 +55,14 @@ namespace WireCell {
                 ISlice::vector m_slices;
                 int m_ident;
                 double m_time;
-            public:
+
+               public:
                 SliceFrame(const ISlice::vector& islices, int ident, double time)
-                    : m_slices(islices), m_ident(ident), m_time(time) {}
+                  : m_slices(islices)
+                  , m_ident(ident)
+                  , m_time(time)
+                {
+                }
                 virtual ~SliceFrame();
 
                 int ident() const { return m_ident; }
@@ -59,13 +70,15 @@ namespace WireCell {
                 ISlice::vector slices() const { return m_slices; }
             };
 
-
             class Stripe : public IStripe {
                 int m_ident;
                 vector_t m_values;
 
-            public:
-                Stripe(int ident) : m_ident(ident) {}
+               public:
+                Stripe(int ident)
+                  : m_ident(ident)
+                {
+                }
                 virtual ~Stripe();
 
                 int ident() const { return m_ident; }
@@ -73,32 +86,29 @@ namespace WireCell {
 
                 // these methods may be used prior to internment into IStripe::pointer
 
-                void append(IChannel::pointer ich, value_t value) {
-                    m_values.push_back(make_pair(ich, value));
-                }
-
+                void append(IChannel::pointer ich, value_t value) { m_values.push_back(make_pair(ich, value)); }
             };
             class StripeSet : public IStripeSet {
                 int m_ident;
                 IStripe::vector m_stripes;
 
-            public:
-
-                StripeSet(int ident) : m_ident(ident) {}
+               public:
+                StripeSet(int ident)
+                  : m_ident(ident)
+                {
+                }
                 virtual ~StripeSet();
 
                 int ident() const { return m_ident; }
                 IStripe::vector stripes() const { return m_stripes; }
-    
+
                 // use before interning
 
                 void push_back(const IStripe::pointer& s) { m_stripes.push_back(s); }
                 size_t size() const { return m_stripes.size(); }
-
             };
 
-        }
-            
-    }
-}
- 
+        }  // namespace Data
+
+    }  // namespace Img
+}  // namespace WireCell

@@ -66,6 +66,18 @@ def convert_icarustpc_wires(ctx, input_file, output_file):
     store = icarustpc.load(input_file)
     persist.dump(output_file, store)
 
+@cli.command("convert-dunevd-wires")
+@click.argument("input-file")
+@click.argument("output-file")
+@click.pass_context
+def convert_dunevd_wires(ctx, input_file, output_file):
+    '''
+    Description
+    '''
+    from wirecell.util.wires import dunevd, persist
+    store = dunevd.load(input_file)
+    persist.dump(output_file, store)
+
 @cli.command("convert-uboone-wire-regions")
 @click.argument("wire-json-file")
 @click.argument("csvfile")

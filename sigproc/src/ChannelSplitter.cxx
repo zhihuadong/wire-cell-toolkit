@@ -5,20 +5,16 @@
 #include "WireCellIface/SimpleFrame.h"
 #include "WireCellIface/IAnodePlane.h"
 
-WIRECELL_FACTORY(ChannelSplitter, WireCell::SigProc::ChannelSplitter,
-                 WireCell::IFrameFanout, WireCell::IConfigurable)
-
+WIRECELL_FACTORY(ChannelSplitter, WireCell::SigProc::ChannelSplitter, WireCell::IFrameFanout, WireCell::IConfigurable)
 
 using namespace WireCell;
 
 SigProc::ChannelSplitter::ChannelSplitter(size_t multiplicity)
-    : m_multiplicity(multiplicity)
-    , log(Log::logger("glue"))
+  : m_multiplicity(multiplicity)
+  , log(Log::logger("glue"))
 {
 }
-SigProc::ChannelSplitter::~ChannelSplitter()
-{
-}
+SigProc::ChannelSplitter::~ChannelSplitter() {}
 
 WireCell::Configuration SigProc::ChannelSplitter::default_configuration() const
 {
@@ -52,7 +48,6 @@ void SigProc::ChannelSplitter::configure(const WireCell::Configuration& cfg)
     m_ft.configure(cfg["tag_rules"]);
 }
 
-
 std::vector<std::string> SigProc::ChannelSplitter::output_types()
 {
     const std::string tname = std::string(typeid(output_type).name());
@@ -60,13 +55,12 @@ std::vector<std::string> SigProc::ChannelSplitter::output_types()
     return ret;
 }
 
-
 bool SigProc::ChannelSplitter::operator()(const input_pointer& in, output_vector& outv)
 {
     outv.resize(m_multiplicity);
 
-    if (!in) {                  //  pass on EOS
-        for (size_t ind=0; ind < m_multiplicity; ++ind) {
+    if (!in) {  //  pass on EOS
+        for (size_t ind = 0; ind < m_multiplicity; ++ind) {
             outv[ind] = in;
         }
         log->debug("ChannelSplitter: see EOS");
@@ -74,7 +68,7 @@ bool SigProc::ChannelSplitter::operator()(const input_pointer& in, output_vector
     }
 
     std::vector<ITrace::vector> port_traces(m_multiplicity);
-    
+
     for (const auto& itrace : *(in->traces())) {
         int chan = itrace->channel();
         const auto& it = m_c2p.find(chan);
@@ -88,8 +82,7 @@ bool SigProc::ChannelSplitter::operator()(const input_pointer& in, output_vector
 
     auto fintags = in->frame_tags();
     std::stringstream taginfo;
-    for (size_t iport=0; iport<m_multiplicity; ++iport) {
-
+    for (size_t iport = 0; iport < m_multiplicity; ++iport) {
         // Basic frame stays the same.
         auto sfout = new SimpleFrame(in->ident(), in->time(), port_traces[iport], in->tick());
 
@@ -123,5 +116,3 @@ bool SigProc::ChannelSplitter::operator()(const input_pointer& in, output_vector
     }
     return true;
 }
-
-

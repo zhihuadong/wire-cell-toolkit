@@ -6,23 +6,19 @@
 
 using namespace WireCell;
 
-Zio::FlowConfigurable::FlowConfigurable(const std::string& direction,
-                                        const std::string& nodename)
-    : m_direction(direction)
-    , m_node(nodename, (zio::origin_t)this)
+Zio::FlowConfigurable::FlowConfigurable(const std::string& direction, const std::string& nodename)
+  : m_direction(direction)
+  , m_node(nodename, (zio::origin_t) this)
 {
 }
 
-Zio::FlowConfigurable::~FlowConfigurable()
-{
-    m_node.offline();
-}
+Zio::FlowConfigurable::~FlowConfigurable() { m_node.offline(); }
 
 WireCell::Configuration Zio::FlowConfigurable::default_configuration() const
 {
     Configuration cfg;
     // zmq
-    cfg["timeout"] = 1000;      // ms
+    cfg["timeout"] = 1000;  // ms
     cfg["binds"] = Json::arrayValue;
     cfg["connects"] = Json::arrayValue;
     cfg["stype"] = m_stype;
@@ -32,8 +28,8 @@ WireCell::Configuration Zio::FlowConfigurable::default_configuration() const
     // zio
     cfg["portname"] = m_portname;
     // msg
-    cfg["origin"] = (Json::UInt64)m_node.origin();
-    cfg["level"] = (int)m_level;
+    cfg["origin"] = (Json::UInt64) m_node.origin();
+    cfg["level"] = (int) m_level;
     // flow
     cfg["credit"] = 10;
     // zdb
@@ -42,7 +38,6 @@ WireCell::Configuration Zio::FlowConfigurable::default_configuration() const
     user_default_configuration(cfg);
     return cfg;
 }
-
 
 void Zio::FlowConfigurable::configure(const WireCell::Configuration& cfg)
 {
@@ -59,18 +54,17 @@ void Zio::FlowConfigurable::configure(const WireCell::Configuration& cfg)
     int cred = get<int>(cfg, "credit", 10);
 
     m_node.set_nick(nick);
-    m_node.set_origin(get(cfg, "origin",  (Json::UInt64)m_node.origin()));
+    m_node.set_origin(get(cfg, "origin", (Json::UInt64) m_node.origin()));
     m_portname = get<std::string>(cfg, "portname", m_portname);
-    m_level = (zio::level::MessageLevel)get<int>(cfg, "level", (int)m_level);
+    m_level = (zio::level::MessageLevel) get<int>(cfg, "level", (int) m_level);
     m_stype = get<int>(cfg, "stype", m_stype);
-    if (! (m_stype == ZMQ_CLIENT or m_stype == ZMQ_SERVER)) {
-        log->error("node {}: may only use CLIENT or SERVER stype, got {}",
-                 nick, m_stype);
+    if (!(m_stype == ZMQ_CLIENT or m_stype == ZMQ_SERVER)) {
+        log->error("node {}: may only use CLIENT or SERVER stype, got {}", nick, m_stype);
         THROW(RuntimeError() << errmsg{"unsupported socket type"});
     }
 
     int verbose = 0;
-    if (! cfg["verbose"].empty()) {
+    if (!cfg["verbose"].empty()) {
         verbose = cfg["verbose"].asInt();
         if (verbose) {
             log->debug("node {}: verbose", nick);
@@ -85,7 +79,7 @@ void Zio::FlowConfigurable::configure(const WireCell::Configuration& cfg)
     auto connects = cfg["connects"];
     if (binds.empty() and connects.empty()) {
         log->info("node {}: binding {} to ephemeral", nick, m_portname);
-        port->bind();       // default: ephemeral bind
+        port->bind();  // default: ephemeral bind
     }
     else {
         for (auto bind : binds) {
@@ -129,8 +123,12 @@ void Zio::FlowConfigurable::configure(const WireCell::Configuration& cfg)
     }
 
     zio::flow::direction_e dir;
-    if (m_direction == "inject") { dir = zio::flow::direction_e::inject; }
-    else if (m_direction == "extract") { dir = zio::flow::direction_e::extract; }
+    if (m_direction == "inject") {
+        dir = zio::flow::direction_e::inject;
+    }
+    else if (m_direction == "extract") {
+        dir = zio::flow::direction_e::extract;
+    }
     else {
         THROW(RuntimeError() << errmsg{"unknown flow direction: " + m_direction});
     }
@@ -139,7 +137,6 @@ void Zio::FlowConfigurable::configure(const WireCell::Configuration& cfg)
     if (!m_flow) {
         THROW(RuntimeError() << errmsg{"failed to make flow"});
     }
-
 
     log->debug("{}: going online with headers:", nick);
     for (const auto& hh : m_headers) {
@@ -164,15 +161,10 @@ void Zio::FlowConfigurable::configure(const WireCell::Configuration& cfg)
     bool noto = m_flow->bot(msg);
     if (!noto) {
         THROW(RuntimeError() << errmsg{"timeout in BOT " + m_portname});
-    }        
+    }
 }
 
-
-
-bool Zio::FlowConfigurable::pre_flow()
-{
-    return true;
-}
+bool Zio::FlowConfigurable::pre_flow() { return true; }
 
 void Zio::FlowConfigurable::finalize()
 {

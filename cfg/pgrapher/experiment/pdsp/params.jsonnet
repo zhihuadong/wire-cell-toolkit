@@ -5,6 +5,7 @@ local wc = import "wirecell.jsonnet";
 local base = import "pgrapher/common/params.jsonnet";
 
 base {
+    // This section will be overwritten in simparams.jsonnet
     det : {
 
         // define the 6 APAs.  This must use the coordinate system
@@ -110,7 +111,8 @@ base {
 
     adc: super.adc {
         // per tdr, chapter 2
-        baselines: [1003*wc.millivolt,1003*wc.millivolt,508*wc.millivolt],
+        // induction plane: 2350 ADC, collection plane: 900 ADC
+        baselines: [1003.4*wc.millivolt,1003.4*wc.millivolt,507.7*wc.millivolt],
 
         // check this.  The tdr says, "The ADC ASIC has an input
         // buffer with offset compensation to match the output of the
@@ -119,10 +121,16 @@ base {
         fullscale: [0.2*wc.volt, 1.6*wc.volt],
     },
 
+    // This sets a relative gain at the input to the ADC.  Note, if
+    // you are looking to fix SimDepoSource, you are in the wrong
+    // place.  See the "scale" parameter of wcls.input.depos() defined
+    // in pgrapher/common/ui/wcls/nodes.jsonnet.
+    // also, see later overwriting in simparams.jsonnet
     elec: super.elec {
-
+      postgain: 1.1365, // pulser calibration: 41.649 ADC*tick/1ke
+                       // theoretical elec resp (14mV/fC): 36.6475 ADC*tick/1ke
+      shaping: 2.2 * wc.us,
     },
-
 
     sim: super.sim {
 
@@ -158,8 +166,8 @@ base {
 
         fields: [
             // "garfield-1d-3planes-21wires-6impacts-dune-v1.json.bz2",
-            "garfield-1d-boundary-path-rev-dune.json.bz2",
-            // "garfield-1d-boundary-path-rev-dune-no-grid.json.bz2",
+            // "garfield-1d-boundary-path-rev-dune.json.bz2",
+            "dune-garfield-1d565.json.bz2",
         ],
 
         // fixme: this is for microboone and probably bogus for

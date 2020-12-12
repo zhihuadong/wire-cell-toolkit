@@ -11,7 +11,7 @@
 namespace WireCell {
     namespace SigProc {
         class FieldResponse : public IFieldResponse, public IConfigurable {
-        public:
+           public:
             // Create directly with the JSON data file or delay that
             // for configuration.
             FieldResponse(const char* frfilename = "");
@@ -20,17 +20,17 @@ namespace WireCell {
 
             // IFieldResponse
             virtual const Response::Schema::FieldResponse& field_response() const;
-            
+
             // IConfigurable
             virtual void configure(const WireCell::Configuration& config);
             virtual WireCell::Configuration default_configuration() const;
 
-        private:
+           private:
             std::string m_fname;
             Response::Schema::FieldResponse m_fr;
         };
 
-    }
+    }  // namespace SigProc
 
-}
+}  // namespace WireCell
 #endif

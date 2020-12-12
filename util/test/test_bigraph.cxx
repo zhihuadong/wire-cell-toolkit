@@ -14,7 +14,11 @@ struct VertexData : bi::set_base_hook<bi::link_mode<bi::auto_unlink>, bi::consta
     std::string label;
     int num;
 
-    VertexData(std::string label, int num) : label(label), num(num) {}
+    VertexData(std::string label, int num)
+      : label(label)
+      , num(num)
+    {
+    }
 
     struct by_label {
         using type = std::string;
@@ -31,25 +35,27 @@ struct EdgeData {
 };
 
 /// define the boost-graph
-typedef boost::adjacency_list<boost::vecS, boost::vecS,
-        boost::bidirectionalS,
-        VertexData,
-        boost::property<boost::edge_weight_t, double, EdgeData> > Graph;
+typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, VertexData,
+                              boost::property<boost::edge_weight_t, double, EdgeData> >
+    Graph;
 
-int main() {
+int main()
+{
     using vertex_t = Graph::vertex_descriptor;
 
     Graph g;
-    for (auto label : { "alerts", "amazed", "buster", "deaths", "ekes", "Enoch", "gale", "hug", "input", "knifed", "lire", "man", "pithy", "Purims", "Rodger", "suckle", "Terr", "theme", "tiling", "vases", }) {
-        boost::add_vertex(VertexData{label, 1+rand()%5}, g);
+    for (auto label : {
+             "alerts", "amazed", "buster", "deaths", "ekes",   "Enoch",  "gale", "hug",   "input",  "knifed",
+             "lire",   "man",    "pithy",  "Purims", "Rodger", "suckle", "Terr", "theme", "tiling", "vases",
+         }) {
+        boost::add_vertex(VertexData{label, 1 + rand() % 5}, g);
     }
 
     /// define vertexMap
     by_label_idx_t label_idx;
     auto reindex = [&] {
         label_idx.clear();
-        for (auto vd : boost::make_iterator_range(boost::vertices(g)))
-            label_idx.insert(g[vd]);
+        for (auto vd : boost::make_iterator_range(boost::vertices(g))) label_idx.insert(g[vd]);
     };
 
     reindex();

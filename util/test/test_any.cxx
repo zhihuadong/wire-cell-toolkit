@@ -4,9 +4,9 @@
 
 using namespace std;
 
-struct Base { 
+struct Base {
     virtual ~Base() {}
-    int b; 
+    int b;
 };
 struct Foo : public Base {
     virtual ~Foo() {}
@@ -37,7 +37,7 @@ int main()
 
     DFPMeta dfpm;
     try {
-         dfpm = boost::any_cast<DFPMeta>(aobj);
+        dfpm = boost::any_cast<DFPMeta>(aobj);
     }
     catch (boost::bad_any_cast &e) {
         std::cerr << "aobj not a DFPMeta: " << e.what() << '\n';
@@ -46,5 +46,4 @@ int main()
     cerr << "DFPMeta = " << dfpm << "\n";
 
     return 0;
-    
 }

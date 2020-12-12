@@ -36,7 +36,7 @@ namespace WireCell {
            region will be output.  In "reject" mode a depo will not be
            output if it explicitly lands on any configured wire
            region.  The first wire region landed will determine the
-           fate of the depo.  
+           fate of the depo.
 
            If users desire to bound depos by the intersection of wires
            from multiple planes they may pipeline multiple
@@ -46,23 +46,23 @@ namespace WireCell {
 
          */
         class WireBoundedDepos : public IDrifter, public IConfigurable {
-        public:
+           public:
             WireBoundedDepos();
             virtual ~WireBoundedDepos();
             virtual bool operator()(const input_pointer& depo, output_queue& outq);
             virtual void configure(const WireCell::Configuration& config);
             virtual WireCell::Configuration default_configuration() const;
-        private:
-            
+
+           private:
             IAnodePlane::pointer m_anode;
             bool m_accept;
             std::vector<const Pimpos*> m_pimpos;
 
-            typedef std::tuple<int,int,int> wire_bounds_t;
+            typedef std::tuple<int, int, int> wire_bounds_t;
             typedef std::vector<wire_bounds_t> wire_region_t;
             std::vector<wire_region_t> m_regions;
         };
-    }
-}
+    }  // namespace Gen
+}  // namespace WireCell
 
 #endif

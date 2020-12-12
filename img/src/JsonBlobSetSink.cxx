@@ -6,23 +6,18 @@
 
 #include <fstream>
 
-WIRECELL_FACTORY(JsonBlobSetSink, WireCell::Img::JsonBlobSetSink,
-                 WireCell::IBlobSetSink, WireCell::IConfigurable)
-
+WIRECELL_FACTORY(JsonBlobSetSink, WireCell::Img::JsonBlobSetSink, WireCell::IBlobSetSink, WireCell::IConfigurable)
 
 using namespace WireCell;
 
 Img::JsonBlobSetSink::JsonBlobSetSink()
-    : m_drift_speed(1.6*units::mm/units::us)
-    , m_filename("blobs-%02d.json")
-    , m_face(0)
-    , l(Log::logger("io"))
+  : m_drift_speed(1.6 * units::mm / units::us)
+  , m_filename("blobs-%02d.json")
+  , m_face(0)
+  , l(Log::logger("io"))
 {
 }
-Img::JsonBlobSetSink::~JsonBlobSetSink()
-{
-}
-
+Img::JsonBlobSetSink::~JsonBlobSetSink() {}
 
 void Img::JsonBlobSetSink::configure(const WireCell::Configuration& cfg)
 {
@@ -61,23 +56,20 @@ bool Img::JsonBlobSetSink::operator()(const IBlobSet::pointer& bs)
     auto frame = slice->frame();
     const double start = slice->start();
     const double time = frame->time();
-    const double x = (start-time)*m_drift_speed;
+    const double x = (start - time) * m_drift_speed;
 
-    l->debug("JsonBlobSetSink: frame:{}, slice:{} set:{} time:{} ms, start={} ms x:{} nblobs:{}",
-             frame->ident(), slice->ident(), bs->ident(),
-             time/units::ms, start/units::ms,
-             x,  blobs.size());
+    l->debug("JsonBlobSetSink: frame:{}, slice:{} set:{} time:{} ms, start={} ms x:{} nblobs:{}", frame->ident(),
+             slice->ident(), bs->ident(), time / units::ms, start / units::ms, x, blobs.size());
 
     Json::Value jblobs = Json::arrayValue;
 
-
-    for (const auto& iblob: blobs) {
+    for (const auto& iblob : blobs) {
         if (m_face >= 0 and m_face != iblob->face()->ident()) {
-            continue;           // filter
+            continue;  // filter
         }
         const auto& coords = iblob->face()->raygrid();
         const auto& blob = iblob->shape();
-        Json::Value jcorners = Json::arrayValue;        
+        Json::Value jcorners = Json::arrayValue;
         for (const auto& corner : blob.corners()) {
             Json::Value jcorner = Json::arrayValue;
             auto pt = coords.ray_crossing(corner.first, corner.second);
@@ -96,7 +88,6 @@ bool Img::JsonBlobSetSink::operator()(const IBlobSet::pointer& bs)
         jblobs.append(jblob);
     }
 
-
     Json::Value top;
 
     top["blobs"] = jblobs;
@@ -112,7 +103,5 @@ bool Img::JsonBlobSetSink::operator()(const IBlobSet::pointer& bs)
     }
     fstr << top;
 
-
-    return true;    
+    return true;
 }
-

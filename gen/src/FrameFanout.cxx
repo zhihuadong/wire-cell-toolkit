@@ -4,26 +4,22 @@
 #include "WireCellUtil/Exceptions.h"
 #include "WireCellIface/SimpleFrame.h"
 
-WIRECELL_FACTORY(FrameFanout, WireCell::Gen::FrameFanout,
-                 WireCell::IFrameFanout, WireCell::IConfigurable)
-
+WIRECELL_FACTORY(FrameFanout, WireCell::Gen::FrameFanout, WireCell::IFrameFanout, WireCell::IConfigurable)
 
 using namespace WireCell;
 
 Gen::FrameFanout::FrameFanout(size_t multiplicity)
-    : m_multiplicity(multiplicity)
-    , log(Log::logger("glue"))
+  : m_multiplicity(multiplicity)
+  , log(Log::logger("glue"))
 {
 }
-Gen::FrameFanout::~FrameFanout()
-{
-}
+Gen::FrameFanout::~FrameFanout() {}
 
 WireCell::Configuration Gen::FrameFanout::default_configuration() const
 {
     Configuration cfg;
     // How many output ports
-    cfg["multiplicity"] = (int)m_multiplicity;
+    cfg["multiplicity"] = (int) m_multiplicity;
     // Tag rules are an array, one element per output port.  Each
     // element is an object keyed with "frame" or "trace".  Each of
     // their values are an object keyed by a regular expression
@@ -34,15 +30,14 @@ WireCell::Configuration Gen::FrameFanout::default_configuration() const
 }
 void Gen::FrameFanout::configure(const WireCell::Configuration& cfg)
 {
-    int m = get<int>(cfg, "multiplicity", (int)m_multiplicity);
-    if (m<=0) {
+    int m = get<int>(cfg, "multiplicity", (int) m_multiplicity);
+    if (m <= 0) {
         THROW(ValueError() << errmsg{"FrameFanout multiplicity must be positive"});
     }
     m_multiplicity = m;
 
     m_ft.configure(cfg["tag_rules"]);
 }
-
 
 std::vector<std::string> Gen::FrameFanout::output_types()
 {
@@ -51,13 +46,12 @@ std::vector<std::string> Gen::FrameFanout::output_types()
     return ret;
 }
 
-
 bool Gen::FrameFanout::operator()(const input_pointer& in, output_vector& outv)
 {
     outv.resize(m_multiplicity);
 
-    if (!in) {                  //  pass on EOS
-        for (size_t ind=0; ind<m_multiplicity; ++ind) {
+    if (!in) {  //  pass on EOS
+        for (size_t ind = 0; ind < m_multiplicity; ++ind) {
             outv[ind] = in;
         }
         log->debug("FrameFanout: see EOS");
@@ -69,11 +63,9 @@ bool Gen::FrameFanout::operator()(const input_pointer& in, output_vector& outv)
     // No equivalent should be made for trace tags.
     fintags.push_back("");
 
-
     std::stringstream taginfo;
 
-    for (size_t ind=0; ind<m_multiplicity; ++ind) {
-
+    for (size_t ind = 0; ind < m_multiplicity; ++ind) {
         // Basic frame stays the same.
         auto sfout = new SimpleFrame(in->ident(), in->time(), *in->traces(), in->tick());
 
@@ -107,5 +99,3 @@ bool Gen::FrameFanout::operator()(const input_pointer& in, output_vector& outv)
     }
     return true;
 }
-
-

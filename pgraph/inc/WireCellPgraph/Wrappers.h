@@ -19,10 +19,11 @@
 #include "WireCellUtil/Type.h"
 
 #include <map>
-#include <iostream>             // debug
+#include <iostream>  // debug
 #include <sstream>
 
-namespace WireCell { namespace Pgraph { 
+namespace WireCell {
+    namespace Pgraph {
 
         // Node wrappers are constructed with just an INode::pointer
         // and adapt it to Pgraph::Node.  They operate at the
@@ -34,30 +35,29 @@ namespace WireCell { namespace Pgraph {
 
         // Base class taking care of constructing ports and providing
         // ident().
-        class PortedNode : public Pgraph::Node
-        {
-        public:
-            PortedNode(INode::pointer wcnode) : m_wcnode(wcnode) {
-                if (! m_wcnode.get()) {
+        class PortedNode : public Pgraph::Node {
+           public:
+            PortedNode(INode::pointer wcnode)
+              : m_wcnode(wcnode)
+            {
+                if (!m_wcnode.get()) {
                     THROW(ValueError() << errmsg{"Pgraph::PortedNode got null INode"});
                 }
-                
+
                 using Pgraph::Port;
                 for (auto sig : wcnode->input_types()) {
-                    m_ports[Port::input].push_back(
-                        Pgraph::Port(this, Pgraph::Port::input, sig));
+                    m_ports[Port::input].push_back(Pgraph::Port(this, Pgraph::Port::input, sig));
                 }
                 for (auto sig : wcnode->output_types()) {
-                    m_ports[Port::output].push_back(
-                        Pgraph::Port(this, Pgraph::Port::output, sig));
+                    m_ports[Port::output].push_back(Pgraph::Port(this, Pgraph::Port::output, sig));
                 }
-            }        
+            }
 
-            virtual std::string ident() {
+            virtual std::string ident()
+            {
                 std::stringstream ss;
                 ss << "<Node "
-                   << " type:" << WireCell::type(*(m_wcnode.get()))
-                   << " cat:" << m_wcnode->category()
+                   << " type:" << WireCell::type(*(m_wcnode.get())) << " cat:" << m_wcnode->category()
                    << " sig:" << demangle(m_wcnode->signature());
                 ss << " inputs:[";
                 for (auto t : m_wcnode->input_types()) {
@@ -72,24 +72,28 @@ namespace WireCell { namespace Pgraph {
                 return ss.str();
             }
 
-        private:
+           private:
             INode::pointer m_wcnode;
         };
-
 
         class Source : public PortedNode {
             ISourceNodeBase::pointer m_wcnode;
             bool m_ok;
-        public:
-            Source(INode::pointer wcnode) : PortedNode(wcnode), m_ok(true) {
+
+           public:
+            Source(INode::pointer wcnode)
+              : PortedNode(wcnode)
+              , m_ok(true)
+            {
                 m_wcnode = std::dynamic_pointer_cast<ISourceNodeBase>(wcnode);
             }
             virtual ~Source() {}
 
-            virtual bool operator()() {
+            virtual bool operator()()
+            {
                 Port& op = oport();
                 if (op.size()) {
-                    return false; // don't call me if I've got existing output waiting
+                    return false;  // don't call me if I've got existing output waiting
                 }
 
                 boost::any obj;
@@ -104,38 +108,46 @@ namespace WireCell { namespace Pgraph {
 
         class Sink : public PortedNode {
             ISinkNodeBase::pointer m_wcnode;
-        public:
-            Sink(INode::pointer wcnode) : PortedNode(wcnode) {
+
+           public:
+            Sink(INode::pointer wcnode)
+              : PortedNode(wcnode)
+            {
                 m_wcnode = std::dynamic_pointer_cast<ISinkNodeBase>(wcnode);
             }
             virtual ~Sink() {}
-            virtual bool operator()() {
+            virtual bool operator()()
+            {
                 Port& ip = iport();
                 if (ip.empty()) {
-                    return false; // don't call me if there is nothing to give me.
+                    return false;  // don't call me if there is nothing to give me.
                 }
                 auto obj = ip.get();
                 bool ok = (*m_wcnode)(obj);
-                //std::cerr << "Sink returns: " << ok << std::endl;
+                // std::cerr << "Sink returns: " << ok << std::endl;
                 return ok;
             }
         };
 
         class Function : public PortedNode {
             IFunctionNodeBase::pointer m_wcnode;
-        public:
-            Function(INode::pointer wcnode) : PortedNode(wcnode) {
+
+           public:
+            Function(INode::pointer wcnode)
+              : PortedNode(wcnode)
+            {
                 m_wcnode = std::dynamic_pointer_cast<IFunctionNodeBase>(wcnode);
             }
             virtual ~Function() {}
-            virtual bool operator()() {
+            virtual bool operator()()
+            {
                 Port& op = oport();
                 if (op.size()) {
-                    return false; // don't call me if I've got existing output waiting
+                    return false;  // don't call me if I've got existing output waiting
                 }
                 Port& ip = iport();
                 if (ip.empty()) {
-                    return false; // don't call me if there is nothing to give me.
+                    return false;  // don't call me if there is nothing to give me.
                 }
                 boost::any out;
                 auto in = ip.get();
@@ -150,14 +162,20 @@ namespace WireCell { namespace Pgraph {
 
         class Queuedout : public PortedNode {
             IQueuedoutNodeBase::pointer m_wcnode;
-        public:
-            Queuedout(INode::pointer wcnode) : PortedNode(wcnode) {
+
+           public:
+            Queuedout(INode::pointer wcnode)
+              : PortedNode(wcnode)
+            {
                 m_wcnode = std::dynamic_pointer_cast<IQueuedoutNodeBase>(wcnode);
             }
             virtual ~Queuedout() {}
-            virtual bool operator()() {
+            virtual bool operator()()
+            {
                 Port& ip = iport();
-                if (ip.empty()) { return false; }
+                if (ip.empty()) {
+                    return false;
+                }
                 IQueuedoutNodeBase::queuedany outv;
                 auto in = ip.get();
                 bool ok = (*m_wcnode)(in, outv);
@@ -169,32 +187,35 @@ namespace WireCell { namespace Pgraph {
             }
         };
 
-        template<class INodeBaseType>
+        template <class INodeBaseType>
         class JoinFanin : public PortedNode {
-        public:
+           public:
             typedef INodeBaseType inode_type;
             typedef typename INodeBaseType::any_vector any_vector;
             typedef typename INodeBaseType::pointer pointer;
 
-            JoinFanin(INode::pointer wcnode) : PortedNode(wcnode) {
+            JoinFanin(INode::pointer wcnode)
+              : PortedNode(wcnode)
+            {
                 m_wcnode = std::dynamic_pointer_cast<INodeBaseType>(wcnode);
             }
             virtual ~JoinFanin() {}
-            virtual bool operator()() {
+            virtual bool operator()()
+            {
                 Port& op = oport();
                 if (!op.empty()) {
-                    return false; // don't call me if I've got existing output waiting
+                    return false;  // don't call me if I've got existing output waiting
                 }
 
                 auto& iports = input_ports();
                 size_t nin = iports.size();
-                for (size_t ind=0; ind<nin; ++ind) {
+                for (size_t ind = 0; ind < nin; ++ind) {
                     if (iports[ind].empty()) {
                         return false;
-                    }                        
+                    }
                 }
                 any_vector inv(nin);
-                for (size_t ind=0; ind<nin; ++ind) {
+                for (size_t ind = 0; ind < nin; ++ind) {
                     inv[ind] = iports[ind].get();
                 }
                 boost::any out;
@@ -203,45 +224,47 @@ namespace WireCell { namespace Pgraph {
                     return false;
                 }
                 op.put(out);
-                return true;                                      
+                return true;
             }
-        private:
+
+           private:
             pointer m_wcnode;
         };
         typedef JoinFanin<IJoinNodeBase> Join;
         typedef JoinFanin<IFaninNodeBase> Fanin;
 
-
-        template<class INodeBaseType>
+        template <class INodeBaseType>
         class SplitFanout : public PortedNode {
-        public:
+           public:
             typedef INodeBaseType inode_type;
             typedef typename INodeBaseType::any_vector any_vector;
             typedef typename INodeBaseType::pointer pointer;
 
-            SplitFanout(INode::pointer wcnode) : PortedNode(wcnode) {
+            SplitFanout(INode::pointer wcnode)
+              : PortedNode(wcnode)
+            {
                 m_wcnode = std::dynamic_pointer_cast<inode_type>(wcnode);
             }
             virtual ~SplitFanout() {}
-            virtual bool operator()() {
-
+            virtual bool operator()()
+            {
                 Port& ip = iport();
                 if (ip.empty()) {
-                    return false; // don't call me if there is not any new input
+                    return false;  // don't call me if there is not any new input
                 }
 
                 auto& oports = output_ports();
                 size_t nout = oports.size();
 
                 bool full = true;
-                for (size_t ind=0; ind<nout; ++ind) {
+                for (size_t ind = 0; ind < nout; ++ind) {
                     if (oports[ind].empty()) {
                         full = false;
                     }
                 }
                 if (full) {
-                    return false; // don't call me if all my output has something
-                }                
+                    return false;  // don't call me if all my output has something
+                }
 
                 auto in = ip.get();
 
@@ -250,19 +273,18 @@ namespace WireCell { namespace Pgraph {
                 if (!ok) {
                     return false;
                 }
-                //std::cerr << "SplitFanout: " << nout << " " << outv.size() << std::endl;
-                for (size_t ind=0; ind<nout; ++ind) {
+                // std::cerr << "SplitFanout: " << nout << " " << outv.size() << std::endl;
+                for (size_t ind = 0; ind < nout; ++ind) {
                     oports[ind].put(outv[ind]);
                 }
-                return true;                                      
+                return true;
             }
-        private:
-            pointer m_wcnode;
 
+           private:
+            pointer m_wcnode;
         };
         typedef SplitFanout<ISplitNodeBase> Split;
         typedef SplitFanout<IFanoutNodeBase> Fanout;
-
 
         // N-to-1 of the same type with synchronization on input.
         // class Fanin : public PortedNode {
@@ -278,20 +300,24 @@ namespace WireCell { namespace Pgraph {
 
         class Hydra : public PortedNode {
             IHydraNodeBase::pointer m_wcnode;
-        public:
-            Hydra(INode::pointer wcnode) : PortedNode(wcnode) {
+
+           public:
+            Hydra(INode::pointer wcnode)
+              : PortedNode(wcnode)
+            {
                 m_wcnode = std::dynamic_pointer_cast<IHydraNodeBase>(wcnode);
             }
-            virtual ~Hydra() { }
-            
-            virtual bool operator()() {
+            virtual ~Hydra() {}
+
+            virtual bool operator()()
+            {
                 auto& iports = input_ports();
                 size_t nin = iports.size();
 
                 // 0) Hydra needs all input ports full to be ready.
                 // For EOS, the concrete INode better retain the
                 // terminating nullptr in its input stream.
-                for (size_t ind=0; ind < nin; ++ind) {
+                for (size_t ind = 0; ind < nin; ++ind) {
                     if (iports[ind].empty()) {
                         return false;
                     }
@@ -299,7 +325,7 @@ namespace WireCell { namespace Pgraph {
 
                 // 1) fill input any queue vector
                 IHydraNodeBase::any_queue_vector inqv(nin);
-                for (size_t ind=0; ind < nin; ++ind) {
+                for (size_t ind = 0; ind < nin; ++ind) {
                     Edge edge = iports[ind].edge();
                     if (!edge) {
                         std::cerr << "Hydra: got broken edge\n";
@@ -319,23 +345,25 @@ namespace WireCell { namespace Pgraph {
 
                 // 3) call
                 bool ok = (*m_wcnode)(inqv, outqv);
-                if (!ok) { return false; } // fixme: this probably
-                                           // needs to reflect into
-                                           // ready().
+                if (!ok) {
+                    return false;
+                }  // fixme: this probably
+                   // needs to reflect into
+                   // ready().
 
                 // 4) pop dfp input queues to match.  BIG FAT
                 // WARNING: this trimming assumes calller only
                 // pop_front's.  Really should hunt for which ones
                 // have been removed.
-                for (size_t ind=0; ind < nin; ++ind) {
+                for (size_t ind = 0; ind < nin; ++ind) {
                     size_t want = inqv[ind].size();
                     while (iports[ind].size() > want) {
-                        iports[ind].get(); 
+                        iports[ind].get();
                     }
                 }
-                
+
                 // 5) send out output any queue vectors
-                for (size_t ind=0; ind < nout; ++ind) {
+                for (size_t ind = 0; ind < nout; ++ind) {
                     Edge edge = oports[ind].edge();
                     edge->insert(edge->end(), outqv[ind].begin(), outqv[ind].end());
                 }
@@ -344,7 +372,7 @@ namespace WireCell { namespace Pgraph {
             }
         };
 
-
-    }}
+    }  // namespace Pgraph
+}  // namespace WireCell
 
 #endif

@@ -20,10 +20,9 @@ namespace WireCell {
     namespace Gen {
 
         class AddNoise : public IFrameFilter, public IConfigurable {
-        public:
-            AddNoise(const std::string& model = "",
-                     const std::string& rng="Random");
-            
+           public:
+            AddNoise(const std::string& model = "", const std::string& rng = "Random");
+
             virtual ~AddNoise();
 
             /// IFrameFilter
@@ -33,17 +32,17 @@ namespace WireCell {
             virtual void configure(const WireCell::Configuration& config);
             virtual WireCell::Configuration default_configuration() const;
 
-        private:
+           private:
             IRandom::pointer m_rng;
             IChannelSpectrum::pointer m_model;
 
-            std::string m_model_tn,  m_rng_tn;
-	    int m_nsamples;
-	    double m_rep_percent;
-	    
+            std::string m_model_tn, m_rng_tn;
+            int m_nsamples;
+            double m_rep_percent;
+
             Log::logptr_t log;
-	};
-    }
-}
+        };
+    }  // namespace Gen
+}  // namespace WireCell
 
 #endif

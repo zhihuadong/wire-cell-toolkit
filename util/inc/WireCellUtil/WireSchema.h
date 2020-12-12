@@ -22,10 +22,9 @@ namespace WireCell {
             int ident;
             int channel;
             int segment;
-            Point tail, head;   // end points, direction of signal to channel
-
+            Point tail, head;  // end points, direction of signal to channel
         };
-            
+
         struct Plane {
             int ident;
             std::vector<int> wires;
@@ -54,17 +53,17 @@ namespace WireCell {
             std::vector<Wire> wires;
         };
 
-
         // Access store via shared pointer to allow for caching of underlying data.
         typedef std::shared_ptr<const StoreDB> StoreDBPtr;
 
         // Bolt on some const functions to the underlying and shared store.
         class Store {
             StoreDBPtr m_db;
-        public:
-            Store();            // underlying store will be null!
+
+           public:
+            Store();  // underlying store will be null!
             Store(StoreDBPtr db);
-            Store(const Store& other); // copy ctro
+            Store(const Store& other);  // copy ctro
             Store& operator=(const Store& other);
 
             // Access underlying data store as shared pointer.
@@ -90,14 +89,12 @@ namespace WireCell {
             Ray wire_pitch(const Plane& plane) const;
 
             std::vector<int> channels(const Plane& plane) const;
-            
         };
 
-
         Store load(const char* filename);
-        //void dump(const char* filename, const Store& store);
+        // void dump(const char* filename, const Store& store);
 
-    }
+    }  // namespace WireSchema
 
-}
+}  // namespace WireCell
 #endif

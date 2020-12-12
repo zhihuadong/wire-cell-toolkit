@@ -10,24 +10,18 @@
 
 namespace WireCell {
 
+    class IClusterFilter : public IFunctionNode<ICluster, ICluster> {
+       public:
+        typedef std::shared_ptr<IClusterFilter> pointer;
 
-    class IClusterFilter : public IFunctionNode<ICluster,ICluster>
-    {
-    public:
-	typedef std::shared_ptr<IClusterFilter> pointer;
+        virtual ~IClusterFilter();
 
-	virtual ~IClusterFilter() ;
+        virtual std::string signature() { return typeid(IClusterFilter).name(); }
 
-	virtual std::string signature() {
-	   return typeid(IClusterFilter).name();
-	}
-
-	// supply:
-	// virtual bool operator()(const input_pointer& in, output_pointer& out);
-
+        // supply:
+        // virtual bool operator()(const input_pointer& in, output_pointer& out);
     };
 
-
-}
+}  // namespace WireCell
 
 #endif

@@ -17,7 +17,6 @@
 #include <vector>
 #include <map>
 
-
 namespace WireCell {
 
     namespace RayGrid {
@@ -54,34 +53,29 @@ namespace WireCell {
         // A 2D array'ish of Vectors.
         typedef ObjectArray2d<Vector> vector_array2d_t;
 
-        // A half open range between two grid indices. 
+        // A half open range between two grid indices.
         typedef std::pair<grid_index_t, grid_index_t> grid_range_t;
 
         // A crossing is identified by the addresses of two rays.
-        typedef std::pair<coordinate_t,coordinate_t> crossing_t;
+        typedef std::pair<coordinate_t, coordinate_t> crossing_t;
         typedef std::vector<crossing_t> crossings_t;
-
 
         // was class RayGrid
         class Coordinates {
-        public:
-
+           public:
             // Create a ray grid by specifying the axis of projection.
-            Coordinates(const ray_pair_vector_t& rays,
-                        int normal_axis=0, double normal_location = 0.0);
-        
+            Coordinates(const ray_pair_vector_t& rays, int normal_axis = 0, double normal_location = 0.0);
+
             // Return the crossing point of the index=0 rays for two layers.
             Vector zero_crossing(layer_index_t one, layer_index_t two) const;
-        
+
             // Return the crossing point of two rays.
             Vector ray_crossing(const coordinate_t& one, const coordinate_t& two) const;
 
             // Return the pitch location measured in an other layer give of the crossing point of two rays
             double pitch_location(const coordinate_t& one, const coordinate_t& two, layer_index_t other) const;
 
-            int pitch_index(double pitch, layer_index_t layer) const {
-                return std::floor(pitch/m_pitch_mag[layer]);
-            }
+            int pitch_index(double pitch, layer_index_t layer) const { return std::floor(pitch / m_pitch_mag[layer]); }
 
             int nlayers() const { return m_nlayers; }
             const std::vector<double>& pitch_mags() const { return m_pitch_mag; }
@@ -93,8 +87,7 @@ namespace WireCell {
             const tensor_t a() const { return m_a; }
             const tensor_t b() const { return m_b; }
 
-        private:
-
+           private:
             int m_nlayers;
 
             // Pitch magnitude for each layer
@@ -109,7 +102,7 @@ namespace WireCell {
             // Zero-rays crossing points indexed by layer index pairs.
             // Symmetric array, diagonal is invalid.
             vector_array2d_t m_zero_crossing;
-    
+
             // Element (l,m) holds a relative vector which jumps along ray
             // direction of layer l between crossing points of neighboring
             // rays of layer m.  Not symmectric, and diagonal is invalid.
@@ -119,18 +112,15 @@ namespace WireCell {
             // are scalar values indexed by three different layer
             // indicies.
             tensor_t m_a, m_b;
-
         };
 
-        inline
-        std::ostream& operator<<(std::ostream& os, const WireCell::RayGrid::coordinate_t& ra)
+        inline std::ostream& operator<<(std::ostream& os, const WireCell::RayGrid::coordinate_t& ra)
         {
-            os << "<rayaddr {L" << ra.layer << ",G" << ra.grid <<"}>";
+            os << "<rayaddr {L" << ra.layer << ",G" << ra.grid << "}>";
             return os;
         }
 
-    } // RayGrid namespace
-} // WireCell namespace
-
+    }  // namespace RayGrid
+}  // namespace WireCell
 
 #endif

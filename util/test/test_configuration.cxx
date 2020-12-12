@@ -28,18 +28,16 @@ int main()
 }
 )";
 
-
     Configuration cfg = Persist::loads(json);
     Configuration extra_cfg = Persist::loads(extra_json);
 
-    Assert(get(cfg,"my_int",0) == 1);
-    Assert(get(cfg,"my_float",0.0) == 6.9);
+    Assert(get(cfg, "my_int", 0) == 1);
+    Assert(get(cfg, "my_float", 0.0) == 6.9);
 
     Assert(string("hello") == convert<std::string>(cfg["my_string"]));
 
-    cerr << "my_string=" << get(cfg,"my_string",string(""))<< endl;
-    Assert(get(cfg,"my_string",string("")) == string("hello"));
-    
+    cerr << "my_string=" << get(cfg, "my_string", string("")) << endl;
+    Assert(get(cfg, "my_string", string("")) == string("hello"));
 
     put(cfg, "a.b.c", 42);
     cerr << cfg << endl;
@@ -48,11 +46,11 @@ int main()
     int n42ind = cfg["a"]["b"]["c"].asInt();
     Assert(42 == n42ind);
 
-    Assert(get<int>(cfg,"my_struct.x") == 1);
+    Assert(get<int>(cfg, "my_struct.x") == 1);
 
-    auto nums = get< vector<string> >(cfg, "my_array");
+    auto nums = get<vector<string> >(cfg, "my_array");
     for (auto anum : nums) {
-	cerr << anum << endl;
+        cerr << anum << endl;
     }
 
     Configuration a = branch(cfg, "data1.data2.a");

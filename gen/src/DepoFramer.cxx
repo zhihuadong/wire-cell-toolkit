@@ -1,24 +1,19 @@
 #include "WireCellGen/DepoFramer.h"
-#include "WireCellGen/FrameUtil.h"
+#include "WireCellAux/FrameTools.h"
 
 #include "WireCellUtil/NamedFactory.h"
 
-WIRECELL_FACTORY(DepoFramer, WireCell::Gen::DepoFramer,
-                 WireCell::IDepoFramer, WireCell::IConfigurable)
-
+WIRECELL_FACTORY(DepoFramer, WireCell::Gen::DepoFramer, WireCell::IDepoFramer, WireCell::IConfigurable)
 
 using namespace WireCell;
 
 Gen::DepoFramer::DepoFramer(const std::string& drifter, const std::string& ductor)
-    : m_drifter_tn(drifter)
-    , m_ductor_tn(ductor)
+  : m_drifter_tn(drifter)
+  , m_ductor_tn(ductor)
 {
 }
 
-Gen::DepoFramer::~DepoFramer()
-{
-}
-
+Gen::DepoFramer::~DepoFramer() {}
 
 WireCell::Configuration Gen::DepoFramer::default_configuration() const
 {
@@ -32,13 +27,10 @@ void Gen::DepoFramer::configure(const WireCell::Configuration& cfg)
 {
     m_drifter = Factory::find_tn<IDrifter>(get(cfg, "Drifter", m_drifter_tn));
     m_ductor = Factory::find_tn<IDuctor>(get(cfg, "Ductor", m_ductor_tn));
-
 }
-
 
 bool Gen::DepoFramer::operator()(const input_pointer& in, output_pointer& out)
 {
-
     const int ident = in->ident();
 
     // get depos into a mutable vector, sort and terminate
@@ -62,7 +54,7 @@ bool Gen::DepoFramer::operator()(const input_pointer& in, output_pointer& out)
     }
 
     m_ductor->reset();
-        
+
     std::vector<IFrame::pointer> partial_frames;
 
     for (auto drifted_depo : drifted) {
@@ -73,8 +65,7 @@ bool Gen::DepoFramer::operator()(const input_pointer& in, output_pointer& out)
         }
     }
 
-    out = Gen::sum(partial_frames, ident);
+    out = aux::sum(partial_frames, ident);
 
     return true;
 }
-

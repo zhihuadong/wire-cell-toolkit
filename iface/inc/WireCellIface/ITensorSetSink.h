@@ -5,22 +5,20 @@
 #include "WireCellIface/ISinkNode.h"
 #include "WireCellUtil/IComponent.h"
 
-namespace WireCell
-{
+namespace WireCell {
 
-/** A frame sink is something that generates IFrames.
- */
-class ITensorSetSink : public ISinkNode<ITensorSet>
-{
-public:
-    typedef std::shared_ptr<ITensorSetSink> pointer;
+    /** A frame sink is something that generates IFrames.
+     */
+    class ITensorSetSink : public ISinkNode<ITensorSet> {
+       public:
+        typedef std::shared_ptr<ITensorSetSink> pointer;
 
-    virtual ~ITensorSetSink() {};
+        virtual ~ITensorSetSink(){};
 
-    // subclass supply:
-    // virtual bool operator()(const ITensorSet::pointer& in);
-};
+        // subclass supply:
+        // virtual bool operator()(const ITensorSet::pointer& in);
+    };
 
-} // namespace WireCell
+}  // namespace WireCell
 
 #endif

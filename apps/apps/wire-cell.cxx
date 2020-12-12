@@ -15,7 +15,9 @@ int main(int argc, char* argv[])
 
     try {
         rc = m.cmdline(argc, argv);
-        if (rc) { return rc; }
+        if (rc) {
+            return rc;
+        }
         m.initialize();
         m();
     }

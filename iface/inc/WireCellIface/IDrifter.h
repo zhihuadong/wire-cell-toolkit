@@ -15,23 +15,17 @@ namespace WireCell {
      * that its earliest drifted deposition will not superseded by any
      * subsequent ones.
      */
-    class IDrifter : public IQueuedoutNode<IDepo, IDepo>
-    {
-    public:
-	typedef std::shared_ptr<IDrifter> pointer;
+    class IDrifter : public IQueuedoutNode<IDepo, IDepo> {
+       public:
+        typedef std::shared_ptr<IDrifter> pointer;
 
-	virtual ~IDrifter() ;
+        virtual ~IDrifter();
 
-	virtual std::string signature() {
-            return typeid(IDrifter).name();
-	}
+        virtual std::string signature() { return typeid(IDrifter).name(); }
 
         /// supply:
         // virtual bool operator()(const input_pointer& in, output_queue& outq) = 0;
-
-
     };
-}
-
+}  // namespace WireCell
 
 #endif

@@ -16,22 +16,28 @@ function(params, tools) {
             // correctly match what is provided in sp-filters.jsonnet.
             anode: wc.tn(tools.anode),
             field_response: wc.tn(tools.field),
+            elecresponse: wc.tn(tools.elec_resp),
+            postgain: 1,  // default 1.2
+                          // see elec postgain in params.jsonnet
             per_chan_resp: wc.tn(tools.perchanresp),
 	    fft_flag: 0,   // 1 is faster but higher memory, 0 is slightly slower but lower memory
         }
-    }, nin=1,nout=1, uses=[tools.anode, tools.field, tools.perchanresp] + import "sp-filters.jsonnet"),
+    }, nin=1,nout=1, uses=[tools.anode, tools.field, tools.elec_resp, tools.perchanresp] + import "sp-filters.jsonnet"),
 local sigproc_uniform = g.pnode({
         type: "OmnibusSigProc",
         data: {
             anode: wc.tn(tools.anode),
             field_response: wc.tn(tools.field),
+            elecresponse: wc.tn(tools.elec_resp),
+            postgain: 1,  // default 1.2
+                          // see elec postgain in params.jsonnet
             per_chan_resp: "",
             shaping: params.elec.shaping,
 	    fft_flag: 0,    // 1 is faster but higher memory, 0 is slightly slower but lower memory
 	    // r_fake_signal_low_th: 300,
 	    // r_fake_signal_high_th: 600,
         }
-    }, nin=1,nout=1,uses=[tools.anode, tools.field] + import "sp-filters.jsonnet"),
+    }, nin=1,nout=1,uses=[tools.anode, tools.field, tools.elec_resp] + import "sp-filters.jsonnet"),
 // ch-by-ch response correction in SP turn off by setting null input
 local sigproc = if std.type(params.files.chresp)=='null'
                     then sigproc_uniform

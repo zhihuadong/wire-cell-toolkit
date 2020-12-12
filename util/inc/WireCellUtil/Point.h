@@ -5,7 +5,7 @@
 #include "WireCellUtil/Configuration.h"
 
 #include <set>
-#include <memory>		// auto_ptr
+#include <memory>  // auto_ptr
 #include <vector>
 
 namespace WireCell {
@@ -21,7 +21,7 @@ namespace WireCell {
     typedef std::pair<Point, Point> Ray;
 
     // Pair of rays.
-    typedef std::pair<Ray,Ray> ray_pair_t;
+    typedef std::pair<Ray, Ray> ray_pair_t;
 
     // A collection of ray pairs;
     typedef std::vector<ray_pair_t> ray_pair_vector_t;
@@ -41,7 +41,7 @@ namespace WireCell {
 
     /// Return true if lhs<rhs w/in tolerance.
     struct ComparePoints {
-	bool operator()(const Point& lhs, const Point& rhs) const;
+        bool operator()(const Point& lhs, const Point& rhs) const;
     };
     typedef std::set<Point, ComparePoints> PointSet;
 
@@ -49,7 +49,6 @@ namespace WireCell {
     /// memory is constrained and double precision is not required.
     typedef D3Vector<float> PointF;
 
-    
     /** Return true if point is contained in a rectangular solid
      * described by the ray bounds running between diagonally opposed
      * corners.*/
@@ -88,33 +87,35 @@ namespace WireCell {
     /** Return the ray representing the intersection of two BoundingBox. */
     Ray box_intersect(const Ray& r1, const Ray& r2);
 
-    template<>
-    inline			// fixme: ignores default
-    WireCell::Point convert< WireCell::Point >(const Configuration& cfg, const WireCell::Point& def) {
-	return Point(get<double>(cfg,"x"), get<double>(cfg,"y"), get<double>(cfg,"z"));
-    }
-    template<>
-    inline			// fixme: ignores default
-    WireCell::Ray convert< WireCell::Ray >(const Configuration& cfg, const WireCell::Ray& def) {
-	return Ray(get<WireCell::Point>(cfg,"tail"), get<WireCell::Point>(cfg,"head"));
-    }
-
-
-    //std::ostream& operator<<(std::ostream& os, const WireCell::Ray& ray);
-    inline
-    std::ostream& operator<<(std::ostream& os, const WireCell::Ray& ray)
+    template <>
+    inline  // fixme: ignores default
+        WireCell::Point
+        convert<WireCell::Point>(const Configuration& cfg, const WireCell::Point& def)
     {
-        os << "["  << ray.first << " --> " << ray.second << "]";
+        return Point(get<double>(cfg, "x"), get<double>(cfg, "y"), get<double>(cfg, "z"));
+    }
+    template <>
+    inline  // fixme: ignores default
+        WireCell::Ray
+        convert<WireCell::Ray>(const Configuration& cfg, const WireCell::Ray& def)
+    {
+        return Ray(get<WireCell::Point>(cfg, "tail"), get<WireCell::Point>(cfg, "head"));
+    }
+
+    // std::ostream& operator<<(std::ostream& os, const WireCell::Ray& ray);
+    inline std::ostream& operator<<(std::ostream& os, const WireCell::Ray& ray)
+    {
+        os << "[" << ray.first << " --> " << ray.second << "]";
         return os;
     }
 
-    inline
-    WireCell::Ray operator/(WireCell::Ray ray, const double& scale) {
-        return WireCell::Ray(ray.first/scale, ray.second/scale);
+    inline WireCell::Ray operator/(WireCell::Ray ray, const double& scale)
+    {
+        return WireCell::Ray(ray.first / scale, ray.second / scale);
     }
 
-}//namespace WireCell
-    
+}  // namespace WireCell
+
 // inline
 // WireCell::Ray operator*(WireCell::Ray ray, const double& scale) {
 //     return WireCell::Ray(ray.first*scale, ray.second*scale);
@@ -124,6 +125,4 @@ namespace WireCell {
 //     return WireCell::Ray(ray.first*scale, ray.second*scale);
 // }
 
-
 #endif
-

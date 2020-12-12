@@ -14,8 +14,8 @@
 namespace WireCell {
     namespace Gen {
 
-        class MegaAnodePlane: public IAnodePlane, public IConfigurable {
-        public:
+        class MegaAnodePlane : public IAnodePlane, public IConfigurable {
+           public:
             // MegaAnodePlane();
             virtual ~MegaAnodePlane() {}
 
@@ -33,26 +33,17 @@ namespace WireCell {
 
             // The number of faces is kind of a ill defined quantity
             // for the mega anode plane.
-            virtual int nfaces() const  {
-                return m_anodes[0]->nfaces();
-            }
+            virtual int nfaces() const { return m_anodes[0]->nfaces(); }
 
             // Implemented with dummies
-            virtual int ident() const {
-                return -1;
-            }
-            virtual IAnodeFace::pointer face(int ident) const {
-                return nullptr;
-            } 
-            virtual IAnodeFace::vector faces() const {
-                return IAnodeFace::vector();
-            }
+            virtual int ident() const { return -1; }
+            virtual IAnodeFace::pointer face(int ident) const { return nullptr; }
+            virtual IAnodeFace::vector faces() const { return IAnodeFace::vector(); }
 
-       	private:
+           private:
             std::vector<IAnodePlane::pointer> m_anodes;
-
         };
-    }
-}
+    }  // namespace Gen
+}  // namespace WireCell
 
 #endif

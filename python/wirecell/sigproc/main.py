@@ -107,11 +107,13 @@ def response_info(ctx, json_file):
               help="Set normalization: 0:none, <0:electrons, >0:multiplicative scale.  def=0")
 @click.option("-z", "--zero-wire-locs", default=[0.0,0.0,0.0], nargs=3, type=float,
               help="Set location of zero wires.  def: 0 0 0")
+@click.option("-d", "--delay", default=0, type=int,
+              help="Set additional delay of bins in the output field response.  def=0")
 @click.argument("garfield-fileset")
 @click.argument("wirecell-field-response-file")
 @click.pass_context
 def convert_garfield(ctx, origin, speed, normalization, zero_wire_locs,
-                         garfield_fileset, wirecell_field_response_file):
+                    delay, garfield_fileset, wirecell_field_response_file):
     '''
     Convert an archive of a Garfield fileset (zip, tar, tgz) into a
     Wire Cell field response file (.json with optional .gz or .bz2
@@ -123,8 +125,8 @@ def convert_garfield(ctx, origin, speed, normalization, zero_wire_locs,
 
     origin = eval(origin, units.__dict__)
     speed = eval(speed, units.__dict__)
-    rflist = gar.load(garfield_fileset, normalization, zero_wire_locs)
-    fr = rf1dtoschema(rflist, origin, speed)
+    rflist = gar.load(garfield_fileset, normalization, zero_wire_locs, delay)
+    fr = res.rf1dtoschema(rflist, origin, speed)
     per.dump(wirecell_field_response_file, fr)
 
 
@@ -159,6 +161,8 @@ def plot_garfield_exhaustive(ctx, normalization, zero_wire_locs,
                   help="Number of ticks of zero ADC to pre-pad the plots.")
 @click.option("-e", "--electrons", default=13300,
                 help="Set normalization in units of electron charge.")
+@click.option("--elec-type", default="cold", type=str,
+                  help="Set electronics type [cold | warm] (def: cold).")
 @click.option("-a", "--adc-gain", default=1.2,
                   help="Set ADC gain (unitless).")
 @click.option("--adc-voltage", default=2.0,
@@ -181,7 +185,7 @@ def plot_garfield_exhaustive(ctx, normalization, zero_wire_locs,
 @click.argument("pdffile")
 @click.pass_context
 def plot_garfield_track_response(ctx, gain, shaping, tick, tick_padding, electrons,
-                                     adc_gain, adc_voltage, adc_resolution,
+                                     elec_type, adc_gain, adc_voltage, adc_resolution,
                                      normalization, zero_wire_locs,
                                      ymin, ymax, regions,
                                      dump_data,
@@ -226,6 +230,8 @@ def plot_garfield_track_response(ctx, gain, shaping, tick, tick_padding, electro
     msg=""
 
     fig,data = plots.plot_digitized_line(uvw, gain, shaping,
+                                         tick = tick,
+                                         elec_type = elec_type,
                                          adc_per_voltage = adc_per_voltage,
                                          detector = detector,
                                          ymin=ymin, ymax=ymax, msg=msg,
@@ -252,18 +258,91 @@ def plot_garfield_track_response(ctx, gain, shaping, tick, tick_padding, electro
             open(dump_data,"wt").write(json.dumps(data.tolist(), indent=4))
 
 
+@cli.command("plot-response-compare-waveforms")
+@click.option("-p", "--plane", default=0,
+              help="Plane")
+@click.option("--irange", default='0',
+              help="Impact range as comma separated integers")
+@click.option("--trange", default='0,70',
+              help="Set time range in us as comma pair. def: 0,70")
+@click.argument("responsefile1")
+@click.argument("responsefile2")
+@click.argument("outfile")
+@click.pass_context
+def plot_response_compare_waveforms(ctx, plane, irange, trange, responsefile1, responsefile2, outfile):
+    '''
+    Plot common response waveforms from two sets
+    '''
+    import wirecell.sigproc.response.persist as per
+    import wirecell.sigproc.response.plots as plots
+
+    irange = list(map(int, irange.split(',')))
+    trange = list(map(int, trange.split(',')))
+
+    colors = ["red","blue"]
+    styles = ["solid","solid"]
+
+    import matplotlib.pyplot as plt
+    import numpy
+    def plot_paths(rfile, n):
+        fr = per.load(rfile)
+        pr = fr.planes[plane]
+        print(f'{colors[n]} {rfile}: plane={plane} {len(pr.paths)} paths:')
+        for ind in irange:
+            path = pr.paths[ind]
+            tot_q = numpy.sum(path.current)*fr.period
+            dt_us = fr.period/units.us
+            tot_es = tot_q / units.eplus
+            print (f'\t{ind}: {path.pitchpos:f}: {len(path.current)} samples, dt={dt_us:.3f} us, tot={tot_es:.3f} electrons')
+            plt.gca().set_xlim(*trange)
+
+            times = plots.time_linspace(fr, plane)
+
+            plt.plot(times/units.us, path.current, color=colors[n], linestyle=styles[n])
+        
+    plot_paths(responsefile1,0)
+    plot_paths(responsefile2,1)
+    plt.savefig(outfile)
+
+
 
 
 @cli.command("plot-response")
+@click.option("--region", default=None, type=float,
+              help="Set a region to demark as 'electrode 0'. def: none")
+@click.option("--trange", default='0,70',
+              help="Set time range in us as comma pair. def: 0,70")
+@click.option("--reflect/--no-reflect", default=True,
+              help="Apply symmetry reflection")
 @click.argument("responsefile")
-@click.argument("pdffile")
+@click.argument("outfile")
 @click.pass_context
-def plot_response(ctx, responsefile, pdffile):
+def plot_response(ctx, responsefile, outfile, region, trange, reflect):
+    '''
+    Plot per plane responses.
+    '''
+    import wirecell.sigproc.response.persist as per
+    import wirecell.sigproc.response.plots as plots
+
+    trange = list(map(int, trange.split(',')))
+    fr = per.load(responsefile)
+    plots.plot_planes(fr, outfile, trange, region, reflect)
+
+
+
+@cli.command("plot-spectra")
+@click.argument("responsefile")
+@click.argument("outfile")
+@click.pass_context
+def plot_spectra(ctx, responsefile, outfile):
+    '''
+    Plot per plane response spectra.
+    '''
     import wirecell.sigproc.response.persist as per
     import wirecell.sigproc.response.plots as plots
 
     fr = per.load(responsefile)
-    plots.plot_planes(fr, pdffile)
+    plots.plot_specs(fr, outfile)
 
 
 @cli.command("plot-electronics-response")
@@ -273,9 +352,11 @@ def plot_response(ctx, responsefile, pdffile):
               help="Set shaping time in us.")
 @click.option("-t", "--tick", default=0.5,
               help="Set tick time in us (0.1 is good for no shaping).")
+@click.option("-e", "--electype", default="cold",
+              help="Set electronics type [cold | warm] (def: cold).")
 @click.argument("plotfile")
 @click.pass_context
-def plot_electronics_response(ctx, gain, shaping, tick, plotfile):
+def plot_electronics_response(ctx, gain, shaping, tick, electype, plotfile):
     '''
     Plot the electronics response function.
     '''
@@ -283,7 +364,7 @@ def plot_electronics_response(ctx, gain, shaping, tick, plotfile):
     shaping *= units.us
     tick *= units.us
     import wirecell.sigproc.plots as plots
-    fig = plots.one_electronics(gain, shaping, tick)
+    fig = plots.one_electronics(gain, shaping, tick, electype)
     fig.savefig(plotfile)
 
 

@@ -4,16 +4,14 @@
 #include <iostream>
 #include <tuple>
 
-
-
 typedef std::tuple<WireCell::IDepo, WireCell::IDepo> in_tuple_t;
-typedef std::tuple<WireCell::IDepo>                  out_tuple_t;
+typedef std::tuple<WireCell::IDepo> out_tuple_t;
 
 class MyDepoSrc : public WireCell::IDepoSource {
-public:
+   public:
     virtual ~MyDepoSrc() {}
-    virtual bool operator()(WireCell::IDepo::pointer& depo) {
-
+    virtual bool operator()(WireCell::IDepo::pointer& depo)
+    {
         using namespace WireCell;
 
         std::cerr << "Running instance of " << demangle(signature()) << "\n";
@@ -31,14 +29,12 @@ public:
     }
 };
 
-class MyHydra : public WireCell::IHydraNode<in_tuple_t, out_tuple_t>
-{
-public:
+class MyHydra : public WireCell::IHydraNode<in_tuple_t, out_tuple_t> {
+   public:
     virtual ~MyHydra() {}
 
-    virtual bool operator()(input_queues_type& inqs,
-                            output_queues_type& outqs) {
-
+    virtual bool operator()(input_queues_type& inqs, output_queues_type& outqs)
+    {
         using namespace WireCell;
 
         std::cerr << "Running instance of " << demangle(signature()) << "\n";
@@ -58,14 +54,11 @@ public:
         return true;
     }
 
-    virtual std::string signature() {
-        return typeid(MyHydra).name();
-    }
-
+    virtual std::string signature() { return typeid(MyHydra).name(); }
 };
 
-int main() {
-
+int main()
+{
     WireCell::IDepo::pointer out;
     MyDepoSrc mds;
     mds(out);
@@ -75,7 +68,6 @@ int main() {
 
     MyHydra mh;
     mh(inqs, outqs);
-    
 
     return 0;
 }

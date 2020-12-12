@@ -9,23 +9,15 @@ struct Base {
 struct A : public Base {
     virtual ~A() {}
 
-    void a() {
-	cerr << "Hi (a)\n";
-    }
+    void a() { cerr << "Hi (a)\n"; }
 
-    virtual void any() {
-	cerr << "Hi from any (a)\n";
-    }
+    virtual void any() { cerr << "Hi from any (a)\n"; }
 };
 struct B : public Base {
     virtual ~B() {}
-    void b() {
-	cerr << "Hi (b)\n";
-    }
+    void b() { cerr << "Hi (b)\n"; }
 
-    virtual void any() {
-	cerr << "Hi from any (b)\n";
-    }
+    virtual void any() { cerr << "Hi from any (b)\n"; }
 };
 
 Base* make_a() { return new A; }
@@ -44,7 +36,6 @@ int main()
 
     // aa->any();
     // aa->a();
-
 
     return 0;
 }

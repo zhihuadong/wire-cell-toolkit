@@ -10,16 +10,13 @@ namespace WireCell {
         // sigproc per se.  There are a few such frame related nodes
         // also in gen.  They should be moved into some neutral package.
         class FrameSplitter : public WireCell::IFrameSplitter {
-
-        public:
-
+           public:
             FrameSplitter();
             virtual ~FrameSplitter();
 
             virtual bool operator()(const input_pointer& in, output_tuple_type& out);
-            
         };
-    }
-}
+    }  // namespace SigProc
+}  // namespace WireCell
 
 #endif

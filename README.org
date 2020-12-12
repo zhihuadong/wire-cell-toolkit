@@ -92,11 +92,21 @@ It is suggested to first build the code before running tests.
 
 ** Installing
 
-To install the code while still avoiding the tests do:
+To install the built toolkit and its configuration support files while
+still avoiding the tests do:
 
 #+BEGIN_EXAMPLE
   $ ./wcb -p --notests install
 #+END_EXAMPLE
+
+Optionally, the *reference* configuration and data files for one or more
+supported experiments may be installed by giving naming them with the
+~--install-config~ option.  A name matches a sub-directory under
+[[file:cfg/pgrapher/experiment/][cfg/pgrapher/experiment/]] or the special ~all~ name will install all.
+
+#+begin_example
+  $ ./wcb -p --notests --install-config=<name> install
+#+end_example
 
 ** Testing
 

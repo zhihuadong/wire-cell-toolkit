@@ -14,13 +14,9 @@ namespace WireCell {
     namespace Gen {
 
         class ColdElecResponse : public IWaveform, public IConfigurable {
-        public:
-            ColdElecResponse(int nticks = 10000,
-                             double t0 = 0,
-                             double gain = 14.0*units::mV/units::fC,
-                             double shaping = 2*units::us,
-                             double postgain = 1.0,
-                             double tick = 0.5*units::us);
+           public:
+            ColdElecResponse(int nticks = 10000, double t0 = 0, double gain = 14.0 * units::mV / units::fC,
+                             double shaping = 2 * units::us, double postgain = 1.0, double tick = 0.5 * units::us);
             // IConfigurable interface
             virtual void configure(const WireCell::Configuration& cfg);
             virtual WireCell::Configuration default_configuration() const;
@@ -33,12 +29,13 @@ namespace WireCell {
             virtual const sequence_type& waveform_samples() const;
             // The collection of sample rebinned
             virtual sequence_type waveform_samples(const WireCell::Binning& tbins) const;
-        private:
-            Response::ColdElec *m_coldresp;
+
+           private:
+            Response::ColdElec* m_coldresp;
             Configuration m_cfg;
             mutable sequence_type m_wave;
         };
-    }
-}
+    }  // namespace Gen
+}  // namespace WireCell
 
 #endif

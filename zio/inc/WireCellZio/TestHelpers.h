@@ -24,9 +24,8 @@ namespace WireCell {
         /// config is that of TensorSetSource.
         void flow_taker(zio::socket_t& link, Configuration cfg);
 
-    }
+    }  // namespace Test
 
-
-}
+}  // namespace WireCell
 
 #endif

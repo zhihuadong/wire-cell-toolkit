@@ -8,22 +8,18 @@
 namespace WireCell {
 
     /*! An IFrame to ITensorSet converter interface. */
-    class IFrameTensorSet : public IFunctionNode<IFrame,ITensorSet>
-    {
-    public:
-	typedef std::shared_ptr<IFrameTensorSet> pointer;
+    class IFrameTensorSet : public IFunctionNode<IFrame, ITensorSet> {
+       public:
+        typedef std::shared_ptr<IFrameTensorSet> pointer;
 
-	virtual ~IFrameTensorSet() {};
+        virtual ~IFrameTensorSet(){};
 
-	virtual std::string signature() {
-	   return typeid(IFrameTensorSet).name();
-	}
+        virtual std::string signature() { return typeid(IFrameTensorSet).name(); }
 
-	// supply:
-	// virtual bool operator()(const input_pointer& in, output_pointer& out);
-
+        // supply:
+        // virtual bool operator()(const input_pointer& in, output_pointer& out);
     };
 
-}
+}  // namespace WireCell
 
 #endif

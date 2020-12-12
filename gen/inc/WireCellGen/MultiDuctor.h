@@ -20,13 +20,11 @@ namespace WireCell {
     namespace Gen {
 
         class MultiDuctor : public IDuctor, public IConfigurable {
-
-        public:
-            
+           public:
             MultiDuctor(const std::string anode = "AnodePlane");
             virtual ~MultiDuctor();
 
-            //virtual void reset();
+            // virtual void reset();
             // IDuctor
             virtual bool operator()(const input_pointer& depo, output_queue& frames);
 
@@ -34,9 +32,7 @@ namespace WireCell {
             virtual void configure(const WireCell::Configuration& config);
             virtual WireCell::Configuration default_configuration() const;
 
-
-        private:
-
+           private:
             std::string m_anode_tn;
             IAnodePlane::pointer m_anode;
             double m_tick;
@@ -50,13 +46,16 @@ namespace WireCell {
                 std::string name;
                 std::function<bool(IDepo::pointer depo)> check;
                 IDuctor::pointer ductor;
-                SubDuctor(const std::string& tn,
-                          std::function<bool(IDepo::pointer depo)> f,
-                          IDuctor::pointer d) : name(tn), check(f), ductor(d) {}
+                SubDuctor(const std::string& tn, std::function<bool(IDepo::pointer depo)> f, IDuctor::pointer d)
+                  : name(tn)
+                  , check(f)
+                  , ductor(d)
+                {
+                }
             };
             typedef std::vector<SubDuctor> ductorchain_t;
-            std::vector<ductorchain_t> m_chains;            
-            
+            std::vector<ductorchain_t> m_chains;
+
             /// As sub ductors are called they will each return frames
             /// which are not in general synchronized with the others.
             /// Their frames must be buffered here and released as a
@@ -81,10 +80,9 @@ namespace WireCell {
             // processing.  Will set start time if in continuous mode.
             bool start_processing(const input_pointer& depo);
 
-            void dump_frame(const IFrame::pointer frame, std::string msg="Gen::MultiDuctor:");
-
+            void dump_frame(const IFrame::pointer frame, std::string msg = "Gen::MultiDuctor:");
         };
-    }
-}
+    }  // namespace Gen
+}  // namespace WireCell
 
 #endif

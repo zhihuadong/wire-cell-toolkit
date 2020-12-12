@@ -6,24 +6,17 @@
 
 #include <boost/graph/connected_components.hpp>
 
-WIRECELL_FACTORY(BlobGrouping, WireCell::Img::BlobGrouping,
-                 WireCell::IClusterFilter, WireCell::IConfigurable)
+WIRECELL_FACTORY(BlobGrouping, WireCell::Img::BlobGrouping, WireCell::IClusterFilter, WireCell::IConfigurable)
 
 using namespace WireCell;
 
 typedef std::unordered_map<WirePlaneLayer_t, cluster_indexed_graph_t> layer_graphs_t;
 
-Img::BlobGrouping::BlobGrouping()
-{
-}
+Img::BlobGrouping::BlobGrouping() {}
 
-Img::BlobGrouping::~BlobGrouping()
-{
-}
+Img::BlobGrouping::~BlobGrouping() {}
 
-void Img::BlobGrouping::configure(const WireCell::Configuration& cfg)
-{
-}
+void Img::BlobGrouping::configure(const WireCell::Configuration& cfg) {}
 
 WireCell::Configuration Img::BlobGrouping::default_configuration() const
 {
@@ -31,12 +24,7 @@ WireCell::Configuration Img::BlobGrouping::default_configuration() const
     return cfg;
 }
 
-
-
-static
-void fill_blob(layer_graphs_t& lgs,
-               const cluster_indexed_graph_t& grind,
-               IBlob::pointer iblob)
+static void fill_blob(layer_graphs_t& lgs, const cluster_indexed_graph_t& grind, IBlob::pointer iblob)
 {
     cluster_node_t nblob{iblob};
 
@@ -52,16 +40,13 @@ void fill_blob(layer_graphs_t& lgs,
             if (cvtx.code() != 'c') {
                 continue;
             }
-            //auto ich = std::get<IChannel::pointer>(cvtx.ptr);
+            // auto ich = std::get<IChannel::pointer>(cvtx.ptr);
             lg.edge(nblob, cvtx);
         }
     }
 }
 
-
-static
-void fill_slice(cluster_indexed_graph_t& grind,
-                ISlice::pointer islice)
+static void fill_slice(cluster_indexed_graph_t& grind, ISlice::pointer islice)
 {
     layer_graphs_t lgs;
 
@@ -72,7 +57,7 @@ void fill_slice(cluster_indexed_graph_t& grind,
         IBlob::pointer iblob = std::get<IBlob::pointer>(other.ptr);
         fill_blob(lgs, grind, iblob);
     }
-    
+
     for (auto lgit : lgs) {
         auto& lgrind = lgit.second;
         auto groups = lgrind.groups();
@@ -98,21 +83,19 @@ void fill_slice(cluster_indexed_graph_t& grind,
     }
 }
 
-
 bool Img::BlobGrouping::operator()(const input_pointer& in, output_pointer& out)
 {
     if (!in) {
         out = nullptr;
         return true;
     }
-    
+
     cluster_indexed_graph_t grind(in->graph());
 
     for (auto islice : oftype<ISlice::pointer>(grind)) {
         fill_slice(grind, islice);
     }
 
-    out = std::make_shared<SimpleCluster>(grind.graph());    
+    out = std::make_shared<SimpleCluster>(grind.graph());
     return true;
 }
-

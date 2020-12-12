@@ -35,7 +35,7 @@ int main()
     t_cfg["connects"][0]["nodename"] = mm_node;
     t_cfg["connects"][0]["portname"] = mm_oport;
     t_cfg["attributes"]["stream"] = "check_zioflow";
-    
+
     zio::context_t ctx;
     zio::zactor_t t(ctx, flow_taker, t_cfg);
 
@@ -48,4 +48,3 @@ int main()
 
     return 0;
 }
-      

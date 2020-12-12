@@ -7,16 +7,11 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/connected_components.hpp>
 
-
-WIRECELL_FACTORY(NaiveStriper, WireCell::Img::NaiveStriper,
-                 WireCell::ISliceStriper, WireCell::IConfigurable)
-
+WIRECELL_FACTORY(NaiveStriper, WireCell::Img::NaiveStriper, WireCell::ISliceStriper, WireCell::IConfigurable)
 
 using namespace WireCell;
 
-Img::NaiveStriper::~NaiveStriper()
-{
-}
+Img::NaiveStriper::~NaiveStriper() {}
 
 WireCell::Configuration Img::NaiveStriper::default_configuration() const
 {
@@ -29,23 +24,18 @@ WireCell::Configuration Img::NaiveStriper::default_configuration() const
     return cfg;
 }
 
-
-void Img::NaiveStriper::configure(const WireCell::Configuration& cfg)
-{
-    m_gap = get(cfg, "gap", 1);
-}
-
+void Img::NaiveStriper::configure(const WireCell::Configuration& cfg) { m_gap = get(cfg, "gap", 1); }
 
 bool Img::NaiveStriper::operator()(const input_pointer& slice, output_pointer& out)
 {
     out = nullptr;
     if (!slice) {
-        return true;            // eos
+        return true;  // eos
     }
 
     // The graph connects channels to attached wires and wires to
     // their adjacent neighbor in the plane and along the positive
-    // pitch direction.  
+    // pitch direction.
 
     typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> graph_t;
     typedef boost::graph_traits<graph_t>::vertex_descriptor vertex_t;
@@ -61,7 +51,7 @@ bool Img::NaiveStriper::operator()(const input_pointer& slice, output_pointer& o
     std::unordered_map<vertex_t, ISlice::pair_t> node_to_chanval;
     std::unordered_map<int, IWireIndexSet> hit_wires;
 
-    // Fill channel nodes in graph and group wires by plane 
+    // Fill channel nodes in graph and group wires by plane
     for (const auto& cv : slice->activity()) {
         auto ichan = cv.first;
         auto node = boost::add_vertex(graph);
@@ -117,7 +107,7 @@ bool Img::NaiveStriper::operator()(const input_pointer& slice, output_pointer& o
         }
         stripe->append(cv.first, cv.second);
     }
-    
+
     auto sliceset = new Img::Data::StripeSet(slice->ident());
     for (auto ss : cluster_to_stripe) {
         sliceset->push_back(IStripe::pointer(ss.second));

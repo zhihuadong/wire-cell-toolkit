@@ -10,21 +10,17 @@ namespace WireCell {
      * are depends on implementation.
 
      */
-    class IFrameFanout : public IFanoutNode<IFrame,IFrame,0> {
-    public:
+    class IFrameFanout : public IFanoutNode<IFrame, IFrame, 0> {
+       public:
+        virtual ~IFrameFanout();
 
-        virtual ~IFrameFanout() ;
-
-        virtual std::string signature() {
-           return typeid(IFrameFanout).name();
-        }
+        virtual std::string signature() { return typeid(IFrameFanout).name(); }
 
         // Subclass must implement:
-        virtual std::vector<std::string>  output_types() = 0;
+        virtual std::vector<std::string> output_types() = 0;
         // and the already abstract:
         // virtual bool operator()(const input_pointer& in, output_vector& outv);
     };
-}
+}  // namespace WireCell
 
 #endif
-

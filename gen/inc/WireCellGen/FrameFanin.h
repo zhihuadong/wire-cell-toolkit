@@ -12,8 +12,8 @@ namespace WireCell {
     namespace Gen {
 
         // Fan in N frames to one.
-        class FrameFanin : public IFrameFanin , public IConfigurable {
-        public:
+        class FrameFanin : public IFrameFanin, public IConfigurable {
+           public:
             FrameFanin(size_t multiplicity = 2);
             virtual ~FrameFanin();
 
@@ -25,12 +25,12 @@ namespace WireCell {
             virtual void configure(const WireCell::Configuration& cfg);
             virtual WireCell::Configuration default_configuration() const;
 
-        private:
+           private:
             size_t m_multiplicity;
             std::vector<std::string> m_tags;
             tagrules::Context m_ft;
         };
-    }
-}
+    }  // namespace Gen
+}  // namespace WireCell
 
 #endif

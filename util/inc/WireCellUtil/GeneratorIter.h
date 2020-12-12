@@ -28,51 +28,46 @@ namespace WireCell {
      * http://stackoverflow.com/questions/27604201/implement-lazy-generator-as-forward-iterator-in-c
      */
     template <typename Callable, typename Value>
-    struct GeneratorIter : public boost::iterator_facade<
-	GeneratorIter<Callable, Value>,
-	Value,
-	boost::forward_traversal_tag
-	>
-    {
-	GeneratorIter(const Callable& func)
-	    : count(0), func(func), last_val(0)
-	{
-	    advance();
-	}
-	void advance() {
-	    if (func) {
-		last_val = func();
-	    }
-	}
-	Value operator*() const {
-	    return last_val;
-	}
-	GeneratorIter& operator++() {
-	    advance();
-	    return *this;
-	}
-	GeneratorIter operator++(int) {
-	    GeneratorIter res = *this;
-	    advance();
-	    return res;
-	}
-	bool operator==(const GeneratorIter& rhs) const {
-	    return (!func && !rhs.func) || (func == rhs.func && count == rhs.count);
-	}
-	bool operator!=(const GeneratorIter& rhs) const {
-	    return !(*this == rhs);
-	}
+    struct GeneratorIter
+      : public boost::iterator_facade<GeneratorIter<Callable, Value>, Value, boost::forward_traversal_tag> {
+        GeneratorIter(const Callable& func)
+          : count(0)
+          , func(func)
+          , last_val(0)
+        {
+            advance();
+        }
+        void advance()
+        {
+            if (func) {
+                last_val = func();
+            }
+        }
+        Value operator*() const { return last_val; }
+        GeneratorIter& operator++()
+        {
+            advance();
+            return *this;
+        }
+        GeneratorIter operator++(int)
+        {
+            GeneratorIter res = *this;
+            advance();
+            return res;
+        }
+        bool operator==(const GeneratorIter& rhs) const
+        {
+            return (!func && !rhs.func) || (func == rhs.func && count == rhs.count);
+        }
+        bool operator!=(const GeneratorIter& rhs) const { return !(*this == rhs); }
 
-	operator bool() const {
-	    return func;
-	}
+        operator bool() const { return func; }
 
-	size_t count;
-	Callable func;
-	Value last_val;
+        size_t count;
+        Callable func;
+        Value last_val;
     };
 
-
-}
+}  // namespace WireCell
 
 #endif

@@ -11,10 +11,9 @@ int main()
     Configuration cfg;
     cfg["chirp"] = "bad";
     cfg["bad"] = "bad";
-       
+
     Configuration top;
     top["maskmap"] = cfg;
-
 
     // void OmnibusNoiseFilter::configure(const WireCell::Configuration& top)
 
@@ -26,15 +25,11 @@ int main()
         cerr << name << " " << mm[name] << endl;
     }
 
-
     auto newthing = top["maskmap"]["adc"];
-    //auto newthing = cfg["adc"];
+    // auto newthing = cfg["adc"];
     if (newthing.isNull()) {
         cerr << "dunno adc\n";
     }
-    
 
-    cerr << top<< endl;
+    cerr << top << endl;
 }
-
-

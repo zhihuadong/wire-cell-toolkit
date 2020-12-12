@@ -51,7 +51,7 @@ namespace WireCell {
 
         // return rule's tagset if rule matches tag else empty set
         tagset_t match(const tag_t& tag, const rule_t& rs);
-        
+
         // Compare a rule set to a tag and fill ret with first
         // matching rule value and return true if match found.  Else
         // return false.  If "all_rules" is false, then stop checking
@@ -62,15 +62,13 @@ namespace WireCell {
         // transforms all input tags according to rules.
         tagset_t transform(const tagset_t& ts, const ruleset_t& rs, bool all_rules = true);
 
-
         /* A tagrule::Context represents a collection of tag
          * transforms, each at an index and with a name.
          */
         class Context {
-    
-            std::unordered_map< std::string, std::vector<ruleset_t> > m_rulesets;
+            std::unordered_map<std::string, std::vector<ruleset_t> > m_rulesets;
 
-        public:
+           public:
             // This should be an array of objects each keyed by a
             // context name and with values providing a ruleset.
             void configure(const Configuration& cfg);
@@ -78,9 +76,10 @@ namespace WireCell {
             // Transform tag in context and return set of produced tags.
             tagset_t transform(size_t ind, const std::string& name, const tag_t& tag);
 
-            // Transform a collection of tags in a context.  
-            template<typename Tags>
-            Tags transform(size_t ind, const std::string& name, const Tags& tags) {
+            // Transform a collection of tags in a context.
+            template <typename Tags>
+            Tags transform(size_t ind, const std::string& name, const Tags& tags)
+            {
                 const auto& rsv = m_rulesets[name];
                 if (rsv.empty() or ind >= rsv.size()) {
                     return Tags();
@@ -92,13 +91,13 @@ namespace WireCell {
             }
         };
 
-    }
+    }  // namespace tagrules
 
     // Some Configuration cverter helpers for targules types.
 
-    template<>
-    inline
-    tagrules::tagset_t convert< tagrules::tagset_t >(const Configuration& cfg, const tagrules::tagset_t& def) {
+    template <>
+    inline tagrules::tagset_t convert<tagrules::tagset_t>(const Configuration& cfg, const tagrules::tagset_t& def)
+    {
         tagrules::tagset_t ret;
         if (cfg.isString()) {
             ret.insert(cfg.asString());
@@ -113,9 +112,9 @@ namespace WireCell {
         return def;
     }
 
-    template<>
-    inline
-    tagrules::ruleset_t convert< tagrules::ruleset_t >(const Configuration& cfg, const tagrules::ruleset_t& def) {
+    template <>
+    inline tagrules::ruleset_t convert<tagrules::ruleset_t>(const Configuration& cfg, const tagrules::ruleset_t& def)
+    {
         tagrules::ruleset_t ret;
         for (auto key : cfg.getMemberNames()) {
             auto ts = convert<tagrules::tagset_t>(cfg[key]);
@@ -129,6 +128,5 @@ namespace WireCell {
         }
         return ret;
     }
-    
 
-}
+}  // namespace WireCell

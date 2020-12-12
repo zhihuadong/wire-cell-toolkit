@@ -98,7 +98,9 @@ def load(filename):
         wire_list.sort(key = wire_pos)
         index = store.make("plane", plane, wire_list)
         wire_plane_indices.append(index)
-    assert(wire_plane_indices == list(range(3)))
+    if wire_plane_indices != list(range(3)):
+        print("caution: did not get 3 planes, got plane IDs:", planes.keys())
+        print("continue, assuming you know what you are doing")
     face_index = store.make("face", 0, wire_plane_indices)
     store.make("anode", 0, [face_index])
     return store.schema()

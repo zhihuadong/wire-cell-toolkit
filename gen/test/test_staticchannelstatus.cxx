@@ -10,11 +10,11 @@ using namespace std;
 using namespace WireCell;
 
 // These are supposed to be the hard-coded defaults in the class.
-const double nominal_gain = 14.0*units::mV/units::fC;
-const double nominal_shaping = 2.0*units::us;
+const double nominal_gain = 14.0 * units::mV / units::fC;
+const double nominal_shaping = 2.0 * units::us;
 
-const double other_gain = 4.7*units::mV/units::fC;
-const double other_shaping = 1.0*units::us;
+const double other_gain = 4.7 * units::mV / units::fC;
+const double other_shaping = 1.0 * units::us;
 
 Gen::StaticChannelStatus::channel_status_map_t make_deviants()
 {
@@ -32,12 +32,12 @@ void test_hardcode()
 
     Gen::StaticChannelStatus scs(nominal_gain, nominal_shaping, deviants);
 
-    for (int chid=0; chid<10; ++chid) {
+    for (int chid = 0; chid < 10; ++chid) {
         Assert(scs.preamp_gain(chid) == nominal_gain);
         Assert(scs.preamp_shaping(chid) == nominal_shaping);
     }
 
-    for (int chid=11; chid<=14; ++chid) {
+    for (int chid = 11; chid <= 14; ++chid) {
         Assert(scs.preamp_gain(chid) == deviants[chid].gain);
         Assert(scs.preamp_shaping(chid) == deviants[chid].shaping);
     }
@@ -63,21 +63,20 @@ void test_config()
         cfg["deviants"].append(jone);
     }
     cscfg->configure(cfg);
-    
-    for (int chid=0; chid<10; ++chid) {
+
+    for (int chid = 0; chid < 10; ++chid) {
         Assert(cs->preamp_gain(chid) == nominal_gain);
         Assert(cs->preamp_shaping(chid) == nominal_shaping);
     }
 
-    for (int chid=11; chid<=14; ++chid) {
-        // cerr << chid << ": " 
+    for (int chid = 11; chid <= 14; ++chid) {
+        // cerr << chid << ": "
         //      << " want gain: " << deviants[chid].gain
         //      << " got gain: " << cs->preamp_gain(chid)
         //      << endl;
         Assert(cs->preamp_gain(chid) == deviants[chid].gain);
         Assert(cs->preamp_shaping(chid) == deviants[chid].shaping);
     }
-
 }
 
 int main()

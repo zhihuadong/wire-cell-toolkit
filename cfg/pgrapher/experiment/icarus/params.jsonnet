@@ -76,16 +76,20 @@ base {
     },
 
     adc: super.adc {
-        // estimated from ADC values. FIXME: accurate voltage setting?
-        baselines: [1003*wc.millivolt,1003*wc.millivolt,508*wc.millivolt],
+        // fix baseline at 2048 (induction), 400 (collection)
+        baselines: [1650.0*wc.millivolt, 1650.0*wc.millivolt, 322.3*wc.millivolt],
 
         // From ICARUS paper: https://iopscience.iop.org/article/10.1088/1748-0221/13/12/P12007/pdf
-        //check (values taken from the FE calibration shown in pg. 7 of the paper)
-        fullscale: [0.8*wc.millivolt, 3.3*wc.volt],
+        // ADC full scale 3.3 volts, least bit 3300 mV/ 4095 ~ 0.8 mV
+        fullscale: [0.0*wc.volt, 3.3*wc.volt],
     },
 
     elec: super.elec {
-        // later defined in simparams.jsonnet
+        type: "WarmElecResponse",
+        gain: 19.2855*wc.mV/wc.fC, // see Response::warmelec
+        shaping: 1.2*wc.us,
+        postgain: 1.0,
+        start: 0,
     },
 
 
@@ -119,7 +123,7 @@ base {
     },
 
     files: {
-        wires: "icarus-wires-dualanode-v2.json.bz2",
+        wires: "icarus-wires-dualanode-v3.json.bz2",
 
         fields: ["garfield-icarus-fnal-commissioning.json.bz2"],
 

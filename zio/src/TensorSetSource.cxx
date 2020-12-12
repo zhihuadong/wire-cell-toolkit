@@ -4,19 +4,19 @@
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/Logging.h"
 
-WIRECELL_FACTORY(ZioTensorSetSource, WireCell::Zio::TensorSetSource,
-                 WireCell::ITensorSetSource, WireCell::IConfigurable)
+WIRECELL_FACTORY(ZioTensorSetSource, WireCell::Zio::TensorSetSource, WireCell::ITensorSetSource,
+                 WireCell::IConfigurable)
 
 using namespace WireCell;
 
 Zio::TensorSetSource::TensorSetSource()
-    : FlowConfigurable("inject")
+  : FlowConfigurable("inject")
 {
 }
 
 Zio::TensorSetSource::~TensorSetSource() {}
 
-bool Zio::TensorSetSource::operator()(ITensorSet::pointer &out)
+bool Zio::TensorSetSource::operator()(ITensorSet::pointer& out)
 {
     auto log = Log::logger("wctzio");
 
@@ -33,21 +33,19 @@ bool Zio::TensorSetSource::operator()(ITensorSet::pointer &out)
         noto = m_flow->get(msg);
     }
     catch (zio::flow::end_of_transmission) {
-        log->debug("[TensorSetSource {}:{}] got EOT on flow get DAT",
-                   m_node.nick(), m_portname);
+        log->debug("[TensorSetSource {}:{}] got EOT on flow get DAT", m_node.nick(), m_portname);
         m_flow->eotack();
         m_flow = nullptr;
-        return true;            // this counts as EOS
+        return true;  // this counts as EOS
     }
-    if (!noto) {                // fixme: maybe loop a few times before giving up?
-        log->warn("[TensorSetSource {}:{}] timeout on flow get",
-                  m_node.nick(), m_portname);                
+    if (!noto) {  // fixme: maybe loop a few times before giving up?
+        log->warn("[TensorSetSource {}:{}] timeout on flow get", m_node.nick(), m_portname);
         finalize();
         return false;
     }
 
     const zio::multipart_t& pls = msg.payload();
-    if (!pls.size()) {           // EOS
+    if (!pls.size()) {  // EOS
         return true;
     }
 

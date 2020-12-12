@@ -3,11 +3,9 @@
 #include <iostream>
 #include <memory>
 
-
-
 // http://stackoverflow.com/a/20429450
 
-typedef boost::signals2::signal<int ()> IntSig;
+typedef boost::signals2::signal<int()> IntSig;
 typedef std::shared_ptr<IntSig> IntSigPtr;
 typedef IntSig::slot_type IntSlot;
 
@@ -16,11 +14,16 @@ using namespace std;
 struct A {
     int x;
     double dd;
-    A(int n, double d) : x(n), dd(d) {}
-    int operator()() {
-	cout << "A @ " << x << " " << dd << endl;
-	dd *= x;
-	return x++;
+    A(int n, double d)
+      : x(n)
+      , dd(d)
+    {
+    }
+    int operator()()
+    {
+        cout << "A @ " << x << " " << dd << endl;
+        dd *= x;
+        return x++;
     }
 };
 
@@ -29,12 +32,18 @@ struct B {
     double s;
     IntSigPtr sig;
 
-    B(double scale) : y(0), s(scale), sig(new IntSig) {}
+    B(double scale)
+      : y(0)
+      , s(scale)
+      , sig(new IntSig)
+    {
+    }
     void connect(const IntSlot& slot) { sig->connect(slot); }
-    int operator()() {
-	y = s * *(*sig)();
-	cout << "B @ " << y << endl;
-	return y;
+    int operator()()
+    {
+        y = s * *(*sig)();
+        cout << "B @ " << y << endl;
+        return y;
     }
 };
 
@@ -55,20 +64,27 @@ void test_simple()
 struct MyData {
     typedef std::shared_ptr<MyData> pointer;
     int x;
-    MyData(int n=0) : x(n) {}
+    MyData(int n = 0)
+      : x(n)
+    {
+    }
     int next() { return ++x; }
     int get() { return x; }
 
-    typedef boost::signals2::signal<pointer ()> source_signal;
+    typedef boost::signals2::signal<pointer()> source_signal;
     typedef typename source_signal::slot_type source_slot;
 };
 
 struct SlotA {
     MyData::pointer data;
-    SlotA() : data(new MyData) {}
-    MyData::pointer operator()() {
-	data->next();
-	return data;
+    SlotA()
+      : data(new MyData)
+    {
+    }
+    MyData::pointer operator()()
+    {
+        data->next();
+        return data;
     }
 };
 
@@ -87,11 +103,13 @@ void test_isignal()
     SigA siga, sigaa;
     siga.connect(slota);
     sigaa.connect(boost::ref(siga));
-    cout << sigaa()->get() << endl;;
-    cout << sigaa()->get() << endl;;
-    cout << sigaa()->get() << endl;;
+    cout << sigaa()->get() << endl;
+    ;
+    cout << sigaa()->get() << endl;
+    ;
+    cout << sigaa()->get() << endl;
+    ;
 }
-
 
 int main()
 {

@@ -8,10 +8,10 @@ namespace WireCell {
 
         // A node in the DFP graph must inherit from Node.
         class Node {
-        public:
-            Node() {} // constructures may wish to resize/populate m_ports.
-            virtual ~Node() { }
-            
+           public:
+            Node() {}  // constructures may wish to resize/populate m_ports.
+            virtual ~Node() {}
+
             // Concrete Node must implement this to consume inputs
             // and/or produce outputs.
             virtual bool operator()() = 0;
@@ -19,28 +19,22 @@ namespace WireCell {
             // Concrete node must return some instance identifier.
             virtual std::string ident() = 0;
 
-            Port& iport(size_t ind=0) {
-                return port(Port::input, ind);
-            }
-            Port& oport(size_t ind=0) {
-                return port(Port::output, ind);
-            }
+            Port& iport(size_t ind = 0) { return port(Port::input, ind); }
+            Port& oport(size_t ind = 0) { return port(Port::output, ind); }
 
-            PortList& input_ports() {
-                return m_ports[Port::input];
-            }
-            PortList& output_ports() {
-                return m_ports[Port::output];
-            }
+            PortList& input_ports() { return m_ports[Port::input]; }
+            PortList& output_ports() { return m_ports[Port::output]; }
 
-            Port& port(Port::Type type, size_t ind=0) {
+            Port& port(Port::Type type, size_t ind = 0)
+            {
                 if (ind >= m_ports[type].size()) {
                     THROW(ValueError() << errmsg{"unknown port"});
                 }
                 return m_ports[type][ind];
             }
-            Port& port(Port::Type type, const std::string& name) {
-                for (size_t ind=0; ind<m_ports[type].size(); ++ind) {
+            Port& port(Port::Type type, const std::string& name)
+            {
+                for (size_t ind = 0; ind < m_ports[type].size(); ++ind) {
                     if (m_ports[type][ind].name() != name) {
                         continue;
                     }
@@ -49,7 +43,8 @@ namespace WireCell {
                 THROW(ValueError() << errmsg{"unknown port"});
             }
 
-            bool connected() {
+            bool connected()
+            {
                 for (auto& p : input_ports()) {
                     if (!p.edge()) {
                         return false;
@@ -63,11 +58,11 @@ namespace WireCell {
                 return true;
             }
 
-        protected:
+           protected:
             // Concrete class should fill during construction
             PortList m_ports[Port::ntypes];
         };
-    }
-}
+    }  // namespace Pgraph
+}  // namespace WireCell
 
 #endif

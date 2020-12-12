@@ -8,20 +8,16 @@
 #include "TTree.h"
 #include "TH2.h"
 
-
-WIRECELL_FACTORY(MagnifySource, WireCell::Root::MagnifySource,
-                 WireCell::IFrameSource, WireCell::IConfigurable)
+WIRECELL_FACTORY(MagnifySource, WireCell::Root::MagnifySource, WireCell::IFrameSource, WireCell::IConfigurable)
 
 using namespace WireCell;
 
 Root::MagnifySource::MagnifySource()
-    : m_calls(0)
+  : m_calls(0)
 {
 }
 
-Root::MagnifySource::~MagnifySource()
-{
-}
+Root::MagnifySource::~MagnifySource() {}
 
 void Root::MagnifySource::configure(const WireCell::Configuration& cfg)
 {
@@ -51,7 +47,6 @@ WireCell::Configuration Root::MagnifySource::default_configuration() const
     return cfg;
 }
 
-
 bool Root::MagnifySource::operator()(IFrame::pointer& out)
 {
     out = nullptr;
@@ -63,53 +58,52 @@ bool Root::MagnifySource::operator()(IFrame::pointer& out)
     }
     if (m_calls > 1) {
         std::cerr << "MagnifySource: EOS\n";
-        return true;            // this is to send out EOS
+        return true;  // this is to send out EOS
     }
-
 
     std::string url = m_cfg["filename"].asString();
 
     TFile* tfile = TFile::Open(url.c_str());
 
-    int frame_ident=0;
-    int nticks=0;
-    double frame_time=0;
+    int frame_ident = 0;
+    int nticks = 0;
+    double frame_time = 0;
     {
-            TTree *trun = (TTree*)tfile->Get("Trun");
-            if (!trun) {
-                std::cerr << "No tree: Trun in input file \n";
-            }
-            else{
+        TTree* trun = (TTree*) tfile->Get("Trun");
+        if (!trun) {
+            std::cerr << "No tree: Trun in input file \n";
+        }
+        else {
             // runNo, subRunNo??
             trun->SetBranchAddress("eventNo", &frame_ident);
             trun->SetBranchAddress("total_time_bin", &nticks);
-            //trun->SetBranchAddress("time_offset", &frame_time); use this??
+            // trun->SetBranchAddress("time_offset", &frame_time); use this??
             trun->GetEntry(0);
-            }
+        }
     }
-    std::cerr << "MagnifySource: frame ident="<<frame_ident<<", time=0, nticks="<<nticks<<"\n";
-
+    std::cerr << "MagnifySource: frame ident=" << frame_ident << ", time=0, nticks=" << nticks << "\n";
 
     WireCell::Waveform::ChannelMaskMap cmm;
     for (auto jcmmtree : m_cfg["cmmtree"]) {
         auto cmmkey = jcmmtree[0].asString();
         auto treename = jcmmtree[1].asString();
-        TTree *tree = dynamic_cast<TTree*>(tfile->Get(treename.c_str()));
+        TTree* tree = dynamic_cast<TTree*>(tfile->Get(treename.c_str()));
         if (!tree) {
-            std::cerr << "MagnifySource: failed to find tree \"" << treename << "\" in " << tfile->GetName() << std::endl;
+            std::cerr << "MagnifySource: failed to find tree \"" << treename << "\" in " << tfile->GetName()
+                      << std::endl;
             THROW(IOError() << errmsg{"MagnifySource: failed to find tree."});
         }
 
         std::cerr << "MagnifySource: loading channel mask \"" << cmmkey << "\" from tree \"" << treename << "\"\n";
 
-        int chid=0, plane=0, start_time=0, end_time=0;
-        tree->SetBranchAddress("chid",&chid);
-        tree->SetBranchAddress("plane",&plane);
-        tree->SetBranchAddress("start_time",&start_time);
-        tree->SetBranchAddress("end_time",&end_time);
+        int chid = 0, plane = 0, start_time = 0, end_time = 0;
+        tree->SetBranchAddress("chid", &chid);
+        tree->SetBranchAddress("plane", &plane);
+        tree->SetBranchAddress("start_time", &start_time);
+        tree->SetBranchAddress("end_time", &end_time);
 
         const int nentries = tree->GetEntries();
-        for (int ientry = 0; ientry < nentries; ++ientry){
+        for (int ientry = 0; ientry < nentries; ++ientry) {
             tree->GetEntry(ientry);
             WireCell::Waveform::BinRange br;
             br.first = start_time;
@@ -117,7 +111,6 @@ bool Root::MagnifySource::operator()(IFrame::pointer& out)
             cmm[cmmkey][chid].push_back(br);
         }
     }
-      
 
     ITrace::vector all_traces;
     std::unordered_map<IFrame::tag_t, IFrame::trace_list_t> tagged_traces;
@@ -126,21 +119,21 @@ bool Root::MagnifySource::operator()(IFrame::pointer& out)
         for (auto jtag : m_cfg["frames"]) {
             auto frametag = jtag.asString();
             int channel_number = 0;
-            for (int iplane=0; iplane<3; ++iplane) {
-                std::string plane_name = Form("%cplane", 'u'+iplane);
-                std::string hist_name = Form("h%c_%s", 'u'+iplane, frametag.c_str());
+            for (int iplane = 0; iplane < 3; ++iplane) {
+                std::string plane_name = Form("%cplane", 'u' + iplane);
+                std::string hist_name = Form("h%c_%s", 'u' + iplane, frametag.c_str());
                 std::cerr << "MagnifySource: loading " << hist_name << std::endl;
-                TH2* hist = (TH2*)tfile->Get(hist_name.c_str());
-            
+                TH2* hist = (TH2*) tfile->Get(hist_name.c_str());
+
                 ITrace::vector plane_traces;
-            
+
                 int nchannels = hist->GetNbinsX();
                 int nticks = hist->GetNbinsY();
                 double qtot = 0;
 
                 // loop over channels in plane
-                for (int chip = 0; chip<nchannels; ++chip) {
-                    const int ichbin = chip+1;
+                for (int chip = 0; chip < nchannels; ++chip) {
+                    const int ichbin = chip + 1;
 
                     ITrace::ChargeSequence charges;
                     for (int itickbin = 1; itickbin <= nticks; ++itickbin) {
@@ -154,17 +147,13 @@ bool Root::MagnifySource::operator()(IFrame::pointer& out)
 
                     ++channel_number;
                 }
-                std::cerr << "MagnifySource: plane " << iplane
-                          << ": " << nchannels << " X " << nticks
-                          << " qtot=" << qtot
-                          << std::endl;
-            } // plane
-
+                std::cerr << "MagnifySource: plane " << iplane << ": " << nchannels << " X " << nticks
+                          << " qtot=" << qtot << std::endl;
+            }  // plane
         }
     }
 
-    auto sframe = new SimpleFrame(frame_ident, frame_time,
-                                  all_traces, 0.5*units::microsecond, cmm);
+    auto sframe = new SimpleFrame(frame_ident, frame_time, all_traces, 0.5 * units::microsecond, cmm);
     for (auto const& it : tagged_traces) {
         sframe->tag_traces(it.first, it.second);
         std::cerr << "MagnifySource: tag " << it.second.size() << " traces as: \"" << it.first << "\"\n";
@@ -173,5 +162,3 @@ bool Root::MagnifySource::operator()(IFrame::pointer& out)
     out = IFrame::pointer(sframe);
     return true;
 }
-
-

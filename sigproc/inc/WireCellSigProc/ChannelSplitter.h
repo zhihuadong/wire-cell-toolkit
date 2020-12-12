@@ -19,12 +19,12 @@ namespace WireCell {
     namespace SigProc {
 
         class ChannelSplitter : public IFrameFanout, public IConfigurable {
-        public:
+           public:
             ChannelSplitter(size_t multiplicity = 0);
             virtual ~ChannelSplitter();
-            
+
             // INode, override because we get multiplicity at run time.
-            virtual std::vector<std::string>  output_types();
+            virtual std::vector<std::string> output_types();
 
             // IFanout
             virtual bool operator()(const input_pointer& in, output_vector& outv);
@@ -33,7 +33,7 @@ namespace WireCell {
             virtual void configure(const WireCell::Configuration& cfg);
             virtual WireCell::Configuration default_configuration() const;
 
-        private:
+           private:
             // channel to port
             std::unordered_map<int, int> m_c2p;
             std::vector<std::string> m_tags;
@@ -41,7 +41,7 @@ namespace WireCell {
             tagrules::Context m_ft;
             Log::logptr_t log;
         };
-    }
-}
+    }  // namespace SigProc
+}  // namespace WireCell
 
 #endif

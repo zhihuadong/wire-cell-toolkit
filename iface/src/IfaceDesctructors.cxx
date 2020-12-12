@@ -75,7 +75,9 @@
 #include "WireCellIface/IStripe.h"
 #include "WireCellIface/IStripeSet.h"
 #include "WireCellIface/ITerminal.h"
+#include "WireCellIface/ITensorPacker.h"
 #include "WireCellIface/ITensorSetFilter.h"
+#include "WireCellIface/ITensorSetUnpacker.h"
 #include "WireCellIface/ITiling.h"
 #include "WireCellIface/ITrace.h"
 #include "WireCellIface/IWaveform.h"
@@ -88,10 +90,9 @@
 #include "WireCellIface/SimpleWire.h"
 #include "WireCellIface/SimpleBlob.h"
 
-
 using namespace WireCell;
 
-IWireParameters::~IWireParameters() { }
+IWireParameters::~IWireParameters() {}
 IAnodeFace::~IAnodeFace() {}
 IAnodePlane::~IAnodePlane() {}
 IApplication::~IApplication() {}
@@ -145,11 +146,11 @@ IFrameSplitter::~IFrameSplitter() {}
 IFunctionNodeBase::~IFunctionNodeBase() {}
 IHydraNodeBase::~IHydraNodeBase() {}
 IJoinNodeBase::~IJoinNodeBase() {}
-INode::~INode(){}
+INode::~INode() {}
 IImpactResponse::~IImpactResponse() {}
 IPlaneImpactResponse::~IPlaneImpactResponse() {}
 IPointFieldSink::~IPointFieldSink() {}
-IProcessor::~IProcessor() { }
+IProcessor::~IProcessor() {}
 IQueuedoutNodeBase::~IQueuedoutNodeBase() {}
 IRandom::~IRandom() {}
 IRecombinationModel::~IRecombinationModel() {}
@@ -165,7 +166,9 @@ ISplitNodeBase::~ISplitNodeBase() {}
 IStripe::~IStripe() {}
 IStripeSet::~IStripeSet() {}
 ITerminal::~ITerminal() {}
+ITensorPacker::~ITensorPacker() {}
 ITensorSetFilter::~ITensorSetFilter() {}
+ITensorSetUnpacker::~ITensorSetUnpacker() {}
 ITiling::~ITiling() {}
 ITrace::~ITrace() {}
 IWaveform::~IWaveform() {}

@@ -14,7 +14,6 @@
 
 #include "WireCellUtil/Configuration.h"
 
-
 namespace WireCell {
     namespace Gen {
 
@@ -32,8 +31,7 @@ namespace WireCell {
 
         */
         class Fourdee : public WireCell::IApplication, public WireCell::IConfigurable {
-
-        public:
+           public:
             Fourdee();
             virtual ~Fourdee();
 
@@ -44,18 +42,17 @@ namespace WireCell {
             virtual void configure(const WireCell::Configuration& config);
             virtual WireCell::Configuration default_configuration() const;
 
-        private:
-
-            WireCell::IDepoSource::pointer m_depos; // required
-            WireCell::IDepoFilter::pointer m_depofilter; // optional
-            WireCell::IDrifter::pointer m_drifter;       // optional, but likely
-            WireCell::IDuctor::pointer m_ductor;         // effectively required
-            WireCell::IFrameSource::pointer m_dissonance; // optional
-            WireCell::IFrameFilter::pointer m_digitizer;  // optional
-            WireCell::IFrameFilter::pointer m_filter;     // optional
-            WireCell::IFrameSink::pointer m_output;       // optional
+           private:
+            WireCell::IDepoSource::pointer m_depos;        // required
+            WireCell::IDepoFilter::pointer m_depofilter;   // optional
+            WireCell::IDrifter::pointer m_drifter;         // optional, but likely
+            WireCell::IDuctor::pointer m_ductor;           // effectively required
+            WireCell::IFrameSource::pointer m_dissonance;  // optional
+            WireCell::IFrameFilter::pointer m_digitizer;   // optional
+            WireCell::IFrameFilter::pointer m_filter;      // optional
+            WireCell::IFrameSink::pointer m_output;        // optional
         };
-    }
-}
+    }  // namespace Gen
+}  // namespace WireCell
 
 #endif

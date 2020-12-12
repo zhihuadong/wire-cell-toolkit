@@ -1,4 +1,4 @@
-/*! 
+/*!
  * FlowConfigurable provides common configuration for any component
  * that is a sink/extractor or source/injector of WCT / ZIO flow data.
  *
@@ -17,24 +17,20 @@
 #include "zio/node.hpp"
 #include "zio/flow.hpp"
 
-
 namespace WireCell {
     namespace Zio {
 
-        class FlowConfigurable : public WireCell::IConfigurable,
-                                 public WireCell::ITerminal {
-        public:
-
-            FlowConfigurable(const std::string& direction,
-                             const std::string& nodename = "");
+        class FlowConfigurable : public WireCell::IConfigurable, public WireCell::ITerminal {
+           public:
+            FlowConfigurable(const std::string& direction, const std::string& nodename = "");
             virtual ~FlowConfigurable();
 
             virtual WireCell::Configuration default_configuration() const;
             virtual void configure(const WireCell::Configuration& config);
-            
+
             virtual void finalize();
 
-        protected:
+           protected:
             std::string m_portname{"flow"}, m_direction{"extract"}, m_bot_label{""};
             zio::Node m_node;
             zio::level::MessageLevel m_level{zio::level::info};
@@ -46,7 +42,7 @@ namespace WireCell {
             flowptr_t m_flow;
 
             /// Called at end of configure.  Subclass may implement.
-            virtual void post_configure() { }
+            virtual void post_configure() {}
 
             /// Subclass must call this before any actual flow.  It is
             /// safe to call at the top of each execution.  If it
@@ -59,20 +55,16 @@ namespace WireCell {
 
             /// Give subclass a chance to read a configuration.  Ports
             /// are not yet online.
-            virtual bool user_configure(const WireCell::Configuration& cfg)
-                {return true;};
+            virtual bool user_configure(const WireCell::Configuration& cfg) { return true; };
 
             /// Called after going online and before configuration phase is over
             virtual bool user_online() { return true; }
-        
-        private:
+
+           private:
             // assure pre_flow() body called just once.
             bool m_did_bot{false};
-       };
-    }
-}
-
+        };
+    }  // namespace Zio
+}  // namespace WireCell
 
 #endif
-
-
