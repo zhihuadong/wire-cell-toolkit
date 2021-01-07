@@ -7,8 +7,8 @@ from . import schema
 from wirecell import units
 
 import numpy
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
+#import matplotlib.pyplot as plt
+#import matplotlib.patches as mpatches
 
 from collections import defaultdict, namedtuple
 
@@ -37,7 +37,7 @@ def load(filename):
                 beg,end = end,beg # always point upward in Y
 
             face = 0            # In ICARUS there is only one face.
-            apa = tpc           # Apa and tpc are coceptually identical
+            apa = tpc         # Apa and tpc are coceptually identical
             wid = wire          # kept the same from multitpc.py script
 
             wpid = schema.wire_plane_id(plane, face, apa)
@@ -60,11 +60,12 @@ def load(filename):
         yz_baricenter = 0.5*(p1.z + p2.z) + 0.5*(p2.y + p1.y)
         return yz_baricenter
 
-    # make and collect planes
     by_apa_face = defaultdict(list)
     for wpid, wire_list in sorted(wpids.items()):
         plane,face,apa = schema.plane_face_apa(wpid)
         wire_list.sort(key = wire_pos)
+        plane_index = store.make("plane", plane, wire_list)
+        by_apa_face[(apa,face)].append(plane_index)
 
     # make and collect faces
     by_apa = defaultdict(list)
