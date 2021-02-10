@@ -126,7 +126,7 @@ local nf_maker = import 'pgrapher/experiment/dune10kt-1x2x6/nf.jsonnet';
 // local nf_pipes = [nf_maker(params, tools.anodes[n], chndb_pipes[n]) for n in std.range(0, std.length(tools.anodes)-1)];
 local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in anode_iota];
 
-local sp_maker = import 'pgrapher/experiment/dune10kt-1x2x6/sp.jsonnet';
+local sp_maker = import 'pgrapher/experiment/dune-vd/sp.jsonnet';
 local sp = sp_maker(params, tools);
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
@@ -174,13 +174,30 @@ local origmagnify = [
 
 local origmagnify_pipe = [g.pipeline([origmagnify[n]], name='origmagnifypipes%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
+local spmagnify = [ 
+  g.pnode({
+    type: 'MagnifySink',
+    name: 'spmag%d' % n,
+    data: {
+        output_filename: 'dune-vd-sim-check.root',
+        root_file_mode: 'UPDATE',
+        frames: ['gauss%d' % n ],
+        trace_has_tag: false,
+        anode: wc.tn(tools.anodes[n]), 
+    },
+  }, nin=1, nout=1) for n in std.range(0, std.length(tools.anodes) - 1)];
+
+
+local spmagnify_pipe = [g.pipeline([spmagnify[n]], name='spmagnifypipes%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
+
 local multipass = [
   g.pipeline([
-               // wcls_simchannel_sink[n],
-               sn_pipes[n],
-               origmagnify_pipe[n],
-               // nf_pipes[n],
-               // sp_pipes[n],
+                // wcls_simchannel_sink[n],
+                sn_pipes[n],
+                origmagnify_pipe[n],
+                // nf_pipes[n],
+                sp_pipes[n],
+                spmagnify_pipe[n],
              ],
              'multipass%d' % n)
   for n in anode_iota
@@ -211,10 +228,11 @@ local sink = sim.frame_sink;
 local graph = g.pipeline([wcls_input.depos, drifter, wcls_simchannel_sink, bagger, bi_manifold, retagger, wcls_output.sim_digits, sink]);
 
 local app = {
-  type: 'Pgrapher',
-  data: {
-    edges: g.edges(graph),
-  },
+    type: 'Pgrapher',
+    // type: 'TbbFlow',
+    data: {
+        edges: g.edges(graph),
+    },
 };
 
 
