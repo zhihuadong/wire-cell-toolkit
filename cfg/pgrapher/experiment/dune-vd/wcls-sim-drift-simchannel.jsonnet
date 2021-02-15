@@ -106,8 +106,8 @@ local bagger = sim.make_bagger();
 // }, nin=1, nout=1);
 
 // signal plus noise pipelines
-local sn_pipes = sim.signal_pipelines;
-// local sn_pipes = sim.splusn_pipelines;
+// local sn_pipes = sim.signal_pipelines;
+local sn_pipes = sim.splusn_pipelines;
 
 local perfect = import 'pgrapher/experiment/dune10kt-1x2x6/chndb-perfect.jsonnet';
 local chndb = [{
