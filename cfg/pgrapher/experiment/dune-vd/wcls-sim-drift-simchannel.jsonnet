@@ -26,6 +26,7 @@ local params = base {
   },
 };
 
+local G4RefTime = std.extVar('G4RefTime') * wc.us;
 
 local tools = tools_maker(params);
 
@@ -149,7 +150,7 @@ local wcls_simchannel_sink = g.pnode({
     u_time_offset: 0.0 * wc.us,
     v_time_offset: 0.0 * wc.us,
     y_time_offset: 0.0 * wc.us,
-    g4_ref_time: 0 * wc.us, //-250 * wc.us,
+    g4_ref_time: G4RefTime,
     use_energy: true,
   },
 }, nin=1, nout=1, uses=tools.anodes);
