@@ -35,7 +35,7 @@ base {
 
     daq: super.daq {
 
-        tick: 0.4*wc.us,
+        tick: 0.5*wc.us, // check this in the TDR, LArSoft
 
         nticks: 9375, // 1.6 mm/us per 0.5 us assuming 6000 mm drift leght. 
 
