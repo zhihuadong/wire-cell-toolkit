@@ -12,7 +12,7 @@ import numpy
 
 from collections import defaultdict, namedtuple
 
-def load(filename):
+def load(filename, type='3view'):
     '''
     ADD DESCRIPTION
     '''
@@ -48,7 +48,7 @@ def load(filename):
             wireind = store.make("wire", wid, chan, seg, begind, endind)
             wpids[wpid].append(wireind)
 
-    def wire_pos(ind):
+    def wire_pos(ind, plane, type):
         '''
         Return a number on which to sort wires. A y-z coordinate combination is
         returned.
@@ -56,14 +56,26 @@ def load(filename):
         wire = store.get("wire", ind)
         p1 = store.get("point", wire.tail)
         p2 = store.get("point", wire.head)
-        length = ( (p1.z - p2.z)**2 + (p1.y - p2.y)**2 )**0.5
-        yz_baricenter = 0.5*(p1.z + p2.z) + 0.5*(p2.y + p1.y)
-        return yz_baricenter
+        # length = ( (p1.z - p2.z)**2 + (p1.y - p2.y)**2 )**0.5
+        if type == '3view' :
+            return 0.5*(p1.z + p2.z) + 0.5*(p2.y + p1.y)
+        elif type == '3view_30deg' :
+            if plane == 0:
+                return 0.5*(p2.y + p1.y)
+            elif plane == 1:
+                return -0.5*(p2.y + p1.y)
+            elif plane == 2:
+                return 0.5*(p1.z + p2.z)
+        elif type == '2view' :
+            return 0.5*(p1.z + p2.z) + 0.5*(p2.y + p1.y)
+        else :
+            raise ValueError('type "{}" not implemented!'.format(type))
+        
 
     by_apa_face = defaultdict(list)
     for wpid, wire_list in sorted(wpids.items()):
         plane,face,apa = schema.plane_face_apa(wpid)
-        wire_list.sort(key = wire_pos)
+        wire_list.sort(key = lambda ind: wire_pos(ind,plane,type))
         plane_index = store.make("plane", plane, wire_list)
         by_apa_face[(apa,face)].append(plane_index)
 
