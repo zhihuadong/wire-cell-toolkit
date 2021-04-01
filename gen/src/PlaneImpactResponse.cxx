@@ -194,8 +194,8 @@ void Gen::PlaneImpactResponse::build_responses()
         const Response::Schema::PathResponse& path = pr.paths[ipath];
         const int wirenum = int(ceil(path.pitchpos / pr.pitch));  // signed
         wire_to_ind[wirenum].push_back(ipath);
-        // l->debug("PIR: ipath:{}, wirenum:{} pitchpos:{}",
-        //          ipath, wirenum, path.pitchpos);
+        l->debug("PIR: ipath:{}, wirenum:{} pitchpos:{}",
+                 ipath, wirenum, path.pitchpos);
 
         // match response sampling to digi and zero-pad
         WireCell::Waveform::realseq_t wave(n_short_length, 0.0);
@@ -206,8 +206,12 @@ void Gen::PlaneImpactResponse::build_responses()
             const size_t bin = time / m_tick;
 
             if (bin >= n_short_length) {
-                l->warn("PIR: out of bounds field response bin={}, ntbins={}, time={} us, tick={} us", bin,
-                        n_short_length, time / units::us, m_tick / units::us);
+                l->error("PIR: out of bounds field response "
+                         "bin={}, ntbins={}, time={} us, tick={} us",
+                         bin, n_short_length, time / units::us,
+                         m_tick / units::us);
+                THROW(ValueError() << errmsg{"Response config not consistent"});
+
             }
 
             // Here we have sampled, instantaneous induced *current*
@@ -277,7 +281,8 @@ std::pair<int, int> Gen::PlaneImpactResponse::closest_wire_impact(double relpitc
 IImpactResponse::pointer Gen::PlaneImpactResponse::closest(double relpitch) const
 {
     if (relpitch < -m_half_extent || relpitch > m_half_extent) {
-        l->error("PIR: closest relative pitch:{} outside of extent", relpitch);
+        l->error("PIR: closest relative pitch:{} outside of extent:{}",
+                 relpitch, m_half_extent);
         THROW(ValueError() << errmsg{"relative pitch outside PIR extent"});
     }
     std::pair<int, int> wi = closest_wire_impact(relpitch);
