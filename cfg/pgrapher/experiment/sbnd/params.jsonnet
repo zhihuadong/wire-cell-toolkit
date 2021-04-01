@@ -109,10 +109,10 @@ base {
 
     adc: super.adc {
         // induction plane: 2000 ADC, collection plane: 650 ADC
-        baselines: [683.5*wc.millivolt, 683.5*wc.millivolt,222.2*wc.millivolt],
+        baselines: [879.1*wc.millivolt, 879.1*wc.millivolt, 285.7*wc.millivolt],
 
         // check this
-        fullscale: [0*wc.volt, 1.4*wc.volt],
+        fullscale: [0*wc.volt, 1.8*wc.volt],
     },
 
     // This sets a relative gain at the input to the ADC.  Note, if
@@ -160,8 +160,10 @@ base {
 
         fields: [ "garfield-icarus-fnal-commissioning.json.bz2" ],
 
-        noise: "sbn_fd_incoherent_noise.json.bz2",
-        coherent_noise: "sbn_fd_coherent_noise.json.bz2",
+        // noise: "sbn_fd_incoherent_noise.json.bz2",
+        noise: "sbnd-noise-spectra-v1.json.bz2",
+
+        // coherent_noise: "sbn_fd_coherent_noise.json.bz2",
 
         chresp: null,
     },
