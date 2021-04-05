@@ -22,16 +22,6 @@ const Waveform::compseq_t& Gen::ImpactResponse::spectrum()
     }
 }
 
-const Waveform::compseq_t& Gen::ImpactResponse::long_aux_spectrum()
-{
-    if (m_long_spectrum.size() != 0) {
-        return m_long_spectrum;
-    }
-    else {
-        m_long_spectrum = Waveform::dft(m_long_waveform);
-        return m_long_spectrum;
-    }
-}
 
 Gen::PlaneImpactResponse::PlaneImpactResponse(int plane_ident, size_t nbins, double tick)
   : m_frname("FieldResponse")

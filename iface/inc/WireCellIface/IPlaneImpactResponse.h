@@ -28,8 +28,6 @@ namespace WireCell {
         // minimum padding for the response
         virtual int waveform_pad() const = 0;
 
-        // Frequency-domain spectrum of the auxillary long-range response
-        virtual const Waveform::compseq_t& long_aux_spectrum() = 0;
         // Time-domain waveform of the auxillary long-range response
         virtual const Waveform::realseq_t& long_aux_waveform() const = 0;
         // minimum padding for the auxillary long-range response
