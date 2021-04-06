@@ -14,13 +14,13 @@ using namespace WireCell;
 using namespace WireCell::Waveform;
 
 struct FakeFR : public Response::Generator {
-    double scale;
-    FakeFR(double scale) : scale(scale) {}
+    double scale, shift;
+    FakeFR(double scale, double shift=0) : scale(scale), shift(shift) {}
 
     virtual ~FakeFR() {}
 
     virtual double operator()(double time) const {
-        double t2 = time/scale;
+        double t2 = (time+shift)/scale;
         t2 *= t2;
         return t2*sin(t2*0.5*3.1415);
     }
@@ -87,6 +87,7 @@ int main(int argc, char* argv[])
 
     Response::ColdElec ce;
     FakeFR fr(tmax_long/3);
+    FakeFR frs(tmax_long/3, 1.0*units::us);
 
     Binning cbin_long(ncoarse, tmin, tmax_long);
     Binning fbin_long(nfine, tmin, tmax_long);
@@ -95,9 +96,13 @@ int main(int argc, char* argv[])
 
     auto cfr = fr.generate(cbin_long);
     auto ffr = fr.generate(fbin_long);
+    auto cfrs = frs.generate(cbin_long);
+    auto ffrs = frs.generate(fbin_long);
 
     p.draw(cfr, cbin_long, "cfr", "Coarse FR");
+    p.draw(cfrs, cbin_long, "cfrs", "Coarse FR Shifted");
     p.draw(ffr, fbin_long, "ffr", "Fine FR");
+    p.draw(ffrs, fbin_long, "ffrs", "Fine FR Shifted");
     
     auto cce = ce.generate(cbin_short);
     auto fce = ce.generate(fbin_short);
@@ -110,6 +115,10 @@ int main(int argc, char* argv[])
     p.draw(fcc, fbin_long, "fcc", "Fine conv");
     auto ccc2 = rebin(fcc, rebinfactor);
     p.draw(ccc2, cbin_long, "ccc2", "Coarse rebin conv");
+    auto fccs = linear_convolve(ffrs, fce);
+    p.draw(fccs, fbin_long, "fccs", "Fine conv shifted");
+    auto cccs2 = rebin(fccs, rebinfactor);
+    p.draw(cccs2, cbin_long, "cccs2", "Coarse rebin conv shifted");
 
     // rebin fine->coarse + convolve
     auto ccc = linear_convolve(cfr, cce);
@@ -117,12 +126,22 @@ int main(int argc, char* argv[])
         ccc[ind] *= rebinfactor;
     }
     p.draw(ccc, cbin_long, "ccc", "Coarse native conv");
+    auto cccs = linear_convolve(cfrs, cce);
+    for (size_t ind=0; ind<ccc.size(); ++ind) {
+        cccs[ind] *= rebinfactor;
+    }
+    p.draw(cccs, cbin_long, "cccs", "Coarse native conv shifted");
 
     realseq_t ccc3(ccc.size(), 0);
     for (size_t ind=0; ind<ccc.size(); ++ind) {
         ccc3[ind] = fcc[ind*rebinfactor] - ccc[ind];
     }
     p.draw(ccc3, cbin_long, "ccc3", "Coarse sampled differences");
+    realseq_t cccs3(ccc.size(), 0);
+    for (size_t ind=0; ind<ccc.size(); ++ind) {
+        cccs3[ind] = fccs[ind*rebinfactor] - cccs[ind];
+    }
+    p.draw(cccs3, cbin_long, "cccs3", "Coarse sampled differences, shifted");
 
     realseq_t ccc4(ccc.size(), 0);
     for (size_t ind=0; ind<ccc.size(); ++ind) {
