@@ -6,9 +6,14 @@ namespace WireCell {
     // you have something that makes depositions immediately and needs
     // no "smarts" just use this to hold their info outright.
     class SimpleDepo : public WireCell::IDepo {
-       public:
-        SimpleDepo(double t, const WireCell::Point& pos, double charge = 1.0, IDepo::pointer prior = nullptr,
-                   double extent_long = 0.0, double extent_tran = 0.0, int id = 0, int pdg = 0, double energy = 1.0);
+    public:
+        SimpleDepo(double t, const WireCell::Point& pos,
+                   double charge = 1.0,
+                   IDepo::pointer prior = nullptr,
+                   double extent_long = 0.0,
+                   double extent_tran = 0.0,
+                   int id = 0, int pdg = 0,
+                   double energy = 1.0);
 
         virtual const WireCell::Point& pos() const;
         virtual double time() const;
@@ -20,7 +25,10 @@ namespace WireCell {
         virtual double extent_long() const;
         virtual double extent_tran() const;
 
-       private:
+    public:                     // not available via IDepo
+        void set_prior(WireCell::IDepo::pointer p) { m_prior = p; }
+
+    private:
         // bag o' data
         double m_time;
         WireCell::Point m_pos;
