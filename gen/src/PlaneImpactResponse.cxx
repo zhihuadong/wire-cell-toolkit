@@ -188,14 +188,25 @@ void Gen::PlaneImpactResponse::build_responses()
     const double rawresp_max = rawresp_min + rawresp_size * rawresp_tick;
     Binning rawresp_bins(rawresp_size, rawresp_min, rawresp_max);
 
+    // The ceil() used below to find a wire num is a little sensitive.
+    // I don't remember why it was used instead of round() but let it
+    // be known that it is somewhat easy to have round-off errors in
+    // an FR file that will cause ceil() to pop the wirenum to the
+    // wrong value.  An example comes from a 7.35 mm pitch producing a
+    // pitchpos of -22.049999999999997 which when divided gives
+    // -2.9999999999999996 that ceil's to -2, where -3 is wanted.  The
+    // solution is to give every pitchpos a nudge downward by an
+    // epsilon factor of the pitch.
+    const double oopsilon = 1e-15*pr.pitch;
+
     // collect paths and index by wire and impact position.
     std::map<int, region_indices_t> wire_to_ind;
     for (int ipath = 0; ipath < npaths; ++ipath) {
         const Response::Schema::PathResponse& path = pr.paths[ipath];
-        const int wirenum = int(ceil(path.pitchpos / pr.pitch));  // signed
+        const int wirenum = int(ceil((path.pitchpos-oopsilon) / pr.pitch));  // signed
         wire_to_ind[wirenum].push_back(ipath);
-        l->debug("PIR: ipath:{}, wirenum:{} pitchpos:{}",
-                 ipath, wirenum, path.pitchpos);
+        // l->debug("PIR: ipath:{}, wirenum:{} pitchpos:{} pitch:{}",
+        //          ipath, wirenum, path.pitchpos, pr.pitch);
 
         // match response sampling to digi and zero-pad
         WireCell::Waveform::realseq_t wave(n_short_length, 0.0);
@@ -251,6 +262,8 @@ void Gen::PlaneImpactResponse::build_responses()
         for (auto it = other.rbegin() + 1; it != other.rend(); ++it) {
             indices.push_back(*it);
         }
+        // l->debug("PIR: irelwire:{} #indices:{} bywire index:{}",
+        //          irelwire, indices.size(), m_bywire.size());
         m_bywire.push_back(indices);
     }
 }

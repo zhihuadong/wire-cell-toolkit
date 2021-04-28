@@ -107,10 +107,9 @@ bool Sio::NumpyDepoLoader::next()
     std::vector<SimpleDepo*> sdepos;
     for (size_t ind=0; ind < ndepos; ++ind) {
 
-        log->debug("dump: {}: t={} q={} x={} y={} z={}", ind,
-                   data(ind, 0), data(ind, 1),
-                   data(ind, 2), data(ind, 3), data(ind, 4));
-
+        // log->debug("dump: {}: t={} q={} x={} y={} z={}", ind,
+        //            data(ind, 0), data(ind, 1),
+        //            data(ind, 2), data(ind, 3), data(ind, 4));
 
         auto sdepo = new SimpleDepo(
             data(ind, 0),        // t
@@ -171,5 +170,13 @@ bool Sio::NumpyDepoLoader::operator()(WireCell::IDepo::pointer& outdepo)
 
     outdepo = m_depos.front();
     m_depos.pop_front();
+    auto log = Log::logger("sio");
+    if (!outdepo) {
+        log->debug("depo loader got no depo");
+    }
+    // else {
+    //     log->debug("depo loader: t={} q={} x={}",
+    //                outdepo->time(), outdepo->charge(), outdepo->pos().x());
+    // }
     return true;
 }
