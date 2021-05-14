@@ -14,21 +14,22 @@ struct number_source {
       : dat(d)
     {
     }
-    bool operator()(data_type& out)
+    data_type operator()(tbb::flow_control& fc)
     {
         cerr << "number_source with " << dat.size() << " element " << endl;
         if (dat.empty()) {
             cerr << "\tempty" << endl;
-            return false;
+            fc.stop();
+            return {};
         }
-        out = dat.front();
+        auto out = dat.front();
         dat.erase(dat.begin());
         cerr << "\treturning value: " << out << endl;
-        return true;
+        return out;
     }
 };
 
-typedef dfp::multifunction_node<int, tbb::flow::tuple<float> > int2float_node;
+typedef dfp::multifunction_node<int, std::tuple<float> > int2float_node;
 
 struct I2Fcaster {
     void operator()(const int& in, int2float_node::output_ports_type& op)
@@ -52,7 +53,7 @@ int main()
 {
     dfp::graph g;
     std::vector<int> numbers{5, 4, 3, 2, 1, 0};
-    dfp::source_node<int> number_source_node(g, number_source<int>(numbers), false);
+    dfp::input_node<int> number_input_node(g, number_source<int>(numbers));
     dfp::function_node<int, int> int_chirp_node(g, dfp::unlimited, [](const int& v) {
         cerr << "i value: " << v << endl;
         msleep(v * 100);
@@ -68,12 +69,12 @@ int main()
     int2float_node i2fcaster_node(g, dfp::unlimited, I2Fcaster());
 
     cerr << "make edges" << endl;
-    make_edge(number_source_node, int_chirp_node);
+    make_edge(number_input_node, int_chirp_node);
     make_edge(int_chirp_node, i2fcaster_node);
     make_edge(dfp::output_port<0>(i2fcaster_node), float_chirp_node);
 
     cerr << "Activate source" << endl;
-    number_source_node.activate();
+    number_input_node.activate();
     cerr << "Waiting for graph" << endl;
     g.wait_for_all();
     return 0;

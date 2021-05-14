@@ -18,16 +18,23 @@ namespace WireCellTbb {
         {
             m_wcnode = std::dynamic_pointer_cast<WireCell::ISourceNodeBase>(wcnode);
         }
-        bool operator()(boost::any& out) { return (*m_wcnode)(out); }
+        boost::any operator()(tbb::flow_control& fc) {
+            boost::any out;
+            if ((*m_wcnode)(out)) {
+                return out;
+            }
+            fc.stop();
+            return {};
+        }
     };
 
     // implement facade to access ports for source nodes
     class SourceNodeWrapper : public NodeWrapper {
-        source_node* m_tbbnode;
+        input_node* m_tbbnode;
 
        public:
         SourceNodeWrapper(tbb::flow::graph& graph, WireCell::INode::pointer wcnode)
-          : m_tbbnode(new source_node(graph, SourceBody(wcnode), false))
+          : m_tbbnode(new input_node(graph, SourceBody(wcnode)))
         {
         }
         ~SourceNodeWrapper() { delete m_tbbnode; }
