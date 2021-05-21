@@ -3,8 +3,6 @@
 #include "WireCellUtil/Type.h"
 #include "WireCellUtil/NamedFactory.h"
 
-#include <tbb/task_scheduler_init.h>
-
 #include <iostream>
 
 WIRECELL_FACTORY(TbbDataFlowGraph, WireCellTbb::DataFlowGraph, WireCell::IDataFlowGraph, WireCell::IConfigurable)
@@ -15,7 +13,7 @@ using namespace WireCellTbb;
 
 DataFlowGraph::DataFlowGraph(int max_threads)
   : m_sched(tbb::global_control::max_allowed_parallelism,
-            max_threads > 0 ? max_threads : tbb::task_scheduler_init::automatic)
+            max_threads > 0 ? max_threads : 1)
   , m_graph()
   , m_factory(m_graph)
   , l(Log::logger("tbb"))
