@@ -19,15 +19,16 @@ struct CountDown {
     {
         cerr << "CountDown(" << index << " , " << n << ")\n";
     }
-    bool operator()(int& x)
+    int operator()(tbb::flow_control& fc)
     {
         if (!count) {
             cerr << "CountDown(" << index << "): EOS\n";
-            return false;
+            fc.stop();
+            return {};
         }
-        x = count--;
-        cerr << "CountDown(" << index << "): " << x << endl;
-        return true;
+        auto result = count--;
+        cerr << "CountDown(" << index << "): " << result<< endl;
+        return result;
     }
 };
 
@@ -104,12 +105,12 @@ int main()
 {
     tbb::flow::graph graph;
 
-    typedef tbb::flow::source_node<int> int_source;
+    typedef tbb::flow::input_node<int> int_source;
     vector<int_source> countdowns;
 
     int n = 3;  // explicitly nonconst
     for (int i = 0; i < n; ++i) {
-        countdowns.push_back(int_source(graph, CountDown(i), false));
+        countdowns.push_back(int_source(graph, CountDown(i)));
     }
 
     // join
