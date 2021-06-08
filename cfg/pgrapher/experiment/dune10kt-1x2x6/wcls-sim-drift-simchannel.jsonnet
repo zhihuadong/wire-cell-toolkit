@@ -12,8 +12,11 @@ local wc = import 'wirecell.jsonnet';
 
 local io = import 'pgrapher/common/fileio.jsonnet';
 local tools_maker = import 'pgrapher/common/tools.jsonnet';
+
+local G4RefTime = std.extVar('G4RefTime') * wc.us;
+
 local base = import 'pgrapher/experiment/dune10kt-1x2x6/simparams.jsonnet';
-local params = base {
+local params = base(G4RefTime) {
   lar: super.lar {
     // Longitudinal diffusion constant
     DL: std.extVar('DL') * wc.cm2 / wc.s,
@@ -26,7 +29,6 @@ local params = base {
   },
 };
 
-local G4RefTime = std.extVar('G4RefTime') * wc.us;
 
 local tools = tools_maker(params);
 
