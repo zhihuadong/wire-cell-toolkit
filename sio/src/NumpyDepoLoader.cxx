@@ -148,6 +148,7 @@ bool Sio::NumpyDepoLoader::next()
             m_depos.push_back(idepo);
         }
     }
+    log->debug("load complete");
     return true;
 }
 
