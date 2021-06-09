@@ -1,4 +1,14 @@
-/** Load depos from a Numpy file. */
+/** Load depos from a Numpy file. 
+
+    Depos should consist of arrays named depo_data_N and depo_info_N
+    where N is an integer count.
+
+    For a given value of N the data array should be shaped (Ndepo, 7),
+    and info is shaped (Ndepo, 4).
+
+    See also @ref NumpyDepoSaver.
+
+*/
 
 #ifndef WIRECELLSIO_NUMPYDEPOLOADER
 #define WIRECELLSIO_NUMPYDEPOLOADER

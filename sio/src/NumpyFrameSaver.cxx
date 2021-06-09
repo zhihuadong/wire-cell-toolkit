@@ -2,7 +2,7 @@
 
 #include "WireCellAux/FrameTools.h"
 #include "WireCellUtil/NamedFactory.h"
-#include "WireCellUtil/cnpy.h"
+#include "WireCellUtil/NumpyHelper.h"
 
 #include <string>
 #include <vector>
@@ -13,6 +13,7 @@
 WIRECELL_FACTORY(NumpyFrameSaver, WireCell::Sio::NumpyFrameSaver, WireCell::IFrameFilter, WireCell::IConfigurable)
 
 using namespace WireCell;
+using WireCell::Numpy::save2d;
 
 Sio::NumpyFrameSaver::NumpyFrameSaver()
   : m_save_count(0)
@@ -130,11 +131,13 @@ bool Sio::NumpyFrameSaver::operator()(const IFrame::pointer& inframe, IFrame::po
             const std::string aname = String::format("frame_%s_%d", tag.c_str(), m_save_count);
             if (digitize) {
                 Array::array_xxs sarr = arr.cast<short>();
-                const short* sdata = sarr.data();
-                cnpy::npz_save(fname, aname, sdata, {ncols, nrows}, mode);
+                // const short* sdata = sarr.data();
+                // cnpy::npz_save(fname, aname, sdata, {ncols, nrows}, mode);
+                save2d(sarr, aname, fname, mode);
             }
             else {
-                cnpy::npz_save(fname, aname, arr.data(), {ncols, nrows}, mode);
+                // cnpy::npz_save(fname, aname, arr.data(), {ncols, nrows}, mode);
+                save2d(arr, aname, fname, mode);
             }
             l->debug("NumpyFrameSaver: saved {} with {} channels {} ticks @t={} ms qtot={}", aname, nrows, ncols,
                      inframe->time() / units::ms, arr.sum());
@@ -143,6 +146,7 @@ bool Sio::NumpyFrameSaver::operator()(const IFrame::pointer& inframe, IFrame::po
         {  // the channel array
             const std::string aname = String::format("channels_%s_%d", tag.c_str(), m_save_count);
             cnpy::npz_save(fname, aname, channels.data(), {nrows}, mode);
+            
         }
 
         {  // the tick array

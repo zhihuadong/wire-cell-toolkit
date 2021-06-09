@@ -4,7 +4,7 @@
 #include "WireCellUtil/Array.h"
 #include "WireCellUtil/Logging.h"
 #include "WireCellUtil/Point.h"
-#include "WireCellUtil/cnpy.h"
+#include "WireCellUtil/NumpyHelper.h"
 #include "WireCellIface/SimpleDepo.h"
 
 #include <string>
@@ -46,7 +46,6 @@ void Sio::NumpyDepoLoader::configure(const WireCell::Configuration& config)
 using DataArray = Eigen::Array<float, Eigen::Dynamic, 7>;
 using InfoArray = Eigen::Array<int, Eigen::Dynamic, 4>;
 
-
 bool Sio::NumpyDepoLoader::next()
 {
     auto log = Log::logger("sio");
@@ -58,10 +57,12 @@ bool Sio::NumpyDepoLoader::next()
     const std::string info_name = String::format("depo_info_%d", m_load_count-1);
 
     const std::string fname = m_cfg["filename"].asString();
-    cnpy::NpyArray data_arr, info_arr;
+
+    Array::array_xxf data;
+    Array::array_xxi info;
     try {
-        data_arr = cnpy::npz_load(fname, data_name);
-        info_arr = cnpy::npz_load(fname, info_name);
+        WireCell::Numpy::load2d(data, data_name, fname);
+        WireCell::Numpy::load2d(info, info_name, fname);
     }
     catch (std::runtime_error) {
         log->debug("NumpyDepoLoader: {}:{}: no such array",
@@ -69,40 +70,26 @@ bool Sio::NumpyDepoLoader::next()
         return false;
     }
 
-    // In [4]: f['depo_data_0'].shape
-    // Out[4]: (7, 1785)
-
-    if (data_arr.shape[0] != 7) {
+    if (data.cols() != 7) {
         log->warn("NumpyDepoLoader: {}:{}: depo data is not size 7",
                   fname, data_name);
         return false;
     }
-    if (info_arr.shape[0] != 4) {
+    if (info.cols() != 4) {
         log->warn("NumpyDepoLoader: {}:{}: depo info is not size 4",
                   fname, info_name);
         return false;
     }
 
-    const auto ndatas = data_arr.shape[1];
-    const auto ninfos = info_arr.shape[1];
+    const size_t ndatas = data.rows();
+    const size_t ninfos = info.rows();
     if (ndatas != ninfos) {
         log->warn("NumpyDepoLoader: {}: mismatch ndepo={} ninfo={}",
                   fname, ndatas, ninfos);
         return false;
     }
-    const auto ndepos = ndatas;
+    const size_t ndepos = ndatas;
     log->debug("load {} depos from frame {}", ndepos, data_name);
-
-    // data: time, charge, x, y, z, dlong, dtran
-    // info: ID, pdg, gen, child
-
-    // Get as eigen arrays
-    auto data = Eigen::Map<DataArray>(data_arr.data<float>(),
-                                      ndepos, 7);
-    auto info = Eigen::Map<InfoArray>(info_arr.data<int>(),
-                                      ndepos, 4);
-    assert(data.cols() == 7); // make sure we understand
-    assert(info.cols() == 4); // how to call eigen::map!
 
     std::vector<SimpleDepo*> sdepos;
     for (size_t ind=0; ind < ndepos; ++ind) {

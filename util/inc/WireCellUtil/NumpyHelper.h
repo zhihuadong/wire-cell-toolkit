@@ -1,0 +1,50 @@
+/** NumpyHelper
+
+    Some helper functions for using with Numpy files.
+    
+    Eigen default 2D array order is column-major.
+
+    Numpy is row-major.
+
+ */
+
+#ifndef WIRECELL_UTIL_NUMPYHELPER
+#define WIRECELL_UTIL_NUMPYHELPER
+
+#include "WireCellUtil/cnpy.h"
+
+#include <Eigen/Core>
+
+#include <string>
+#include <vector>
+
+namespace WireCell::Numpy {
+
+
+    template <typename ARRAY>
+    void save2d(ARRAY& array, std::string aname, std::string fname, std::string mode = "w") {
+        using ROWM = Eigen::Array<typename ARRAY::Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+        using Scalar = typename ARRAY::Scalar;
+        ROWM rowm = array;     // assure we have row major
+        const Scalar* data = rowm.data();
+        std::vector<size_t> shape(2);
+        shape[0] = static_cast<size_t>(array.rows());
+        shape[1] = static_cast<size_t>(array.cols());
+        cnpy::npz_save<Scalar>(fname.c_str(), aname, data, 
+                               shape, mode);
+    }
+    
+    template <typename ARRAY>
+    void load2d(ARRAY& array, std::string aname, std::string fname) {
+        using ROWM = Eigen::Array<typename ARRAY::Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+        using Scalar = typename ARRAY::Scalar;
+        
+        cnpy::NpyArray np = cnpy::npz_load(fname, aname);
+
+        ROWM temp = Eigen::Map<ROWM>(np.data<Scalar>(),
+                                     np.shape[0], np.shape[1]);
+        array = temp;
+    }
+
+}
+#endif

@@ -1,5 +1,6 @@
 #include "WireCellGen/DepoBagger.h"
 #include "WireCellIface/SimpleDepoSet.h"
+#include "WireCellUtil/Logging.h"
 
 #include "WireCellUtil/NamedFactory.h"
 WIRECELL_FACTORY(DepoBagger, WireCell::Gen::DepoBagger, WireCell::IDepoCollector, WireCell::IConfigurable)
@@ -33,6 +34,8 @@ void Gen::DepoBagger::configure(const WireCell::Configuration& cfg)
 bool Gen::DepoBagger::operator()(const input_pointer& depo, output_queue& deposetqueue)
 {
     if (!depo) {  // EOS
+        Log::logptr_t log(Log::logger("sim"));
+        log->debug("bagged {} depos at {}", m_depos.size(), m_count);
         // even if empyt, must send out something to retain sync.
         auto out = std::make_shared<SimpleDepoSet>(m_count, m_depos);
         deposetqueue.push_back(out);

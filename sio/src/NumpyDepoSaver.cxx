@@ -2,7 +2,7 @@
 
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/Array.h"
-#include "WireCellUtil/cnpy.h"
+#include "WireCellUtil/NumpyHelper.h"
 
 #include <string>
 #include <vector>
@@ -13,6 +13,7 @@
 WIRECELL_FACTORY(NumpyDepoSaver, WireCell::Sio::NumpyDepoSaver, WireCell::IDepoFilter, WireCell::IConfigurable)
 
 using namespace WireCell;
+using WireCell::Numpy::save2d;
 
 Sio::NumpyDepoSaver::NumpyDepoSaver()
   : m_save_count(0)
@@ -75,6 +76,7 @@ bool Sio::NumpyDepoSaver::operator()(const WireCell::IDepo::pointer& indepo, Wir
     auto fdepos = flatten_depos(m_depos);
     const size_t nfdepos = fdepos.size();
 
+    /// Dimensions are such that we have a vecotr of N-tuples
     // time, charge, x, y, z, dlong, dtran
     const size_t ndata = 7;
     Array::array_xxf data(nfdepos, ndata);
@@ -103,8 +105,10 @@ bool Sio::NumpyDepoSaver::operator()(const WireCell::IDepo::pointer& indepo, Wir
 
     const std::string fname = m_cfg["filename"].asString();
     const std::string mode = "a";
-    cnpy::npz_save(fname, data_name, data.data(), {ndata, ndepos}, mode);
-    cnpy::npz_save(fname, info_name, info.data(), {ninfo, ndepos}, mode);
+
+    save2d(data, data_name, fname, mode);
+    save2d(info, info_name, fname, mode);
+    
     m_depos.clear();
 
     ++m_save_count;
