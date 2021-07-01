@@ -19,7 +19,17 @@
 #define WIRECELL_PERSIST
 
 #include <json/json.h>
-#include "libjsonnet++.h"
+//#include "libjsonnet++.h"
+//
+// Note, you can build WCT against the C-bindings to the Go jsonnet
+// library which will provide substantial speed up ver the native C
+// implementation.  To do this, configure code like:
+//
+// ./wcb configure --with-jsonnet-libs=gojsonnet [...as usual...]
+//
+extern "C" {
+#include "libjsonnet.h"
+}
 #include <boost/filesystem.hpp>
 #include <vector>
 #include <string>
@@ -82,24 +92,24 @@ namespace WireCell {
         Json::Value loads(const std::string& text, const externalvars_t& extvar = externalvars_t(),
                           const externalvars_t& extcode = externalvars_t());
 
-        /** Explicitly evaluate contents of file with Jsonnet.  If no
-            support for Jsonnet is built, return the contents of
-            file.  Return empty string if Jsonnet evaluation failes.
+        // /** Explicitly evaluate contents of file with Jsonnet.  If no
+        //     support for Jsonnet is built, return the contents of
+        //     file.  Return empty string if Jsonnet evaluation failes.
 
-            WireCell::IOError is thrown if file is not found.
-            WireCell::ValueError is thrown parsing fails.
-        */
-        std::string evaluate_jsonnet_file(const std::string& filename, const externalvars_t& extvar = externalvars_t(),
-                                          const externalvars_t& extcode = externalvars_t());
+        //     WireCell::IOError is thrown if file is not found.
+        //     WireCell::ValueError is thrown parsing fails.
+        // */
+        // std::string evaluate_jsonnet_file(const std::string& filename, const externalvars_t& extvar = externalvars_t(),
+        //                                   const externalvars_t& extcode = externalvars_t());
 
-        /** Explicitly evaluate text with JSonnet.  If no support for
-            Jsonnet is built, return the text. Return empty string if
-            Jsonnet evaluation failes.
+        // /** Explicitly evaluate text with JSonnet.  If no support for
+        //     Jsonnet is built, return the text. Return empty string if
+        //     Jsonnet evaluation failes.
 
-            WireCell::ValueError is thrown parsing fails.
-        */
-        std::string evaluate_jsonnet_text(const std::string& text, const externalvars_t& extvar = externalvars_t(),
-                                          const externalvars_t& extcode = externalvars_t());
+        //     WireCell::ValueError is thrown parsing fails.
+        // */
+        // std::string evaluate_jsonnet_text(const std::string& text, const externalvars_t& extvar = externalvars_t(),
+        //                                   const externalvars_t& extcode = externalvars_t());
 
         /** Explicitly convert JSON text to Json::Value object */
         Json::Value json2object(const std::string& text);
@@ -116,9 +126,8 @@ namespace WireCell {
             return v;
         }
 
-        // This provides a super set of the functionality as the above
-        // free functions.  It wraps a persistent Jsonnet parser and
-        // in particular allows more control over the load path.
+        // An class version of the above free functions which more
+        // control over the load path.
         class Parser {
            public:
             typedef std::vector<std::string> pathlist_t;
@@ -126,6 +135,19 @@ namespace WireCell {
             Parser(const pathlist_t& load_paths = pathlist_t(), const externalvars_t& extvar = externalvars_t(),
                    const externalvars_t& extcode = externalvars_t(), const externalvars_t& tlavar = externalvars_t(),
                    const externalvars_t& tlacode = externalvars_t());
+            ~Parser();
+
+            // Add a path to the list to search in order to resolve
+            // imports.
+            void add_load_path(const std::string& path);
+
+            // Define an external variable or code be retrieved via extVar() in Jsonnet.
+            void bind_ext_var(const std::string& key, const std::string& val);
+            void bind_ext_code(const std::string& key, const std::string& val);
+
+            // Define a top level argument value or code
+            void bind_tla_var(const std::string& key, const std::string& val);
+            void bind_tla_code(const std::string& key, const std::string& val);
 
             // Load a Jonnet file (or .json or .json.bz2) and return the Json object
             Json::Value load(const std::string& filename);
@@ -137,7 +159,8 @@ namespace WireCell {
             std::string resolve(const std::string& filename);
 
            private:
-            jsonnet::Jsonnet m_jsonnet;
+            using JVM = struct JsonnetVm;
+            JVM* m_jvm{nullptr};
             std::vector<boost::filesystem::path> m_load_paths;
         };
     }  // namespace Persist

@@ -3,8 +3,6 @@
 #include "WireCellUtil/Logging.h"
 #include "WireCellUtil/Exceptions.h"
 
-#include "libjsonnet++.h"
-
 #include <cstdlib>  // for getenv, see get_path()
 
 #include <boost/iostreams/copy.hpp>
@@ -114,18 +112,21 @@ std::string WireCell::Persist::resolve(const std::string& filename)
     return "";
 }
 
-Json::Value WireCell::Persist::load(const std::string& filename, const externalvars_t& extvar,
+Json::Value WireCell::Persist::load(const std::string& filename,
+                                    const externalvars_t& extvar,
                                     const externalvars_t& extcode)
 {
     string ext = file_extension(filename);
-    if (ext == ".jsonnet") {  // use libjsonnet++ file interface
-        string text = evaluate_jsonnet_file(filename, extvar, extcode);
-        return json2object(text);
-    }
-
     std::string fname = resolve(filename);
     if (fname.empty()) {
-        THROW(IOError() << errmsg{"no such file: " + filename + ". Maybe you need to add to WIRECELL_PATH."});
+        THROW(IOError() <<
+              errmsg{"no such file: " + filename
+                  + ". Maybe you need to add to WIRECELL_PATH."});
+    }
+
+    if (ext == ".jsonnet") {  // use libjsonnet++ file interface
+        Parser parser(get_path(), extvar, extcode);
+        return parser.load(fname);
     }
 
     // use jsoncpp file interface
@@ -143,11 +144,12 @@ Json::Value WireCell::Persist::load(const std::string& filename, const externalv
     return jroot;
 }
 
-Json::Value WireCell::Persist::loads(const std::string& text, const externalvars_t& extvar,
+Json::Value WireCell::Persist::loads(const std::string& text,
+                                     const externalvars_t& extvar,
                                      const externalvars_t& extcode)
 {
-    const std::string jtext = evaluate_jsonnet_text(text, extvar, extcode);
-    return json2object(jtext);
+    Parser parser(get_path(), extvar, extcode);
+    return parser.loads(text);
 }
 
 // bundles few lines into function to avoid some copy-paste
@@ -159,59 +161,71 @@ Json::Value WireCell::Persist::json2object(const std::string& text)
     return res;
 }
 
-static void init_parser(jsonnet::Jsonnet& parser, const Persist::externalvars_t& extvar,
-                        const Persist::externalvars_t& extcode)
+
+// std::string
+// WireCell::Persist::evaluate_jsonnet_file(const std::string& filename,
+//                                          const externalvars_t& extvar,
+//                                          const externalvars_t& extcode)
+// {
+//     std::string fname = resolve(filename);
+//     if (fname.empty()) {
+//         THROW(IOError() <<
+//               errmsg{"no such file: " + filename
+//                   + ", maybe you need to add to WIRECELL_PATH."});
+//     }
+
+//     Parser parser(get_path(), extvar, extcode);
+//     return parser.load(fname);
+// }
+
+// std::string
+// WireCell::Persist::evaluate_jsonnet_text(const std::string& text,
+//                                          const externalvars_t& extvar,
+//                                          const externalvars_t& extcode)
+// {
+//     Parser parser(get_path(), extvar, extcode);
+//     return parser.loads(text);
+// }
+
+WireCell::Persist::Parser::~Parser()
 {
-    parser.init();
-    for (auto path : get_path()) {
-        parser.addImportPath(path);
-    }
-    for (auto& vv : extvar) {
-        parser.bindExtVar(vv.first, vv.second);
-    }
-    for (auto& vv : extcode) {
-        parser.bindExtCodeVar(vv.first, vv.second);
+    if (m_jvm) {
+        jsonnet_destroy(m_jvm);
+        m_jvm = nullptr;
     }
 }
-std::string WireCell::Persist::evaluate_jsonnet_file(const std::string& filename, const externalvars_t& extvar,
-                                                     const externalvars_t& extcode)
+
+
+void WireCell::Persist::Parser::add_load_path(const std::string& path)
 {
-    std::string fname = resolve(filename);
-    if (fname.empty()) {
-        THROW(IOError() << errmsg{"no such file: " + filename + ", maybe you need to add to WIRECELL_PATH."});
-    }
-
-    jsonnet::Jsonnet parser;
-    init_parser(parser, extvar, extcode);
-
-    std::string output;
-    const bool ok = parser.evaluateFile(fname, &output);
-    if (!ok) {
-        error(parser.lastError());
-        THROW(ValueError() << errmsg{parser.lastError()});
-    }
-    return output;
+    jsonnet_jpath_add(m_jvm, path.c_str());
 }
-std::string WireCell::Persist::evaluate_jsonnet_text(const std::string& text, const externalvars_t& extvar,
-                                                     const externalvars_t& extcode)
+void WireCell::Persist::Parser::bind_ext_var(const std::string& key,
+                                             const std::string& val)
 {
-    jsonnet::Jsonnet parser;
-    init_parser(parser, extvar, extcode);
-
-    std::string output;
-    bool ok = parser.evaluateSnippet("<stdin>", text, &output);
-    if (!ok) {
-        error(parser.lastError());
-        THROW(ValueError() << errmsg{parser.lastError()});
-    }
-    return output;
+    jsonnet_ext_var(m_jvm, key.c_str(), val.c_str());
+}
+void WireCell::Persist::Parser::bind_ext_code(const std::string& key,
+                                              const std::string& val)
+{
+    jsonnet_ext_code(m_jvm, key.c_str(), val.c_str());
+}
+void WireCell::Persist::Parser::bind_tla_var(const std::string& key,
+                                             const std::string& val)
+{
+    jsonnet_tla_var(m_jvm, key.c_str(), val.c_str());
+}
+void WireCell::Persist::Parser::bind_tla_code(const std::string& key,
+                                              const std::string& val)
+{
+    jsonnet_tla_code(m_jvm, key.c_str(), val.c_str());
 }
 
 WireCell::Persist::Parser::Parser(const std::vector<std::string>& load_paths, const externalvars_t& extvar,
                                   const externalvars_t& extcode, const externalvars_t& tlavar,
                                   const externalvars_t& tlacode)
+    : m_jvm{jsonnet_make()}
 {
-    m_jsonnet.init();
 
     // Loading: 1) cwd, 2) passed in paths 3) environment
     m_load_paths.push_back(boost::filesystem::current_path());
@@ -225,32 +239,31 @@ WireCell::Persist::Parser::Parser(const std::vector<std::string>& load_paths, co
     }
     // load paths into jsonnet backwards to counteract its reverse ordering
     for (auto pit = m_load_paths.rbegin(); pit != m_load_paths.rend(); ++pit) {
-        m_jsonnet.addImportPath(boost::filesystem::canonical(*pit).string());
+        auto path = boost::filesystem::canonical(*pit).string();
+        add_load_path(path);
     }
 
     // external variables
     for (auto& vv : extvar) {
-        m_jsonnet.bindExtVar(vv.first, vv.second);
+        bind_ext_var(vv.first, vv.second);
     }
+
     // external code
     for (auto& vv : extcode) {
-        m_jsonnet.bindExtCodeVar(vv.first, vv.second);
+        bind_ext_code(vv.first, vv.second);
     }
 
     // top level argument string variables
     for (auto& vv : tlavar) {
         debug("tla: {} = \"{}\"", vv.first, vv.second);
-        m_jsonnet.bindTlaVar(vv.first, vv.second);
+        bind_tla_var(vv.first, vv.second);
     }
+
     // top level argument code variables
     for (auto& vv : tlacode) {
-        m_jsonnet.bindTlaCodeVar(vv.first, vv.second);
+        bind_tla_code(vv.first, vv.second);
     }
 }
-
-///
-/// Below is a reimplimenatiaon of the above but in class form.....
-////
 
 std::string WireCell::Persist::Parser::resolve(const std::string& filename)
 {
@@ -279,12 +292,14 @@ Json::Value WireCell::Persist::Parser::load(const std::string& filename)
     string ext = file_extension(filename);
 
     if (ext == ".jsonnet" or ext.empty()) {  // use libjsonnet++ file interface
-        std::string output;
-        const bool ok = m_jsonnet.evaluateFile(fname, &output);
-        if (!ok) {
-            error(m_jsonnet.lastError());
-            THROW(ValueError() << errmsg{m_jsonnet.lastError()});
+        int rc=0;
+        char* jtext = jsonnet_evaluate_file(m_jvm, fname.c_str(), &rc);
+        if (rc) {
+            error(jtext);
+            THROW(ValueError() << errmsg{jtext});
         }
+        std::string output(jtext);
+        jsonnet_realloc(m_jvm, jtext, 0);
         return json2object(output);
     }
 
@@ -307,11 +322,13 @@ Json::Value WireCell::Persist::Parser::load(const std::string& filename)
 
 Json::Value WireCell::Persist::Parser::loads(const std::string& text)
 {
-    std::string output;
-    bool ok = m_jsonnet.evaluateSnippet("<stdin>", text, &output);
-    if (!ok) {
-        error(m_jsonnet.lastError());
-        THROW(ValueError() << errmsg{m_jsonnet.lastError()});
+    int rc=0;
+    char* jtext = jsonnet_evaluate_snippet(m_jvm, "<stdin>", text.c_str(), &rc);
+    if (rc) {
+        error(jtext);
+        THROW(ValueError() << errmsg{jtext});
     }
+    std::string output(jtext);
+    jsonnet_realloc(m_jvm, jtext, 0);
     return json2object(output);
 }
