@@ -25,7 +25,7 @@ namespace WireCellTbb {
     typedef std::tuple<boost::any, boost::any, boost::any> any_triple;
 
     /// Types for TBB nodes
-    typedef tbb::flow::source_node<boost::any> source_node;
+    typedef tbb::flow::input_node<boost::any> input_node;
     typedef tbb::flow::function_node<boost::any> sink_node;
     typedef tbb::flow::function_node<boost::any, boost::any> function_node;
     typedef tbb::flow::multifunction_node<boost::any, any_single> queuedout_node;

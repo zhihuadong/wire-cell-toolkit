@@ -111,7 +111,7 @@ typedef std::shared_ptr<receiver_type> receiver_port_pointer;
 typedef std::vector<sender_port_pointer> sender_port_vector;
 typedef std::vector<receiver_port_pointer> receiver_port_vector;
 
-typedef tbb::flow::source_node<boost::any> source_node;
+typedef tbb::flow::input_node<boost::any> input_node;
 typedef tbb::flow::function_node<boost::any> sink_node;
 
 // base facade, expose sender/receiver ports and provide initialize hook
@@ -155,10 +155,14 @@ class TbbSourceBody {
         m_wcnode = other.m_wcnode;
     }
 
-    bool operator()(boost::any& out)
+    boost::any operator()(tbb::flow_control& fc)
     {
         cerr << "Extracting from " << m_wcnode << endl;
-        return m_wcnode->extract(out);
+        if (boost::any out; m_wcnode->extract(out)) {
+            return out;
+        }
+        fc.stop();
+        return {};
     }
 
    private:
@@ -169,7 +173,7 @@ class TbbSourceBody {
 class TbbSourceNodeWrapper : public TbbNodeWrapper {
    public:
     TbbSourceNodeWrapper(tbb::flow::graph& graph, mock_node_pointer wcnode)
-      : m_tbbnode(new source_node(graph, TbbSourceBody(wcnode), false))
+      : m_tbbnode(new input_node(graph, TbbSourceBody(wcnode)))
     {
     }
 
@@ -187,7 +191,7 @@ class TbbSourceNodeWrapper : public TbbNodeWrapper {
     }
 
    private:
-    std::shared_ptr<source_node> m_tbbnode;
+    std::shared_ptr<input_node> m_tbbnode;
 };
 
 //

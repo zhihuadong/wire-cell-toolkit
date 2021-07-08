@@ -22,16 +22,6 @@ const Waveform::compseq_t& Gen::ImpactResponse::spectrum()
     }
 }
 
-const Waveform::compseq_t& Gen::ImpactResponse::long_aux_spectrum()
-{
-    if (m_long_spectrum.size() != 0) {
-        return m_long_spectrum;
-    }
-    else {
-        m_long_spectrum = Waveform::dft(m_long_waveform);
-        return m_long_spectrum;
-    }
-}
 
 Gen::PlaneImpactResponse::PlaneImpactResponse(int plane_ident, size_t nbins, double tick)
   : m_frname("FieldResponse")
@@ -188,14 +178,25 @@ void Gen::PlaneImpactResponse::build_responses()
     const double rawresp_max = rawresp_min + rawresp_size * rawresp_tick;
     Binning rawresp_bins(rawresp_size, rawresp_min, rawresp_max);
 
+    // The ceil() used below to find a wire num is a little sensitive.
+    // I don't remember why it was used instead of round() but let it
+    // be known that it is somewhat easy to have round-off errors in
+    // an FR file that will cause ceil() to pop the wirenum to the
+    // wrong value.  An example comes from a 7.35 mm pitch producing a
+    // pitchpos of -22.049999999999997 which when divided gives
+    // -2.9999999999999996 that ceil's to -2, where -3 is wanted.  The
+    // solution is to give every pitchpos a nudge downward by an
+    // epsilon factor of the pitch.
+    const double oopsilon = 1e-15*pr.pitch;
+
     // collect paths and index by wire and impact position.
     std::map<int, region_indices_t> wire_to_ind;
     for (int ipath = 0; ipath < npaths; ++ipath) {
         const Response::Schema::PathResponse& path = pr.paths[ipath];
-        const int wirenum = int(ceil(path.pitchpos / pr.pitch));  // signed
+        const int wirenum = int(ceil((path.pitchpos-oopsilon) / pr.pitch));  // signed
         wire_to_ind[wirenum].push_back(ipath);
-        // l->debug("PIR: ipath:{}, wirenum:{} pitchpos:{}",
-        //          ipath, wirenum, path.pitchpos);
+        // l->debug("PIR: ipath:{}, wirenum:{} pitchpos:{} pitch:{}",
+        //          ipath, wirenum, path.pitchpos, pr.pitch);
 
         // match response sampling to digi and zero-pad
         WireCell::Waveform::realseq_t wave(n_short_length, 0.0);
@@ -206,8 +207,12 @@ void Gen::PlaneImpactResponse::build_responses()
             const size_t bin = time / m_tick;
 
             if (bin >= n_short_length) {
-                l->warn("PIR: out of bounds field response bin={}, ntbins={}, time={} us, tick={} us", bin,
-                        n_short_length, time / units::us, m_tick / units::us);
+                l->error("PIR: out of bounds field response "
+                         "bin={}, ntbins={}, time={} us, tick={} us",
+                         bin, n_short_length, time / units::us,
+                         m_tick / units::us);
+                THROW(ValueError() << errmsg{"Response config not consistent"});
+
             }
 
             // Here we have sampled, instantaneous induced *current*
@@ -233,8 +238,10 @@ void Gen::PlaneImpactResponse::build_responses()
         Waveform::realseq_t wf = Waveform::idft(spec);
         wf.resize(m_nbins, 0);
 
-        IImpactResponse::pointer ir = std::make_shared<Gen::ImpactResponse>(ipath, wf, m_overall_short_padding / m_tick,
-                                                                            long_wf, m_long_padding / m_tick);
+        IImpactResponse::pointer ir =
+            std::make_shared<Gen::ImpactResponse>(
+                ipath, wf, m_overall_short_padding / m_tick,
+                long_wf, m_long_padding / m_tick);
         m_ir.push_back(ir);
     }
 
@@ -247,6 +254,8 @@ void Gen::PlaneImpactResponse::build_responses()
         for (auto it = other.rbegin() + 1; it != other.rend(); ++it) {
             indices.push_back(*it);
         }
+        // l->debug("PIR: irelwire:{} #indices:{} bywire index:{}",
+        //          irelwire, indices.size(), m_bywire.size());
         m_bywire.push_back(indices);
     }
 }
@@ -277,7 +286,8 @@ std::pair<int, int> Gen::PlaneImpactResponse::closest_wire_impact(double relpitc
 IImpactResponse::pointer Gen::PlaneImpactResponse::closest(double relpitch) const
 {
     if (relpitch < -m_half_extent || relpitch > m_half_extent) {
-        l->error("PIR: closest relative pitch:{} outside of extent", relpitch);
+        l->error("PIR: closest relative pitch:{} outside of extent:{}",
+                 relpitch, m_half_extent);
         THROW(ValueError() << errmsg{"relative pitch outside PIR extent"});
     }
     std::pair<int, int> wi = closest_wire_impact(relpitch);

@@ -1,7 +1,7 @@
 #include "WireCellGen/ImpactTransform.h"
 #include "WireCellUtil/Testing.h"
 #include "WireCellUtil/FFTBestLength.h"
-
+#include "WireCellUtil/Exceptions.h"
 #include <iostream>  // debugging.
 using namespace std;
 
@@ -47,7 +47,24 @@ Gen::ImpactTransform::ImpactTransform(IPlaneImpactResponse::pointer pir, BinnedD
             //           << rel_cen_imp_pos - (j-m_num_pad_wire)*m_pir->pitch()<< " "
             //           << std::endl;
 
-            map_resp[j - m_num_pad_wire] = m_pir->closest(rel_cen_imp_pos - (j - m_num_pad_wire) * m_pir->pitch());
+            try {
+                map_resp[j - m_num_pad_wire] = m_pir->closest(rel_cen_imp_pos - (j - m_num_pad_wire) * m_pir->pitch());
+            }
+            catch (ValueError& ve) {
+                std::cerr << "ImpactTransform: I angered PIR with: i="
+                          << i << " j=" << j
+                          << " rel_cen_imp_pos=" << rel_cen_imp_pos
+                          << " m_num_pad_wire=" << m_num_pad_wire
+                          << " m_num_group=" << m_num_group
+                          << " pir->pitch=" << m_pir->pitch()
+                          << " pir->impact=" << m_pir->impact()
+                          << " pir->nwires=" << m_pir->nwires()
+                          << " looking for: "
+                          << rel_cen_imp_pos - (j - m_num_pad_wire) * m_pir->pitch()
+                          << std::endl;                
+                continue;
+            }
+                
             Waveform::compseq_t response_spectrum = map_resp[j - m_num_pad_wire]->spectrum();
 
             //response_spectrum.size() << std::endl;

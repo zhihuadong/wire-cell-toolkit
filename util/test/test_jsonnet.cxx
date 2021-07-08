@@ -22,24 +22,27 @@ std.mergePatch({
 }, std.extVar("override"))
 )";
 const std::string want1 = R"({
-   "person1": {
-      "name": "Alice",
-      "welcome": "Hello Alice!"
-   },
-   "person2": {
-      "name": "Bob",
-      "welcome": "Hello Bob!"
-   },
-   "person3": {
-      "name": "Malory",
-      "welcome": "Hello Malory!"
-   },
-   "person4": {
-      "name": "Surley",
-      "welcome": "Don't call my Shirley"
-   }
-}
-)";
+	"person1" : 
+	{
+		"name" : "Alice",
+		"welcome" : "Hello Alice!"
+	},
+	"person2" : 
+	{
+		"name" : "Bob",
+		"welcome" : "Hello Bob!"
+	},
+	"person3" : 
+	{
+		"name" : "Malory",
+		"welcome" : "Hello Malory!"
+	},
+	"person4" : 
+	{
+		"name" : "Surley",
+		"welcome" : "Don't call my Shirley"
+	}
+})";
 //' <-- make emacs c++ mode happy about matched quotes
 
 int main()
@@ -47,7 +50,9 @@ int main()
     Persist::externalvars_t extravars{{"person", "Malory"}};
     Persist::externalvars_t extracode{{"override", "{person4: {name: \"Surley\", welcome:\"Don't call my Shirley\"}}"}};
 
-    string got1 = Persist::evaluate_jsonnet_text(give1, extravars, extracode);
+    auto jobj = Persist::loads(give1, extravars, extracode);
+    string got1 = Persist::dumps(jobj);
+
     cerr << "------give:\n";
     cerr << give1 << endl;
     cerr << "------got:\n";
@@ -59,7 +64,8 @@ int main()
 
     try {
         cerr << "There should be errors following:\n";
-        string what = Persist::evaluate_jsonnet_text("[ std.extVar(\"doesnoteexists\") ]");
+        jobj = Persist::loads("[ std.extVar(\"doesnoteexists\") ]");
+        string what = Persist::dumps(jobj);
         cerr << what << endl;
     }
     catch (Exception& e) {
@@ -70,7 +76,8 @@ int main()
         cerr << "test_jsonnet requires setting WIRECELL_PATH to point to where 'wirecell.jsonnet' exists\n";
         return 0;
     }
-    string text = Persist::evaluate_jsonnet_text("local wc = import \"wirecell.jsonnet\"; [ wc.pi ]");
+    jobj = Persist::loads("local wc = import \"wirecell.jsonnet\"; [ wc.pi ]");
+    string text = Persist::dumps(jobj);
     // cerr << text << endl;
     auto res = Persist::loads(text);
 

@@ -187,8 +187,59 @@ local wc = import "wirecell.jsonnet";
 
     // Some utility functions to build fan-out/in subgraphs.
     fan:: {
-        // Build a fanout-[pipelines]-fanin graph.  pipelines is a list of
-        // pnode objects, one for each spine of the fan.
+
+        // Build a node which internally is a fanout-[pipelines].  The
+        // result will have a single input node and one output for the
+        // output of each pipline.  See fan.fanin() and fan.pipe().
+        fanout :: function(fantype, pipelines, name="fanout", tag_rules = []) {
+            
+            local fanmult = std.length(pipelines),
+
+            local fan = $.pnode({
+                type: fantype,
+                name: name,
+                data: {
+                    multiplicity: fanmult,
+                    tag_rules: tag_rules,
+                },
+            }, nin=1, nout=fanmult),
+
+            ret: $.intern(innodes=[fan],
+                          outnodes=pipelines,
+                          centernodes=[],
+                          edges=
+                          [$.edge(fan, pipelines[n], n, 0) for n in std.range(0, fanmult-1)],
+                          name=name),
+        }.ret,
+        
+        // Build a node which internally is a [pipelines]-fanin.  The
+        // result will have a single output node and one input for the
+        // input of each pipline.  See also fan.fanin() and fan.pipe().
+        fanin :: function(fantype, pipelines, name="fanin", outtags=[]) {
+
+            local fanmult = std.length(pipelines),
+
+            local fan = $.pnode({
+                type: fantype,
+                name: name,
+                data: {
+                    multiplicity: fanmult,
+                    tags: outtags,
+                },
+            }, nin=fanmult, nout=1),
+
+            ret: $.intern(innodes=pipelines,
+                          outnodes=[fan],
+                          centernodes=[],
+                          edges=
+                          [$.edge(pipelines[n], fan, 0, n) for n in std.range(0, fanmult-1)],
+                          name=name),
+
+        }.ret,
+
+
+        // Build a fanout-[pipelines]-fanin graph.  pipelines is a
+        // list of pnode objects, one for each spine of the fan.
         pipe :: function(fout, pipelines, fin, name="fanpipe", outtags=[], tag_rules=[]) {
 
             local fanmult = std.length(pipelines),

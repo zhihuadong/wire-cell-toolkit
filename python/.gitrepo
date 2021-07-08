@@ -6,7 +6,7 @@
 [subrepo]
 	remote = git@github.com:wirecell/wire-cell-python
 	branch = master
-	commit = b6f4a64cd408b47ab5ba42f815cbf871f6f5c1e1
+	commit = ca9889b3f3fd0ea4ed40048881cb471fc4b21910
 	parent = 6ebda2dcf79d36f796e49628276f9efe95a3e757
 	method = merge
-	cmdver = 0.4.1
+	cmdver = 0.4.3

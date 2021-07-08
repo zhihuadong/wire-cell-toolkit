@@ -128,7 +128,10 @@ void OmnibusSigProc::configure(const WireCell::Configuration& config)
     }
 
     m_fft_flag = get(config, "fft_flag", m_fft_flag);
-
+    if (m_fft_flag) {
+      m_fft_flag = 0;
+      log->warn("OmnibusSigProc fft_flag option is broken, will use native array sizes");
+    }
     m_elecresponse_tn = get(config, "elecresponse", m_elecresponse_tn);
     m_gain = get(config, "gain", m_gain);
     m_shaping_time = get(config, "shaping", m_shaping_time);
@@ -259,7 +262,8 @@ WireCell::Configuration OmnibusSigProc::default_configuration() const
     // cfg["nticks"] = m_nticks;
     // cfg["period"] = m_period;
 
-    cfg["fft_flag"] = m_fft_flag;
+    //cfg["fft_flag"] = m_fft_flag;
+    cfg["fft_flag"] = 0;
 
     cfg["elecresponse"] = m_elecresponse_tn;
     cfg["gain"] = m_gain;

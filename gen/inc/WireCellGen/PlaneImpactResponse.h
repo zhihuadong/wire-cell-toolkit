@@ -43,7 +43,6 @@ namespace WireCell {
             const Waveform::realseq_t& waveform() const { return m_waveform; };
             int waveform_pad() const { return m_waveform_pad; };
 
-            const Waveform::compseq_t& long_aux_spectrum();
             const Waveform::realseq_t& long_aux_waveform() const { return m_long_waveform; };
             int long_aux_waveform_pad() const { return m_long_waveform_pad; };
 

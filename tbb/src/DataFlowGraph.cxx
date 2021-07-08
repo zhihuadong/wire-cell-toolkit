@@ -1,5 +1,3 @@
-
-
 #include "WireCellTbb/DataFlowGraph.h"
 
 #include "WireCellUtil/Type.h"
@@ -14,7 +12,8 @@ using namespace WireCell;
 using namespace WireCellTbb;
 
 DataFlowGraph::DataFlowGraph(int max_threads)
-  : m_sched(max_threads > 0 ? max_threads : tbb::task_scheduler_init::automatic)
+  : m_sched(tbb::global_control::max_allowed_parallelism,
+            max_threads > 0 ? max_threads : 1)
   , m_graph()
   , m_factory(m_graph)
   , l(Log::logger("tbb"))

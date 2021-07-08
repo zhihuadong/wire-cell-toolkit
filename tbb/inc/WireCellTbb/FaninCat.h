@@ -69,13 +69,17 @@ namespace WireCellTbb {
         {
             int nin = wcnode->input_types().size();
             // an exhaustive switch to convert from run-time to compile-time types and enumerations.
-            Assert(nin > 0 && nin <= 6);  // fixme: exception instead?
+            Assert(nin > 0 && nin <= 10);  // fixme: exception instead?
             if (1 == nin) m_receiver_ports = build_faniner<1>(graph, wcnode, m_joiner, m_caller);
             if (2 == nin) m_receiver_ports = build_faniner<2>(graph, wcnode, m_joiner, m_caller);
             if (3 == nin) m_receiver_ports = build_faniner<3>(graph, wcnode, m_joiner, m_caller);
             if (4 == nin) m_receiver_ports = build_faniner<4>(graph, wcnode, m_joiner, m_caller);
             if (5 == nin) m_receiver_ports = build_faniner<5>(graph, wcnode, m_joiner, m_caller);
             if (6 == nin) m_receiver_ports = build_faniner<6>(graph, wcnode, m_joiner, m_caller);
+            if (7 == nin) m_receiver_ports = build_faniner<7>(graph, wcnode, m_joiner, m_caller);
+            if (8 == nin) m_receiver_ports = build_faniner<8>(graph, wcnode, m_joiner, m_caller);
+            if (9 == nin) m_receiver_ports = build_faniner<9>(graph, wcnode, m_joiner, m_caller);
+            if (10 == nin) m_receiver_ports = build_faniner<10>(graph, wcnode, m_joiner, m_caller);
         }
 
         virtual receiver_port_vector receiver_ports() { return m_receiver_ports; }

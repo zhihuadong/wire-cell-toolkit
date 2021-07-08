@@ -43,6 +43,10 @@ std::vector<std::string> Gen::DepoFanout::output_types()
 bool Gen::DepoFanout::operator()(const input_pointer& in, output_vector& outv)
 {
     // Note: if "in" indicates EOS, just pass it on
+    if (!in) {
+        auto log = Log::logger("sio");
+        log->debug("depo fanout sees EOS");
+    }
 
     outv.resize(m_multiplicity);
     for (size_t ind = 0; ind < m_multiplicity; ++ind) {
