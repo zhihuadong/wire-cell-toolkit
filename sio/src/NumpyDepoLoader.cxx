@@ -58,45 +58,68 @@ bool Sio::NumpyDepoLoader::next()
 
     const std::string fname = m_cfg["filename"].asString();
 
+
     Array::array_xxf data;
-    Array::array_xxi info;
     try {
         WireCell::Numpy::load2d(data, data_name, fname);
-        WireCell::Numpy::load2d(info, info_name, fname);
     }
-    catch (std::runtime_error) {
-        log->debug("NumpyDepoLoader: {}:{}: no such array",
+    catch (std::runtime_error& err) {
+        log->debug("NumpyDepoLoader: {}:{}: no such array, assuming end of input",
                    fname, data_name);
+        log->debug(err.what());
         return false;
     }
 
     if (data.cols() != 7) {
-        log->warn("NumpyDepoLoader: {}:{}: depo data is not size 7",
-                  fname, data_name);
+        log->error("NumpyDepoLoader: {}:{}: depo data is not size 7",
+                   fname, data_name);
+        return false;
+    }
+    const size_t ndatas = data.rows();
+
+
+    Array::array_xxi info;
+    try {
+        WireCell::Numpy::load2d(info, info_name, fname);
+    }
+    catch (std::runtime_error& err) {
+        log->error("NumpyDepoLoader: {}:{}: no such array",
+                   fname, info_name);
+        log->error(err.what());
         return false;
     }
     if (info.cols() != 4) {
-        log->warn("NumpyDepoLoader: {}:{}: depo info is not size 4",
-                  fname, info_name);
+        log->error("NumpyDepoLoader: {}:{}: depo info is not size 4",
+                   fname, info_name);
         return false;
     }
-
-    const size_t ndatas = data.rows();
     const size_t ninfos = info.rows();
+
+
     if (ndatas != ninfos) {
-        log->warn("NumpyDepoLoader: {}: mismatch ndepo={} ninfo={}",
+        log->error("NumpyDepoLoader: {}: mismatch ndepo={} ninfo={}",
                   fname, ndatas, ninfos);
         return false;
     }
     const size_t ndepos = ndatas;
     log->debug("load {} depos from frame {}", ndepos, data_name);
 
+    size_t npositive = 0;
+
     std::vector<SimpleDepo*> sdepos;
     for (size_t ind=0; ind < ndepos; ++ind) {
 
-        // log->debug("dump: {}: t={} q={} x={} y={} z={}", ind,
+        // log->debug("dump: {}: t={} q={} x={} y={} z={} id={} pdg={} gen={} p={}", ind,
         //            data(ind, 0), data(ind, 1),
-        //            data(ind, 2), data(ind, 3), data(ind, 4));
+        //            data(ind, 2), data(ind, 3), data(ind, 4),
+        //            info(ind, 0), info(ind, 1), info(ind, 2), info(ind, 3));
+
+        {
+            auto q = data(ind, 1);
+            if (q > 0) {
+                ++npositive;
+            }
+        }
 
         auto sdepo = new SimpleDepo(
             data(ind, 0),        // t
@@ -128,6 +151,13 @@ bool Sio::NumpyDepoLoader::next()
         sdepos.push_back(sdepo);
     }
     
+    if (npositive) {
+        log->warn("NumpyDepoLoader: got {} positive depos out of {}, "
+                  "you probably want to use electrons not ions",
+                  npositive, ndepos);
+    }
+        
+
     for (auto sdepo: sdepos) {
         if (sdepo) {
             auto idepo = IDepo::pointer(sdepo);

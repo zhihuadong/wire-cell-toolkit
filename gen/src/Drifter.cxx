@@ -246,8 +246,8 @@ bool Gen::Drifter::operator()(const input_pointer& depo, output_queue& outq)
         flush(outq);
 
         if (n_dropped) {
-            l->debug("at EOS, dropped {} / {} depos from stream, outside of all {} drift regions", n_dropped,
-                     n_dropped + n_drifted, m_xregions.size());
+            l->debug("drifter: EOS, dropped {} / {} depos from stream, outside of all {} drift xregions",
+                     n_dropped, n_dropped + n_drifted, m_xregions.size());
         }
         n_drifted = n_dropped = 0;
         return true;
