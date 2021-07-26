@@ -298,7 +298,7 @@ const IChannelSpectrum::amplitude_t& Gen::EmpiricalNoiseModel::operator()(int ch
         ilen = int(len / m_wlres);
         // there might be  aproblem with the wire length's unit
         // ilen = int(len);
-        m_chid_to_intlen[chid] = ilen;
+        m_chid_to_intlen[chid] = ilen; // fixme: not thread safe
     }
     else {
         ilen = chlen->second;
@@ -312,7 +312,7 @@ const IChannelSpectrum::amplitude_t& Gen::EmpiricalNoiseModel::operator()(int ch
     auto lenamp = amp_cache.find(ilen);
     if (lenamp == amp_cache.end()) {
         auto amp = interpolate(iplane, ilen * m_wlres);  // interpolate ...
-        amp_cache[ilen] = amp;
+        amp_cache[ilen] = amp;  // fixme: not thread safe
     }
     lenamp = amp_cache.find(ilen);
 

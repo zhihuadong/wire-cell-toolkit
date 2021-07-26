@@ -1,4 +1,4 @@
-/** Some frames to a Numpy file */
+/** Save frames to a Numpy file */
 
 #ifndef WIRECELLSIO_NUMPYFRAMESAVER
 #define WIRECELLSIO_NUMPYFRAMESAVER

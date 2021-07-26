@@ -36,10 +36,11 @@ namespace WireCell {
               , m_long_waveform(long_wf)
               , m_long_waveform_pad(long_waveform_pad)
             {
+                m_spectrum = Waveform::dft(m_waveform);
             }
 
             /// Frequency-domain spectrum of response
-            const Waveform::compseq_t& spectrum();
+            const Waveform::compseq_t& spectrum() const { return m_spectrum; };
             const Waveform::realseq_t& waveform() const { return m_waveform; };
             int waveform_pad() const { return m_waveform_pad; };
 
