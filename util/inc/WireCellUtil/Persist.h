@@ -40,6 +40,13 @@ namespace WireCell {
         /// Return true file exists (no file resolution performed).
         bool exists(const std::string& filename);
 
+
+        /// Create directory for pathname if it does not exist.
+        /// If pathname has an extension, take parent as directory.
+        /// Return true if directory created
+        bool assuredir(const std::string& pathname);
+
+
         /** Return full path to a file of the given filename.  If the
          * file is not directly located and is a relative path then
          * the file will be first located in the current working

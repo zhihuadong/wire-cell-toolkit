@@ -12,6 +12,7 @@
 #define WIRECELL_UTIL_NUMPYHELPER
 
 #include "WireCellUtil/cnpy.h"
+#include "WireCellUtil/Persist.h"
 
 #include <Eigen/Core>
 
@@ -30,6 +31,7 @@ namespace WireCell::Numpy {
         std::vector<size_t> shape(2);
         shape[0] = static_cast<size_t>(array.rows());
         shape[1] = static_cast<size_t>(array.cols());
+        WireCell::Persist::assuredir(fname);
         cnpy::npz_save<Scalar>(fname.c_str(), aname, data, 
                                shape, mode);
     }
