@@ -34,7 +34,7 @@ OmnibusSigProc::OmnibusSigProc(
     double r_th_peak, double r_sep_peak, double r_low_peak_sep_threshold_pre, int r_max_npeaks, double r_sigma,
     double r_th_percent, std::vector<int> process_planes, int charge_ch_offset, const std::string& wiener_tag,
     const std::string& wiener_threshold_tag, const std::string& decon_charge_tag, const std::string& gauss_tag,
-    bool use_roi_debug_mode, const std::string& tight_lf_tag, const std::string& loose_lf_tag,
+    bool use_roi_debug_mode, bool use_roi_refinement, const std::string& tight_lf_tag, const std::string& loose_lf_tag,
     const std::string& cleanup_roi_tag, const std::string& break_roi_loop1_tag, const std::string& break_roi_loop2_tag,
     const std::string& shrink_roi_tag, const std::string& extend_roi_tag, const std::string& mp3_roi_tag,
     const std::string& mp2_roi_tag)
@@ -82,6 +82,7 @@ OmnibusSigProc::OmnibusSigProc(
   , m_gauss_tag(gauss_tag)
   , m_frame_tag("sigproc")
   , m_use_roi_debug_mode(use_roi_debug_mode)
+  , m_use_roi_refinement(use_roi_refinement)
   , m_tight_lf_tag(tight_lf_tag)
   , m_loose_lf_tag(loose_lf_tag)
   , m_cleanup_roi_tag(cleanup_roi_tag)
@@ -184,6 +185,7 @@ void OmnibusSigProc::configure(const WireCell::Configuration& config)
     m_frame_tag = get(config, "frame_tag", m_frame_tag);
 
     m_use_roi_debug_mode = get(config, "use_roi_debug_mode", m_use_roi_debug_mode);
+    m_use_roi_refinement = get(config, "use_roi_refinement", m_use_roi_refinement);
     m_tight_lf_tag = get(config, "tight_lf_tag", m_tight_lf_tag);
     m_loose_lf_tag = get(config, "loose_lf_tag", m_loose_lf_tag);
     m_cleanup_roi_tag = get(config, "cleanup_roi_tag", m_cleanup_roi_tag);
@@ -311,6 +313,7 @@ WireCell::Configuration OmnibusSigProc::default_configuration() const
     cfg["frame_tag"] = m_frame_tag;
 
     cfg["use_roi_debug_mode"] = m_use_roi_debug_mode;  // default false
+    cfg["use_roi_refinement"] = m_use_roi_refinement;  // default true
     cfg["tight_lf_tag"] = m_tight_lf_tag;
     cfg["loose_lf_tag"] = m_loose_lf_tag;
     cfg["cleanup_roi_tag"] = m_cleanup_roi_tag;
@@ -1390,11 +1393,13 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
 
         // Form tight ROIs
         if (iplane != 2) {  // induction wire planes
-            decon_2D_tighterROI(iplane);
-            Array::array_xxf r_data_tight = m_r_data[iplane];
-            //      r_data_tight = m_r_data[plane];
-            decon_2D_tightROI(iplane);
-            roi_form.find_ROI_by_decon_itself(iplane, m_r_data[iplane], r_data_tight);
+            if (m_use_roi_refinement) {
+                decon_2D_tighterROI(iplane);
+                Array::array_xxf r_data_tight = m_r_data[iplane];
+                //      r_data_tight = m_r_data[plane];
+                decon_2D_tightROI(iplane);
+                roi_form.find_ROI_by_decon_itself(iplane, m_r_data[iplane], r_data_tight);
+            }
         }
         else {  // collection wire planes
             decon_2D_tightROI(iplane);
@@ -1403,7 +1408,7 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
 
         // [wgu] save decon result after tight LF
         std::vector<double> dummy;
-        if (m_use_roi_debug_mode) save_data(*itraces, tight_lf_traces, iplane, perwire_rmses, dummy);
+        if (m_use_roi_debug_mode and m_use_roi_refinement) save_data(*itraces, tight_lf_traces, iplane, perwire_rmses, dummy);
 
         // Form loose ROIs
         if (iplane != 2) {
@@ -1413,9 +1418,11 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
                 save_data(*itraces, loose_lf_traces, iplane, perwire_rmses, dummy);
             }
 
-            decon_2D_looseROI(iplane);
-            roi_form.find_ROI_loose(iplane, m_r_data[iplane]);
-            decon_2D_ROI_refine(iplane);
+            if (m_use_roi_refinement) {
+                decon_2D_looseROI(iplane);
+                roi_form.find_ROI_loose(iplane, m_r_data[iplane]);
+                decon_2D_ROI_refine(iplane);
+            }
         }
 
         // [wgu] collection plane does not need loose LF
@@ -1423,9 +1430,14 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
         if (m_use_roi_debug_mode and iplane == 2) save_data(*itraces, loose_lf_traces, iplane, perwire_rmses, dummy);
 
         // Refine ROIs
-        roi_refine.load_data(iplane, m_r_data[iplane], roi_form);
+        if (m_use_roi_refinement) roi_refine.load_data(iplane, m_r_data[iplane], roi_form);
+        else {
+          m_c_data[iplane].resize(0, 0);  // clear memory
+          m_r_data[iplane].resize(0, 0);  // clear memory
+        }
     }
 
+    if (m_use_roi_refinement) {
     for (int iplane = 0; iplane != 3; ++iplane) {
         auto it = std::find(m_process_planes.begin(), m_process_planes.end(), iplane);
         if (it == m_process_planes.end()) continue;
@@ -1501,6 +1513,7 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
         m_c_data[iplane].resize(0, 0);  // clear memory
         m_r_data[iplane].resize(0, 0);  // clear memory
     }
+    }
 
     SimpleFrame* sframe = new SimpleFrame(in->ident(), in->time(), ITrace::shared_vector(itraces), in->tick(), m_cmm);
     sframe->tag_frame(m_frame_tag);
@@ -1519,19 +1532,23 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
     //   }
     // }
 
-    sframe->tag_traces(m_wiener_tag, wiener_traces);
-    sframe->tag_traces(m_wiener_threshold_tag, wiener_traces, thresholds);
-    sframe->tag_traces(m_gauss_tag, gauss_traces);
+    if (m_use_roi_refinement) {
+        sframe->tag_traces(m_wiener_tag, wiener_traces);
+        sframe->tag_traces(m_wiener_threshold_tag, wiener_traces, thresholds);
+        sframe->tag_traces(m_gauss_tag, gauss_traces);
+    }
 
     if (m_use_roi_debug_mode) {
-        sframe->tag_traces(m_decon_charge_tag, decon_charge_traces);
-        sframe->tag_traces(m_tight_lf_tag, tight_lf_traces);
         sframe->tag_traces(m_loose_lf_tag, loose_lf_traces);
-        sframe->tag_traces(m_cleanup_roi_tag, cleanup_roi_traces);
-        sframe->tag_traces(m_break_roi_loop1_tag, break_roi_loop1_traces);
-        sframe->tag_traces(m_break_roi_loop2_tag, break_roi_loop2_traces);
-        sframe->tag_traces(m_shrink_roi_tag, shrink_roi_traces);
-        sframe->tag_traces(m_extend_roi_tag, extend_roi_traces);
+        if (m_use_roi_refinement) {
+            sframe->tag_traces(m_decon_charge_tag, decon_charge_traces);
+            sframe->tag_traces(m_tight_lf_tag, tight_lf_traces);
+            sframe->tag_traces(m_cleanup_roi_tag, cleanup_roi_traces);
+            sframe->tag_traces(m_break_roi_loop1_tag, break_roi_loop1_traces);
+            sframe->tag_traces(m_break_roi_loop2_tag, break_roi_loop2_traces);
+            sframe->tag_traces(m_shrink_roi_tag, shrink_roi_traces);
+            sframe->tag_traces(m_extend_roi_tag, extend_roi_traces);
+        }
     }
 
     if (m_use_multi_plane_protection) {
