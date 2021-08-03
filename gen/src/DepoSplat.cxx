@@ -7,17 +7,227 @@
 
 #include <iostream>
 
+// from ductor
+#include "WireCellGen/BinnedDiffusion.h"
+#include "WireCellGen/ImpactZipper.h"
+#include "WireCellUtil/Units.h"
+#include "WireCellUtil/Point.h"
+#include "WireCellUtil/NamedFactory.h"
+#include "WireCellIface/SimpleTrace.h"
+#include "WireCellIface/SimpleFrame.h"
+#include <string>
+
+
 WIRECELL_FACTORY(DepoSplat, WireCell::Gen::DepoSplat, WireCell::IDuctor, WireCell::IConfigurable)
 
+using namespace std;
 using namespace WireCell;
 
+Gen::DepoSplat::~DepoSplat() {}
+
+
 Gen::DepoSplat::DepoSplat()
-  : Ductor()
+  : m_anode_tn("AnodePlane")
+  , m_start_time(0.0 * units::ns)
+  , m_readout_time(5.0 * units::ms)
+  , m_tick(0.5 * units::us)
+  , m_drift_speed(1.0 * units::mm / units::us)
+  , m_nsigma(3.0)
+  , m_mode("continuous")
+  , m_frame_count(0)
   , l(Log::logger("sim"))
 {
 }
 
-Gen::DepoSplat::~DepoSplat() {}
+WireCell::Configuration Gen::DepoSplat::default_configuration() const
+{
+    Configuration cfg;
+
+    /// How many Gaussian sigma due to diffusion to keep before truncating.
+    put(cfg, "nsigma", m_nsigma);
+
+    /// The initial time for this ductor
+    put(cfg, "start_time", m_start_time);
+
+    /// The time span for each readout.
+    put(cfg, "readout_time", m_readout_time);
+
+    /// The sample period
+    put(cfg, "tick", m_tick);
+
+    /// If false then determine start time of each readout based on the
+    /// input depos.  This option is useful when running WCT sim on a
+    /// source of depos which have already been "chunked" in time.  If
+    /// true then this Ductor will continuously simulate all time in
+    /// "readout_time" frames leading to empty frames in the case of
+    /// some readout time with no depos.
+    put(cfg, "continuous", true);
+
+    /// Fixed mode simply reads out the same time window all the time.
+    /// It implies discontinuous (continuous == false).
+    put(cfg, "fixed", false);
+
+    /// The nominal speed of drifting electrons
+    put(cfg, "drift_speed", m_drift_speed);
+
+    /// Allow for a custom starting frame number
+    put(cfg, "first_frame_number", m_frame_count);
+
+    /// Name of component providing the anode plane.
+    put(cfg, "anode", m_anode_tn);
+
+    // Tag to use for frame and traces will get this tag + the anode
+    // ID.
+    cfg["tag"] = "splat";
+
+    return cfg;
+}
+
+void Gen::DepoSplat::configure(const WireCell::Configuration& cfg)
+{
+    m_anode_tn = get<string>(cfg, "anode", m_anode_tn);
+    m_anode = Factory::find_tn<IAnodePlane>(m_anode_tn);
+
+    m_nsigma = get<double>(cfg, "nsigma", m_nsigma);
+    bool continuous = get<bool>(cfg, "continuous", true);
+    bool fixed = get<bool>(cfg, "fixed", false);
+
+    m_mode = "continuous";
+    if (fixed) {
+        m_mode = "fixed";
+    }
+    else if (!continuous) {
+        m_mode = "discontinuous";
+    }
+
+    m_readout_time = get<double>(cfg, "readout_time", m_readout_time);
+    m_tick = get<double>(cfg, "tick", m_tick);
+    m_start_time = get<double>(cfg, "start_time", m_start_time);
+    m_drift_speed = get<double>(cfg, "drift_speed", m_drift_speed);
+    m_frame_count = get<int>(cfg, "first_frame_number", m_frame_count);
+
+    m_tag = get<std::string>(cfg, "tag", "splat");
+
+    l->debug("DepoSplat tagging {}, AnodePlane: {}, mode: {}, time start: {} ms, readout time: {} ms, frame start: {}",
+             m_tag,
+             m_anode_tn, m_mode, m_start_time / units::ms, m_readout_time / units::ms,
+             m_frame_count);
+}
+
+
+void Gen::DepoSplat::process(output_queue& frames)
+{
+    ITrace::vector traces;
+
+    for (auto face : m_anode->faces()) {
+        // Select the depos which are in this face's sensitive volume
+        IDepo::vector face_depos, dropped_depos;
+        auto bb = face->sensitive();
+        if (bb.empty()) {
+            l->debug("anode: {} face: {} is marked insensitive, skipping", m_anode->ident(), face->ident());
+            continue;
+        }
+
+        for (auto depo : m_depos) {
+            if (bb.inside(depo->pos())) {
+                face_depos.push_back(depo);
+            }
+            else {
+                dropped_depos.push_back(depo);
+            }
+        }
+
+        if (face_depos.size()) {
+            auto ray = bb.bounds();
+            l->debug(
+                "anode: {}, face: {}, processing {} depos spanning "
+                "t:[{},{}]ms, bb:[{}-->{}]cm",
+                m_anode->ident(), face->ident(), face_depos.size(), face_depos.front()->time() / units::ms,
+                face_depos.back()->time() / units::ms, ray.first / units::cm, ray.second / units::cm);
+        }
+        if (dropped_depos.size()) {
+            auto ray = bb.bounds();
+            l->debug(
+                "anode: {}, face: {}, dropped {} depos spanning "
+                "t:[{},{}]ms, outside bb:[{}-->{}]cm",
+                m_anode->ident(), face->ident(), dropped_depos.size(), dropped_depos.front()->time() / units::ms,
+                dropped_depos.back()->time() / units::ms, ray.first / units::cm, ray.second / units::cm);
+        }
+
+        auto newtraces = process_face(face, face_depos);
+        traces.insert(traces.end(), newtraces.begin(), newtraces.end());
+    }
+
+    auto frame = make_shared<SimpleFrame>(m_frame_count, m_start_time, traces, m_tick);
+    IFrame::trace_list_t indices(traces.size());
+    for (size_t ind = 0; ind < traces.size(); ++ind) {
+        indices[ind] = ind;
+    }
+    frame->tag_traces(m_tag + std::to_string(m_anode->ident()), indices);
+    frame->tag_frame(m_tag);
+    frames.push_back(frame);
+    l->debug("made frame: {} with {} traces @ {}ms", m_frame_count, traces.size(), m_start_time / units::ms);
+
+    // fixme: what about frame overflow here?  If the depos extend
+    // beyond the readout where does their info go?  2nd order,
+    // diffusion and finite field response can cause depos near the
+    // end of the readout to have some portion of their waveforms
+    // lost?
+    m_depos.clear();
+
+    if (m_mode == "continuous") {
+        m_start_time += m_readout_time;
+    }
+
+    ++m_frame_count;
+}
+
+// Return true if ready to start processing and capture start time if
+// in continuous mode.
+bool Gen::DepoSplat::start_processing(const input_pointer& depo)
+{
+    if (!depo) {
+        return true;
+    }
+
+    if (m_mode == "fixed") {
+        // fixed mode waits until EOS
+        return false;
+    }
+
+    if (m_mode == "discontinuous") {
+        // discontinuous mode sets start time on first depo.
+        if (m_depos.empty()) {
+            m_start_time = depo->time();
+            return false;
+        }
+    }
+
+    // continuous and discontinuous modes follow Just Enough
+    // Processing(TM) strategy.
+
+    // Note: we use this depo time even if it may not actually be
+    // inside our sensitive volume.
+    bool ok = depo->time() > m_start_time + m_readout_time;
+    return ok;
+}
+
+bool Gen::DepoSplat::operator()(const input_pointer& depo, output_queue& frames)
+{
+    if (start_processing(depo)) {
+        process(frames);
+    }
+
+    if (depo) {
+        m_depos.push_back(depo);
+    }
+    else {
+        frames.push_back(nullptr);
+    }
+
+    return true;
+}
+
 
 ITrace::vector Gen::DepoSplat::process_face(IAnodeFace::pointer face, const IDepo::vector& depos)
 

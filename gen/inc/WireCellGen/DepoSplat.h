@@ -1,30 +1,86 @@
-/** This class "splats" depos directly into a frame without regards to
- * much reality.  It's only useful for gross, but fast debugging jobs.
- * The frame it produces is the moral equivalent of post-SP.
+/** This class "splats" depos directly into a frame.
+ *
+ * It is approximately equivalent to combined simulation and sigproc
+ * using the same response.
+ *
+ * FIXME: A new DepoSetSplat needs to be written as an IDepoFramer to
+ * avoid the high cost of sending individual depos to N APAs.
  */
 
 #ifndef WIRECELLGEN_DEPOSPLAT
 #define WIRECELLGEN_DEPOSPLAT
 
-#include "WireCellGen/Ductor.h"
+
+#include "WireCellIface/IConfigurable.h"
+#include "WireCellIface/IDuctor.h"
+
+#include "WireCellIface/IAnodeFace.h"
+#include "WireCellIface/IAnodePlane.h"
+#include "WireCellIface/IRandom.h"
+#include "WireCellUtil/Logging.h"
+
+#include <vector>
 
 namespace WireCell {
     namespace Gen {
-
-        // DepoSplat inherits from Ductor, replacing the heavy lifting
-        // with some lightweight laziness.
-        class DepoSplat : public Ductor {
-           public:
+        class DepoSplat : public IDuctor, public IConfigurable {
+          public:
             DepoSplat();
             virtual ~DepoSplat();
 
-           protected:
-            virtual ITrace::vector process_face(IAnodeFace::pointer face, const IDepo::vector& depos);
+            // virtual void reset();
+            virtual bool operator()(const input_pointer& depo, output_queue& frames);
 
-            /// SPD logger
+            virtual void configure(const WireCell::Configuration& config);
+            virtual WireCell::Configuration default_configuration() const;
+
+          private:
+
+            std::string m_anode_tn;
+
+            IAnodePlane::pointer m_anode;
+
+            IDepo::vector m_depos;
+
+            double m_start_time;
+            double m_readout_time;
+            double m_tick;
+            double m_drift_speed;
+            double m_nsigma;
+            std::string m_mode;
+
+            int m_frame_count;
+            std::string m_tag;
+
+            void process(output_queue& frames);
+            ITrace::vector process_face(IAnodeFace::pointer face, const IDepo::vector& face_depos);
+            bool start_processing(const input_pointer& depo);
             Log::logptr_t l;
         };
     }  // namespace Gen
 }  // namespace WireCell
+
+
+
+// #include "WireCellGen/Ductor.h"
+
+// namespace WireCell {
+//     namespace Gen {
+
+//         // DepoSplat inherits from Ductor, replacing the heavy lifting
+//         // with some lightweight laziness.
+//         class DepoSplat : public Ductor {
+//           public:
+//             DepoSplat();
+//             virtual ~DepoSplat();
+
+//           protected:
+//             virtual ITrace::vector process_face(IAnodeFace::pointer face, const IDepo::vector& depos);
+
+//             /// SPD logger
+//             Log::logptr_t l;
+//         };
+//     }  // namespace Gen
+// }  // namespace WireCell
 
 #endif
