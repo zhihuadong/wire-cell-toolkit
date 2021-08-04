@@ -31,7 +31,10 @@ WireCell::Configuration Gen::Reframer::default_configuration() const
 
     cfg["anode"] = "";
 
+    // tags to find input traces/frames
     cfg["tags"] = Json::arrayValue;
+    // tag to apply to output frame
+    cfg["frame_tag"] = "";
     cfg["tbin"] = m_tbin;
     cfg["nticks"] = m_nticks;
     cfg["toffset"] = m_toffset;
@@ -50,6 +53,7 @@ void Gen::Reframer::configure(const WireCell::Configuration& cfg)
     for (auto jtag : cfg["tags"]) {
         m_input_tags.push_back(jtag.asString());
     }
+    m_frame_tag = get<std::string>(cfg, "frame_tag", "");
     m_toffset = get(cfg, "toffset", m_toffset);
     m_tbin = get(cfg, "tbin", m_tbin);
     m_fill = get(cfg, "fill", m_fill);
@@ -126,8 +130,13 @@ bool Gen::Reframer::operator()(const input_pointer& inframe, output_pointer& out
         out_traces.push_back(out_trace);
     }
 
-    outframe = make_shared<SimpleFrame>(inframe->ident(), inframe->time() + m_toffset + m_tbin * inframe->tick(),
-                                        out_traces, inframe->tick());
+    auto sframe = make_shared<SimpleFrame>(inframe->ident(), inframe->time() + m_toffset + m_tbin * inframe->tick(),
+                                           out_traces, inframe->tick());
+    if (! m_frame_tag.empty()) {
+        sframe->tag_frame(m_frame_tag);
+    }
+
+    outframe = sframe;
     log->debug("Gen::Reframer: frame {} {} traces, {} ticks", inframe->ident(), out_traces.size(), m_nticks);
     return true;
 }

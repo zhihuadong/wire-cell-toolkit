@@ -49,8 +49,14 @@ namespace WireCell {
             double m_nsigma;
             std::string m_mode;
 
+            // If set (config fluctuate=true), apply charge-preserving
+            // fluctuation to each Gaussian sampling.  Default is no
+            // fluctuation.
+            IRandom::pointer m_rng;
+
             int m_frame_count;
-            std::string m_tag;
+            // if non-empty, set as tag on output frame
+            std::string m_frame_tag{""};
 
             void process(output_queue& frames);
             ITrace::vector process_face(IAnodeFace::pointer face, const IDepo::vector& face_depos);

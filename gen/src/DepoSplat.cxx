@@ -76,9 +76,8 @@ WireCell::Configuration Gen::DepoSplat::default_configuration() const
     /// Name of component providing the anode plane.
     put(cfg, "anode", m_anode_tn);
 
-    // Tag to use for frame and traces will get this tag + the anode
-    // ID.
-    cfg["tag"] = "splat";
+    // Tag to apply to output frame if non-empty.
+    cfg["frame_tag"] = "";
 
     return cfg;
 }
@@ -100,18 +99,24 @@ void Gen::DepoSplat::configure(const WireCell::Configuration& cfg)
         m_mode = "discontinuous";
     }
 
+    m_rng = nullptr;
+    if (get<bool>(cfg, "fluctuate", false)) {
+        auto tn = get<std::string>(cfg, "rng", "Random");
+        m_rng = Factory::find_tn<IRandom>(tn);
+    }
+
     m_readout_time = get<double>(cfg, "readout_time", m_readout_time);
     m_tick = get<double>(cfg, "tick", m_tick);
     m_start_time = get<double>(cfg, "start_time", m_start_time);
     m_drift_speed = get<double>(cfg, "drift_speed", m_drift_speed);
     m_frame_count = get<int>(cfg, "first_frame_number", m_frame_count);
 
-    m_tag = get<std::string>(cfg, "tag", "splat");
+    m_frame_tag = get<std::string>(cfg, "frame_tag", "");
 
-    l->debug("DepoSplat tagging {}, AnodePlane: {}, mode: {}, time start: {} ms, readout time: {} ms, frame start: {}",
-             m_tag,
+    l->debug("DepoSplat: tagging {}, AnodePlane: {}, mode: {}, time start: {} ms, readout time: {} ms, frame start: {}, fluctuate: {}",
+             m_frame_tag,
              m_anode_tn, m_mode, m_start_time / units::ms, m_readout_time / units::ms,
-             m_frame_count);
+             m_frame_count, m_rng != nullptr);
 }
 
 
@@ -124,7 +129,9 @@ void Gen::DepoSplat::process(output_queue& frames)
         IDepo::vector face_depos, dropped_depos;
         auto bb = face->sensitive();
         if (bb.empty()) {
-            l->debug("anode: {} face: {} is marked insensitive, skipping", m_anode->ident(), face->ident());
+            l->debug("DepoSplat: anode: {} face: {} is "
+                     "marked insensitive, skipping",
+                     m_anode->ident(), face->ident());
             continue;
         }
 
@@ -139,7 +146,7 @@ void Gen::DepoSplat::process(output_queue& frames)
 
         if (face_depos.size()) {
             auto ray = bb.bounds();
-            l->debug(
+            l->debug("DepoSplat: "
                 "anode: {}, face: {}, processing {} depos spanning "
                 "t:[{},{}]ms, bb:[{}-->{}]cm",
                 m_anode->ident(), face->ident(), face_depos.size(), face_depos.front()->time() / units::ms,
@@ -147,7 +154,7 @@ void Gen::DepoSplat::process(output_queue& frames)
         }
         if (dropped_depos.size()) {
             auto ray = bb.bounds();
-            l->debug(
+            l->debug("DepoSplat: "
                 "anode: {}, face: {}, dropped {} depos spanning "
                 "t:[{},{}]ms, outside bb:[{}-->{}]cm",
                 m_anode->ident(), face->ident(), dropped_depos.size(), dropped_depos.front()->time() / units::ms,
@@ -163,10 +170,9 @@ void Gen::DepoSplat::process(output_queue& frames)
     for (size_t ind = 0; ind < traces.size(); ++ind) {
         indices[ind] = ind;
     }
-    frame->tag_traces(m_tag + std::to_string(m_anode->ident()), indices);
-    frame->tag_frame(m_tag);
+    frame->tag_frame(m_frame_tag);
     frames.push_back(frame);
-    l->debug("made frame: {} with {} traces @ {}ms", m_frame_count, traces.size(), m_start_time / units::ms);
+    l->debug("DepoSplat: made frame: {} with {} traces @ {}ms", m_frame_count, traces.size(), m_start_time / units::ms);
 
     // fixme: what about frame overflow here?  If the depos extend
     // beyond the readout where does their info go?  2nd order,
@@ -232,6 +238,7 @@ bool Gen::DepoSplat::operator()(const input_pointer& depo, output_queue& frames)
 ITrace::vector Gen::DepoSplat::process_face(IAnodeFace::pointer face, const IDepo::vector& depos)
 
 {
+    // why????
     const int time_offset = 2;  // # of ticks
     // const double difusion_scaler = 6.;
     const double charge_scaler = 1.;  // 18.;
@@ -259,6 +266,8 @@ ITrace::vector Gen::DepoSplat::process_face(IAnodeFace::pointer face, const IDep
         //           << "#wires:" << wires.size() << " "
         //           << "#depos:" << depos.size() << "\n";
 
+        int t_dropped{0}, p_dropped{0};
+
         int idepo = 0;
         for (auto depo : depos) {
             // const double tsig = depo->extent_long() * difusion_scaler;
@@ -276,6 +285,7 @@ ITrace::vector Gen::DepoSplat::process_face(IAnodeFace::pointer face, const IDep
                 sigma_L = sqrt(pow(depo->extent_long(), 2) + pow(add_sigma_L, 2));  // / time_slice_width;
             }
 
+            // What are these magic numbers???
             if (true) {
                 double add_sigma_T = wbins.binsize();
                 if (iplane == 0)
@@ -303,15 +313,26 @@ ITrace::vector Gen::DepoSplat::process_face(IAnodeFace::pointer face, const IDep
             const int tbeg = std::max(tbins.bin(tcen - twid), 0);                      // fixme what limits
             const int tend = std::min(tbins.bin(tcen + twid) + 1, tbins.nbins() - 1);  //  to enforce here?
 
-            if (tbeg > tend) continue;
+            if (tbeg > tend) {
+                ++t_dropped;
+                // l->debug("DepoSplat: dropping depo times (us) "
+                //          "tbeg:{} > tend:{}, "
+                //          "tcen:{}, twid:{}",
+                //          tbeg/units::us, tend/units::us,
+                //          tcen/units::us, twid/units::us);
+                continue;
+            }
 
-            if (pbeg > pend) continue;
+            if (pbeg > pend) {
+                ++p_dropped;
+                continue;
+            }
 
             Gen::GausDesc time_desc(tcen, tsig);
             Gen::GausDesc pitch_desc(pcen, psig);
 
             auto gd = std::make_shared<Gen::GaussianDiffusion>(depo, time_desc, pitch_desc);
-            gd->set_sampling(tbins, wbins, m_nsigma, 0, 1);
+            gd->set_sampling(tbins, wbins, m_nsigma, m_rng, 1);
             const auto patch = gd->patch();
 
             // std::stringstream ss;
@@ -345,7 +366,11 @@ ITrace::vector Gen::DepoSplat::process_face(IAnodeFace::pointer face, const IDep
                 }
             }
             ++idepo;
-        }
+        } // over depos
+        l->debug("DepoSplat: plane {} "
+                 "dropped {} (time) and {} (pitch) from {} total",
+                 iplane, t_dropped, p_dropped, depos.size());
+
     }
 
     // make output traces

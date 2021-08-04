@@ -56,6 +56,8 @@ namespace WireCell {
 
             // Consider traces with these tags.  No tags mean all traces.
             std::vector<std::string> m_input_tags;
+            // If not empty, apply this tag to output frame
+            std::string m_frame_tag;
 
             double m_toffset, m_fill;
             int m_tbin, m_nticks;
