@@ -3,6 +3,7 @@
 
 #include "WireCellIface/IClusterSink.h"
 #include "WireCellIface/IConfigurable.h"
+#include "WireCellUtil/Logging.h"
 
 #include <boost/iostreams/filtering_stream.hpp>
 
@@ -45,7 +46,8 @@ namespace WireCell::Sio {
         ///
         /// If set to true, also output the referenced frames.
         bool m_output_frame{"true"};
-
+        /// Used to set X-axis blob point values based on drift time.
+        double m_drift_speed;
 
         // The output stream
         boost::iostreams::filtering_ostream m_out;

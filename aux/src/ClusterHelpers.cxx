@@ -1,4 +1,4 @@
-#include "ClusterJsonify.h"
+#include "WireCellAux/ClusterHelpers.h"
 
 #include "WireCellIface/IChannel.h"
 #include "WireCellIface/IAnodeFace.h"
@@ -148,10 +148,11 @@ Json::Value measurement_jsoner(const cluster_node_t& n)
     return ret;
 }
 
-Json::Value cluster_jsonify(const ICluster::pointer& in)
+Json::Value WireCell::Aux::cluster::jsonify(const ICluster::pointer& cluster,
+                                            double drift_speed)
 {
     std::vector<std::function<Json::Value(const cluster_node_t& ptr)> > jsoners{
-        size_stringer, channel_jsoner, wire_jsoner, blob_jsoner(m_drift_speed), slice_jsoner, measurement_jsoner};
+        size_stringer, channel_jsoner, wire_jsoner, blob_jsoner(drift_speed), slice_jsoner, measurement_jsoner};
     auto asjson = [&](const cluster_node_t& n) { return jsoners[n.ptr.index()](n); };
 
     /*
@@ -166,7 +167,7 @@ Json::Value cluster_jsonify(const ICluster::pointer& in)
      * An edge is a pair of vertex ident numbers.
      *
      */
-    const auto& gr = in->graph();
+    const auto& gr = cluster->graph();
 
     Json::Value jvertices = Json::arrayValue;
     for (auto vtx : boost::make_iterator_range(boost::vertices(gr))) {
@@ -196,4 +197,46 @@ Json::Value cluster_jsonify(const ICluster::pointer& in)
     top["edges"] = jedges;
 
     return top;
+}
+
+// maybe useful to export
+ISlice::vector WireCell::Aux::cluster::find_slices(const ICluster::pointer& cluster)
+{
+    ISlice::vector ret;
+    const auto& gr = cluster->graph();
+    for (auto vtx : boost::make_iterator_range(boost::vertices(gr))) {
+        const auto& vobj = gr[vtx];
+        if (vobj.ptr.index() != 4) {
+            continue;
+        }
+
+        ISlice::pointer islice = std::get<typename ISlice::pointer>(vobj.ptr);
+        ret.push_back(islice);
+    }
+    return ret;
+}
+
+IFrame::pointer WireCell::Aux::cluster::find_frame(const ICluster::pointer& cluster)
+{
+    const auto& gr = cluster->graph();
+    for (auto vtx : boost::make_iterator_range(boost::vertices(gr))) {
+        const auto& vobj = gr[vtx];
+        if (vobj.ptr.index() != 4) {
+            continue;
+        }
+
+        ISlice::pointer islice = std::get<typename ISlice::pointer>(vobj.ptr);
+        return islice->frame();
+    }
+    return nullptr;
+}
+
+std::string WireCell::Aux::cluster::name(const ICluster::pointer& cluster)
+{
+    IFrame::pointer frame = find_frame(cluster);
+
+    std::stringstream ss;
+    ss << "frame-" << frame->ident() << "-"
+       << "cluster-" << cluster->ident();
+    return ss.str();
 }
