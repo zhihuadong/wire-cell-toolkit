@@ -106,17 +106,17 @@ bool Sio::NumpyFrameSaver::operator()(const IFrame::pointer& inframe, IFrame::po
 
     for (auto jtag : m_cfg["frame_tags"]) {
         const std::string tag = jtag.asString();
-        auto traces = aux::tagged_traces(inframe, tag);
+        auto traces = Aux::tagged_traces(inframe, tag);
         l->debug("NumpyFrameSaver: save {} tagged as {}", traces.size(), tag);
         if (traces.empty()) {
             l->warn("NumpyFrameSaver: no traces for tag: \"{}\"", tag);
             continue;
         }
-        auto channels = aux::channels(traces);
+        auto channels = Aux::channels(traces);
         std::sort(channels.begin(), channels.end());
         auto chbeg = channels.begin();
         auto chend = std::unique(chbeg, channels.end());
-        auto tbinmm = aux::tbin_range(traces);
+        auto tbinmm = Aux::tbin_range(traces);
 
         // fixme: may want to give user some config over tbin range to save.
         const size_t ncols = tbinmm.second - tbinmm.first;
@@ -124,7 +124,7 @@ bool Sio::NumpyFrameSaver::operator()(const IFrame::pointer& inframe, IFrame::po
         l->debug("NumpyFrameSaver: saving ncols={} nrows={}", ncols, nrows);
 
         Array::array_xxf arr = Array::array_xxf::Zero(nrows, ncols) + baseline;
-        aux::fill(arr, traces, channels.begin(), chend, tbinmm.first);
+        Aux::fill(arr, traces, channels.begin(), chend, tbinmm.first);
         arr = arr * scale + offset;
 
         {  // the 2D frame array

@@ -230,7 +230,7 @@ class NoiseAdderProc : public FilterProc {
         IFrame::pointer nframe;
         bool ok = (*noise_node)(nframe);
         if (!ok) return false;
-        nframe = aux::sum(IFrame::vector{iframe, nframe}, iframe->ident());
+        nframe = Aux::sum(IFrame::vector{iframe, nframe}, iframe->ident());
         boost::any anyout = nframe;
         oq.push(anyout);
         return true;
@@ -426,7 +426,7 @@ void Gen::Fourdee::execute_old()
                     if (noise) {
                         cerr << "noiseframe: ";
                         dump(noise);
-                        voltframe = aux::sum(IFrame::vector{voltframe, noise}, voltframe->ident());
+                        voltframe = Aux::sum(IFrame::vector{voltframe, noise}, voltframe->ident());
                         em("got noise");
                     }
                     else {

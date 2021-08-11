@@ -12,7 +12,6 @@
 
 using namespace WireCell;
 
-
 static Json::Value size_stringer(const cluster_node_t& n) { return Json::nullValue; }
 
 static Json::Value jpoint(const Point& p)
@@ -148,8 +147,8 @@ Json::Value measurement_jsoner(const cluster_node_t& n)
     return ret;
 }
 
-Json::Value WireCell::Aux::cluster::jsonify(const ICluster::pointer& cluster,
-                                            double drift_speed)
+Json::Value WireCell::Aux::jsonify(const ICluster::pointer& cluster,
+                                   double drift_speed)
 {
     std::vector<std::function<Json::Value(const cluster_node_t& ptr)> > jsoners{
         size_stringer, channel_jsoner, wire_jsoner, blob_jsoner(drift_speed), slice_jsoner, measurement_jsoner};
@@ -200,7 +199,7 @@ Json::Value WireCell::Aux::cluster::jsonify(const ICluster::pointer& cluster,
 }
 
 // maybe useful to export
-ISlice::vector WireCell::Aux::cluster::find_slices(const ICluster::pointer& cluster)
+ISlice::vector WireCell::Aux::find_slices(const ICluster::pointer& cluster)
 {
     ISlice::vector ret;
     const auto& gr = cluster->graph();
@@ -216,7 +215,7 @@ ISlice::vector WireCell::Aux::cluster::find_slices(const ICluster::pointer& clus
     return ret;
 }
 
-IFrame::pointer WireCell::Aux::cluster::find_frame(const ICluster::pointer& cluster)
+IFrame::pointer WireCell::Aux::find_frame(const ICluster::pointer& cluster)
 {
     const auto& gr = cluster->graph();
     for (auto vtx : boost::make_iterator_range(boost::vertices(gr))) {
@@ -231,12 +230,9 @@ IFrame::pointer WireCell::Aux::cluster::find_frame(const ICluster::pointer& clus
     return nullptr;
 }
 
-std::string WireCell::Aux::cluster::name(const ICluster::pointer& cluster)
+std::string WireCell::Aux::name(const ICluster::pointer& cluster)
 {
-    IFrame::pointer frame = find_frame(cluster);
-
     std::stringstream ss;
-    ss << "frame-" << frame->ident() << "-"
-       << "cluster-" << cluster->ident();
+    ss << "cluster_" << cluster->ident();
     return ss.str();
 }

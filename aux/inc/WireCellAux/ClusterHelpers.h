@@ -10,13 +10,14 @@
 
 #include <string>
 
-namespace WireCell::Aux::cluster {
+namespace WireCell::Aux {
     /// Return JSON representation of the cluster.
     Json::Value jsonify(const ICluster::pointer& cluster,
                          double drift_speed);
 
     /// Return name for the cluster in a canonical form suitable for
-    /// use as a file name.
+    /// use as a file name.  It only includes info related directly to
+    /// the cluster (the ident).
     std::string name(const ICluster::pointer& cluster);
 
     /// Return the slices in the cluster.

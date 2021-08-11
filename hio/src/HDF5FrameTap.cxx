@@ -161,14 +161,14 @@ bool Hio::HDF5FrameTap::operator()(const IFrame::pointer &inframe, IFrame::point
 
     for (auto jtag : m_cfg["trace_tags"]) {
         const std::string tag = jtag.asString();
-        auto traces = aux::tagged_traces(inframe, tag);
+        auto traces = Aux::tagged_traces(inframe, tag);
         l->debug("HDF5FrameTap: save {} tagged as {}", traces.size(), tag);
         if (traces.empty()) {
             l->warn("HDF5FrameTap: no traces for tag: \"{}\"", tag);
             continue;
         }
 
-        // auto channels = aux::channels(traces);
+        // auto channels = Aux::channels(traces);
         // std::sort(channels.begin(), channels.end());
         // auto chmin = channels.front();
         // auto chmax = channels.back();
@@ -176,7 +176,7 @@ bool Hio::HDF5FrameTap::operator()(const IFrame::pointer &inframe, IFrame::point
         // std::iota(std::begin(channels), std::end(channels), chmin);
         // auto chbeg = channels.begin();
         // auto chend = channels.end(); //std::unique(chbeg, channels.end());
-        // auto tbinmm = aux::tbin_range(traces);
+        // auto tbinmm = Aux::tbin_range(traces);
 
         // // fixme: may want to give user some config over tbin range to save.
         // const size_t ncols = tbinmm.second-tbinmm.first;
@@ -192,8 +192,8 @@ bool Hio::HDF5FrameTap::operator()(const IFrame::pointer &inframe, IFrame::point
         l->debug("HDF5FrameTap: chunking ncols={} nrows={}", chunk_ncols, chunk_nrows);
 
         Array::array_xxf arr = Array::array_xxf::Zero(nrows, ncols) + baseline;
-        // aux::fill(arr, traces, channels.begin(), chend, tbinmm.first);
-        aux::fill(arr, traces, channels.begin(), channels.end(), tick0);
+        // Aux::fill(arr, traces, channels.begin(), chend, tbinmm.first);
+        Aux::fill(arr, traces, channels.begin(), channels.end(), tick0);
         arr = arr * scale + offset;
         int sequence = inframe->ident();
         {  // the 2D frame array

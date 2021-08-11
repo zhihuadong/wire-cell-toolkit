@@ -8,7 +8,10 @@
 #include "WireCellUtil/Array.h"
 
 namespace WireCell {
-    namespace aux {
+    namespace Aux {
+
+        /// Return a canonical name for the frame.
+        std::string name(const WireCell::IFrame::pointer& frame);
 
         // Print some info to cerr about frame
         void dump_frame(WireCell::IFrame::pointer frame);
@@ -106,7 +109,7 @@ namespace WireCell {
         /// outside of any individual trace.
         IFrame::pointer sum(std::vector<IFrame::pointer> frames, int ident);
 
-    }  // namespace aux
+    }  // namespace Aux
 }  // namespace WireCell
 
 #endif

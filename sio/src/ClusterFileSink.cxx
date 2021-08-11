@@ -2,14 +2,13 @@
 
 #include "WireCellAux/ClusterHelpers.h"
 
-#include "custard/boost_custard.hpp"
-
 #include "WireCellUtil/Units.h"
 #include "WireCellUtil/Exceptions.h"
 #include "WireCellUtil/NamedFactory.h"
 
 #include "WireCellAux/FrameTools.h"
 
+#include "custard/boost_custard.hpp"
 
 WIRECELL_FACTORY(ClusterFileSink, WireCell::Sio::ClusterFileSink,
                  WireCell::IClusterSink, WireCell::IConfigurable)
@@ -47,24 +46,28 @@ void Sio::ClusterFileSink::configure(const WireCell::Configuration& cfg)
     m_out.clear();
     custard::output_filters(m_out, m_outname);
     if (m_out.empty()) {
-        THROW(ValueError() << errmsg{"unsupported outname: " + m_outname});
+        THROW(ValueError() << errmsg{"ClusterFileSink: unsupported outname: " + m_outname});
     }
 }
 
+
+
 bool Sio::ClusterFileSink::operator()(const ICluster::pointer& cluster)
 {
-    auto top = Aux::cluster::jsonify(cluster, m_drift_speed);
+    
+    auto cname = Aux::name(Aux::find_frame(cluster));
+    cname += "_";
+    cname += Aux::name(cluster);
+
+    auto top = Aux::jsonify(cluster, m_drift_speed);
     std::stringstream topss;
     topss << top;
     auto tops = topss.str();
-    std::stringstream sizess;
-    sizess << tops.size();
-    auto sizes = sizess.str();
-    auto cname = Aux::cluster::name(cluster);
-    m_out << cname << "\n" << sizes << "\n" << tops;
+
+    m_out << cname << "\n" << tops.size() << "\n" << tops.data();
 
     if (m_output_frame) {
-        log->warn("ClsuterFileSink: frame output not yet implemented");
+        log->warn("ClusterFileSink: frame output not yet implemented");
     }
     return true;
 }

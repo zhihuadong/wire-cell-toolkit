@@ -70,7 +70,7 @@ void SigProc::Omnibus::execute()
         else {
             std::cerr << "Omnibus: got input frame from " << m_input_tn << " with " << frame->traces()->size()
                       << " traces\n";
-            aux::dump_frame(frame);
+            Aux::dump_frame(frame);
         }
     }
 
@@ -99,7 +99,7 @@ void SigProc::Omnibus::execute()
 
         if (frame) {
             std::cerr << "Omnibus: got frame from " << tn << " with " << frame->traces()->size() << " traces\n";
-            aux::dump_frame(frame);
+            Aux::dump_frame(frame);
         }
     }
 
