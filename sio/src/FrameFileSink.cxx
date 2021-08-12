@@ -6,6 +6,7 @@
 
 #include "WireCellAux/FrameTools.h"
 
+// These are found at *compile* time in util/inc/.
 #include "custard/custard_boost.hpp"
 #include "custard/custard_pigenc.hpp"
 
@@ -126,6 +127,7 @@ void Sio::FrameFileSink::one_tag(const IFrame::pointer& frame,
         const std::vector<double> tickinfo{frame->time(), frame->tick(), (double) tbinmm.first};
         custard::vector_sink(m_out, aname, tickinfo);
     }
+    m_out.flush();
 
 }
 bool Sio::FrameFileSink::operator()(const IFrame::pointer& frame)

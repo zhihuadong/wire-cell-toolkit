@@ -296,5 +296,29 @@ local wc = import "wirecell.jsonnet";
                           [$.edge(fanout, pipelines[n], n, 0) for n in std.range(0, fanmult-1)],
                           name=name),
         }.ret,
+
+
+        // A "tap" is a sink which is adapted to look like a filter
+        // via a 2-way fanout.  The "fout" names the fanout type and
+        // the "sink" is a full pnode.
+        tap :: function(fout, sink, name="tap", tag_rules=[]) {
+            local fanout = $.pnode({
+                type: fout,
+                name: name,
+                data: {
+                    multiplicity: 2,
+                    tag_rules: tag_rules,
+                },
+            }, nin=1, nout=2),
+
+            ret: $.intern(innodes=[fanout],
+                          outnodes=[fanout],
+                          centernodes=[sink],
+                          edges=[$.edge(fanout, sink, 1, 0)],
+                          name=name),
+        }.ret,
+
+
     },                          // fan
+
 }
