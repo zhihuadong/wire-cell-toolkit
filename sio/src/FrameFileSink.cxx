@@ -85,9 +85,18 @@ void Sio::FrameFileSink::one_tag(const IFrame::pointer& frame,
         // comment.
         auto sv = frame->traces();
         traces.insert(traces.begin(), sv->begin(), sv->end());
+        log->debug("FrameFileSink: all traces [{}], frame: {}",
+                   traces.size(), frame->ident());
     }
     else {
         traces = Aux::tagged_traces(frame, tag);
+        log->debug("FrameFileSink: tag: {} traces [{}], frame: {}",
+                   tag, traces.size(), frame->ident());
+    }
+    if (traces.empty()) {
+        log->warn("FrameFileSink: tag: {}, frame: {}.  ZERO TRACES",
+                   tag, frame->ident());
+        return;
     }
 
     auto channels = Aux::channels(traces);
@@ -113,7 +122,7 @@ void Sio::FrameFileSink::one_tag(const IFrame::pointer& frame,
         else {
             custard::eigen_sink(m_out, aname, arr);
         }
-        log->debug("NumpyFrameSaver: saved {} with {} channels {} ticks @t={} ms qtot={}", aname, nrows, ncols,
+        log->debug("FrameFileSink: saved {} with {} channels {} ticks @t={} ms qtot={}", aname, nrows, ncols,
                    frame->time() / units::ms, arr.sum());
     }
 
@@ -132,6 +141,11 @@ void Sio::FrameFileSink::one_tag(const IFrame::pointer& frame,
 }
 bool Sio::FrameFileSink::operator()(const IFrame::pointer& frame)
 {
+    if (! frame) { // eos
+        m_out.clear();
+        return true;
+    }
+
     for (auto tag : m_tags) {
         one_tag(frame, tag);
     }
