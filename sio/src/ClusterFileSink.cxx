@@ -8,7 +8,7 @@
 
 #include "WireCellAux/FrameTools.h"
 
-#include "custard/boost_custard.hpp"
+#include "custard/custard_boost.hpp"
 
 WIRECELL_FACTORY(ClusterFileSink, WireCell::Sio::ClusterFileSink,
                  WireCell::IClusterSink, WireCell::IConfigurable)

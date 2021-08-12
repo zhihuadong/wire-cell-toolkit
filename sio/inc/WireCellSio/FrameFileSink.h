@@ -52,7 +52,7 @@ namespace WireCell::Sio {
         /// This is mostly intended if digitizing/truncating.
         double m_baseline{0.0};
         double m_scale{1.0};
-        double m_offset{0.0}
+        double m_offset{0.0};
 
         /// After possible transform we may truncate from 32 bit float
         /// to 16 bit int.
@@ -62,6 +62,9 @@ namespace WireCell::Sio {
         boost::iostreams::filtering_ostream m_out;
 
         Log::logptr_t log;
+
+        void one_tag(const IFrame::pointer& frame,
+                     const std::string& tag);
     };        
      
 }
