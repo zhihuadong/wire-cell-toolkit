@@ -42,6 +42,7 @@ namespace WireCell {
             double m_drift_speed;
             double m_nsigma;
             int m_frame_count;
+            size_t m_count{0};
             Log::logptr_t l;
         };
     }  // namespace Gen

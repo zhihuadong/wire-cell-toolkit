@@ -29,7 +29,7 @@ void Gen::DepoSetFanout::configure(const WireCell::Configuration& cfg)
 {
     int m = get<int>(cfg, "multiplicity", (int) m_multiplicity);
     if (m <= 0) {
-        log->critical("DepoSetFanout multiplicity must be positive");
+        log->critical("Gen::DepoSetFanout multiplicity must be positive");
         THROW(ValueError() << errmsg{"DepoSetFanout multiplicity must be positive"});
     }
     m_multiplicity = m;
@@ -46,11 +46,13 @@ bool Gen::DepoSetFanout::operator()(const input_pointer& in, output_vector& outv
 {
     // Note: if "in" indicates EOS, just pass it on
     if (in) {
-        log->debug("DepoSetFanout ({}) fanout data", in->ident());
+        log->debug("Gen::DepoSetFanout #{}: fanout depo set {}",
+                   m_count, in->ident());
     }
     else {
-        log->debug("DepoSetFanout fanout EOS");
+        log->debug("Gen::DepoSetFanout #{}: see EOS", m_count);
     }
+    ++m_count;
 
     outv.resize(m_multiplicity);
     for (size_t ind = 0; ind < m_multiplicity; ++ind) {

@@ -92,7 +92,7 @@ double Gen::Digitizer::digitize(double voltage)
 bool Gen::Digitizer::operator()(const input_pointer& vframe, output_pointer& adcframe)
 {
     if (!vframe) {  // EOS
-        log->debug("Gen::Digitizer: EOS");
+        log->debug("Gen::Digitizer: anode {}: see EOS", m_anode->ident());
         adcframe = nullptr;
         return true;
     }
@@ -103,6 +103,8 @@ bool Gen::Digitizer::operator()(const input_pointer& vframe, output_pointer& adc
         log->error("Gen::Digitizer: no traces in input frame {}", vframe->ident());
         return false;
     }
+    log->debug("Gen::Digitizer: traces: {} in input frame {} to frame tag \"{}\"",
+               vtraces.size(), vframe->ident(), m_frame_tag);
 
     // Get extent in channel and tbin
     auto channels = Aux::channels(vtraces);

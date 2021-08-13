@@ -64,14 +64,14 @@ bool Sio::NumpyDepoLoader::next()
         WireCell::Numpy::load2d(data, data_name, fname);
     }
     catch (std::runtime_error& err) {
-        log->debug("NumpyDepoLoader: {}:{}: no such array, assuming end of input",
+        log->debug("Sio::NumpyDepoLoader: {}:{}: no such array, assuming end of input",
                    fname, data_name);
         log->debug(err.what());
         return false;
     }
 
     if (data.cols() != 7) {
-        log->error("NumpyDepoLoader: {}:{}: depo data is not size 7",
+        log->error("Sio::NumpyDepoLoader: {}:{}: depo data is not size 7",
                    fname, data_name);
         return false;
     }
@@ -83,13 +83,13 @@ bool Sio::NumpyDepoLoader::next()
         WireCell::Numpy::load2d(info, info_name, fname);
     }
     catch (std::runtime_error& err) {
-        log->error("NumpyDepoLoader: {}:{}: no such array",
+        log->error("Sio::NumpyDepoLoader: {}:{}: no such array",
                    fname, info_name);
         log->error(err.what());
         return false;
     }
     if (info.cols() != 4) {
-        log->error("NumpyDepoLoader: {}:{}: depo info is not size 4",
+        log->error("Sio::NumpyDepoLoader: {}:{}: depo info is not size 4",
                    fname, info_name);
         return false;
     }
@@ -97,12 +97,12 @@ bool Sio::NumpyDepoLoader::next()
 
 
     if (ndatas != ninfos) {
-        log->error("NumpyDepoLoader: {}: mismatch ndepo={} ninfo={}",
+        log->error("Sio::NumpyDepoLoader: {}: mismatch ndepo={} ninfo={}",
                   fname, ndatas, ninfos);
         return false;
     }
     const size_t ndepos = ndatas;
-    log->debug("load {} depos from frame {}", ndepos, data_name);
+    log->debug("Sio::NumpyDepoLoader: load {} depos from frame {}", ndepos, data_name);
 
     size_t npositive = 0;
 
@@ -138,7 +138,7 @@ bool Sio::NumpyDepoLoader::next()
             // this depo is a prior
             const size_t other = info(ind, 3);
             if (other >= sdepos.size()) {
-                log->warn("NumpyDepoLoader: {}: depo ordering corrupt at {}: {} > {}",
+                log->warn("Sio::NumpyDepoLoader: {}: depo ordering corrupt at {}: {} > {}",
                           fname, ind, other, sdepos.size());
                 return false;
             }
@@ -152,12 +152,11 @@ bool Sio::NumpyDepoLoader::next()
     }
     
     if (npositive) {
-        log->warn("NumpyDepoLoader: got {} positive depos out of {}, "
+        log->warn("Sio::NumpyDepoLoader: got {} positive depos out of {}, "
                   "you probably want to use electrons not ions",
                   npositive, ndepos);
     }
         
-
     for (auto sdepo: sdepos) {
         if (sdepo) {
             auto idepo = IDepo::pointer(sdepo);
@@ -165,7 +164,7 @@ bool Sio::NumpyDepoLoader::next()
             m_depos.push_back(idepo);
         }
     }
-    log->debug("load complete");
+    log->debug("Sio::NumpyDepoLoader: load complete");
     return true;
 }
 

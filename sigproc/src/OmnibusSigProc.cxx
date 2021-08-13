@@ -1318,18 +1318,24 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
 {
     out = nullptr;
     if (!in) {
-        log->debug("OmnibusSigProc: see EOS");
+        log->debug("OmnibusSigProc #{}: anode {}: see EOS",
+                   m_count, m_anode->ident());
+        ++m_count;
         return true;
     }
     const size_t ntraces = in->traces()->size();
     if (ntraces) {
-        log->debug("OmnibusSigProc: receive frame {} with {} traces", in->ident(), ntraces);
+        log->debug("OmnibusSigProc #{}: receive frame {} with {} traces",
+                   m_count, in->ident(), ntraces);
     }
     else {
         out = std::make_shared<SimpleFrame>(in->ident(), in->time(), std::make_shared<ITrace::vector>(), in->tick());
-        log->debug("OmnibusSigProc: got and sending empty frame {}", out->ident());
+        log->debug("OmnibusSigProc #{}: got and sending empty frame {} to tag {}",
+                   m_count, out->ident(), m_frame_tag);
+        ++m_count;
         return true;
     }
+    ++m_count;
 
     // Convert to OSP cmm indexed by OSB sequential channels, NOT WCT channel ID.
     m_cmm.clear();
@@ -1531,9 +1537,13 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
         sframe->tag_traces(m_mp2_roi_tag, mp2_roi_traces);
     }
 
-    log->debug("OmnibusSigProc: produce {} traces: {} {}, {} {}, {} {}, frame tag: {}", itraces->size(),
-               wiener_traces.size(), m_wiener_tag, decon_charge_traces.size(), m_decon_charge_tag, gauss_traces.size(),
-               m_gauss_tag, m_frame_tag);
+    log->debug("OmnibusSigProc: produce {} "
+               "traces: {} {}, {} {}, {} {}, frame tag: {}",
+               itraces->size(),
+               wiener_traces.size(), m_wiener_tag,
+               decon_charge_traces.size(), m_decon_charge_tag,
+               gauss_traces.size(), m_gauss_tag,
+               m_frame_tag);
 
     out = IFrame::pointer(sframe);
 

@@ -237,7 +237,7 @@ void Gen::Drifter::flush_ripe(output_queue& outq, double now)
 bool Gen::Drifter::operator()(const input_pointer& depo, output_queue& outq)
 {
     if (m_speed <= 0.0) {
-        l->error("illegal drift speed: {}", m_speed);
+        l->error("Gen::Drifter: illegal drift speed: {}", m_speed);
         return false;
     }
 
@@ -246,8 +246,11 @@ bool Gen::Drifter::operator()(const input_pointer& depo, output_queue& outq)
         flush(outq);
 
         if (n_dropped) {
-            l->debug("drifter: EOS, dropped {} / {} depos from stream, outside of all {} drift xregions",
-                     n_dropped, n_dropped + n_drifted, m_xregions.size());
+            l->debug("Gen::Drifter: see EOS, "
+                     "( dropped:{} + drifted:{} ) / total:{} depos "
+                     "from stream, outside of all {} drift xregions",
+                     n_dropped, n_drifted, n_dropped + n_drifted,
+                     m_xregions.size());
         }
         n_drifted = n_dropped = 0;
         return true;

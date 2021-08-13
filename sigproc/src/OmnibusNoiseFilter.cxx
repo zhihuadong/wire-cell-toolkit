@@ -242,6 +242,10 @@ bool OmnibusNoiseFilter::operator()(const input_pointer& inframe, output_pointer
     sframe->tag_frame("noisefilter");
     outframe = IFrame::pointer(sframe);
 
+    log->warn("OmnibusNoiseFilter: frame: {}, traces: {}, tags: {} -> {}",
+              sframe->ident(), itraces.size(), m_intag, m_outtag);
+
+
     return true;
 }
 

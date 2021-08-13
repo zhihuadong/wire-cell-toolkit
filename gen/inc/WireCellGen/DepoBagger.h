@@ -35,7 +35,7 @@ namespace WireCell {
 
            private:
             // Count how many we've produced, use this for the depo set ident.
-            int m_count;
+            int m_count{0};
 
             // The acceptance time gate
             std::pair<double, double> m_gate;

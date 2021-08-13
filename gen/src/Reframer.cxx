@@ -75,18 +75,26 @@ bool Gen::Reframer::operator()(const input_pointer& inframe, output_pointer& out
         waves[chid].resize(m_nticks, m_fill);
     }
 
+    auto all_traces = inframe->traces();
+
+    std::stringstream report;
+    report << "Gen::Reframer: frame:" << inframe->ident() << " ";
+
+
     // Get traces to consider
     std::vector<ITrace::pointer> traces;
-    auto all_traces = inframe->traces();
     if (m_input_tags.empty()) {  // all traces
+        report << "all traces in: " << all_traces->size() << " ";
         traces.insert(traces.begin(), all_traces->begin(), all_traces->end());
     }
     else {
         // get tagged traces, but don't double count
         std::unordered_set<int> trace_indices;
+        report << "in tags: ";
         for (auto tag : m_input_tags) {
             auto indices = inframe->tagged_traces(tag);
             trace_indices.insert(indices.begin(), indices.end());
+            report << "\"" << tag << "\":" << indices.size() << " ";
         }
         for (int ind : trace_indices) {
             traces.push_back(all_traces->at(ind));
@@ -137,6 +145,9 @@ bool Gen::Reframer::operator()(const input_pointer& inframe, output_pointer& out
     }
 
     outframe = sframe;
-    log->debug("Gen::Reframer: frame {} {} traces, {} ticks", inframe->ident(), out_traces.size(), m_nticks);
+
+    report << "out tag: \"" << m_frame_tag << "\"";
+    log->debug(report.str());
+
     return true;
 }
