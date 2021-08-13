@@ -43,8 +43,14 @@ namespace WireCell {
 
         // Subclasses may override to provide the number of instances
         // that can run concurrently.  Default is 1.  Return 0 for
-        // unlimited.  If the implementation buffers data between
-        // calls to its signature it should likely return 1.
+        // unlimited.  It is expected that NO node has concurency
+        // other than unity for two reasons: 1) The node itself must
+        // not have mutable data which tends not to be possible.  2)
+        // Concurent running of the same node violates fairly
+        // pervasive ordering assumptions for downstreadm nodes.  If
+        // you think your node should run concurrently with itself,
+        // test carefully with full graphs and with TbbFlow given more
+        // than one thread.  See #121 for some more details.
         virtual int concurrency() { return 1; }
 
         // Return string representations of the C++ types this node takes as input.

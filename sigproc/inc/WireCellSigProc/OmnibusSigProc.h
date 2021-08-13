@@ -42,9 +42,6 @@ namespace WireCell {
 
             virtual bool operator()(const input_pointer& in, output_pointer& out);
 
-            /// OmnibusSigProc is NOT stateless
-            virtual int concurrency() { return 1; }
-
             virtual void configure(const WireCell::Configuration& config);
             virtual WireCell::Configuration default_configuration() const;
 
@@ -229,6 +226,7 @@ namespace WireCell {
             // samples.
             bool m_sparse;
 
+            size_t m_count{0};
             Log::logptr_t log;
         };
     }  // namespace SigProc

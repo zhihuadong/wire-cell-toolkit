@@ -20,9 +20,6 @@ namespace WireCell {
         virtual bool operator()(const boost::any& anyin, boost::any& anyout) = 0;
 
         virtual NodeCategory category() { return functionNode; }
-
-        /// By default assume all subclasses are stateless.
-        virtual int concurrency() { return 0; }
     };
 
     template <typename InputType, typename OutputType>

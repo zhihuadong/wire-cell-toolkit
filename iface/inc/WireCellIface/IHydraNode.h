@@ -32,9 +32,6 @@ namespace WireCell {
         virtual bool operator()(any_queue_vector& anyinq, any_queue_vector& anyoutq) = 0;
 
         virtual NodeCategory category() { return hydraNode; }
-
-        /// By default assume hydra nodes can do their thing stateless.
-        virtual int concurrency() { return 0; }
     };
 
     /** A hydra with input and output fixed at compile-time with tuples.

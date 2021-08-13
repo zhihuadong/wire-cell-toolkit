@@ -27,9 +27,6 @@ namespace WireCell {
         virtual bool operator()(const boost::any& anyin, any_vector& anyout) = 0;
 
         virtual NodeCategory category() { return splitNode; }
-
-        /// Split nodes can usually do their thing stateless.
-        virtual int concurrency() { return 0; }
     };
 
     //
