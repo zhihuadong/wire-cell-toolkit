@@ -452,8 +452,10 @@ void OmnibusSigProc::save_data(ITrace::vector& itraces, IFrame::trace_list_t& in
     }
     else {
         const int nadded = indices.back() - indices.front() + 1;
-        log->debug("OmnibusSigProc::save_data plane index: Qtot={} added {} traces to total {} indices:[{},{}]", plane,
-                   qtot, nadded, indices.size(), indices.front(), indices.back());
+        log->debug("OmnibusSigProc::save_data plane index: {}, Qtot={} "
+                   "added {} traces to total {} indices:[{},{}]",
+                   plane, qtot,
+                   nadded, indices.size(), indices.front(), indices.back());
     }
 }
 
