@@ -136,13 +136,13 @@ void Sio::FrameFileSink::one_tag(const IFrame::pointer& frame,
         const std::vector<double> tickinfo{frame->time(), frame->tick(), (double) tbinmm.first};
         custard::vector_sink(m_out, aname, tickinfo);
     }
-    m_out.flush();
 
 }
 bool Sio::FrameFileSink::operator()(const IFrame::pointer& frame)
 {
     if (! frame) { // eos
-        m_out.clear();
+        log->debug("FrameFileSink: EOS, closing {}", m_outname);
+        m_out.pop();
         return true;
     }
 
