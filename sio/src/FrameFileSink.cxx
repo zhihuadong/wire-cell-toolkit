@@ -7,11 +7,13 @@
 #include "WireCellAux/FrameTools.h"
 
 // These are found at *compile* time in util/inc/.
+// Fixme: move them into util/Persist.
 #include "custard/custard_boost.hpp"
 #include "custard/custard_pigenc.hpp"
 
 WIRECELL_FACTORY(FrameFileSink, WireCell::Sio::FrameFileSink,
-                 WireCell::IFrameSink, WireCell::IConfigurable)
+                 WireCell::IFrameSink, WireCell::ITerminal,
+                 WireCell::IConfigurable)
 
 using namespace WireCell;
 
@@ -22,6 +24,12 @@ Sio::FrameFileSink::FrameFileSink()
 
 Sio::FrameFileSink::~FrameFileSink()
 {
+}
+
+void Sio::FrameFileSink::finalize()
+{
+    log->debug("FrameFileSink: closing {}", m_outname);
+    m_out.pop();
 }
 
 WireCell::Configuration Sio::FrameFileSink::default_configuration() const
@@ -136,13 +144,12 @@ void Sio::FrameFileSink::one_tag(const IFrame::pointer& frame,
         const std::vector<double> tickinfo{frame->time(), frame->tick(), (double) tbinmm.first};
         custard::vector_sink(m_out, aname, tickinfo);
     }
+    m_out.flush();
 
 }
 bool Sio::FrameFileSink::operator()(const IFrame::pointer& frame)
 {
     if (! frame) { // eos
-        log->debug("FrameFileSink: EOS, closing {}", m_outname);
-        m_out.pop();
         return true;
     }
 

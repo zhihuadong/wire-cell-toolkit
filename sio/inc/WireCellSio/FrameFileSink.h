@@ -2,6 +2,7 @@
 #define WIRECELLSIO_FRAMEFILESINK
 
 #include "WireCellIface/IFrameSink.h"
+#include "WireCellIface/ITerminal.h"
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellUtil/Logging.h"
 
@@ -12,10 +13,12 @@
 
 namespace WireCell::Sio {
 
-    class FrameFileSink : public IFrameSink, public IConfigurable {
+    class FrameFileSink : public IFrameSink, public IConfigurable, public ITerminal {
     public:
         FrameFileSink();
         virtual ~FrameFileSink();
+
+        virtual void finalize();
 
         virtual void configure(const WireCell::Configuration& cfg);
         virtual WireCell::Configuration default_configuration() const;
