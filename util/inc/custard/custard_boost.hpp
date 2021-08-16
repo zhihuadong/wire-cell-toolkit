@@ -1,11 +1,15 @@
 /**
-   A tar reader and writer as boost::iostreams filters.
+   custard filters
+
+   Provide boost::iostreams input and output filters to convert
+   between custard and tar codec.
  */
 
 #ifndef boost_custart_hpp
 #define boost_custart_hpp
 
 #include "custard.hpp"
+#include "custard_stream.hpp"
 
 #include <boost/iostreams/concepts.hpp>    // multichar_output_filter
 #include <boost/iostreams/operations.hpp> // write
@@ -35,36 +39,58 @@ namespace custard {
         return boost::filesystem::create_directories(p);
     }
 
-    // This is a stateful filter which parses the stream for
-    // [filename]\n[size-as-string]\n[file body of given size][filename]\n....
+    // This filter inputs a custard stream and outputs a tar stream.
     class tar_writer : public boost::iostreams::multichar_output_filter {
       public:
 
-        std::streamsize slurp_filename(const char* s, std::streamsize n)
+        std::streamsize slurp_header(const char* s, std::streamsize nin)
         {
-            for (int ind=0; ind<n; ++ind) {
-                if (s[ind] == '\n') {
-                    sizebytes="";
-                    state = State::size;
-                    return ind+1;
+            for (std::streamsize ind = 0; ind<nin; ++ind) {
+                char c = s[ind];
+                headstring.push_back(c);
+                // std::cerr << "|" << c << "|" << ind << "/" << nin << "/" << headstring.size() << std::endl;
+
+                if (c == '\n') { // just finished a value
+                    have_key = false;
+                    key_start = headstring.size(); // one past the newline
+                    if (in_body) {
+                        std::istringstream ss(headstring);
+                        read(ss, th);
+                        loc = 0;
+                        // std::cerr << "custard write filter header: " << th.name() << " " << th.size() << " " << th.chksum() << " " << th.checksum() << std::endl;
+                        // std::cerr << "headstring: |" << headstring << "|\n";
+                        headstring.clear();
+                        key_start = 0;
+                        in_body = false;
+                        state = State::sendhead;
+                        return ind+1;
+                    }
+                    continue;
                 }
-                filename += s[ind];
+
+                if (c == ' ') { 
+                    if (have_key) { 
+                        // just a random space in a value
+                        continue;
+                    }
+                    // we've just past the key
+                    have_key = true;
+                    in_body = false;
+                    std::string key = headstring.substr(key_start);
+                    // std::cerr << "custard write filter: found key: |" << key << "| at " << key_start 
+                    //           << " headstring: |" << headstring << "|\n";
+
+                    if (key == "body ") {
+                        in_body = true;
+                    }
+                    continue;
+                }
             }
-            return n;
+
+            return nin;
         }
 
-        std::streamsize slurp_size(const char* s, std::streamsize n)
-        {
-            for (int ind=0; ind<n; ++ind) {
-                if (s[ind] == '\n') {
-                    size = atol(sizebytes.c_str());
-                    state = State::header;
-                    return ind+1;
-                }
-                sizebytes += s[ind];
-            }
-            return n;
-        }
+
 
         template<typename Sink>
         std::streamsize slurp_body(Sink& dest, const char* s, std::streamsize n)
@@ -78,16 +104,16 @@ namespace custard {
                 size_t pad = 512 - loc%512;
 
                 for (size_t ind=0; ind<pad; ++ind) {
-                    const char zero = '\0';
-                    boost::iostreams::write(dest, &zero, 1);
+                    boost::iostreams::put(dest, '\0');
                 };
 
                 loc = 0;
-                size = 0;
-                filename = "";
                 th.clear();
-                state = State::filename;
+                // std::cerr << "custard write filter: going to gethed, headstring: |" << headstring << "|\n";
+
+                state = State::gethead;
             }
+            assert(take >= 0 and take <= n);
             return take;        
         }
 
@@ -95,20 +121,14 @@ namespace custard {
         template<typename Sink>
         std::streamsize write_one(Sink& dest, const char* s, std::streamsize n)
         {
-            if (state == State::filename) {
-                return slurp_filename(s, n);
+            if (state == State::gethead) {
+                return slurp_header(s, n);
             }
 
-            if (state == State::size) {
-                auto ret = slurp_size(s, n);
-                if (state == State::header) {
-                    loc = 0;
-                    th.init(filename, size);
-                    boost::iostreams::write(dest, (char*)th.as_bytes(), 512);
-
-                    state = State::body;
-                }
-                return ret;
+            if (state == State::sendhead) {
+                boost::iostreams::write(dest, (char*)th.as_bytes(), 512);
+                // std::cerr << "custard write filter: going to body, headstring: |" << headstring << "|\n";
+                state = State::body;
             }
 
             if (state == State::body) {
@@ -120,24 +140,20 @@ namespace custard {
         template<typename Sink>
         std::streamsize write(Sink& dest, const char* buf, std::streamsize bufsiz)
         {
-            // std::cerr << "WRITE in [" << std::this_thread::get_id() << "]: " << bufsiz << std::endl;
             std::streamsize consumed = 0; // number taken from buf
             const char* ptr = buf;
             while (consumed < bufsiz) {
                 std::streamsize left = bufsiz - consumed;
                 auto took = write_one(dest, ptr, left);
                 if (took < 0) {
-                    // std::cerr << "WRITE out [" << std::this_thread::get_id() << "]: " << took << std::endl;
                     return took;
                 }
                 if (!took) {
-                    // std::cerr << "WRITE out [" << std::this_thread::get_id() << "]: " << consumed << std::endl;
                     return consumed;
                 }
                 consumed += took;
                 ptr += took;
             }
-            // std::cerr << "WRITE out [" << std::this_thread::get_id() << "]: " << bufsiz << std::endl;
             return bufsiz;
         }
 
@@ -151,95 +167,110 @@ namespace custard {
       private:
         custard::Header th;
 
-        std::string filename{""}, sizebytes{""};
-        size_t size{0}, loc{0};
-        enum class State { filename, size, header, body };
-        State state{State::filename};
+        // we slurp in the custard header string fully first
+        std::string headstring;
+        // the start of the current key in the headstring
+        size_t key_start{0};
+        // we have a seen a key in the current option
+        bool have_key{false};
+        // If we are in the middle of inputing the "body" key
+        bool in_body{false};
+        // where in the body we are
+        size_t loc{0};
+        enum class State { gethead, sendhead, body };
+        State state{State::gethead};
+
     };
 
 
-    // This filter inputs a tar stream and produces a stream matching
-    // the output_filter's input expectation:
-    // [filename]\n[size-as-string]\n[file body of given size][filename]\n....
+    // This filter inputs a tar stream and produces custard stream.
     class tar_reader : public boost::iostreams::multichar_input_filter {
       public:
 
         template<typename Source>
         std::streamsize slurp_header(Source& src)
         {
-            auto got = boost::iostreams::read(src, th.as_bytes(), 512);
-            if (got < 0) {
-                return got;
-            }
-            assert (got == 512); // fixme: handle short reads
+            // std::cerr << "tar_reader: slurp_header\n";
+            std::streamsize got{0};
 
-            // drain trailing zeroed "blockings"
-            if (th.size() == 0) {
-                return slurp_header(src);
+            // Either we have a next non-zero header or we have zero
+            // headers until we hit EOF.
+            while (true) {
+                got = boost::iostreams::read(src, th.as_bytes(), 512);
+                if (got < 0) {
+                    // std::cerr << "tar_reader: EOF in header\n";
+                    return got;
+                }
+                if (th.size() == 0) {
+                    // std::cerr << "tar_reader: empty header\n";
+                    continue;
+                }
+                break;
             }
+            assert (got == 512);
 
-            filename = th.name() + "\n";
-            bodysize = bodyleft = th.size();
-            std::stringstream ss;
-            ss << bodyleft << "\n";
-            sizebytes = ss.str();
+            // std::cerr << "tar_reader: |" << th.name() << "| " << th.size() <<"|\n";
+
+            bodyleft = th.size();
+            std::ostringstream ss;
+            custard::write(ss, th);
+            headstring = ss.str();
+
+            // std::cerr << "\theadstring:\n|" << headstring << "|\n";
+
             return 512;
         }
 
         template<typename Source>
         std::streamsize read_one(Source& src, char* buf, std::streamsize bufsiz)
         {
-            if (state == State::header) {
+            // std::cerr << "tar_reader: read_one at state "
+            //           << (int)state << " bufsize "<<bufsiz<<"\n";
+            if (state == State::gethead) {
                 auto got = slurp_header(src);
-                if (got < 0) { return got; }
-                state = State::filename;
+                if (got < 0) {
+                    // std::cerr << "tar_reader: forwarding EOF in read_one\n";
+                    return got;
+                }
+                state = State::sendhead;
                 return read_one(src, buf, bufsiz);
             }
 
             // The rest may take several calls if bufsiz is too small.
 
-            if (state == State::filename) { 
-                std::streamsize tosend = std::min<size_t>(bufsiz, filename.size());
-                std::memcpy(buf, filename.data(), tosend);
-                filename.erase(0, tosend);
-                if (filename.empty()) {
-                    state = State::size;
-                }
-                return tosend;
-            }
-
-            if (state == State::size) {
-                std::streamsize tosend = std::min<size_t>(bufsiz, sizebytes.size());
-                std::memcpy(buf, sizebytes.data(), tosend);
-                sizebytes.erase(0, tosend);
-                if (sizebytes.empty()) {
+            if (state == State::sendhead) { 
+                std::streamsize tosend = std::min<size_t>(bufsiz, headstring.size());
+                std::memcpy(buf, headstring.data(), tosend);
+                headstring = headstring.substr(tosend);
+                if (headstring.empty()) {
                     state = State::body;
                 }
                 return tosend;
             }
 
             if (state == State::body) {
-                std::streamsize tosend = std::min<size_t>(bufsiz, bodyleft);
-                auto got = boost::iostreams::read(src, buf, tosend);
-                if (got < 0) {
-                    return got;
+                std::streamsize want = std::min<size_t>(bufsiz, bodyleft);
+                auto put = boost::iostreams::read(src, buf, want);
+
+                // std::cerr << "bodyleft: " << bodyleft << " " << bufsiz
+                //           << " " << want << " " << put << "\n";
+                if (put < 0) {
+                    return put;
                 }
-                // fixme: handle short read
 
-                bodyleft -= tosend;
+                bodyleft -= put;
                 if (bodyleft == 0) {
-                    state = State::header;
-
+                    state = State::filedone;
                     // slurp padding
-                    const size_t jump = 512 - bodysize%512;
+                    const size_t jump = 512 - th.size()%512;
                     std::string pad(jump, 0);
-                    got = boost::iostreams::read(src, &pad[0], jump);
+                    auto got = boost::iostreams::read(src, &pad[0], jump);
+                    // std::cerr << "padleft: " << jump << " " << got << "\n";
                     if (got < 0) {
                         return got;
                     }
-                    // fixme: handle short read
                 }
-                return tosend;                
+                return put;
             }
             return -1;
         }
@@ -261,17 +292,22 @@ namespace custard {
                 }
                 filled += got;
                 ptr += got;
+                if (state == State::filedone) {
+                    state = State::gethead;
+                    return filled;
+                }
             }
             return filled;
         }
 
       private:
         custard::Header th;
-
-        std::string filename{""}, sizebytes{""};
-        size_t bodysize{0}, bodyleft{0};
-        enum class State { header, filename, size, body };
-        State state{State::header};
+        // temp buffer for custard codec of header
+        std::string headstring{""};
+        // track how much of the body is left to read
+        size_t bodyleft{0};
+        enum class State { gethead, sendhead, body, getpadd, filedone };
+        State state{State::gethead};
         
     };
 
@@ -306,17 +342,6 @@ namespace custard {
                         std::string outname,
                         int level = boost::iostreams::zlib::default_compression)
     {
-        /// future intentions:
-        // if (boost::algorithm::iends_with(outname, "/")) {
-        //     out.push(custard::dir_writer(outname));
-        //     return;
-        // }
-        // if (boost::algorithm::istarts_with(outname, "inproc://")) {
-        //     out.push(custard::zmq_writer(outname));
-        //     return;
-        // }
-
-        
         assuredir(outname);
 
         // Add tar writer if we see tar at the end.
