@@ -135,12 +135,12 @@ void Sio::FrameFileSink::one_tag(const IFrame::pointer& frame,
     }
 
     {  // the channel array
-        const std::string aname = String::format("channels_%s_%d", tag.c_str(), frame->ident());
+        const std::string aname = String::format("channels_%s_%d.npy", tag.c_str(), frame->ident());
         custard::vector_sink(m_out, aname, channels);
     }
 
     {  // the tick array
-        const std::string aname = String::format("tickinfo_%s_%d", tag.c_str(), frame->ident());
+        const std::string aname = String::format("tickinfo_%s_%d.npy", tag.c_str(), frame->ident());
         const std::vector<double> tickinfo{frame->time(), frame->tick(), (double) tbinmm.first};
         custard::vector_sink(m_out, aname, tickinfo);
     }
