@@ -1,21 +1,19 @@
 #include "WireCellSio/FrameFileSink.h"
 
 #include "WireCellUtil/Units.h"
+#include "WireCellUtil/Stream.h"
 #include "WireCellUtil/Exceptions.h"
 #include "WireCellUtil/NamedFactory.h"
 
 #include "WireCellAux/FrameTools.h"
 
-// These are found at *compile* time in util/inc/.
-// Fixme: move them into util/Persist.
-#include "custard/custard_boost.hpp"
-#include "custard/custard_pigenc.hpp"
 
 WIRECELL_FACTORY(FrameFileSink, WireCell::Sio::FrameFileSink,
                  WireCell::IFrameSink, WireCell::ITerminal,
                  WireCell::IConfigurable)
 
 using namespace WireCell;
+using namespace WireCell::Stream;
 
 Sio::FrameFileSink::FrameFileSink()
   : log(Log::logger("io"))
@@ -64,8 +62,8 @@ void Sio::FrameFileSink::configure(const WireCell::Configuration& cfg)
     m_outname = get(cfg, "outname", m_outname);
 
     m_out.clear();
-    custard::output_filters(m_out, m_outname);
-    if (m_out.empty()) {
+    output_filters(m_out, m_outname);
+    if (m_out.size() < 2) {     // must have at least get tar filter + file sink.
         THROW(ValueError() << errmsg{"FrameFielSink: unsupported outname: " + m_outname});
     }
 
@@ -125,10 +123,10 @@ void Sio::FrameFileSink::one_tag(const IFrame::pointer& frame,
         const std::string aname = String::format("frame_%s_%d.npy", tag.c_str(), frame->ident());
         if (m_digitize) {
             Array::array_xxs sarr = arr.cast<short>();
-            custard::eigen_sink(m_out, aname, sarr);
+            write(m_out, aname, sarr);
         }
         else {
-            custard::eigen_sink(m_out, aname, arr);
+            write(m_out, aname, arr);
         }
         log->debug("FrameFileSink: saved {} with {} channels {} ticks @t={} ms qtot={}", aname, nrows, ncols,
                    frame->time() / units::ms, arr.sum());
@@ -136,13 +134,13 @@ void Sio::FrameFileSink::one_tag(const IFrame::pointer& frame,
 
     {  // the channel array
         const std::string aname = String::format("channels_%s_%d.npy", tag.c_str(), frame->ident());
-        custard::vector_sink(m_out, aname, channels);
+        write(m_out, aname, channels);
     }
 
     {  // the tick array
         const std::string aname = String::format("tickinfo_%s_%d.npy", tag.c_str(), frame->ident());
         const std::vector<double> tickinfo{frame->time(), frame->tick(), (double) tbinmm.first};
-        custard::vector_sink(m_out, aname, tickinfo);
+        write(m_out, aname, tickinfo);
     }
     m_out.flush();
 
