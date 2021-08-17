@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/ingydotnet/git-subrepo#readme
+;
+[subrepo]
+	remote = git@github.com:brettviren/custard.git
+	branch = master
+	commit = be39e0859d6940d366c4c02a65e188bb0a091475
+	parent = 61b8f93d7a24f69176c96d93a1a37dcbff7e9c58
+	method = merge
+	cmdver = 0.4.3
