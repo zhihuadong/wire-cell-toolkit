@@ -23,9 +23,6 @@ namespace WireCell {
         virtual bool operator()(const boost::any& anyin, queuedany& out) = 0;
 
         virtual NodeCategory category() { return queuedoutNode; }
-
-        /// By default assume all subclasses maintain state.
-        virtual int concurrency() { return 1; }
     };
 
     template <typename InputType, typename OutputType>

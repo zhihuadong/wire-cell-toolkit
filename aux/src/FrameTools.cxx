@@ -9,13 +9,22 @@
 #include <vector>
 #include <memory>
 #include <numeric>
+#include <sstream>
 
 using namespace WireCell;
 
-int aux::frmtcmp(IFrame::pointer frame, double time)
+std::string Aux::name(const WireCell::IFrame::pointer& frame)
+{
+    std::stringstream ss;
+    ss << "frame_" << frame->ident();
+    return ss.str();
+    
+}
+
+int Aux::frmtcmp(IFrame::pointer frame, double time)
 {
     auto traces = frame->traces();
-    auto tbin_mm = aux::tbin_range(*traces.get());
+    auto tbin_mm = Aux::tbin_range(*traces.get());
 
     const double tref = frame->time();
     const double tick = frame->tick();
@@ -30,7 +39,7 @@ int aux::frmtcmp(IFrame::pointer frame, double time)
     }
     return 0;
 }
-std::pair<IFrame::pointer, IFrame::pointer> aux::split(IFrame::pointer frame, double time)
+std::pair<IFrame::pointer, IFrame::pointer> Aux::split(IFrame::pointer frame, double time)
 {
     int cmp = frmtcmp(frame, time);
     if (cmp < 0) {
@@ -82,7 +91,7 @@ std::pair<IFrame::pointer, IFrame::pointer> aux::split(IFrame::pointer frame, do
     return std::pair<IFrame::pointer, IFrame::pointer>(mframe, pframe);
 }
 
-ITrace::vector aux::untagged_traces(IFrame::pointer frame)
+ITrace::vector Aux::untagged_traces(IFrame::pointer frame)
 {
     auto traces = frame->traces();
     size_t ntraces = traces->size();
@@ -103,7 +112,7 @@ ITrace::vector aux::untagged_traces(IFrame::pointer frame)
     return ret;
 }
 
-ITrace::vector aux::tagged_traces(IFrame::pointer frame, IFrame::tag_t tag)
+ITrace::vector Aux::tagged_traces(IFrame::pointer frame, IFrame::tag_t tag)
 {
     if (tag == "") {
         return untagged_traces(frame);
@@ -123,17 +132,17 @@ ITrace::vector aux::tagged_traces(IFrame::pointer frame, IFrame::tag_t tag)
     return *all_traces;  // must make copy of shared pointers
 }
 
-aux::channel_list aux::channels(const ITrace::vector& traces)
+Aux::channel_list Aux::channels(const ITrace::vector& traces)
 {
     const auto nchans = traces.size();
-    aux::channel_list ret(nchans, 0);
+    Aux::channel_list ret(nchans, 0);
     for (size_t ind = 0; ind != nchans; ++ind) {
         ret[ind] = traces[ind]->channel();
     }
     return ret;
 }
 
-std::pair<int, int> aux::tbin_range(const ITrace::vector& traces)
+std::pair<int, int> Aux::tbin_range(const ITrace::vector& traces)
 {
     const auto siz = traces.size();
     std::vector<int> tbins(siz), tlens(siz);
@@ -147,7 +156,7 @@ std::pair<int, int> aux::tbin_range(const ITrace::vector& traces)
                                *std::max_element(tlens.begin(), tlens.end()));
 }
 
-void aux::fill(Array::array_xxf& array, const ITrace::vector& traces, channel_list::iterator chit,
+void Aux::fill(Array::array_xxf& array, const ITrace::vector& traces, channel_list::iterator chit,
                channel_list::iterator chend, int tbin)
 {
     std::unordered_map<int, int> index;
@@ -192,7 +201,7 @@ void aux::fill(Array::array_xxf& array, const ITrace::vector& traces, channel_li
 }
 
 
-void aux::dump_frame(WireCell::IFrame::pointer frame)
+void Aux::dump_frame(WireCell::IFrame::pointer frame)
 {
     auto traces = frame->traces();
     const size_t ntraces = traces->size();
@@ -233,7 +242,7 @@ void aux::dump_frame(WireCell::IFrame::pointer frame)
     }
 }
 
-void aux::raster(WireCell::Array::array_xxf& block, WireCell::ITrace::vector traces,
+void Aux::raster(WireCell::Array::array_xxf& block, WireCell::ITrace::vector traces,
                  const std::vector<int>& channels)
 {
     const size_t nchannels = channels.size();
@@ -271,7 +280,7 @@ void aux::raster(WireCell::Array::array_xxf& block, WireCell::ITrace::vector tra
 typedef std::pair<int, const std::vector<float>*> tbin_charge_t;
 typedef std::map<int, std::vector<tbin_charge_t> > channel_index_t;
 
-IFrame::pointer aux::sum(std::vector<IFrame::pointer> frames, int ident)
+IFrame::pointer Aux::sum(std::vector<IFrame::pointer> frames, int ident)
 {
     // Extract starting times and ticks of all frames
     const int nframes = frames.size();

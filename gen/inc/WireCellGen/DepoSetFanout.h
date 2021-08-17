@@ -26,8 +26,11 @@ namespace WireCell {
 
            private:
             size_t m_multiplicity;
+            size_t m_count{0};
 
             Log::logptr_t log;
+
+            
         };
     }  // namespace Gen
 }  // namespace WireCell

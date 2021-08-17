@@ -54,6 +54,7 @@ namespace WireCell {
             std::string m_mode;
 
             int m_frame_count;
+            std::string m_tag;
 
             virtual void process(output_queue& frames);
             virtual ITrace::vector process_face(IAnodeFace::pointer face, const IDepo::vector& face_depos);

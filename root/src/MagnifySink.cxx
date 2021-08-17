@@ -331,7 +331,7 @@ bool Root::MagnifySink::operator()(const IFrame::pointer& frame, IFrame::pointer
             log->debug("MagnifySink: set desired trace tag to \"\" as cfg::trace_has_tag=false");
         }
 
-        ITrace::vector traces_byplane[3], traces = aux::tagged_traces(frame, trace_tag);
+        ITrace::vector traces_byplane[3], traces = Aux::tagged_traces(frame, trace_tag);
         if (traces.empty()) {
             log->warn("MagnifySink: no tagged traces for \"{}\"", tag);
             continue;
@@ -386,7 +386,7 @@ bool Root::MagnifySink::operator()(const IFrame::pointer& frame, IFrame::pointer
     // Handle any trace summaries
     for (auto tag : getset(m_cfg["summaries"])) {
         // auto traces = get_tagged_traces(frame, tag);
-        auto traces = aux::tagged_traces(frame, tag);
+        auto traces = Aux::tagged_traces(frame, tag);
         if (traces.empty()) {
             log->warn("MagnifySink: no traces tagged with \"{}\", skipping summary", tag);
             continue;

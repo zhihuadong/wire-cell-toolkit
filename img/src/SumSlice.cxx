@@ -48,7 +48,7 @@ void Img::SumSliceBase::slice(const IFrame::pointer& in, slice_map_t& svcmap)
     const double tick = in->tick();
     const double span = tick * m_tick_span;
 
-    for (auto trace : aux::tagged_traces(in, m_tag)) {
+    for (auto trace : Aux::tagged_traces(in, m_tag)) {
         const int tbin = trace->tbin();
         const int chid = trace->channel();
         IChannel::pointer ich = m_anode->channel(chid);

@@ -27,6 +27,7 @@ namespace WireCell {
 
            private:
             size_t m_multiplicity;
+            size_t m_count{0};
 
             tagrules::Context m_ft;
             Log::logptr_t log;

@@ -50,11 +50,16 @@ bool Gen::FrameFanout::operator()(const input_pointer& in, output_vector& outv)
 {
     outv.resize(m_multiplicity);
 
+    std::stringstream taginfo;
+    taginfo << "FrameFanout: #" << m_count << ": ";
+    ++m_count;
+
     if (!in) {  //  pass on EOS
         for (size_t ind = 0; ind < m_multiplicity; ++ind) {
             outv[ind] = in;
         }
-        log->debug("FrameFanout: see EOS");
+        taginfo << "see EOS";
+        log->debug(taginfo.str());
         return true;
     }
 
@@ -63,7 +68,13 @@ bool Gen::FrameFanout::operator()(const input_pointer& in, output_vector& outv)
     // No equivalent should be made for trace tags.
     fintags.push_back("");
 
-    std::stringstream taginfo;
+    taginfo << "found input frame tags:[";
+    std::string comma="";
+    for (auto tag : fintags) {
+        taginfo << comma << "\"" << tag << "\"";
+        comma=",";
+    }
+    taginfo << "] traces: " << in->traces()->size() << " --> ";
 
     for (size_t ind = 0; ind < m_multiplicity; ++ind) {
         // Basic frame stays the same.
@@ -72,10 +83,14 @@ bool Gen::FrameFanout::operator()(const input_pointer& in, output_vector& outv)
         // Transform any frame tags based on a per output port ruleset
         auto fouttags = m_ft.transform(ind, "frame", fintags);
 
+        taginfo << " out#" << ind << ": frame tags:[";
+        comma = "";
         for (auto ftag : fouttags) {
             sfout->tag_frame(ftag);
-            taginfo << " ftag:" << ftag;
+            taginfo << comma << "\"" << ftag << "\"";
+            comma = ",";
         }
+        taginfo << "], trace tags mapping:";
 
         for (auto inttag : in->trace_tags()) {
             tagrules::tagset_t touttags = m_ft.transform(ind, "trace", inttag);
@@ -84,18 +99,21 @@ bool Gen::FrameFanout::operator()(const input_pointer& in, output_vector& outv)
             }
             const auto& traces = in->tagged_traces(inttag);
             const auto& summary = in->trace_summary(inttag);
+
+            taginfo << " (\"" << inttag << "\") -> [";
+            comma="";
             for (auto otag : touttags) {
                 sfout->tag_traces(otag, traces, summary);
-                taginfo << " " << inttag << "->" << otag;
+                taginfo << comma << "\"" << otag << "\"";
+                comma=",";
             }
+            taginfo << "]";
         };
 
         outv[ind] = IFrame::pointer(sfout);
     }
 
-    std::string tagmsg = taginfo.str();
-    if (!tagmsg.empty()) {
-        log->debug("FrameFanout: tagnifo:{}", taginfo.str());
-    }
+    log->debug(taginfo.str());
+
     return true;
 }

@@ -7,5 +7,5 @@ bld.smplpkg('WireCellUtil',
 
 util_inc_dir = bld.path.find_dir('inc')
 bld.install_files('${PREFIX}/include',
-                  util_inc_dir.ant_glob('spdlog/**/*.h'),
+                  util_inc_dir.ant_glob('custard/**/*.hpp'),
                   cwd = util_inc_dir, relative_trick=True)

@@ -210,8 +210,8 @@ bool L1SPFilter::operator()(const input_pointer& in, output_pointer& out)
     //  ftbins.at(i) = i * fravg.period;
     //}
 
-    auto adctraces = aux::tagged_traces(in, adctag);
-    auto sigtraces = aux::tagged_traces(in, sigtag);
+    auto adctraces = Aux::tagged_traces(in, adctag);
+    auto sigtraces = Aux::tagged_traces(in, sigtag);
 
     if (adctraces.empty() or sigtraces.empty() or adctraces.size() != sigtraces.size()) {
         std::cerr << "L1SPFilter got unexpected input: " << adctraces.size() << " ADC traces and " << sigtraces.size()

@@ -84,6 +84,9 @@ bool WireCell::Persist::assuredir(const std::string& pathname)
     if ( ! p.extension().empty() ) {
         p = p.parent_path();
     }
+    if (p.empty()) {
+        return false;
+    }
     return boost::filesystem::create_directories(p);
 }
 

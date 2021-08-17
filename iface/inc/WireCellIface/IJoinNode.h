@@ -27,9 +27,6 @@ namespace WireCell {
         virtual bool operator()(const any_vector& anyin, boost::any& anyout) = 0;
 
         virtual NodeCategory category() { return joinNode; }
-
-        /// Join nodes can usually do their thing stateless.
-        virtual int concurrency() { return 0; }
     };
 
     //

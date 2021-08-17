@@ -76,6 +76,10 @@ WireCell::Configuration Gen::Ductor::default_configuration() const
     // cfg["pirs"][1] = "PlaneImpactResponseV";
     // cfg["pirs"][2] = "PlaneImpactResponseW";
 
+    // Tag to use for frame and traces will get this tag + the anode
+    // ID.
+    cfg["tag"] = "ductor";
+
     return cfg;
 }
 
@@ -121,7 +125,10 @@ void Gen::Ductor::configure(const WireCell::Configuration& cfg)
         m_pirs.push_back(pir);
     }
 
-    l->debug("AnodePlane: {}, mode: {}, fluctuate: {}, time start: {} ms, readout time: {} ms, frame start: {}",
+    m_tag = get<std::string>(cfg, "tag", "ductor");
+
+    l->debug("Ductor tagging {}, AnodePlane: {}, mode: {}, fluctuate: {}, time start: {} ms, readout time: {} ms, frame start: {}",
+             m_tag,
              m_anode_tn, m_mode, (m_fluctuate ? "on" : "off"), m_start_time / units::ms, m_readout_time / units::ms,
              m_frame_count);
 }
@@ -216,9 +223,8 @@ void Gen::Ductor::process(output_queue& frames)
     for (size_t ind = 0; ind < traces.size(); ++ind) {
         indices[ind] = ind;
     }
-    std::string trace_tag("ductor");
-    frame->tag_traces(string("ductor") + std::to_string(m_anode->ident()), indices);
-    frame->tag_frame("ductor");
+    frame->tag_traces(m_tag + std::to_string(m_anode->ident()), indices);
+    frame->tag_frame(m_tag);
     frames.push_back(frame);
     l->debug("made frame: {} with {} traces @ {}ms", m_frame_count, traces.size(), m_start_time / units::ms);
 

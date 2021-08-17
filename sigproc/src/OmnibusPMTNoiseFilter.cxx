@@ -88,7 +88,7 @@ bool OmnibusPMTNoiseFilter::operator()(const input_pointer& in, output_pointer& 
     std::map<int, Waveform::realseq_t> bychan_indv;
     std::map<int, double> by_chan_rms;
     // go through all channels and calculate RMS as well as categorize them
-    auto traces = aux::tagged_traces(in, m_intag);
+    auto traces = Aux::tagged_traces(in, m_intag);
     for (auto trace : traces) {
         int ch = trace->channel();
 

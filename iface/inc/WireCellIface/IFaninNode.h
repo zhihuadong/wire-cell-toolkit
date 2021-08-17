@@ -24,9 +24,6 @@ namespace WireCell {
         virtual bool operator()(const any_vector& anyin, boost::any& anyout) = 0;
 
         virtual NodeCategory category() { return faninNode; }
-
-        /// Fanin nodes can usually do their thing stateless.
-        virtual int concurrency() { return 0; }
     };
 
     // This converts between any and typed.
