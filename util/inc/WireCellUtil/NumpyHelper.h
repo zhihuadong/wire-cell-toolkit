@@ -12,6 +12,7 @@
 #define WIRECELL_UTIL_NUMPYHELPER
 
 #include "WireCellUtil/cnpy.h"
+#include "WireCellUtil/Persist.h"
 
 #include <Eigen/Core>
 
@@ -30,20 +31,29 @@ namespace WireCell::Numpy {
         std::vector<size_t> shape(2);
         shape[0] = static_cast<size_t>(array.rows());
         shape[1] = static_cast<size_t>(array.cols());
+        WireCell::Persist::assuredir(fname);
         cnpy::npz_save<Scalar>(fname.c_str(), aname, data, 
                                shape, mode);
     }
     
     template <typename ARRAY>
     void load2d(ARRAY& array, std::string aname, std::string fname) {
-        using ROWM = Eigen::Array<typename ARRAY::Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
         using Scalar = typename ARRAY::Scalar;
-        
+
         cnpy::NpyArray np = cnpy::npz_load(fname, aname);
 
-        ROWM temp = Eigen::Map<ROWM>(np.data<Scalar>(),
-                                     np.shape[0], np.shape[1]);
-        array = temp;
+        if (np.fortran_order) {
+            using COLM = Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor>;
+            COLM temp = Eigen::Map<COLM>(np.data<Scalar>(),
+                                         np.shape[0], np.shape[1]);
+            array = temp;
+        }
+        else{
+            using ROWM = Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+            ROWM temp = Eigen::Map<ROWM>(np.data<Scalar>(),
+                                         np.shape[0], np.shape[1]);
+            array = temp;
+        }
     }
 
 }

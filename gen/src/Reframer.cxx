@@ -31,7 +31,10 @@ WireCell::Configuration Gen::Reframer::default_configuration() const
 
     cfg["anode"] = "";
 
+    // tags to find input traces/frames
     cfg["tags"] = Json::arrayValue;
+    // tag to apply to output frame
+    cfg["frame_tag"] = "";
     cfg["tbin"] = m_tbin;
     cfg["nticks"] = m_nticks;
     cfg["toffset"] = m_toffset;
@@ -50,6 +53,7 @@ void Gen::Reframer::configure(const WireCell::Configuration& cfg)
     for (auto jtag : cfg["tags"]) {
         m_input_tags.push_back(jtag.asString());
     }
+    m_frame_tag = get<std::string>(cfg, "frame_tag", "");
     m_toffset = get(cfg, "toffset", m_toffset);
     m_tbin = get(cfg, "tbin", m_tbin);
     m_fill = get(cfg, "fill", m_fill);
@@ -71,18 +75,26 @@ bool Gen::Reframer::operator()(const input_pointer& inframe, output_pointer& out
         waves[chid].resize(m_nticks, m_fill);
     }
 
+    auto all_traces = inframe->traces();
+
+    std::stringstream report;
+    report << "Gen::Reframer: frame:" << inframe->ident() << " ";
+
+
     // Get traces to consider
     std::vector<ITrace::pointer> traces;
-    auto all_traces = inframe->traces();
     if (m_input_tags.empty()) {  // all traces
+        report << "all traces in: " << all_traces->size() << " ";
         traces.insert(traces.begin(), all_traces->begin(), all_traces->end());
     }
     else {
         // get tagged traces, but don't double count
         std::unordered_set<int> trace_indices;
+        report << "in tags: ";
         for (auto tag : m_input_tags) {
             auto indices = inframe->tagged_traces(tag);
             trace_indices.insert(indices.begin(), indices.end());
+            report << "\"" << tag << "\":" << indices.size() << " ";
         }
         for (int ind : trace_indices) {
             traces.push_back(all_traces->at(ind));
@@ -126,8 +138,16 @@ bool Gen::Reframer::operator()(const input_pointer& inframe, output_pointer& out
         out_traces.push_back(out_trace);
     }
 
-    outframe = make_shared<SimpleFrame>(inframe->ident(), inframe->time() + m_toffset + m_tbin * inframe->tick(),
-                                        out_traces, inframe->tick());
-    log->debug("Gen::Reframer: frame {} {} traces, {} ticks", inframe->ident(), out_traces.size(), m_nticks);
+    auto sframe = make_shared<SimpleFrame>(inframe->ident(), inframe->time() + m_toffset + m_tbin * inframe->tick(),
+                                           out_traces, inframe->tick());
+    if (! m_frame_tag.empty()) {
+        sframe->tag_frame(m_frame_tag);
+    }
+
+    outframe = sframe;
+
+    report << "out tag: \"" << m_frame_tag << "\"";
+    log->debug(report.str());
+
     return true;
 }

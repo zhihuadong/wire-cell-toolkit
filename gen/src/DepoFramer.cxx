@@ -65,7 +65,7 @@ bool Gen::DepoFramer::operator()(const input_pointer& in, output_pointer& out)
         }
     }
 
-    out = aux::sum(partial_frames, ident);
+    out = Aux::sum(partial_frames, ident);
 
     return true;
 }

@@ -73,7 +73,22 @@ std::string WireCell::Persist::slurp(const std::string& filename)
     return buf.str();
 }
 
-bool WireCell::Persist::exists(const std::string& filename) { return boost::filesystem::exists(filename); }
+bool WireCell::Persist::exists(const std::string& filename)
+{
+    return boost::filesystem::exists(filename);
+}
+
+bool WireCell::Persist::assuredir(const std::string& pathname)
+{
+    boost::filesystem::path p(pathname);
+    if ( ! p.extension().empty() ) {
+        p = p.parent_path();
+    }
+    if (p.empty()) {
+        return false;
+    }
+    return boost::filesystem::create_directories(p);
+}
 
 static std::vector<std::string> get_path()
 {

@@ -22,7 +22,7 @@ namespace WireCell {
         virtual ~IImpactResponse();
 
         /// Frequency-domain spectrum of response
-        virtual const Waveform::compseq_t& spectrum() = 0;
+        virtual const Waveform::compseq_t& spectrum() const = 0;
         /// Time-domain waveform of the response
         virtual const Waveform::realseq_t& waveform() const = 0;
         // minimum padding for the response

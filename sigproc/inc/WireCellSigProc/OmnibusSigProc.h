@@ -32,7 +32,7 @@ namespace WireCell {
                 double r_th_percent = 0.1, std::vector<int> process_planes = {0, 1, 2}, int charge_ch_offset = 10000,
                 const std::string& wiener_tag = "wiener", const std::string& wiener_threshold_tag = "threshold",
                 const std::string& decon_charge_tag = "decon_charge", const std::string& gauss_tag = "gauss",
-                bool use_roi_debug_mode = false, const std::string& tight_lf_tag = "tight_lf",
+                bool use_roi_debug_mode = false, bool use_roi_refinement = true, const std::string& tight_lf_tag = "tight_lf",
                 const std::string& loose_lf_tag = "loose_lf", const std::string& cleanup_roi_tag = "cleanup_roi",
                 const std::string& break_roi_loop1_tag = "break_roi_1st",
                 const std::string& break_roi_loop2_tag = "break_roi_2nd",
@@ -41,9 +41,6 @@ namespace WireCell {
             virtual ~OmnibusSigProc();
 
             virtual bool operator()(const input_pointer& in, output_pointer& out);
-
-            /// OmnibusSigProc is NOT stateless
-            virtual int concurrency() { return 1; }
 
             virtual void configure(const WireCell::Configuration& config);
             virtual WireCell::Configuration default_configuration() const;
@@ -210,6 +207,7 @@ namespace WireCell {
             std::string m_frame_tag;
 
             bool m_use_roi_debug_mode;
+            bool m_use_roi_refinement;
             std::string m_tight_lf_tag;
             std::string m_loose_lf_tag;
             std::string m_cleanup_roi_tag;
@@ -229,6 +227,7 @@ namespace WireCell {
             // samples.
             bool m_sparse;
 
+            size_t m_count{0};
             Log::logptr_t log;
         };
     }  // namespace SigProc

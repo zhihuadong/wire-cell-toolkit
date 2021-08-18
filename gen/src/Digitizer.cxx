@@ -92,24 +92,26 @@ double Gen::Digitizer::digitize(double voltage)
 bool Gen::Digitizer::operator()(const input_pointer& vframe, output_pointer& adcframe)
 {
     if (!vframe) {  // EOS
-        log->debug("Gen::Digitizer: EOS");
+        log->debug("Gen::Digitizer: anode {}: see EOS", m_anode->ident());
         adcframe = nullptr;
         return true;
     }
 
     // fixme: maybe make this honor a tag
-    auto vtraces = aux::untagged_traces(vframe);
+    auto vtraces = Aux::untagged_traces(vframe);
     if (vtraces.empty()) {
         log->error("Gen::Digitizer: no traces in input frame {}", vframe->ident());
         return false;
     }
+    log->debug("Gen::Digitizer: traces: {} in input frame {} to frame tag \"{}\"",
+               vtraces.size(), vframe->ident(), m_frame_tag);
 
     // Get extent in channel and tbin
-    auto channels = aux::channels(vtraces);
+    auto channels = Aux::channels(vtraces);
     std::sort(channels.begin(), channels.end());
     auto chbeg = channels.begin();
     auto chend = std::unique(chbeg, channels.end());
-    auto tbinmm = aux::tbin_range(vtraces);
+    auto tbinmm = Aux::tbin_range(vtraces);
 
     const size_t ncols = tbinmm.second - tbinmm.first;
     const size_t nrows = std::distance(chbeg, chend);
@@ -117,7 +119,7 @@ bool Gen::Digitizer::operator()(const input_pointer& vframe, output_pointer& adc
     // make a dense array working space.  a row is one trace.  a
     // column is one tick.
     Array::array_xxf arr = Array::array_xxf::Zero(nrows, ncols);
-    aux::fill(arr, vtraces, channels.begin(), chend, tbinmm.first);
+    Aux::fill(arr, vtraces, channels.begin(), chend, tbinmm.first);
 
     ITrace::vector adctraces(nrows);
 

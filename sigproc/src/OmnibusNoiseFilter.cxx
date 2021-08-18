@@ -97,7 +97,7 @@ bool OmnibusNoiseFilter::operator()(const input_pointer& inframe, output_pointer
         return true;
     }
 
-    auto traces = aux::tagged_traces(inframe, m_intag);
+    auto traces = Aux::tagged_traces(inframe, m_intag);
     if (traces.empty()) {
         log->warn("OmnibusNoiseFilter: no traces for tag \"{}\", sending empty frame", m_intag);
         outframe = std::make_shared<SimpleFrame>(inframe->ident(), inframe->time(), std::make_shared<ITrace::vector>(),
@@ -241,6 +241,10 @@ bool OmnibusNoiseFilter::operator()(const input_pointer& inframe, output_pointer
     sframe->tag_traces(m_outtag, indices);
     sframe->tag_frame("noisefilter");
     outframe = IFrame::pointer(sframe);
+
+    log->debug("OmnibusNoiseFilter: frame: {}, traces: {}, tags: {} -> {}",
+               sframe->ident(), itraces.size(), m_intag, m_outtag);
+
 
     return true;
 }

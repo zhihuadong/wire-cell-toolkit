@@ -35,8 +35,9 @@ bool Gen::DepoBagger::operator()(const input_pointer& depo, output_queue& depose
 {
     if (!depo) {  // EOS
         Log::logptr_t log(Log::logger("sim"));
-        log->debug("bagged {} depos at {}", m_depos.size(), m_count);
-        // even if empyt, must send out something to retain sync.
+        log->debug("Gen::DepoBagger: send bag #{} with {} depos followed by EOS",
+                   m_count, m_depos.size());
+        // even if empty, must send out something to retain sync.
         auto out = std::make_shared<SimpleDepoSet>(m_count, m_depos);
         deposetqueue.push_back(out);
         m_depos.clear();

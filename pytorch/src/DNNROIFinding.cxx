@@ -162,13 +162,13 @@ namespace {
         const size_t nrows = cend - cbeg + 1;
         Array::array_xxf arr = Array::array_xxf::Zero(nrows, ncols);
 
-        auto traces = aux::tagged_traces(inframe, tag);
+        auto traces = Aux::tagged_traces(inframe, tag);
         if (traces.empty()) {
             // std::cout << "[yuhw] frame " << inframe->frame_tags() << " has 0 " << tag << " traces!\n";
             return arr;
         }
 
-        aux::fill(arr, traces, channels.begin() + win_cbeg, channels.begin() + win_cend, tick0);
+        Aux::fill(arr, traces, channels.begin() + win_cbeg, channels.begin() + win_cend, tick0);
         arr = arr * scale + offset;
 
         return arr;

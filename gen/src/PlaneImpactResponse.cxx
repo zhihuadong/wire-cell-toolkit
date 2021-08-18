@@ -11,17 +11,6 @@ WIRECELL_FACTORY(PlaneImpactResponse, WireCell::Gen::PlaneImpactResponse, WireCe
 using namespace std;
 using namespace WireCell;
 
-const Waveform::compseq_t& Gen::ImpactResponse::spectrum()
-{
-    if (m_spectrum.size() != 0) {
-        return m_spectrum;
-    }
-    else {
-        m_spectrum = Waveform::dft(m_waveform);
-        return m_spectrum;
-    }
-}
-
 
 Gen::PlaneImpactResponse::PlaneImpactResponse(int plane_ident, size_t nbins, double tick)
   : m_frname("FieldResponse")
