@@ -31,6 +31,8 @@
 #include "WireCellIface/IDepoMerger.h"
 #include "WireCellIface/IDepoSet.h"
 #include "WireCellIface/IDepoSetFanout.h"
+#include "WireCellIface/IDepoSetFilter.h"
+#include "WireCellIface/IDepoSetSource.h"
 #include "WireCellIface/IDepoSink.h"
 #include "WireCellIface/IDepoSource.h"
 #include "WireCellIface/IDiffusion.h"
@@ -123,6 +125,8 @@ IDepoFramer::~IDepoFramer() {}
 IDepoMerger::~IDepoMerger() {}
 IDepoSet::~IDepoSet() {}
 IDepoSetFanout::~IDepoSetFanout() {}
+IDepoSetFilter::~IDepoSetFilter() {}
+IDepoSetSource::~IDepoSetSource() {}
 IDepoSink::~IDepoSink() {}
 IDepoSource::~IDepoSource() {}
 IDiffusion::~IDiffusion() {}
