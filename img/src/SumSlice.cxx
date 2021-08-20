@@ -1,6 +1,7 @@
 #include "WireCellImg/SumSlice.h"
 #include "WireCellImg/ImgData.h"
 #include "WireCellUtil/NamedFactory.h"
+#include "WireCellUtil/Logging.h"
 
 #include "WireCellAux/FrameTools.h"
 
@@ -95,6 +96,7 @@ bool Img::SumSlicer::operator()(const input_pointer& in, output_pointer& out)
 bool Img::SumSlices::operator()(const input_pointer& in, output_queue& slices)
 {
     if (!in) {
+        Log::logger("img")->debug("SumSlices: EOS");
         slices.push_back(nullptr);
         return true;  // eos
     }
@@ -116,5 +118,7 @@ bool Img::SumSlices::operator()(const input_pointer& in, output_queue& slices)
         slices.push_back(ISlice::pointer(s));
     }
 
+    Log::logger("img")->debug("SumSlices: frame: {}, make {} slices from {}",
+                              in->ident(), slices.size(), svcmap.size());
     return true;
 }

@@ -5,6 +5,7 @@
 #include "WireCellUtil/Ress.h"
 #include "WireCellUtil/IndexedSet.h"
 #include "WireCellUtil/NamedFactory.h"
+#include "WireCellUtil/Logging.h"
 
 WIRECELL_FACTORY(BlobSolving, WireCell::Img::BlobSolving, WireCell::IClusterFilter, WireCell::IConfigurable)
 
@@ -124,6 +125,7 @@ bool Img::BlobSolving::operator()(const input_pointer& in, output_pointer& out)
 {
     if (!in) {
         out = nullptr;
+        Log::logger("img")->debug("BlobSolving: see EOS");
         return true;
     }
 
@@ -133,6 +135,9 @@ bool Img::BlobSolving::operator()(const input_pointer& in, output_pointer& out)
         solve_slice(grind, islice);
     }
 
+    Log::logger("img")->debug("BlobSolving: send graph with {}",
+                        boost::num_vertices(grind.graph()));
+                              
     out = std::make_shared<SimpleCluster>(grind.graph());
     return true;
 }

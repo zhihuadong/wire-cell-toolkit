@@ -2,6 +2,7 @@
 #define WIRECELLSIO_CLUSTERFILESINK
 
 #include "WireCellIface/IClusterSink.h"
+#include "WireCellIface/ITerminal.h"
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellUtil/Logging.h"
 
@@ -17,10 +18,14 @@ namespace WireCell::Sio {
      * optionally including IFrame, to a stream which may terminate in
      * file or files or be forwarded over a network.
      */
-    class ClusterFileSink : public IClusterSink, public IConfigurable {
+    class ClusterFileSink : public IClusterSink, public ITerminal,
+                            public IConfigurable
+    {
     public:
         ClusterFileSink();
         virtual ~ClusterFileSink();
+
+        virtual void finalize();
 
         virtual void configure(const WireCell::Configuration& cfg);
         virtual WireCell::Configuration default_configuration() const;
@@ -43,9 +48,10 @@ namespace WireCell::Sio {
         /// files or to a zeromq stream is expected and their outname
         /// formats are reserved.
         std::string m_outname{"cluster-file.tar.bz2"};
-        ///
+
         /// If set to true, also output the referenced frames.
-        bool m_output_frame{"true"};
+        // bool m_output_frame{"false"};
+
         /// Used to set X-axis blob point values based on drift time.
         double m_drift_speed;
 

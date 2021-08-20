@@ -15,6 +15,10 @@ using namespace WireCell;
 
 std::string Aux::name(const WireCell::IFrame::pointer& frame)
 {
+    if (!frame) {
+        return "(null frame)";
+    }
+
     std::stringstream ss;
     ss << "frame_" << frame->ident();
     return ss.str();
@@ -41,6 +45,9 @@ int Aux::frmtcmp(IFrame::pointer frame, double time)
 }
 std::pair<IFrame::pointer, IFrame::pointer> Aux::split(IFrame::pointer frame, double time)
 {
+    if (!frame) {
+        return std::pair<IFrame::pointer, IFrame::pointer>(nullptr, nullptr);
+    }
     int cmp = frmtcmp(frame, time);
     if (cmp < 0) {
         return std::pair<IFrame::pointer, IFrame::pointer>(frame, nullptr);
@@ -93,6 +100,10 @@ std::pair<IFrame::pointer, IFrame::pointer> Aux::split(IFrame::pointer frame, do
 
 ITrace::vector Aux::untagged_traces(IFrame::pointer frame)
 {
+    ITrace::vector ret;
+    if (!frame) {
+        return ret;
+    }
     auto traces = frame->traces();
     size_t ntraces = traces->size();
 
@@ -105,7 +116,6 @@ ITrace::vector Aux::untagged_traces(IFrame::pointer frame)
     std::iota(all.begin(), all.end(), 0);
     std::set_difference(all.begin(), all.end(), tagged.begin(), tagged.end(),
                         std::inserter(untagged, untagged.begin()));
-    ITrace::vector ret;
     for (size_t ind : untagged) {
         ret.push_back(traces->at(ind));
     }
@@ -114,10 +124,13 @@ ITrace::vector Aux::untagged_traces(IFrame::pointer frame)
 
 ITrace::vector Aux::tagged_traces(IFrame::pointer frame, IFrame::tag_t tag)
 {
+    ITrace::vector ret;
+    if (!frame) {
+        return ret;
+    }
     if (tag == "") {
         return untagged_traces(frame);
     }
-    ITrace::vector ret;
     auto const& all_traces = frame->traces();
     for (size_t index : frame->tagged_traces(tag)) {
         ret.push_back(all_traces->at(index));

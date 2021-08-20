@@ -25,7 +25,7 @@ void Img::BlobSetSync::configure(const WireCell::Configuration& cfg)
 {
     int m = get<int>(cfg, "multiplicity", (int) m_multiplicity);
     if (m <= 0) {
-        THROW(ValueError() << errmsg{"BlobSync multiplicity must be positive"});
+        THROW(ValueError() << errmsg{"BlobSetSync multiplicity must be positive"});
     }
     m_multiplicity = m;
 }
@@ -59,9 +59,11 @@ bool Img::BlobSetSync::operator()(const input_vector& invec, output_pointer& out
     }
     if (neos) {
         out = nullptr;
-        SPDLOG_LOGGER_TRACE(l, "BlobSetSink: EOS");
+        l->debug("BlobSetSync: see {} EOS in invec");
         return true;
     }
-    SPDLOG_LOGGER_TRACE(l, "BlobSetSink: sync'ed {} blobs", sbs->m_blobs.size());
+    // we get called a lot so make this a trace level!
+    SPDLOG_LOGGER_TRACE(l, "BlobSetSync: sync'ed {} blobs",
+                        sbs->m_blobs.size());
     return true;
 }
