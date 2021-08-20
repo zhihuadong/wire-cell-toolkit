@@ -6,7 +6,7 @@
 
 namespace WireCell {
 
-    /** A depo source is a node that generates IDepoSet objects.
+    /** A source node that generates IDepoSet objects.
      */
     class IDepoSetSource : public ISourceNode<IDepoSet> {
        public:

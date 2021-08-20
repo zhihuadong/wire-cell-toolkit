@@ -6,7 +6,7 @@
 
 namespace WireCell {
 
-    /** Depos go in, depos go out.
+    /** DepoSet -> DepoSet
      */
     class IDepoSetFilter : public IFunctionNode<IDepoSet, IDepoSet> {
        public:
