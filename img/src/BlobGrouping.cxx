@@ -3,18 +3,21 @@
 #include "WireCellIface/SimpleCluster.h"
 
 #include "WireCellUtil/NamedFactory.h"
-#include "WireCellUtil/Logging.h"
 
 #include <boost/graph/connected_components.hpp>
 
 WIRECELL_FACTORY(BlobGrouping, WireCell::Img::BlobGrouping,
+                 WireCell::INamed,
                  WireCell::IClusterFilter, WireCell::IConfigurable)
 
 using namespace WireCell;
 
 typedef std::unordered_map<WirePlaneLayer_t, cluster_indexed_graph_t> layer_graphs_t;
 
-Img::BlobGrouping::BlobGrouping() {}
+Img::BlobGrouping::BlobGrouping()
+    : Aux::Logger("BlobGrouping", "img")
+{
+}
 
 Img::BlobGrouping::~BlobGrouping() {}
 
@@ -98,8 +101,8 @@ bool Img::BlobGrouping::operator()(const input_pointer& in, output_pointer& out)
         fill_slice(grind, islice);
     }
 
-    Log::logger("img")->debug("BlobGrouping: have {} graph nodes",
-                              boost::num_vertices(grind.graph()));
+    log->debug("have {} graph nodes",
+               boost::num_vertices(grind.graph()));
 
     out = std::make_shared<SimpleCluster>(grind.graph());
     return true;

@@ -14,6 +14,7 @@
 
 #include "WireCellIface/IDepoCollector.h"
 #include "WireCellIface/IConfigurable.h"
+#include "WireCellAux/Logger.h"
 
 #include <map>
 #include <vector>
@@ -21,7 +22,8 @@
 namespace WireCell {
     namespace Gen {
 
-        class DepoBagger : public IDepoCollector, public IConfigurable {
+        class DepoBagger : public Aux::Logger,
+                           public IDepoCollector, public IConfigurable {
            public:
             DepoBagger();
             virtual ~DepoBagger();

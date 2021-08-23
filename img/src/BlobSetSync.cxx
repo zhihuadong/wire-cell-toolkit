@@ -3,12 +3,14 @@
 
 #include "WireCellUtil/NamedFactory.h"
 
-WIRECELL_FACTORY(BlobSetSync, WireCell::Img::BlobSetSync, WireCell::IBlobSetFanin, WireCell::IConfigurable)
+WIRECELL_FACTORY(BlobSetSync, WireCell::Img::BlobSetSync,
+                 WireCell::INamed,
+                 WireCell::IBlobSetFanin, WireCell::IConfigurable)
 using namespace WireCell;
 
 Img::BlobSetSync::BlobSetSync()
-  : m_multiplicity(0)
-  , l(Log::logger("glue"))
+    : Aux::Logger("BlobSetSync", "glue")
+    , m_multiplicity(0)
 {
 }
 
@@ -59,11 +61,11 @@ bool Img::BlobSetSync::operator()(const input_vector& invec, output_pointer& out
     }
     if (neos) {
         out = nullptr;
-        l->debug("BlobSetSync: see {} EOS in invec");
+        log->debug("EOS");
         return true;
     }
     // we get called a lot so make this a trace level!
-    SPDLOG_LOGGER_TRACE(l, "BlobSetSync: sync'ed {} blobs",
+    SPDLOG_LOGGER_TRACE(log, "sync'ed {} blobs",
                         sbs->m_blobs.size());
     return true;
 }

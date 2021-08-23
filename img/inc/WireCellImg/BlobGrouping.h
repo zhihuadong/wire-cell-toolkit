@@ -13,12 +13,13 @@
 
 #include "WireCellIface/IClusterFilter.h"
 #include "WireCellIface/IConfigurable.h"
+#include "WireCellAux/Logger.h"
 
 namespace WireCell {
 
     namespace Img {
 
-        class BlobGrouping : public IClusterFilter, public IConfigurable {
+        class BlobGrouping : public Aux::Logger, public IClusterFilter, public IConfigurable {
            public:
             BlobGrouping();
             virtual ~BlobGrouping();

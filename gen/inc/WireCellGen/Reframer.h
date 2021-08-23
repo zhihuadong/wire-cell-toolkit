@@ -33,7 +33,7 @@
 #include "WireCellIface/IFrameFilter.h"
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/IAnodePlane.h"
-#include "WireCellUtil/Logging.h"
+#include "WireCellAux/Logger.h"
 
 #include <vector>
 #include <string>
@@ -41,7 +41,8 @@
 namespace WireCell {
     namespace Gen {
 
-        class Reframer : public IFrameFilter, public IConfigurable {
+        class Reframer : public Aux::Logger,
+                         public IFrameFilter, public IConfigurable {
            public:
             Reframer();
             virtual ~Reframer();
@@ -61,7 +62,6 @@ namespace WireCell {
 
             double m_toffset, m_fill;
             int m_tbin, m_nticks;
-            Log::logptr_t log;
         };
     }  // namespace Gen
 }  // namespace WireCell

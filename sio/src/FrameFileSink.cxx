@@ -9,6 +9,7 @@
 
 
 WIRECELL_FACTORY(FrameFileSink, WireCell::Sio::FrameFileSink,
+                 WireCell::INamed,
                  WireCell::IFrameSink, WireCell::ITerminal,
                  WireCell::IConfigurable)
 
@@ -16,7 +17,7 @@ using namespace WireCell;
 using namespace WireCell::Stream;
 
 Sio::FrameFileSink::FrameFileSink()
-  : log(Log::logger("io"))
+    : Aux::Logger("FrameFileSink", "io")
 {
 }
 
@@ -26,7 +27,7 @@ Sio::FrameFileSink::~FrameFileSink()
 
 void Sio::FrameFileSink::finalize()
 {
-    log->debug("FrameFileSink: closing {}", m_outname);
+    log->debug("closing {}", m_outname);
     m_out.pop();
 }
 
@@ -91,16 +92,16 @@ void Sio::FrameFileSink::one_tag(const IFrame::pointer& frame,
         // comment.
         auto sv = frame->traces();
         traces.insert(traces.begin(), sv->begin(), sv->end());
-        log->debug("FrameFileSink: all traces [{}], frame: {}",
+        log->debug("all traces [{}], frame: {}",
                    traces.size(), frame->ident());
     }
     else {
         traces = Aux::tagged_traces(frame, tag);
-        log->debug("FrameFileSink: tag: {} traces [{}], frame: {}",
+        log->debug("tag: {} traces [{}], frame: {}",
                    tag, traces.size(), frame->ident());
     }
     if (traces.empty()) {
-        log->warn("FrameFileSink: tag: {}, frame: {}.  ZERO TRACES",
+        log->warn("tag: {}, frame: {}.  ZERO TRACES",
                    tag, frame->ident());
         return;
     }
@@ -113,7 +114,7 @@ void Sio::FrameFileSink::one_tag(const IFrame::pointer& frame,
 
     const size_t ncols = tbinmm.second - tbinmm.first;
     const size_t nrows = std::distance(chbeg, chend);
-    log->debug("FrameFileSink: saving ncols={} nrows={}", ncols, nrows);
+    log->debug("saving ncols={} nrows={}", ncols, nrows);
 
     Array::array_xxf arr = Array::array_xxf::Zero(nrows, ncols) + m_baseline;
     Aux::fill(arr, traces, channels.begin(), chend, tbinmm.first);
@@ -128,7 +129,7 @@ void Sio::FrameFileSink::one_tag(const IFrame::pointer& frame,
         else {
             write(m_out, aname, arr);
         }
-        log->debug("FrameFileSink: saved {} with {} channels {} ticks @t={} ms qtot={}", aname, nrows, ncols,
+        log->debug("saved {} with {} channels {} ticks @t={} ms qtot={}", aname, nrows, ncols,
                    frame->time() / units::ms, arr.sum());
     }
 

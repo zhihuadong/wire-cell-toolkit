@@ -4,13 +4,15 @@
 #include "WireCellUtil/Exceptions.h"
 #include "WireCellIface/SimpleFrame.h"
 
-WIRECELL_FACTORY(FrameFanout, WireCell::Gen::FrameFanout, WireCell::IFrameFanout, WireCell::IConfigurable)
+WIRECELL_FACTORY(FrameFanout, WireCell::Gen::FrameFanout,
+                 WireCell::INamed,
+                 WireCell::IFrameFanout, WireCell::IConfigurable)
 
 using namespace WireCell;
 
 Gen::FrameFanout::FrameFanout(size_t multiplicity)
-  : m_multiplicity(multiplicity)
-  , log(Log::logger("glue"))
+    : Aux::Logger("FrameFanout", "glue")
+    , m_multiplicity(multiplicity)
 {
 }
 Gen::FrameFanout::~FrameFanout() {}
@@ -51,7 +53,7 @@ bool Gen::FrameFanout::operator()(const input_pointer& in, output_vector& outv)
     outv.resize(m_multiplicity);
 
     std::stringstream taginfo;
-    taginfo << "FrameFanout: #" << m_count << ": ";
+    taginfo << "#" << m_count << ": ";
     ++m_count;
 
     if (!in) {  //  pass on EOS

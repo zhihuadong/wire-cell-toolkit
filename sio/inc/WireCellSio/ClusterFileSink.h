@@ -4,7 +4,7 @@
 #include "WireCellIface/IClusterSink.h"
 #include "WireCellIface/ITerminal.h"
 #include "WireCellIface/IConfigurable.h"
-#include "WireCellUtil/Logging.h"
+#include "WireCellAux/Logger.h"
 
 #include <boost/iostreams/filtering_stream.hpp>
 
@@ -18,7 +18,8 @@ namespace WireCell::Sio {
      * optionally including IFrame, to a stream which may terminate in
      * file or files or be forwarded over a network.
      */
-    class ClusterFileSink : public IClusterSink, public ITerminal,
+    class ClusterFileSink : public Aux::Logger,
+                            public IClusterSink, public ITerminal,
                             public IConfigurable
     {
     public:
@@ -57,8 +58,6 @@ namespace WireCell::Sio {
 
         // The output stream
         boost::iostreams::filtering_ostream m_out;
-
-        Log::logptr_t log;
 
     };
 

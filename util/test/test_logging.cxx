@@ -11,8 +11,6 @@ int main(int argc, char* argv[])
     std::string fname = argv[0];
     fname += ".log";
 
-    auto l = Log::logger("test_logging");
-    Assert(l != spdlog::default_logger());
 
     Log::add_stdout(true, "debug");
 
@@ -27,9 +25,11 @@ int main(int argc, char* argv[])
 
     Log::set_level("debug", "special");
 
-    auto s = Log::logger("special");
+    auto l = Log::logger("notshared", false);
+    Assert(l != spdlog::default_logger());
+    Log::set_pattern("special pattern: %v", "notshared");
 
-    l->set_pattern("[%H:%M:%S.%03e] [%n:%L] %v");
+    auto s = Log::logger("special");
 
     l->error("error test logger");
     b->error("error other logger");

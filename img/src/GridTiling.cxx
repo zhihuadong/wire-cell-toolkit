@@ -4,15 +4,17 @@
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellIface/SimpleBlob.h"
 
-WIRECELL_FACTORY(GridTiling, WireCell::Img::GridTiling, WireCell::ITiling, WireCell::IConfigurable)
+WIRECELL_FACTORY(GridTiling, WireCell::Img::GridTiling,
+                 WireCell::INamed,
+                 WireCell::ITiling, WireCell::IConfigurable)
 
 using namespace WireCell;
 using namespace WireCell::RayGrid;
 
 Img::GridTiling::GridTiling()
-  : m_blobs_seen(0)
-  , m_threshold(0.0)
-  , l(Log::logger("img"))
+    : Aux::Logger("GridTiling", "img")
+    , m_blobs_seen(0)
+    , m_threshold(0.0)
 {
 }
 
@@ -23,6 +25,8 @@ void Img::GridTiling::configure(const WireCell::Configuration& cfg)
     m_anode = Factory::find_tn<IAnodePlane>(cfg["anode"].asString());
     m_face = m_anode->face(cfg["face"].asInt());
     m_threshold = get(cfg, "threshold", m_threshold);
+    log->debug("configured with anode:{} face:{}",
+               m_anode->ident(), m_face->ident());
 }
 
 WireCell::Configuration Img::GridTiling::default_configuration() const
@@ -40,7 +44,7 @@ bool Img::GridTiling::operator()(const input_pointer& slice, output_pointer& out
     out = nullptr;
     if (!slice) {
         m_blobs_seen = 0;
-        SPDLOG_LOGGER_TRACE(l, "GridTiling: EOS");
+        SPDLOG_LOGGER_TRACE(log, "GridTiling: EOS");
         return true;  // eos
     }
 
@@ -58,14 +62,14 @@ bool Img::GridTiling::operator()(const input_pointer& slice, output_pointer& out
     const auto faceid = m_face->ident();
     auto chvs = slice->activity();
     if (chvs.empty()) {
-        SPDLOG_LOGGER_TRACE(l, "GridTiling: anode:{} face:{} slice:{} no activity", anodeid, faceid, slice->ident());
+        SPDLOG_LOGGER_TRACE(log, "anode:{} face:{} slice:{} no activity", anodeid, faceid, slice->ident());
         return true;
     }
 
     const int nactivities = slice->activity().size();
     int total_activity = 0;
     if (nactivities < m_face->nplanes()) {
-        SPDLOG_LOGGER_TRACE(l, "GridTiling: anode:{} face:{} slice:{} too few activities given", anodeid, faceid,
+        SPDLOG_LOGGER_TRACE(log, "anode:{} face:{} slice:{} too few activities given", anodeid, faceid,
                             slice->ident());
         return true;
     }
@@ -95,21 +99,21 @@ bool Img::GridTiling::operator()(const input_pointer& slice, output_pointer& out
     }
 
     if (!total_activity) {
-        SPDLOG_LOGGER_TRACE(l, "GridTiling: anode:{} face:{} slice:{} no activity", anodeid, faceid, slice->ident());
+        SPDLOG_LOGGER_TRACE(log, "anode:{} face:{} slice:{} no activity", anodeid, faceid, slice->ident());
         return true;
     }
     size_t nactive_layers = 0;
     for (size_t ind = 0; ind < measures.size(); ++ind) {
         const auto& blah = measures[ind];
         if (blah.empty()) {
-            SPDLOG_LOGGER_TRACE(l, "GridTiling: anode:{} face:{} slice:{} empty active layer ind={} out of {}", anodeid,
+            SPDLOG_LOGGER_TRACE(log, "anode:{} face:{} slice:{} empty active layer ind={} out of {}", anodeid,
                                 faceid, slice->ident(), ind, measures.size());
             continue;
         }
         ++nactive_layers;
     }
     if (nactive_layers != measures.size()) {
-        SPDLOG_LOGGER_TRACE(l, "GridTiling: anode:{} face:{} slice:{} missing active layers {}  != {}, {} activities",
+        SPDLOG_LOGGER_TRACE(log, "anode:{} face:{} slice:{} missing active layers {}  != {}, {} activities",
                             anodeid, faceid, slice->ident(), nactive_layers, measures.size(), nactivities);
         return true;
     }
@@ -118,11 +122,11 @@ bool Img::GridTiling::operator()(const input_pointer& slice, output_pointer& out
     for (int layer = 0; layer < nlayers; ++layer) {
         auto& m = measures[layer];
         Activity activity(layer, {m.begin(), m.end()}, 0, m_threshold);
-        SPDLOG_LOGGER_TRACE(l, "GridTiling: L{} A:{}", layer, activity.as_string());
+        SPDLOG_LOGGER_TRACE(log, "L{} A:{}", layer, activity.as_string());
         activities.push_back(activity);
     }
 
-    SPDLOG_LOGGER_TRACE(l, "GridTiling: anode:{} face:{} slice:{} making blobs",
+    SPDLOG_LOGGER_TRACE(log, "anode:{} face:{} slice:{} making blobs",
                         anodeid, faceid, slice->ident());
     auto blobs = make_blobs(m_face->raygrid(), activities);
 
@@ -132,7 +136,7 @@ bool Img::GridTiling::operator()(const input_pointer& slice, output_pointer& out
                                         0.0, blob, slice, m_face);
         sbs->m_blobs.push_back(IBlob::pointer(sb));
     }
-    SPDLOG_LOGGER_TRACE(l, "GridTiling: anode:{} face:{} slice:{} found {} blobs",
+    SPDLOG_LOGGER_TRACE(log, "anode:{} face:{} slice:{} found {} blobs",
                         anodeid, faceid, slice->ident(),
                         sbs->m_blobs.size());
 

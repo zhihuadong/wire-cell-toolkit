@@ -12,7 +12,9 @@
 
 #include <sstream>
 
-WIRECELL_FACTORY(Drifter, WireCell::Gen::Drifter, WireCell::IDrifter, WireCell::IConfigurable)
+WIRECELL_FACTORY(Drifter, WireCell::Gen::Drifter,
+                 WireCell::INamed,
+                 WireCell::IDrifter, WireCell::IConfigurable)
 
 using namespace std;
 using namespace WireCell;
@@ -58,7 +60,8 @@ bool Gen::Drifter::Xregion::inside_bulk(double x) const
 }
 
 Gen::Drifter::Drifter()
-  : m_rng(nullptr)
+  : Aux::Logger("Drifter", "gen")
+  , m_rng(nullptr)
   , m_rng_tn("Random")
   , m_DL(7.2 * units::centimeter2 / units::second)   // from arXiv:1508.07059v2
   , m_DT(12.0 * units::centimeter2 / units::second)  // ditto
@@ -68,7 +71,6 @@ Gen::Drifter::Drifter()
   , m_toffset(0.0)
   , n_dropped(0)
   , n_drifted(0)
-  , l(Log::logger("sim"))
 {
 }
 
@@ -105,13 +107,13 @@ void Gen::Drifter::configure(const WireCell::Configuration& cfg)
 
     auto jxregions = cfg["xregions"];
     if (jxregions.empty()) {
-        l->critical("no xregions given so I can do nothing");
+        log->critical("no xregions given so I can do nothing");
         THROW(ValueError() << errmsg{"no xregions given"});
     }
     for (auto jone : jxregions) {
         m_xregions.push_back(Xregion(jone));
     }
-    l->debug("Drifter: time offset: {} ms, drift speed: {} mm/us", m_toffset / units::ms,
+    log->debug("time offset: {} ms, drift speed: {} mm/us", m_toffset / units::ms,
              m_speed / (units::mm / units::us));
 }
 
@@ -193,7 +195,7 @@ bool by_time(const IDepo::pointer& lhs, const IDepo::pointer& rhs) { return lhs-
 void Gen::Drifter::flush(output_queue& outq)
 {
     for (auto& xr : m_xregions) {
-        l->debug("xregion: anode: {} mm, response: {} mm, cathode: {} mm, flushing {}", xr.anode / units::mm,
+        log->debug("xregion: anode: {} mm, response: {} mm, cathode: {} mm, flushing {}", xr.anode / units::mm,
                  xr.response / units::mm, xr.cathode / units::mm, xr.depos.size());
         outq.insert(outq.end(), xr.depos.begin(), xr.depos.end());
         xr.depos.clear();
@@ -236,8 +238,8 @@ void Gen::Drifter::flush_ripe(output_queue& outq, double now)
 // always returns true because by hook or crook we consume the input.
 bool Gen::Drifter::operator()(const input_pointer& depo, output_queue& outq)
 {
-    if (m_speed <= 0.0) {
-        l->error("Gen::Drifter: illegal drift speed: {}", m_speed);
+    if (m_speed <= 0.0) {       // should be in configure()?
+        log->error("illegal drift speed: {}", m_speed);
         return false;
     }
 
@@ -246,11 +248,11 @@ bool Gen::Drifter::operator()(const input_pointer& depo, output_queue& outq)
         flush(outq);
 
         if (n_dropped) {
-            l->debug("Gen::Drifter: see EOS, "
-                     "( dropped:{} + drifted:{} ) / total:{} depos "
-                     "from stream, outside of all {} drift xregions",
-                     n_dropped, n_drifted, n_dropped + n_drifted,
-                     m_xregions.size());
+            log->debug("see EOS, "
+                       "( dropped:{} + drifted:{} ) / total:{} depos "
+                       "from stream, outside of all {} drift xregions",
+                       n_dropped, n_drifted, n_dropped + n_drifted,
+                       m_xregions.size());
         }
         n_drifted = n_dropped = 0;
         return true;

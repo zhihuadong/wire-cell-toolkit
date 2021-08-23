@@ -13,7 +13,7 @@
 #include "WireCellIface/IChannelFilter.h"
 
 #include "WireCellUtil/Waveform.h"
-#include "WireCellUtil/Logging.h"
+#include "WireCellAux/Logger.h"
 
 #include <vector>
 #include <map>
@@ -28,7 +28,9 @@ namespace WireCell {
            the second is applied on groups of channels as determined by
            its channel grouping.
         */
-        class OmnibusNoiseFilter : public WireCell::IFrameFilter, public WireCell::IConfigurable {
+        class OmnibusNoiseFilter : public Aux::Logger,
+                                   public WireCell::IFrameFilter,
+                                   public WireCell::IConfigurable {
            public:
             typedef std::vector<std::vector<int> > grouped_channels_t;
 
@@ -62,7 +64,6 @@ namespace WireCell {
 
             std::map<std::string, std::string> m_maskmap;
 
-            Log::logptr_t log;
         };
 
     }  // namespace SigProc

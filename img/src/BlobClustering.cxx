@@ -5,14 +5,16 @@
 
 #include <boost/graph/graphviz.hpp>
 
-WIRECELL_FACTORY(BlobClustering, WireCell::Img::BlobClustering, WireCell::IClustering, WireCell::IConfigurable)
+WIRECELL_FACTORY(BlobClustering, WireCell::Img::BlobClustering,
+                 WireCell::INamed,
+                 WireCell::IClustering, WireCell::IConfigurable)
 
 using namespace WireCell;
 
 Img::BlobClustering::BlobClustering()
-  : m_spans(1.0)
-  , m_last_bs(nullptr)
-  , l(Log::logger("img"))
+    : Aux::Logger("BlobClustering", "img")
+    , m_spans(1.0)
+    , m_last_bs(nullptr)
 {
 }
 Img::BlobClustering::~BlobClustering() {}
@@ -141,20 +143,20 @@ bool Img::BlobClustering::operator()(const input_pointer& blobset, output_queue&
 {
     if (!blobset) {  // eos
         flush(clusters);
-        l->debug("BlobClustering: flush {} clusters + EOS on EOS",
+        log->debug("flush {} clusters + EOS on EOS",
                  clusters.size());
         clusters.push_back(nullptr);  // forward eos
         return true;
     }
 
-    SPDLOG_LOGGER_TRACE(l, "BlobClustering: got {} blobs",
+    SPDLOG_LOGGER_TRACE(log, "got {} blobs",
                         blobset->blobs().size());
 
     bool gap = graph_bs(blobset);
     if (gap) {
         flush(clusters);
-        l->debug("BlobClustering: sending {} clusters after gap",
-                 clusters.size());
+        log->debug("sending {} clusters after gap",
+                   clusters.size());
         // note: flush fast to keep memory usage in this component
         // down and because in an MT job, downstream components might
         // benefit to start consuming clusters ASAP.  We do NOT want
@@ -165,7 +167,7 @@ bool Img::BlobClustering::operator()(const input_pointer& blobset, output_queue&
 
     intern(blobset);
 
-    SPDLOG_LOGGER_TRACE(l, "BlobClustering: holding graph with {}",
+    SPDLOG_LOGGER_TRACE(log, "holding graph with {}",
                         boost::num_vertices(m_grind.graph()));
 
     return true;

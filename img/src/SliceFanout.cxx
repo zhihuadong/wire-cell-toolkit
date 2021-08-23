@@ -3,13 +3,15 @@
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/Exceptions.h"
 
-WIRECELL_FACTORY(SliceFanout, WireCell::Img::SliceFanout, WireCell::ISliceFanout, WireCell::IConfigurable)
+WIRECELL_FACTORY(SliceFanout, WireCell::Img::SliceFanout,
+                 WireCell::INamed,
+                 WireCell::ISliceFanout, WireCell::IConfigurable)
 
 using namespace WireCell;
 
 Img::SliceFanout::SliceFanout(size_t multiplicity)
-  : m_multiplicity(multiplicity)
-  , l(Log::logger("glue"))
+    : Aux::Logger("SliceFanout", "glue")
+    , m_multiplicity(multiplicity)
 {
 }
 Img::SliceFanout::~SliceFanout() {}
@@ -25,7 +27,7 @@ void Img::SliceFanout::configure(const WireCell::Configuration& cfg)
 {
     int m = get<int>(cfg, "multiplicity", (int) m_multiplicity);
     if (m <= 0) {
-        l->critical("SliceFanout multiplicity must be positive");
+        log->critical("multiplicity must be positive");
         THROW(ValueError() << errmsg{"SliceFanout multiplicity must be positive"});
     }
     m_multiplicity = m;
@@ -44,7 +46,7 @@ bool Img::SliceFanout::operator()(const input_pointer& in, output_vector& outv)
 
     if (!in) {
         //SPDLOG_LOGGER_TRACE(l, "SliceFanout: sending out {} EOSes", m_multiplicity);
-        l->debug("SliceFanout: sending out {} EOSes", m_multiplicity);
+        log->debug("sending out {} EOSes", m_multiplicity);
         for (size_t ind = 0; ind < m_multiplicity; ++ind) {
             outv[ind] = nullptr;
         }
@@ -52,7 +54,7 @@ bool Img::SliceFanout::operator()(const input_pointer& in, output_vector& outv)
     }
 
     // Slices are pretty verbose so keep this at trace.
-    SPDLOG_LOGGER_TRACE(l, "SliceFanout: {}x of #{} t={} + {} in nchan={}",
+    SPDLOG_LOGGER_TRACE(log, "{}x of #{} t={} + {} in nchan={}",
                         m_multiplicity, in->ident(), in->start(),
                         in->span(), in->activity().size());
 

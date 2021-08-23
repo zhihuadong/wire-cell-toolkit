@@ -4,7 +4,7 @@
 #include "WireCellIface/IFrameSink.h"
 #include "WireCellIface/ITerminal.h"
 #include "WireCellIface/IConfigurable.h"
-#include "WireCellUtil/Logging.h"
+#include "WireCellAux/Logger.h"
 
 #include <boost/iostreams/filtering_stream.hpp>
 
@@ -13,7 +13,7 @@
 
 namespace WireCell::Sio {
 
-    class FrameFileSink : public IFrameSink, public IConfigurable, public ITerminal {
+    class FrameFileSink : public Aux::Logger, public IFrameSink, public IConfigurable, public ITerminal {
     public:
         FrameFileSink();
         virtual ~FrameFileSink();
@@ -63,8 +63,6 @@ namespace WireCell::Sio {
 
         // The output stream
         boost::iostreams::filtering_ostream m_out;
-
-        Log::logptr_t log;
 
         void one_tag(const IFrame::pointer& frame,
                      const std::string& tag);

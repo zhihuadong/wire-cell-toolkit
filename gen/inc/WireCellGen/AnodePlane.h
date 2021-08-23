@@ -9,13 +9,14 @@
 
 #include "WireCellIface/IAnodePlane.h"
 #include "WireCellIface/IConfigurable.h"
-#include "WireCellUtil/Logging.h"
+#include "WireCellAux/Logger.h"
 #include <unordered_map>
 
 namespace WireCell {
     namespace Gen {
 
-        class AnodePlane : public IAnodePlane, public IConfigurable {
+        class AnodePlane : public Aux::Logger,
+                           public IAnodePlane, public IConfigurable {
            public:
             AnodePlane();
             virtual ~AnodePlane() {}
@@ -42,7 +43,6 @@ namespace WireCell {
             std::unordered_map<int, IWire::vector> m_c2wires;
             std::vector<int> m_channels;
             std::unordered_map<int, IChannel::pointer> m_ichannels;
-            Log::logptr_t l;
         };
     }  // namespace Gen
 

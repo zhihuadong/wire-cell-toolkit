@@ -11,15 +11,17 @@
 #include "WireCellIface/SimpleFrame.h"
 #include "WireCellIface/SimpleTrace.h"
 
-WIRECELL_FACTORY(BlobReframer, WireCell::Img::BlobReframer, WireCell::IClusterFramer, WireCell::IConfigurable)
+WIRECELL_FACTORY(BlobReframer, WireCell::Img::BlobReframer,
+                 WireCell::INamed,
+                 WireCell::IClusterFramer, WireCell::IConfigurable)
 
 using namespace WireCell;
 
 Img::BlobReframer::BlobReframer(const std::string& frame_tag)
-  : m_nticks(0)
-  , m_period(0)
-  , m_frame_tag(frame_tag)
-  , log(Log::logger("reframe"))
+    : Aux::Logger("BlobReframer", "img")
+    , m_nticks(0)
+    , m_period(0)
+    , m_frame_tag(frame_tag)
 {
 }
 
@@ -70,7 +72,7 @@ bool Img::BlobReframer::operator()(const input_pointer& in, output_pointer& out)
                 int tbinmin = *mme.first;
                 int tbinmax = *mme.second;
                 m_nticks = tbinmax - tbinmin;
-                log->debug("BlobReframer: nticks={} tbinmin={} tbinmax={}", m_nticks, tbinmin, tbinmax);
+                log->debug("nticks={} tbinmin={} tbinmax={}", m_nticks, tbinmin, tbinmax);
             }
         }
         int itick = islice->start() / m_period;

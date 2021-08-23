@@ -12,14 +12,15 @@
 #include "custard/custard_boost.hpp"
 
 WIRECELL_FACTORY(ClusterFileSink, WireCell::Sio::ClusterFileSink,
+                 WireCell::INamed,
                  WireCell::IClusterSink, WireCell::ITerminal,
                  WireCell::IConfigurable)
 
 using namespace WireCell;
 
 Sio::ClusterFileSink::ClusterFileSink()
-  : m_drift_speed(1.6 * units::mm / units::us)
-  , log(Log::logger("io"))
+    : Aux::Logger("ClusterFileSink", "io")
+    , m_drift_speed(1.6 * units::mm / units::us)
 {
 }
 
@@ -29,7 +30,7 @@ Sio::ClusterFileSink::~ClusterFileSink()
 
 void Sio::ClusterFileSink::finalize()
 {
-    log->debug("ClusterFileSink: closing {}", m_outname);
+    log->debug("closing {}", m_outname);
     m_out.pop();
 }
 
@@ -65,7 +66,7 @@ void Sio::ClusterFileSink::configure(const WireCell::Configuration& cfg)
 bool Sio::ClusterFileSink::operator()(const ICluster::pointer& cluster)
 {
     if (!cluster) {             // EOS
-        log->debug("ClusterFileSink: see EOS");
+        log->debug("see EOS with {}", m_outname);
         return true;
     }
     
@@ -81,7 +82,7 @@ bool Sio::ClusterFileSink::operator()(const ICluster::pointer& cluster)
     auto tops = topss.str();
 
 
-    log->debug("ClusterFileSink: output {} with {} bytes to {}",
+    log->debug("output {} with {} bytes to {}",
                cname, tops.size(), m_outname );
 
     m_out << "name " << cname << "\n"
@@ -89,7 +90,7 @@ bool Sio::ClusterFileSink::operator()(const ICluster::pointer& cluster)
     m_out.flush();
 
     // if (m_output_frame) {
-    //     log->warn("ClusterFileSink: frame output not yet implemented");
+    //     log->warn("frame output not yet implemented");
     // }
     return true;
 }

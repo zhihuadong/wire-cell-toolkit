@@ -12,14 +12,15 @@
 #include "WireCellIface/IRandom.h"
 #include "WireCellIface/IChannelSpectrum.h"
 #include "WireCellUtil/Waveform.h"
-#include "WireCellUtil/Logging.h"
+#include "WireCellAux/Logger.h"
 
 #include <string>
 
 namespace WireCell {
     namespace Gen {
 
-        class AddNoise : public IFrameFilter, public IConfigurable {
+        class AddNoise : public Aux::Logger,
+                         public IFrameFilter, public IConfigurable {
            public:
             AddNoise(const std::string& model = "", const std::string& rng = "Random");
 
@@ -40,7 +41,6 @@ namespace WireCell {
             int m_nsamples;
             double m_rep_percent;
 
-            Log::logptr_t log;
         };
     }  // namespace Gen
 }  // namespace WireCell
