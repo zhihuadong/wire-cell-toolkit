@@ -3,6 +3,7 @@
 
 #include "WireCellApps/Main.h"
 
+#include "WireCellUtil/Version.h"
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/String.h"
 #include "WireCellUtil/Point.h"
@@ -89,6 +90,10 @@ int Main::cmdline(int argc, char* argv[])
         ("threads,t", po::value<int>(),
          "limit number of threads used")
 #endif
+
+        ("version,v", 
+         "print the compiled version to stdout")
+
         ;
     // clang-format on
 
@@ -187,11 +192,20 @@ int Main::cmdline(int argc, char* argv[])
     }
 #endif
 
+    if (opts.count("version")) {
+        std::cout << version() << std::endl;
+    }
+
     // Maybe make this cmdline configurable.  For now, set all
     // backends the same.
     Log::set_pattern("[%H:%M:%S.%03e] %L [%^%=8n%$] %v");
 
     return 0;
+}
+
+std::string Main::version() const
+{
+    return WireCell::version;
 }
 
 void Main::add_plugin(const std::string& libname) { m_plugins.push_back(libname); }

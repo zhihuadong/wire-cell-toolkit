@@ -91,7 +91,8 @@ namespace WireCell {
         /// Call to finalize any terminal components.
         void finalize();
 
-
+        /// Return the compiled version string
+        std::string version() const;
 
        private:
         ConfigManager m_cfgmgr;
