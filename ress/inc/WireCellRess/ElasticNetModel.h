@@ -11,7 +11,7 @@ namespace WireCell {
        public:
         ElasticNetModel(double lambda = 1., double alpha = 1., int max_iter = 100000, double TOL = 1e-3,
                         bool non_negtive = true);
-        ~ElasticNetModel();
+        virtual ~ElasticNetModel();
 
         double lambda;  // regularization parameter
         double alpha;   // L1 ratio (L2 ratio = 1 - alpha)
@@ -27,7 +27,9 @@ namespace WireCell {
             LinearModel::SetX(X);
             SetLambdaWeight(Eigen::VectorXd::Zero(X.cols()) + Eigen::VectorXd::Constant(X.cols(), 1.));
         }
-        virtual void Fit();
+        // Perform the fit and return indices of variables below threshold.
+        // These can be ignored or the fit may be retried with these variables removed.
+        virtual std::vector<size_t> Fit();
 
        protected:
         double _soft_thresholding(double x, double lambda_);
