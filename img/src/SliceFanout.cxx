@@ -42,7 +42,7 @@ std::vector<std::string> Img::SliceFanout::output_types()
 
 bool Img::SliceFanout::operator()(const input_pointer& in, output_vector& outv)
 {
-    outv.resize(m_multiplicity);
+    outv.resize(m_multiplicity, nullptr);
 
     if (!in) {
         //SPDLOG_LOGGER_TRACE(l, "SliceFanout: sending out {} EOSes", m_multiplicity);
@@ -54,7 +54,7 @@ bool Img::SliceFanout::operator()(const input_pointer& in, output_vector& outv)
     }
 
     // Slices are pretty verbose so keep this at trace.
-    SPDLOG_LOGGER_TRACE(log, "{}x of #{} t={} + {} in nchan={}",
+    SPDLOG_LOGGER_TRACE(log, "{}x of slice={} t={} + {} in nchan={}",
                         m_multiplicity, in->ident(), in->start(),
                         in->span(), in->activity().size());
 

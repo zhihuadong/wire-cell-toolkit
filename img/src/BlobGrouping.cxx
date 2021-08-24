@@ -91,6 +91,7 @@ static void fill_slice(cluster_indexed_graph_t& grind, ISlice::pointer islice)
 bool Img::BlobGrouping::operator()(const input_pointer& in, output_pointer& out)
 {
     if (!in) {
+        log->debug("EOS");
         out = nullptr;
         return true;
     }

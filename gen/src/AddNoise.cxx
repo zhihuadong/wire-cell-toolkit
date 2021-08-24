@@ -57,6 +57,7 @@ bool Gen::AddNoise::operator()(const input_pointer& inframe, output_pointer& out
 {
     if (!inframe) {
         outframe = nullptr;
+        log->debug("EOS");
         return true;
     }
 
@@ -72,5 +73,6 @@ bool Gen::AddNoise::operator()(const input_pointer& inframe, output_pointer& out
         outtraces.push_back(trace);
     }
     outframe = make_shared<SimpleFrame>(inframe->ident(), inframe->time(), outtraces, inframe->tick());
+    log->debug("#{} {} traces", inframe->ident(), outtraces.size());
     return true;
 }

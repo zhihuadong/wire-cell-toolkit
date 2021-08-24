@@ -24,12 +24,12 @@ namespace WireCellTbb {
     typedef std::tuple<boost::any, boost::any> any_double;
     typedef std::tuple<boost::any, boost::any, boost::any> any_triple;
 
-    /// Types for TBB nodes
-    typedef tbb::flow::input_node<boost::any> input_node;
-    typedef tbb::flow::function_node<boost::any> sink_node;
-    typedef tbb::flow::function_node<boost::any, boost::any> function_node;
-    typedef tbb::flow::multifunction_node<boost::any, any_single> queuedout_node;
-    typedef queuedout_node::output_ports_type queuedout_port;
+    /// fixme: move to individual Cat*.h files.  
+    // typedef tbb::flow::input_node<boost::any> input_node;
+    // typedef tbb::flow::function_node<boost::any> sink_node;
+    // typedef tbb::flow::function_node<boost::any, boost::any> function_node;
+    // typedef tbb::flow::multifunction_node<boost::any, any_single> queuedout_node;
+    // typedef queuedout_node::output_ports_type queuedout_port;
 
     // A base facade which expose sender/receiver ports and provide
     // initialize hook.  There is one NodeWrapper for each node

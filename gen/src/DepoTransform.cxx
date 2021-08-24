@@ -225,6 +225,8 @@ bool Gen::DepoTransform::operator()(const input_pointer& in, output_pointer& out
     }
 
     auto frame = make_shared<SimpleFrame>(m_frame_count, m_start_time, traces, m_tick);
+    log->debug("#{} {} traces", m_frame_count, traces.size());
+
     ++m_frame_count;
     ++m_count;
     out = frame;

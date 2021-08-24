@@ -5,6 +5,8 @@
 #include "WireCellUtil/Testing.h"
 #include "WireCellTbb/NodeWrapper.h"
 
+#include <iostream> // fixme: for non-error handling
+
 namespace WireCellTbb {
 
     // Body for a TBB join node.
@@ -28,7 +30,10 @@ namespace WireCellTbb {
             any_vector in = ih.as_any(tup);
             boost::any ret;
             // bool ok = (*m_wcnode)(in, ret);
-            (*m_wcnode)(in, ret);  // fixme: don't ignore the return code
+            bool ok = (*m_wcnode)(in, ret);  // fixme: don't ignore the return code
+            if (!ok) {
+                std::cerr << "TbbFlow: join node return false ignored\n";
+            }
             return ret;
         }
     };

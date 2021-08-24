@@ -7,6 +7,8 @@
 
 namespace WireCellTbb {
 
+    using input_node = tbb::flow::input_node<boost::any>;
+
     // adapter to convert from WC source node to TBB source node body.
     class SourceBody {
         WireCell::ISourceNodeBase::pointer m_wcnode;

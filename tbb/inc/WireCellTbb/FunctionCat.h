@@ -8,6 +8,8 @@
 
 namespace WireCellTbb {
 
+    using function_node = tbb::flow::function_node<boost::any, boost::any>;
+
     // Body for a TBB function node.
     class FunctionBody {
         WireCell::IFunctionNodeBase::pointer m_wcnode;
@@ -24,7 +26,7 @@ namespace WireCellTbb {
             boost::any ret;
             bool ok = (*m_wcnode)(in, ret);  // fixme: don't ignore the error code!
             if (!ok) {
-                std::cerr << "I'm ignoring the error code!\n";
+                std::cerr << "TbbFlow: function node return false ignored\n";
             }
             return ret;
         }

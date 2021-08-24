@@ -149,9 +149,6 @@ bool Img::BlobClustering::operator()(const input_pointer& blobset, output_queue&
         return true;
     }
 
-    SPDLOG_LOGGER_TRACE(log, "got {} blobs",
-                        blobset->blobs().size());
-
     bool gap = graph_bs(blobset);
     if (gap) {
         flush(clusters);
@@ -167,7 +164,8 @@ bool Img::BlobClustering::operator()(const input_pointer& blobset, output_queue&
 
     intern(blobset);
 
-    SPDLOG_LOGGER_TRACE(log, "holding graph with {}",
+    SPDLOG_LOGGER_TRACE(log, "got {} blobs, holding graph with {}",
+                        blobset->blobs().size(),
                         boost::num_vertices(m_grind.graph()));
 
     return true;

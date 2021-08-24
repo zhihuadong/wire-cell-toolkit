@@ -45,6 +45,7 @@ bool Img::BlobSetSync::operator()(const input_vector& invec, output_pointer& out
     out = IBlobSet::pointer(sbs);
 
     int neos = 0;
+    std::stringstream perset;
     for (const auto& ibs : invec) {
         if (!ibs) {
             ++neos;
@@ -58,14 +59,16 @@ bool Img::BlobSetSync::operator()(const input_vector& invec, output_pointer& out
         for (const auto& iblob : ibs->blobs()) {
             sbs->m_blobs.push_back(iblob);
         }
+        perset << " " << ibs->blobs().size();
     }
+    perset << " ";
     if (neos) {
         out = nullptr;
         log->debug("EOS");
         return true;
     }
     // we get called a lot so make this a trace level!
-    SPDLOG_LOGGER_TRACE(log, "sync'ed {} blobs",
-                        sbs->m_blobs.size());
+    SPDLOG_LOGGER_TRACE(log, "sync'ed {} blobs: {}",
+                        sbs->m_blobs.size(), perset.str());
     return true;
 }

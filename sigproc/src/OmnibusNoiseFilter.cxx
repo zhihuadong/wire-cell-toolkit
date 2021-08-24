@@ -98,15 +98,16 @@ bool OmnibusNoiseFilter::operator()(const input_pointer& inframe, output_pointer
 {
     if (!inframe) {  // eos
         outframe = nullptr;
+        log->debug("EOS");
         return true;
     }
 
     auto traces = Aux::tagged_traces(inframe, m_intag);
     if (traces.empty()) {
         log->warn("no traces for tag \"{}\", sending empty frame", m_intag);
-        outframe = std::make_shared<SimpleFrame>(inframe->ident(), inframe->time(), std::make_shared<ITrace::vector>(),
-                                                 inframe->tick());
-
+        outframe = std::make_shared<SimpleFrame>(
+            inframe->ident(), inframe->time(),
+            std::make_shared<ITrace::vector>(), inframe->tick());
         return true;
     }
 
@@ -246,8 +247,8 @@ bool OmnibusNoiseFilter::operator()(const input_pointer& inframe, output_pointer
     sframe->tag_frame("noisefilter");
     outframe = IFrame::pointer(sframe);
 
-    log->debug("frame: {}, traces: {}, tags: {} -> {}",
-               sframe->ident(), itraces.size(), m_intag, m_outtag);
+    log->debug("frame: {} {}, traces: {}, tags: {} -> {}",
+               sframe->ident(), (void*)sframe, itraces.size(), m_intag, m_outtag);
 
 
     return true;

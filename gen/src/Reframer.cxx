@@ -66,6 +66,7 @@ bool Gen::Reframer::operator()(const input_pointer& inframe, output_pointer& out
 {
     if (!inframe) {
         outframe = nullptr;
+        log->debug("EOS");
         return true;
     }
 

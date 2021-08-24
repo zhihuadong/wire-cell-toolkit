@@ -13,7 +13,7 @@ using namespace WireCell;
 using namespace std;
 
 Gen::DepoSetFanout::DepoSetFanout(size_t multiplicity)
-    : Aux::Logger("DepoSeteFanout", "glue")
+    : Aux::Logger("DepoSetFanout", "glue")
     , m_multiplicity(multiplicity)
 {
 }

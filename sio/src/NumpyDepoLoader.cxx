@@ -19,7 +19,7 @@ WIRECELL_FACTORY(NumpyDepoLoader, WireCell::Sio::NumpyDepoLoader,
 using namespace WireCell;
 
 Sio::NumpyDepoLoader::NumpyDepoLoader()
-    : Aux::Logger("NumberDepoLoader", "io")
+    : Aux::Logger("NumpyDepoLoader", "io")
     , m_load_count(0)
     , m_eos(1)
 {
@@ -172,14 +172,16 @@ bool Sio::NumpyDepoLoader::operator()(WireCell::IDepo::pointer& outdepo)
     outdepo = nullptr;
     if (m_depos.empty()) {
         if (m_eos == 0) {
+            log->debug("send EOS");
             m_eos = 1;          // we just finished a stream
             return true;        // so send null outdepo -> EOS
         }
         // We are outside a stream, try to initiate a new one
         bool ok = next();
         if (!ok or m_depos.empty()) { // failed to initiate
+            log->warn("failed to advance next={} with {} depos", ok, m_depos.size());
             m_depos.clear();
-            return false;       // we've gone off the rails
+            return false;       // the stream is dry
         }
         m_eos = 0;              // we are in a working stream
     }
@@ -189,7 +191,7 @@ bool Sio::NumpyDepoLoader::operator()(WireCell::IDepo::pointer& outdepo)
     if (!outdepo) {
         log->debug("got no depo");
     }
-    // else {
+    // else {  // super verbose!
     //     log->debug("depo loader: t={} q={} x={}",
     //                outdepo->time(), outdepo->charge(), outdepo->pos().x());
     // }

@@ -1332,8 +1332,8 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
     }
     const size_t ntraces = in->traces()->size();
     if (ntraces) {
-        log->debug("OmnibusSigProc #{}: receive frame {} with {} traces",
-                   m_count, in->ident(), ntraces);
+        log->debug("OmnibusSigProc #{}: receive frame {} {} with {} traces",
+                   m_count, in->ident(), (void*)in.get(), ntraces);
     }
     else {
         out = std::make_shared<SimpleFrame>(in->ident(), in->time(), std::make_shared<ITrace::vector>(), in->tick());

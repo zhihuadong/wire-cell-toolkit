@@ -9,7 +9,10 @@
 namespace WireCell {
     namespace Gen {
 
-        // Fan out 1 frame to N set at construction or configuration time.
+        /// Fan out 1 frame to N set at construction or configuration time.
+        ///
+        /// This is not strictly a fanout as it takes tag rules so
+        /// each output frame may differ in terms of tags and traces.
         class FrameFanout : public Aux::Logger,
                             public IFrameFanout, public IConfigurable {
            public:

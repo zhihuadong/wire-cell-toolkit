@@ -7,7 +7,13 @@
 #include "WireCellTbb/NodeWrapper.h"
 #include "WireCellIface/IQueuedoutNode.h"
 
+#include <iostream>             // debug
+
 namespace WireCellTbb {
+
+    using queuedout_node = tbb::flow::multifunction_node<boost::any, any_single>;
+    using queuedout_port = queuedout_node::output_ports_type;
+
 
     class QueuedoutBody {
         WireCell::IQueuedoutNodeBase::pointer m_wcnode;
@@ -23,10 +29,15 @@ namespace WireCellTbb {
             WireCell::IQueuedoutNodeBase::queuedany outq;
             bool ok = (*m_wcnode)(in, outq);
             if (!ok) {
+                std::cerr << "TbbFlow: queued node return false ignored\n";
                 return;
             }  // fixme: do something better here!
             for (auto a : outq) {
-                std::get<0>(out).try_put(a);
+                // does not block.
+                bool accepted = std::get<0>(out).try_put(a);
+                if (!accepted) {
+                    std::cerr << "UNACCEPTED try_put " << m_wcnode->signature() << std::endl;
+                }
             }
         }
     };

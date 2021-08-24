@@ -4,7 +4,11 @@
 #include "WireCellTbb/NodeWrapper.h"
 #include "WireCellIface/ISinkNode.h"
 
+#include <iostream> // fixme: for non-error handling
+
 namespace WireCellTbb {
+
+    using sink_node = tbb::flow::function_node<boost::any>;
 
     // adapter to convert from WC sink node to TBB sink node body.
     class SinkBody {
@@ -20,7 +24,10 @@ namespace WireCellTbb {
         boost::any operator()(const boost::any& in)
         {
             // bool ok = (*m_wcnode)(in);
-            (*m_wcnode)(in);  // fixme: don't ignore the return code
+            bool ok = (*m_wcnode)(in);  // fixme: don't ignore the return code
+            if (!ok) {
+                std::cerr << "TbbFlow: sink node return false ignored\n";
+            }
             return in;
         }
     };

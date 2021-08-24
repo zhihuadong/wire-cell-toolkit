@@ -123,7 +123,9 @@ bool Img::SumSlices::operator()(const input_pointer& in, output_queue& slices)
         slices.push_back(ISlice::pointer(s));
     }
 
-    log->debug("frame: {}, make {} slices from {}",
-               in->ident(), slices.size(), svcmap.size());
+    log->debug("frame={}, make {} slices in [{},{}] from {}",
+               in->ident(), slices.size(),
+               slices.front()->ident(), slices.back()->ident(),
+               svcmap.size());
     return true;
 }
