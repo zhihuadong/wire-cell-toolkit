@@ -27,7 +27,8 @@ Sio::FrameFileSink::~FrameFileSink()
 
 void Sio::FrameFileSink::finalize()
 {
-    log->debug("closing {}", m_outname);
+    log->debug("closing {} after {} calls",
+               m_outname, m_count);
     m_out.pop();
 }
 
@@ -92,19 +93,18 @@ void Sio::FrameFileSink::one_tag(const IFrame::pointer& frame,
         // comment.
         auto sv = frame->traces();
         traces.insert(traces.begin(), sv->begin(), sv->end());
-        log->debug("all traces [{}], frame: {}",
-                   traces.size(), frame->ident());
     }
     else {
         traces = Aux::tagged_traces(frame, tag);
-        log->debug("tag: {} traces [{}], frame: {}",
-                   tag, traces.size(), frame->ident());
     }
     if (traces.empty()) {
-        log->warn("tag: {}, frame: {}.  ZERO TRACES",
-                   tag, frame->ident());
+        log->warn("call={} frame={} ntraces={} tag=\"{}\" zero traces",
+                   m_count, frame->ident(),traces.size(), tag);
         return;
     }
+    log->debug("call={} frame={} ntraces={} tag=\"{}\"",
+               m_count, frame->ident(),traces.size(), tag);
+
 
     auto channels = Aux::channels(traces);
     std::sort(channels.begin(), channels.end());
@@ -114,7 +114,6 @@ void Sio::FrameFileSink::one_tag(const IFrame::pointer& frame,
 
     const size_t ncols = tbinmm.second - tbinmm.first;
     const size_t nrows = std::distance(chbeg, chend);
-    log->debug("saving ncols={} nrows={}", ncols, nrows);
 
     Array::array_xxf arr = Array::array_xxf::Zero(nrows, ncols) + m_baseline;
     Aux::fill(arr, traces, channels.begin(), chend, tbinmm.first);
@@ -129,8 +128,6 @@ void Sio::FrameFileSink::one_tag(const IFrame::pointer& frame,
         else {
             write(m_out, aname, arr);
         }
-        log->debug("saved {} with {} channels {} ticks @t={} ms qtot={}", aname, nrows, ncols,
-                   frame->time() / units::ms, arr.sum());
     }
 
     {  // the channel array
@@ -149,11 +146,14 @@ void Sio::FrameFileSink::one_tag(const IFrame::pointer& frame,
 bool Sio::FrameFileSink::operator()(const IFrame::pointer& frame)
 {
     if (! frame) { // eos
+        log->debug("EOS at call={}", m_count);
+        ++m_count;
         return true;
     }
 
     for (auto tag : m_tags) {
         one_tag(frame, tag);
     }
+    ++m_count;
     return true;
 }

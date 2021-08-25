@@ -10,18 +10,20 @@
 
 namespace WireCellTbb {
 
-    using seq_any_t = std::pair<size_t, boost::any>;
-
     // Body for a TBB split node.
     template <typename std::size_t N>
     class FanoutBody {
         WireCell::IFanoutNodeBase::pointer m_wcnode;
-        mutable size_t m_seqno{0}; // FIXME WARNING: mutable
+        // This is maybe better provided as a std::atomic.  However,
+        // the lack of copy constructor conflicts with the need for
+        // the body to be copied.  For now, we are safe as we ignore
+        // wcnode's desired concurrency and force the parent
+        // function_node to have concurrency=1.
+        mutable size_t m_seqno{0};
 
        public:
         typedef typename WireCell::IFanoutNodeBase::any_vector any_vector;
-        typedef typename WireCell::type_repeater<N, seq_any_t>::type TupleType;
-        // typedef typename WireCell::tuple_helper<TupleType> helper_type;
+        typedef typename WireCell::type_repeater<N, msg_t>::type TupleType;
 
         FanoutBody(WireCell::INode::pointer wcnode)
         {
@@ -29,47 +31,35 @@ namespace WireCellTbb {
             Assert(m_wcnode);
         }
 
-        TupleType operator()(boost::any in) const
+        TupleType operator()(msg_t in) const
         {
             any_vector anyvec;
-            // bool ok = (*m_wcnode)(in, ret);
-            (*m_wcnode)(in, anyvec);  // fixme: don't ignore return code
-            // return ih.from_any(vectorToTuple<N>(ret));
-            std::vector<seq_any_t> savec;
-            for (auto& a : anyvec) {
-                savec.push_back(seq_any_t(m_seqno, a));
+            bool ok = (*m_wcnode)(in.second, anyvec);
+            if (!ok ) {
+                std::cerr << "TbbFlow: fanout call fails\n";
             }
-            ++m_seqno;
+            msg_vector_t savec;
+            const size_t seqno = m_seqno++;
+            for (auto& a : anyvec) {
+                savec.push_back(msg_t(seqno, a));
+            }
             return WireCell::vectorToTuple<N>(savec);
         }
     };
 
-    typedef tbb::flow::sender<seq_any_t> seq_sender_type;
-    typedef std::vector<seq_sender_type*> seq_sender_port_vector;
-    
-    typedef tbb::flow::receiver<seq_any_t> seq_receiver_type;
-
-    template <typename Tuple, std::size_t... Is>
-    seq_sender_port_vector seq_sender_ports(tbb::flow::split_node<Tuple>& sp, std::index_sequence<Is...>)
-    {
-        return {dynamic_cast<seq_sender_type*>(&tbb::flow::output_port<Is>(sp))...};
-    }
-    /// Return sender ports of a split node as a vector.
-    template <typename Tuple>
-    seq_sender_port_vector seq_sender_ports(tbb::flow::split_node<Tuple>& sp)
-    {
-        return seq_sender_ports(sp, std::make_index_sequence<std::tuple_size<Tuple>::value>{});
-    }
 
 
     template <std::size_t N>
-    sender_port_vector build_fanouter(tbb::flow::graph& graph, WireCell::INode::pointer wcnode,
+    sender_port_vector build_fanouter(tbb::flow::graph& graph,
+                                      WireCell::INode::pointer wcnode,
                                       std::vector<tbb::flow::graph_node*>& nodes)
     {
-        typedef typename WireCell::type_repeater<N, seq_any_t>::type TupleType;
+        using TupleType = typename WireCell::type_repeater<N, msg_t>::type;
+        using tuple_func_node = tbb::flow::function_node<msg_t, TupleType>;
 
-        // this node takes user WC body and runs it after converting input verctor to tuple
-        auto* fn = new tbb::flow::function_node<boost::any, TupleType>(graph, 1 /*wcnode->concurrency()*/, FanoutBody<N>(wcnode));
+        // This node takes user WC body and runs it after converting input verctor to tuple.
+        // We force-set concurency=1 so as not to upset to seqno in the body.
+        auto* fn = new tuple_func_node(graph, 1 /*wcnode->concurrency()*/, FanoutBody<N>(wcnode));
         // Below requires first to be the WCT body caller
         nodes.push_back(fn);
 
@@ -83,20 +73,14 @@ namespace WireCellTbb {
 
         // The split_node can introduce out-of-order as it has
         // unlimited concurency.  After each sender_node output port
-        // we add a sequencer based on the seqno added by the caller
-        // followed by a function to strip the seqno and pass on the
-        // any from the original function.  Whew.
-        for (seq_sender_type* one : seq_sender_ports<TupleType>(*sp)) {
+        // we add a sequencer based on the seqno.
+        for (sender_type* one : sender_ports<TupleType>(*sp)) {
 
-            auto* seq = new tbb::flow::sequencer_node<seq_any_t>(graph, [](const seq_any_t& sa) { return sa.first; });
+            auto* seq = new seq_node(graph, [](const msg_t& sa) { return sa.first; });
             nodes.push_back(seq);
-            tbb::flow::make_edge(*one, *dynamic_cast<seq_receiver_type*>(seq));
+            tbb::flow::make_edge(*one, *seq);
 
-            auto* strip = new tbb::flow::function_node<seq_any_t, boost::any>(graph, 1, [](const seq_any_t& sa) { return sa.second; });
-            nodes.push_back(strip);
-            tbb::flow::make_edge(*dynamic_cast<seq_sender_type*>(seq), *dynamic_cast<seq_receiver_type*>(strip));
-            
-            outports.push_back(dynamic_cast<sender_type*>(strip));
+            outports.push_back(dynamic_cast<sender_type*>(seq));
         }
         return outports;
     }

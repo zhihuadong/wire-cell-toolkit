@@ -57,7 +57,8 @@ bool Gen::AddNoise::operator()(const input_pointer& inframe, output_pointer& out
 {
     if (!inframe) {
         outframe = nullptr;
-        log->debug("EOS");
+        log->debug("EOS at call={}", m_count);
+        ++m_count;
         return true;
     }
 
@@ -73,6 +74,8 @@ bool Gen::AddNoise::operator()(const input_pointer& inframe, output_pointer& out
         outtraces.push_back(trace);
     }
     outframe = make_shared<SimpleFrame>(inframe->ident(), inframe->time(), outtraces, inframe->tick());
-    log->debug("#{} {} traces", inframe->ident(), outtraces.size());
+    log->debug("call={} frame={} {} traces",
+               m_count, inframe->ident(), outtraces.size());
+    ++m_count;
     return true;
 }

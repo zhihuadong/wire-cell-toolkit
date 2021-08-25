@@ -138,7 +138,7 @@ WireCell::Configuration Gen::DepoTransform::default_configuration() const
 bool Gen::DepoTransform::operator()(const input_pointer& in, output_pointer& out)
 {
     if (!in) {
-        log->debug("#{}: EOS", m_count);
+        log->debug("EOS at call={}", m_count);
         ++m_count;
         out = nullptr;
         return true;
@@ -153,7 +153,7 @@ bool Gen::DepoTransform::operator()(const input_pointer& in, output_pointer& out
         IDepo::vector face_depos, dropped_depos;
         auto bb = face->sensitive();
         if (bb.empty()) {
-            log->debug("#{}: anode {} face {} is marked insensitive, skipping",
+            log->debug("call={}: anode {} face {} is marked insensitive, skipping",
                      m_count, m_anode->ident(), face->ident());
             continue;
         }
@@ -170,7 +170,7 @@ bool Gen::DepoTransform::operator()(const input_pointer& in, output_pointer& out
         if (face_depos.size()) {
             auto ray = bb.bounds();
             log->debug(
-                "#{}: anode: {}, face: {}, processing {} depos spanning "
+                "call={}: anode: {}, face: {}, processing {} depos spanning "
                 "t:[{},{}]ms, bb:[{}-->{}]cm",
                 m_count,
                 m_anode->ident(), face->ident(), face_depos.size(), face_depos.front()->time() / units::ms,
@@ -179,7 +179,7 @@ bool Gen::DepoTransform::operator()(const input_pointer& in, output_pointer& out
         if (dropped_depos.size()) {
             auto ray = bb.bounds();
             log->debug(
-                "#{}: anode: {}, face: {}, dropped {} depos spanning "
+                "call={}: anode: {}, face: {}, dropped {} depos spanning "
                 "t:[{},{}]ms, outside bb:[{}-->{}]cm",
                 m_count,
                 m_anode->ident(), face->ident(), dropped_depos.size(), dropped_depos.front()->time() / units::ms,
@@ -225,7 +225,7 @@ bool Gen::DepoTransform::operator()(const input_pointer& in, output_pointer& out
     }
 
     auto frame = make_shared<SimpleFrame>(m_frame_count, m_start_time, traces, m_tick);
-    log->debug("#{} {} traces", m_frame_count, traces.size());
+    log->debug("call={} frame={} ntraces={}", m_frame_count, m_count, traces.size());
 
     ++m_frame_count;
     ++m_count;

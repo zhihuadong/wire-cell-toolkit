@@ -95,19 +95,20 @@ double Gen::Digitizer::digitize(double voltage)
 bool Gen::Digitizer::operator()(const input_pointer& vframe, output_pointer& adcframe)
 {
     if (!vframe) {  // EOS
-        log->debug("anode {}: see EOS", m_anode->ident());
+        log->debug("see EOS at call={}", m_count);
         adcframe = nullptr;
+        ++m_count;
         return true;
     }
 
     // fixme: maybe make this honor a tag
     auto vtraces = Aux::untagged_traces(vframe);
     if (vtraces.empty()) {
-        log->error("no traces in input frame {}", vframe->ident());
+        log->error("no traces in input frame {} at call={}",
+                   vframe->ident(), m_count);
+        ++m_count;
         return false;
     }
-    log->debug("traces: {} in input frame {} to frame tag \"{}\"",
-               vtraces.size(), vframe->ident(), m_frame_tag);
 
     // Get extent in channel and tbin
     auto channels = Aux::channels(vtraces);
@@ -149,5 +150,9 @@ bool Gen::Digitizer::operator()(const input_pointer& vframe, output_pointer& adc
     }
     adcframe = sframe;
 
+    log->debug("call={} traces={} frame={} outtag=\"{}\"",
+               m_count,
+               adctraces.size(), vframe->ident(), m_frame_tag);
+    ++m_count;
     return true;
 }

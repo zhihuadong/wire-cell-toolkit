@@ -41,6 +41,7 @@ namespace WireCell {
             int m_nsamples;
             double m_rep_percent;
 
+            size_t m_count{0};
         };
     }  // namespace Gen
 }  // namespace WireCell

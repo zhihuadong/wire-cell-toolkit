@@ -66,6 +66,8 @@ namespace WireCell::Sio {
 
         void one_tag(const IFrame::pointer& frame,
                      const std::string& tag);
+
+        size_t m_count{0};
     };        
      
 }

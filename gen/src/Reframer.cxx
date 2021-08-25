@@ -66,7 +66,8 @@ bool Gen::Reframer::operator()(const input_pointer& inframe, output_pointer& out
 {
     if (!inframe) {
         outframe = nullptr;
-        log->debug("EOS");
+        log->debug("EOS at call={}", m_count);
+        ++m_count;
         return true;
     }
 
@@ -81,8 +82,7 @@ bool Gen::Reframer::operator()(const input_pointer& inframe, output_pointer& out
     auto all_traces = inframe->traces();
 
     std::stringstream report;
-    report << "frame:" << inframe->ident() << " ";
-
+    report << "call=" << m_count << " frame=" << inframe->ident() << " ";
 
     // Get traces to consider
     std::vector<ITrace::pointer> traces;
@@ -152,5 +152,6 @@ bool Gen::Reframer::operator()(const input_pointer& inframe, output_pointer& out
     report << "out tag: \"" << m_frame_tag << "\"";
     log->debug(report.str());
 
+    ++m_count;
     return true;
 }

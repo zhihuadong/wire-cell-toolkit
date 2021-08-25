@@ -47,6 +47,7 @@ namespace WireCell {
             double m_gain;
             std::vector<double> m_fullscale, m_baselines;
             std::string m_frame_tag;
+            size_t m_count{0};
         };
 
     }  // namespace Gen

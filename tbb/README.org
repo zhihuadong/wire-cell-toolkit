@@ -87,6 +87,8 @@ RAM usage may grow without bound.
 
 * Out-of-order
 
+** Concurrency
+ 
 The [[https://spec.oneapi.io/versions/latest/elements/oneTBB/source/flow_graph/split_node_cls.html][TBB ~split_node~ ]] is used in part to execute WCT's ~IFanout~ nodes.
 It trails a ~function_node~ with a WCT body which is responsible to
 produce a tuple that is passed to the ~split_node~ to send each tuple
@@ -100,3 +102,19 @@ function body.  Because this seqno violates the WCT data model, a
 final ~function_node~ follows each ~sequencer_node~ which strips off the
 seqno.  So, each N-way fanout is really a 2*(N+1) subgraph.
 
+** Buffering
+
+Despite the TBB documentation saying ~function_node~ has a FIFO queue at
+its input, it behaves as if it has a unordered buffer.  This has been
+[[https://community.intel.com/t5/Intel-oneAPI-Threading-Building/Nondeterministic-processing-order-for-function-node-with/m-p/1164061][noticed by others and awaiting response by Intel]].  After fixing the
+above concurrency-related OOO, this can be observed in a WCT graph
+between two ~function_node~ of serial concurrency.
+
+The trial solution is to bolt on a ~sequencer_node~ after ~function_node~
+and similar.  This requires a full redefining of the data type used at
+the TBB node level.  Previously it shared the same type as with WCT
+nodes (~boost::any~) and now that is combined with a sequence number
+into a ~std::pair<size_t, boost::any>~.  Node bodies strip and discard
+any input seqno prior to passing the ~any~ for WCT node input.  Node
+bodies also maintain a seqno, incrementing on each call, and combined
+with WCT node output for TBB level output.

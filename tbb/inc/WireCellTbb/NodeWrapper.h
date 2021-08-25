@@ -6,30 +6,36 @@
 
 #include <tbb/flow_graph.h>
 #include <boost/any.hpp>
+#include <utility>              // make_index_sequence
 #include <memory>
 #include <map>
 
 namespace WireCellTbb {
 
+    // Message type passed through WCT nodes
+    using wct_t = boost::any;
+
+    // We combine WCT data with a sequence number to assure order.
+    using seqno_t = size_t;
+
+    // The message type used by all TBB flow_graph nodes
+    using msg_t = std::pair<seqno_t, wct_t>;
+    using msg_vector_t = std::vector<msg_t>;
+
     // Broken out sender/receiver types, vectors of their pointers
-    typedef tbb::flow::sender<boost::any> sender_type;
-    typedef tbb::flow::receiver<boost::any> receiver_type;
+    typedef tbb::flow::sender<msg_t> sender_type;
+    typedef tbb::flow::receiver<msg_t> receiver_type;
 
     typedef std::vector<sender_type*> sender_port_vector;
     typedef std::vector<receiver_type*> receiver_port_vector;
 
-    typedef std::vector<boost::any> any_vector;
+    // Each WCT node is serviced by a small subgraph of TBB nodes.
+    using src_node = tbb::flow::input_node<msg_t>;
+    using func_node = tbb::flow::function_node<msg_t, msg_t>;
+    using mfunc_node = tbb::flow::multifunction_node<msg_t, std::tuple<msg_t>>;
+    using seq_node = tbb::flow::sequencer_node<msg_t>;
+    using sink_node = tbb::flow::function_node<msg_t>;
 
-    typedef std::tuple<boost::any> any_single;
-    typedef std::tuple<boost::any, boost::any> any_double;
-    typedef std::tuple<boost::any, boost::any, boost::any> any_triple;
-
-    /// fixme: move to individual Cat*.h files.  
-    // typedef tbb::flow::input_node<boost::any> input_node;
-    // typedef tbb::flow::function_node<boost::any> sink_node;
-    // typedef tbb::flow::function_node<boost::any, boost::any> function_node;
-    // typedef tbb::flow::multifunction_node<boost::any, any_single> queuedout_node;
-    // typedef queuedout_node::output_ports_type queuedout_port;
 
     // A base facade which expose sender/receiver ports and provide
     // initialize hook.  There is one NodeWrapper for each node
@@ -48,7 +54,20 @@ namespace WireCellTbb {
     // expose the wrappers only as a shared pointer
     typedef std::shared_ptr<NodeWrapper> Node;
 
-    // internal
+
+    // tuple helpers
+
+    template <typename Tuple, std::size_t... Is>
+    msg_vector_t as_msg_vector(const Tuple& tup, std::index_sequence<Is...>)
+    {
+        return {std::get<Is>(tup)...};
+    }
+    template <typename Tuple>
+    msg_vector_t as_msg_vector(const Tuple& tup)
+    {
+        return as_msg_vector(tup, std::make_index_sequence<std::tuple_size<Tuple>::value>{});
+    }
+
     template <typename Tuple, std::size_t... Is>
     receiver_port_vector receiver_ports(tbb::flow::join_node<Tuple>& jn, std::index_sequence<Is...>)
     {

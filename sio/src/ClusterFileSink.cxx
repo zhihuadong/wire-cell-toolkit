@@ -30,7 +30,7 @@ Sio::ClusterFileSink::~ClusterFileSink()
 
 void Sio::ClusterFileSink::finalize()
 {
-    log->debug("closing {}", m_outname);
+    log->debug("closing {} after {} calls", m_outname, m_count);
     m_out.pop();
 }
 
@@ -61,12 +61,11 @@ void Sio::ClusterFileSink::configure(const WireCell::Configuration& cfg)
     }
 }
 
-
-
 bool Sio::ClusterFileSink::operator()(const ICluster::pointer& cluster)
 {
     if (!cluster) {             // EOS
-        log->debug("see EOS with {}", m_outname);
+        log->debug("see EOS at call={}", m_count);
+        ++m_count;
         return true;
     }
     
@@ -82,15 +81,13 @@ bool Sio::ClusterFileSink::operator()(const ICluster::pointer& cluster)
     auto tops = topss.str();
 
 
-    log->debug("output {} with {} bytes to {}",
-               cname, tops.size(), m_outname );
+    log->debug("call={} output {} with {} bytes to {}",
+               m_count, cname, tops.size(), m_outname );
 
     m_out << "name " << cname << "\n"
           << "body " << tops.size() << "\n" << tops.data();
     m_out.flush();
 
-    // if (m_output_frame) {
-    //     log->warn("frame output not yet implemented");
-    // }
+    ++m_count;
     return true;
 }

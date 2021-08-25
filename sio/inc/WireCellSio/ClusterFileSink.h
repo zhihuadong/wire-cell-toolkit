@@ -59,6 +59,7 @@ namespace WireCell::Sio {
         // The output stream
         boost::iostreams::filtering_ostream m_out;
 
+        size_t m_count{0};
     };
 
 }  // namespace WireCell

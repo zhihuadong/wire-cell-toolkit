@@ -62,6 +62,8 @@ namespace WireCell {
 
             double m_toffset, m_fill;
             int m_tbin, m_nticks;
+
+            size_t m_count{0};
         };
     }  // namespace Gen
 }  // namespace WireCell

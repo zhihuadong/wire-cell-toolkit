@@ -64,6 +64,7 @@ namespace WireCell {
 
             std::map<std::string, std::string> m_maskmap;
 
+            size_t m_count{0};
         };
 
     }  // namespace SigProc

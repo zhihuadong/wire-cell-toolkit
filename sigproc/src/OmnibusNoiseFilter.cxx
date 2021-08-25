@@ -98,28 +98,26 @@ bool OmnibusNoiseFilter::operator()(const input_pointer& inframe, output_pointer
 {
     if (!inframe) {  // eos
         outframe = nullptr;
-        log->debug("EOS");
+        log->debug("EOS at call={}", m_count);
+        ++m_count;
         return true;
     }
 
     auto traces = Aux::tagged_traces(inframe, m_intag);
     if (traces.empty()) {
-        log->warn("no traces for tag \"{}\", sending empty frame", m_intag);
+        log->warn("no traces for tag \"{}\", sending empty frame at call={}",
+                  m_intag, m_count);
         outframe = std::make_shared<SimpleFrame>(
             inframe->ident(), inframe->time(),
             std::make_shared<ITrace::vector>(), inframe->tick());
+        ++m_count;
         return true;
     }
 
-    if (m_nticks) {
-        log->debug("will resize working waveforms from {} to {}", traces.at(0)->charge().size(),
-                   m_nticks);
-    }
-    else {
+    if (! m_nticks) {
         // Warning: this implicitly assumes a dense frame (ie, all tbin=0 and all waveforms same size).
         // It also won't stop triggering a warning inside OneChannelNoise if there is a mismatch.
         m_nticks = traces.at(0)->charge().size();
-        log->debug("nticks based on first waveform: {}", m_nticks);
     }
 
     // For now, just collect any and all masks and interpret them as "bad".
@@ -247,10 +245,12 @@ bool OmnibusNoiseFilter::operator()(const input_pointer& inframe, output_pointer
     sframe->tag_frame("noisefilter");
     outframe = IFrame::pointer(sframe);
 
-    log->debug("frame: {} {}, traces: {}, tags: {} -> {}",
-               sframe->ident(), (void*)sframe, itraces.size(), m_intag, m_outtag);
+    log->debug("call={}, frame={}, ntraces={}, nticks={} intag={} outtag={}",
+               m_count,
+               sframe->ident(), itraces.size(), m_nticks,
+               m_intag, m_outtag);
 
-
+    ++m_count;
     return true;
 }
 

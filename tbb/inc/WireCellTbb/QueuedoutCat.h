@@ -11,62 +11,69 @@
 
 namespace WireCellTbb {
 
-    using queuedout_node = tbb::flow::multifunction_node<boost::any, any_single>;
-    using queuedout_port = queuedout_node::output_ports_type;
-
-
     class QueuedoutBody {
         WireCell::IQueuedoutNodeBase::pointer m_wcnode;
 
-       public:
+        seqno_t m_seqno{0};
+
+      public:
+        using mfunc_port = mfunc_node::output_ports_type;
+
         ~QueuedoutBody() {}
         QueuedoutBody(WireCell::INode::pointer wcnode)
         {
             m_wcnode = std::dynamic_pointer_cast<WireCell::IQueuedoutNodeBase>(wcnode);
         }
-        void operator()(const boost::any& in, queuedout_port& out)
+        void operator()(const msg_t& in, mfunc_port& out)
         {
             WireCell::IQueuedoutNodeBase::queuedany outq;
-            bool ok = (*m_wcnode)(in, outq);
+            bool ok = (*m_wcnode)(in.second, outq);
             if (!ok) {
-                std::cerr << "TbbFlow: queued node return false ignored\n";
+                std::cerr << "TbbFlow: queuedout node return false ignored\n";
                 return;
-            }  // fixme: do something better here!
+            }
             for (auto a : outq) {
                 // does not block.
-                bool accepted = std::get<0>(out).try_put(a);
+                bool accepted = std::get<0>(out).try_put(msg_t(m_seqno++, a));
                 if (!accepted) {
-                    std::cerr << "UNACCEPTED try_put " << m_wcnode->signature() << std::endl;
+                    std::cerr << "TbbFlow: unaccepted try_put " << m_wcnode->signature() << std::endl;
                 }
             }
         }
     };
+
     class QueuedoutWrapper : public NodeWrapper {
-       public:
+        tbb::flow::graph_node *m_fn, *m_qn;
+
+      public:
+
         QueuedoutWrapper(tbb::flow::graph& graph, WireCell::INode::pointer wcnode)
-          : m_tbbnode(new queuedout_node(graph, wcnode->concurrency(), QueuedoutBody(wcnode)))
         {
+            auto fn = new mfunc_node(graph, wcnode->concurrency(), QueuedoutBody(wcnode));
+            auto qn = new seq_node(graph, [](const msg_t& m) {return m.first;});
+            tbb::flow::make_edge(*fn, *qn);
+            m_fn = fn;
+            m_qn = qn;
         }
         virtual ~QueuedoutWrapper()
         {
-            delete m_tbbnode;
-            m_tbbnode = nullptr;
+            /// we haven't been doing this religiously....
+            // delete m_tbbnode;
+            // m_tbbnode = nullptr;
         }
 
         virtual receiver_port_vector receiver_ports()
         {
-            auto ptr = dynamic_cast<receiver_type*>(m_tbbnode);
+            auto ptr = dynamic_cast<receiver_type*>(m_fn);
             return receiver_port_vector{ptr};
         }
 
         virtual sender_port_vector sender_ports()
         {
-            auto ptr = &tbb::flow::output_port<0>(*m_tbbnode);
+            auto ptr = dynamic_cast<sender_type*>(m_qn);
             return sender_port_vector{ptr};
         }
 
-       private:
-        queuedout_node* m_tbbnode;
     };
 
 }  // namespace WireCellTbb
