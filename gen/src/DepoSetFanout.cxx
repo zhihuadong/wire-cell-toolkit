@@ -48,14 +48,14 @@ bool Gen::DepoSetFanout::operator()(const input_pointer& in, output_vector& outv
 {
     // Note: if "in" indicates EOS, just pass it on
     if (in) {
-        log->debug("call={} fanout depo set {}",
-                   m_count, in->ident());
+        log->debug("call={} fanout depo set {} with {}",
+                   m_count, in->ident(), in->depos()->size());
     }
     else {
         log->debug("EOS at call={}", m_count);
     }
 
-    outv.resize(m_multiplicity);
+    outv.resize(m_multiplicity, nullptr);
     for (size_t ind = 0; ind < m_multiplicity; ++ind) {
         outv[ind] = in;
     }

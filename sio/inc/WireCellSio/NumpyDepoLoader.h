@@ -26,7 +26,7 @@ namespace WireCell {
         class NumpyDepoLoader : public WireCell::Aux::Logger,
                                 public WireCell::IDepoSource,
                                 public WireCell::IConfigurable {
-           public:
+          public:
             NumpyDepoLoader();
             virtual ~NumpyDepoLoader();
 
@@ -39,7 +39,7 @@ namespace WireCell {
             virtual WireCell::Configuration default_configuration() const;
             virtual void configure(const WireCell::Configuration& config);
 
-           private:
+          protected:
             // try to load next array
             bool next();
 

@@ -51,7 +51,10 @@ bool DepoSetDrifter::operator()(const input_pointer& in, output_pointer& out)
         (*m_drifter)(idepo, more);
         all_depos.insert(all_depos.end(), more.begin(), more.end());
     }
+    // The EOS comes through
+    all_depos.pop_back();
         
+    log->debug("call={} drifted ndepos={}", m_count, all_depos.size());
     out = std::make_shared<SimpleDepoSet>(m_count, all_depos);
     ++m_count;
     return true;
