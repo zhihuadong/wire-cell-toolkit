@@ -35,7 +35,7 @@ void Sio::FrameFileSink::finalize()
 WireCell::Configuration Sio::FrameFileSink::default_configuration() const
 {
     Configuration cfg;
-    // output json file.  A "%d" type format code may be included to be resolved by a frame identifier.
+    // Output tar file name.
     cfg["outname"] = m_outname;
 
     // Select which traces to consider.

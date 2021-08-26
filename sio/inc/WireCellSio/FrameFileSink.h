@@ -23,7 +23,7 @@ namespace WireCell::Sio {
         virtual void configure(const WireCell::Configuration& cfg);
         virtual WireCell::Configuration default_configuration() const;
         
-        virtual bool operator()(const IFrame::pointer& cluster);
+        virtual bool operator()(const IFrame::pointer& frame);
 
     private:
 
