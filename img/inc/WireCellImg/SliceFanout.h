@@ -3,13 +3,13 @@
 
 #include "WireCellIface/ISliceFanout.h"
 #include "WireCellIface/IConfigurable.h"
-#include "WireCellUtil/Logging.h"
+#include "WireCellAux/Logger.h"
 
 namespace WireCell {
     namespace Img {
 
         // Fan out 1 slice to N set at construction or configuration time.
-        class SliceFanout : public ISliceFanout, public IConfigurable {
+        class SliceFanout : public Aux::Logger, public ISliceFanout, public IConfigurable {
            public:
             SliceFanout(size_t multiplicity = 0);
             virtual ~SliceFanout();
@@ -26,7 +26,6 @@ namespace WireCell {
 
            private:
             size_t m_multiplicity;
-            Log::logptr_t l;
         };
     }  // namespace Img
 }  // namespace WireCell

@@ -53,13 +53,13 @@ using namespace WireCell;
 using namespace std;
 
 Gen::DepoTransform::DepoTransform()
-  : m_start_time(0.0 * units::ns)
+  : Aux::Logger("DepoTransform", "gen")
+  , m_start_time(0.0 * units::ns)
   , m_readout_time(5.0 * units::ms)
   , m_tick(0.5 * units::us)
   , m_drift_speed(1.0 * units::mm / units::us)
   , m_nsigma(3.0)
   , m_frame_count(0)
-  , l(Log::logger("sim"))
 {
 }
 
@@ -87,7 +87,7 @@ void Gen::DepoTransform::configure(const WireCell::Configuration& cfg)
     auto jpirs = cfg["pirs"];
     if (jpirs.isNull() or jpirs.empty()) {
         std::string msg = "must configure with some plane impact response components";
-        l->error(msg);
+        log->error(msg);
         THROW(ValueError() << errmsg{"Gen::Ductor: " + msg});
     }
     m_pirs.clear();
@@ -138,7 +138,7 @@ WireCell::Configuration Gen::DepoTransform::default_configuration() const
 bool Gen::DepoTransform::operator()(const input_pointer& in, output_pointer& out)
 {
     if (!in) {
-        l->debug("DepoTransform #{}: EOS", m_count);
+        log->debug("EOS at call={}", m_count);
         ++m_count;
         out = nullptr;
         return true;
@@ -153,7 +153,7 @@ bool Gen::DepoTransform::operator()(const input_pointer& in, output_pointer& out
         IDepo::vector face_depos, dropped_depos;
         auto bb = face->sensitive();
         if (bb.empty()) {
-            l->debug("DepoTransform #{}: anode {} face {} is marked insensitive, skipping",
+            log->debug("call={}: anode {} face {} is marked insensitive, skipping",
                      m_count, m_anode->ident(), face->ident());
             continue;
         }
@@ -169,8 +169,8 @@ bool Gen::DepoTransform::operator()(const input_pointer& in, output_pointer& out
 
         if (face_depos.size()) {
             auto ray = bb.bounds();
-            l->debug(
-                "DepoTransform #{}: anode: {}, face: {}, processing {} depos spanning "
+            log->debug(
+                "call={}: anode: {}, face: {}, processing {} depos spanning "
                 "t:[{},{}]ms, bb:[{}-->{}]cm",
                 m_count,
                 m_anode->ident(), face->ident(), face_depos.size(), face_depos.front()->time() / units::ms,
@@ -178,8 +178,8 @@ bool Gen::DepoTransform::operator()(const input_pointer& in, output_pointer& out
         }
         if (dropped_depos.size()) {
             auto ray = bb.bounds();
-            l->debug(
-                "DepoTransform #{}: anode: {}, face: {}, dropped {} depos spanning "
+            log->debug(
+                "call={}: anode: {}, face: {}, dropped {} depos spanning "
                 "t:[{},{}]ms, outside bb:[{}-->{}]cm",
                 m_count,
                 m_anode->ident(), face->ident(), dropped_depos.size(), dropped_depos.front()->time() / units::ms,
@@ -225,6 +225,8 @@ bool Gen::DepoTransform::operator()(const input_pointer& in, output_pointer& out
     }
 
     auto frame = make_shared<SimpleFrame>(m_frame_count, m_start_time, traces, m_tick);
+    log->debug("call={} frame={} ntraces={}", m_frame_count, m_count, traces.size());
+
     ++m_frame_count;
     ++m_count;
     out = frame;

@@ -3,6 +3,7 @@
 
 #include "WireCellApps/Main.h"
 
+#include "WireCellUtil/Version.h"
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/String.h"
 #include "WireCellUtil/Point.h"
@@ -10,6 +11,7 @@
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/ITerminal.h"
 #include "WireCellIface/IApplication.h"
+#include "WireCellIface/INamed.h"
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
@@ -88,6 +90,10 @@ int Main::cmdline(int argc, char* argv[])
         ("threads,t", po::value<int>(),
          "limit number of threads used")
 #endif
+
+        ("version,v", 
+         "print the compiled version to stdout")
+
         ;
     // clang-format on
 
@@ -186,11 +192,20 @@ int Main::cmdline(int argc, char* argv[])
     }
 #endif
 
+    if (opts.count("version")) {
+        std::cout << version() << std::endl;
+    }
+
     // Maybe make this cmdline configurable.  For now, set all
     // backends the same.
     Log::set_pattern("[%H:%M:%S.%03e] %L [%^%=8n%$] %v");
 
     return 0;
+}
+
+std::string Main::version() const
+{
+    return WireCell::version;
 }
 
 void Main::add_plugin(const std::string& libname) { m_plugins.push_back(libname); }
@@ -224,6 +239,9 @@ void Main::add_path(const std::string& dirname) { m_load_path.push_back(dirname)
 
 void Main::initialize()
 {
+    // Here we got thought the boot-up sequence steps.
+
+    // Load configuration files
     for (auto filename : m_cfgfiles) {
         l->info("loading config file {} ...", filename);
         Persist::Parser p(m_load_path, m_extvars, m_extcode, m_tlavars, m_tlacode);
@@ -232,7 +250,7 @@ void Main::initialize()
         l->info("...done");
     }
 
-    // Find if we have our special configuration entry
+    // Find if we have our own special configuration entry
     int ind = m_cfgmgr.index("wire-cell");
     Configuration main_cfg = m_cfgmgr.pop(ind);
     if (!main_cfg.isNull()) {
@@ -258,11 +276,9 @@ void Main::initialize()
         pm.add(pname, lname);
     }
 
-    // Apply any user configuration.  This is a two step.  First, just
-    // assure all the components referenced in the configuration
-    // sequence can be instantiated.  Then, find them again and
-    // actually configure them.  This way, any problems fails fast.
+    // Apply any component configuration sequence.
 
+    // Instantiation
     for (auto c : m_cfgmgr.all()) {
         if (c.isNull()) {
             continue;  // allow and ignore any totally empty configurations
@@ -280,6 +296,23 @@ void Main::initialize()
         l->info("constructing app: \"{}\"", c);
         Factory::lookup_tn<IApplication>(c);
     }
+
+    // Give any named components their name.
+    for (auto c : m_cfgmgr.all()) {
+        if (c.isNull()) {
+            continue;  // allow and ignore any totally empty configurations
+        }
+        string type = get<string>(c, "type");
+        string name = get<string>(c, "name");
+        auto namobj = Factory::find_maybe<INamed>(type, name);  // doesn't throw.
+        if (!namobj) {
+            continue;
+        }
+        namobj->set_name(name);
+    }
+
+    // Finally, ask any configurables for their default, merge with
+    // user config and give back.
     for (auto c : m_cfgmgr.all()) {
         if (c.isNull()) {
             continue;  // allow and ignore any totally empty configurations

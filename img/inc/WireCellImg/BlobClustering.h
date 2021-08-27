@@ -32,12 +32,12 @@
 #include "WireCellIface/IBlobSet.h"
 
 #include "WireCellUtil/IndexedGraph.h"
-#include "WireCellUtil/Logging.h"
+#include "WireCellAux/Logger.h"
 
 namespace WireCell {
     namespace Img {
 
-        class BlobClustering : public IClustering, public IConfigurable {
+        class BlobClustering : public Aux::Logger, public IClustering, public IConfigurable {
            public:
             BlobClustering();
             virtual ~BlobClustering();
@@ -74,7 +74,6 @@ namespace WireCell {
             // Blob set must be kept, this saves them.
             void intern(const input_pointer& newbs);
 
-            Log::logptr_t l;
         };
     }  // namespace Img
 }  // namespace WireCell

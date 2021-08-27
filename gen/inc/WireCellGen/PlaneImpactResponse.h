@@ -6,7 +6,7 @@
 
 #include "WireCellUtil/Waveform.h"
 #include "WireCellUtil/Units.h"
-#include "WireCellUtil/Logging.h"
+#include "WireCellAux/Logger.h"
 
 namespace WireCell {
 
@@ -52,7 +52,8 @@ namespace WireCell {
         };
 
         /** Collection of all impact responses for a plane */
-        class PlaneImpactResponse : public IPlaneImpactResponse, public IConfigurable {
+        class PlaneImpactResponse : public Aux::Logger,
+                                    public IPlaneImpactResponse, public IConfigurable {
            public:
             /** Create a PlaneImpactResponse.
 
@@ -116,8 +117,6 @@ namespace WireCell {
 
             std::vector<IImpactResponse::pointer> m_ir;
             double m_half_extent, m_pitch, m_impact;
-
-            Log::logptr_t l;
 
             void build_responses();
         };

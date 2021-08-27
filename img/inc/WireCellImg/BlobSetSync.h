@@ -6,12 +6,12 @@
 
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/IBlobSetFanin.h"
-#include "WireCellUtil/Logging.h"
+#include "WireCellAux/Logger.h"
 
 namespace WireCell {
     namespace Img {
 
-        class BlobSetSync : public IBlobSetFanin, public IConfigurable {
+        class BlobSetSync : public Aux::Logger, public IBlobSetFanin, public IConfigurable {
            public:
             BlobSetSync();
             virtual ~BlobSetSync();
@@ -25,7 +25,6 @@ namespace WireCell {
 
            private:
             size_t m_multiplicity;
-            Log::logptr_t l;
         };
     }  // namespace Img
 }  // namespace WireCell

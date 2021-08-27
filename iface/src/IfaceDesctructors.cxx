@@ -1,6 +1,12 @@
+// Collect most of the interfaces' virtual destructors.
+//
+// Some details about this file found in:
 // https://github.com/WireCell/wire-cell-iface/issues/5
+// 
+// Please try to keep the block of #includes and of destructors
+// alphabetically ordered.  In Emacs, select each individually and:
+// M-x sort-lines.
 
-#include "WireCellIface/IWireParameters.h"
 #include "WireCellIface/IAnodeFace.h"
 #include "WireCellIface/IAnodePlane.h"
 #include "WireCellIface/IApplication.h"
@@ -18,8 +24,8 @@
 #include "WireCellIface/IClusterFanin.h"
 #include "WireCellIface/IClusterFilter.h"
 #include "WireCellIface/IClusterFramer.h"
-#include "WireCellIface/IClustering.h"
 #include "WireCellIface/IClusterSink.h"
+#include "WireCellIface/IClustering.h"
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/IDataFlowGraph.h"
 #include "WireCellIface/IDeconvolution.h"
@@ -37,8 +43,8 @@
 #include "WireCellIface/IDepoSetSource.h"
 #include "WireCellIface/IDepoSink.h"
 #include "WireCellIface/IDepoSource.h"
-#include "WireCellIface/IDiffusion.h"
 #include "WireCellIface/IDiffuser.h"
+#include "WireCellIface/IDiffusion.h"
 #include "WireCellIface/IDrifter.h"
 #include "WireCellIface/IDuctor.h"
 #include "WireCellIface/IFaninNode.h"
@@ -58,6 +64,7 @@
 #include "WireCellIface/IFunctionNode.h"
 #include "WireCellIface/IHydraNode.h"
 #include "WireCellIface/IJoinNode.h"
+#include "WireCellIface/INamed.h"
 #include "WireCellIface/INode.h"
 #include "WireCellIface/IPlaneImpactResponse.h"
 #include "WireCellIface/IPointFieldSink.h"
@@ -69,34 +76,34 @@
 #include "WireCellIface/IScalarFieldSink.h"
 #include "WireCellIface/ISequence.h"
 #include "WireCellIface/ISinkNode.h"
-#include "WireCellIface/ISourceNode.h"
 #include "WireCellIface/ISlice.h"
 #include "WireCellIface/ISliceFanout.h"
 #include "WireCellIface/ISliceFrame.h"
 #include "WireCellIface/ISliceFrameSink.h"
 #include "WireCellIface/ISliceStriper.h"
+#include "WireCellIface/ISourceNode.h"
 #include "WireCellIface/ISplitNode.h"
 #include "WireCellIface/IStripe.h"
 #include "WireCellIface/IStripeSet.h"
-#include "WireCellIface/ITerminal.h"
 #include "WireCellIface/ITensorPacker.h"
 #include "WireCellIface/ITensorSetFilter.h"
 #include "WireCellIface/ITensorSetUnpacker.h"
+#include "WireCellIface/ITerminal.h"
 #include "WireCellIface/ITiling.h"
 #include "WireCellIface/ITrace.h"
 #include "WireCellIface/IWaveform.h"
 #include "WireCellIface/IWireGenerator.h"
+#include "WireCellIface/IWireParameters.h"
 #include "WireCellIface/IWireSchema.h"
 #include "WireCellIface/IWireSource.h"
 #include "WireCellIface/IWireSummarizer.h"
 #include "WireCellIface/IWireSummary.h"
+#include "WireCellIface/SimpleBlob.h"
 #include "WireCellIface/SimpleDepoSet.h"
 #include "WireCellIface/SimpleWire.h"
-#include "WireCellIface/SimpleBlob.h"
 
 using namespace WireCell;
 
-IWireParameters::~IWireParameters() {}
 IAnodeFace::~IAnodeFace() {}
 IAnodePlane::~IAnodePlane() {}
 IApplication::~IApplication() {}
@@ -114,8 +121,8 @@ ICluster::~ICluster() {}
 IClusterFanin::~IClusterFanin() {}
 IClusterFilter::~IClusterFilter() {}
 IClusterFramer::~IClusterFramer() {}
-IClustering::~IClustering() {}
 IClusterSink::~IClusterSink() {}
+IClustering::~IClustering() {}
 IConfigurable::~IConfigurable() {}
 IDataFlowGraph::~IDataFlowGraph() {}
 IDeconvolution::~IDeconvolution() {}
@@ -133,8 +140,8 @@ IDepoSetSink::~IDepoSetSink() {}
 IDepoSetSource::~IDepoSetSource() {}
 IDepoSink::~IDepoSink() {}
 IDepoSource::~IDepoSource() {}
-IDiffusion::~IDiffusion() {}
 IDiffuser::~IDiffuser() {}
+IDiffusion::~IDiffusion() {}
 IDrifter::~IDrifter() {}
 IDuctor::~IDuctor() {}
 IFaninNodeBase::~IFaninNodeBase() {}
@@ -153,9 +160,10 @@ IFrameSource::~IFrameSource() {}
 IFrameSplitter::~IFrameSplitter() {}
 IFunctionNodeBase::~IFunctionNodeBase() {}
 IHydraNodeBase::~IHydraNodeBase() {}
-IJoinNodeBase::~IJoinNodeBase() {}
-INode::~INode() {}
 IImpactResponse::~IImpactResponse() {}
+IJoinNodeBase::~IJoinNodeBase() {}
+INamed::~INamed() {}
+INode::~INode() {}
 IPlaneImpactResponse::~IPlaneImpactResponse() {}
 IPointFieldSink::~IPointFieldSink() {}
 IProcessor::~IProcessor() {}
@@ -173,19 +181,20 @@ ISourceNodeBase::~ISourceNodeBase() {}
 ISplitNodeBase::~ISplitNodeBase() {}
 IStripe::~IStripe() {}
 IStripeSet::~IStripeSet() {}
-ITerminal::~ITerminal() {}
 ITensorPacker::~ITensorPacker() {}
 ITensorSetFilter::~ITensorSetFilter() {}
 ITensorSetUnpacker::~ITensorSetUnpacker() {}
+ITerminal::~ITerminal() {}
 ITiling::~ITiling() {}
 ITrace::~ITrace() {}
 IWaveform::~IWaveform() {}
 IWireGenerator::~IWireGenerator() {}
+IWireParameters::~IWireParameters() {}
 IWireSchema::~IWireSchema() {}
 IWireSource::~IWireSource() {}
 IWireSummarizer::~IWireSummarizer() {}
 IWireSummary::~IWireSummary() {}
-SimpleDepoSet::~SimpleDepoSet() {}
-SimpleWire::~SimpleWire() {}
 SimpleBlob::~SimpleBlob() {}
 SimpleBlobSet::~SimpleBlobSet() {}
+SimpleDepoSet::~SimpleDepoSet() {}
+SimpleWire::~SimpleWire() {}

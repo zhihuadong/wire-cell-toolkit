@@ -18,7 +18,9 @@
 
 #include "WireCellUtil/NamedFactory.h"
 
-WIRECELL_FACTORY(OmnibusSigProc, WireCell::SigProc::OmnibusSigProc, WireCell::IFrameFilter, WireCell::IConfigurable)
+WIRECELL_FACTORY(OmnibusSigProc, WireCell::SigProc::OmnibusSigProc,
+                 WireCell::INamed,
+                 WireCell::IFrameFilter, WireCell::IConfigurable)
 
 using namespace WireCell;
 
@@ -38,7 +40,8 @@ OmnibusSigProc::OmnibusSigProc(
     const std::string& cleanup_roi_tag, const std::string& break_roi_loop1_tag, const std::string& break_roi_loop2_tag,
     const std::string& shrink_roi_tag, const std::string& extend_roi_tag, const std::string& mp3_roi_tag,
     const std::string& mp2_roi_tag)
-  : m_anode_tn(anode_tn)
+  : Aux::Logger("OmnibusSigProc", "sigproc")
+  , m_anode_tn(anode_tn)
   , m_per_chan_resp(per_chan_resp_tn)
   , m_field_response(field_response)
   , m_fine_time_offset(fine_time_offset)
@@ -95,7 +98,6 @@ OmnibusSigProc::OmnibusSigProc(
   , m_mp2_roi_tag(mp2_roi_tag)
   , m_isWrapped(false)
   , m_sparse(false)
-  , log(Log::logger("sigproc"))
 {
     // get wires for each plane
 
@@ -121,17 +123,17 @@ void OmnibusSigProc::configure(const WireCell::Configuration& config)
 
     // m_nticks = get(config,"nticks",m_nticks);
     if (!config["nticks"].isNull()) {
-        log->warn("OmnibusSigProc has not setting \"nticks\", ignoring value {}", config["nticks"].asInt());
+        log->warn("no setting \"nticks\", ignoring value {}", config["nticks"].asInt());
     }
     // m_period = get(config,"period",m_period);
     if (!config["period"].isNull()) {
-        log->warn("OmnibusSigProc has not setting \"period\", ignoring value {}", config["period"].asDouble());
+        log->warn("no setting \"period\", ignoring value {}", config["period"].asDouble());
     }
 
     m_fft_flag = get(config, "fft_flag", m_fft_flag);
     if (m_fft_flag) {
       m_fft_flag = 0;
-      log->warn("OmnibusSigProc fft_flag option is broken, will use native array sizes");
+      log->warn("fft_flag option is broken, will use native array sizes");
     }
     m_elecresponse_tn = get(config, "elecresponse", m_elecresponse_tn);
     m_gain = get(config, "gain", m_gain);
@@ -211,7 +213,7 @@ void OmnibusSigProc::configure(const WireCell::Configuration& config)
     // but we have plane-major order so make a temporary collection.
     IChannel::vector plane_channels[3];
     std::stringstream ss;
-    ss << "OmnibusSigproc: internal channel map for tags: gauss:\"" << m_gauss_tag << "\", wiener:\"" << m_wiener_tag
+    ss << "internal channel map for tags: gauss:\"" << m_gauss_tag << "\", wiener:\"" << m_wiener_tag
        << "\", frame:\"" << m_frame_tag << "\"\n";
 
     for (auto face : m_anode->faces()) {
@@ -371,7 +373,7 @@ void OmnibusSigProc::load_data(const input_pointer& in, int plane)
             }
         }
     }
-    log->debug("OmnibusSigProc: plane index: {} input data identifies {} bad regions", plane, nbad);
+    log->debug("plane index: {} input data identifies {} bad regions", plane, nbad);
 }
 
 // used in sparsifying below.  Could use C++17 lambdas....
@@ -451,11 +453,11 @@ void OmnibusSigProc::save_data(ITrace::vector& itraces, IFrame::trace_list_t& in
 
     // debug
     if (indices.empty()) {
-        log->debug("OmnibusSigProc::save_data plane index: {} empty", plane);
+        log->debug("save_data plane index: {} empty", plane);
     }
     else {
         const int nadded = indices.back() - indices.front() + 1;
-        log->debug("OmnibusSigProc::save_data plane index: {}, Qtot={} "
+        log->debug("save_data plane index: {}, Qtot={} "
                    "added {} traces to total {} indices:[{},{}]",
                    plane, qtot,
                    nadded, indices.size(), indices.front(), indices.back());
@@ -1323,24 +1325,19 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
 {
     out = nullptr;
     if (!in) {
-        log->debug("OmnibusSigProc #{}: anode {}: see EOS",
+        log->debug("EOS at call={} anode={}",
                    m_count, m_anode->ident());
         ++m_count;
         return true;
     }
     const size_t ntraces = in->traces()->size();
-    if (ntraces) {
-        log->debug("OmnibusSigProc #{}: receive frame {} with {} traces",
-                   m_count, in->ident(), ntraces);
-    }
-    else {
+    if (!ntraces) {
         out = std::make_shared<SimpleFrame>(in->ident(), in->time(), std::make_shared<ITrace::vector>(), in->tick());
-        log->debug("OmnibusSigProc #{}: got and sending empty frame {} to tag {}",
-                   m_count, out->ident(), m_frame_tag);
+        log->debug("call={} forwarding empty frame={} ",
+                   m_count, out->ident());
         ++m_count;
         return true;
     }
-    ++m_count;
 
     // Convert to OSP cmm indexed by OSB sequential channels, NOT WCT channel ID.
     m_cmm.clear();
@@ -1556,8 +1553,9 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
         sframe->tag_traces(m_mp2_roi_tag, mp2_roi_traces);
     }
 
-    log->debug("OmnibusSigProc: produce {} "
+    log->debug("call={} produce {} "
                "traces: {} {}, {} {}, {} {}, frame tag: {}",
+               m_count,
                itraces->size(),
                wiener_traces.size(), m_wiener_tag,
                decon_charge_traces.size(), m_decon_charge_tag,
@@ -1565,6 +1563,7 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
                m_frame_tag);
 
     out = IFrame::pointer(sframe);
+    ++m_count;
 
     return true;
 }

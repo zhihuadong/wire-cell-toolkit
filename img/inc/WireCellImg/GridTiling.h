@@ -18,12 +18,13 @@
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/IAnodePlane.h"
 #include "WireCellIface/IAnodeFace.h"
-#include "WireCellUtil/Logging.h"
+
+#include "WireCellAux/Logger.h"
 
 namespace WireCell {
     namespace Img {
 
-        class GridTiling : public ITiling, public IConfigurable {
+        class GridTiling : public Aux::Logger, public ITiling, public IConfigurable {
            public:
             GridTiling();
             virtual ~GridTiling();
@@ -37,7 +38,7 @@ namespace WireCell {
             IAnodePlane::pointer m_anode;
             IAnodeFace::pointer m_face;
             double m_threshold;
-            Log::logptr_t l;
+
         };
     }  // namespace Img
 }  // namespace WireCell

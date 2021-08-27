@@ -83,7 +83,7 @@ bool DataFlowGraph::connect(INode::pointer tail, INode::pointer head, size_t spo
 bool DataFlowGraph::run()
 {
     for (auto it : m_factory.seen()) {
-        l->debug("Initialize node of type: {}", demangle(it.first->signature()));
+        //l->debug("Initialize node of type: {}", demangle(it.first->signature()));
         it.second->initialize();
     }
 

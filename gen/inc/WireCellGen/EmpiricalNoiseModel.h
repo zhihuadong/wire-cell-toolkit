@@ -18,7 +18,7 @@
 
 #include "WireCellUtil/Units.h"
 #include "WireCellUtil/Waveform.h"
-#include "WireCellUtil/Logging.h"
+#include "WireCellAux/Logger.h"
 
 #include <string>
 #include <vector>
@@ -27,7 +27,8 @@
 namespace WireCell {
     namespace Gen {
 
-        class EmpiricalNoiseModel : public IChannelSpectrum, public IConfigurable {
+        class EmpiricalNoiseModel : public Aux::Logger,
+                                    public IChannelSpectrum, public IConfigurable {
            public:
             EmpiricalNoiseModel(const std::string& spectra_file = "",
                                 const int nsamples = 10000,  // assuming 10k samples
@@ -106,7 +107,6 @@ namespace WireCell {
             mutable std::unordered_map<int, Waveform::realseq_t> m_elec_resp_cache;
             mutable amplitude_t comb_amp;
 
-            Log::logptr_t log;
         };
 
     }  // namespace Gen

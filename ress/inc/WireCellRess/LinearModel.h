@@ -3,6 +3,7 @@
 
 #include <Eigen/Dense>
 #include <string>
+#include <vector>
 
 namespace WireCell {
 
@@ -28,7 +29,7 @@ namespace WireCell {
         }
         virtual void Setbeta(Eigen::VectorXd beta) { _beta = beta; }
 
-        virtual void Fit(){};
+        virtual std::vector<size_t> Fit(){ return std::vector<size_t>(); };
         Eigen::VectorXd Predict();
         double chi2_base();
         double MeanResidual();

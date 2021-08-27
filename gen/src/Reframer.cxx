@@ -9,17 +9,19 @@
 #include <map>
 #include <unordered_set>
 
-WIRECELL_FACTORY(Reframer, WireCell::Gen::Reframer, WireCell::IFrameFilter, WireCell::IConfigurable)
+WIRECELL_FACTORY(Reframer, WireCell::Gen::Reframer,
+                 WireCell::INamed,
+                 WireCell::IFrameFilter, WireCell::IConfigurable)
 
 using namespace std;
 using namespace WireCell;
 
 Gen::Reframer::Reframer()
-  : m_toffset(0.0)
+    : Aux::Logger("Reframer", "gen")
+  , m_toffset(0.0)
   , m_fill(0.0)
   , m_tbin(0)
   , m_nticks(0)
-  , log(Log::logger("sim"))
 {
 }
 
@@ -46,7 +48,7 @@ WireCell::Configuration Gen::Reframer::default_configuration() const
 void Gen::Reframer::configure(const WireCell::Configuration& cfg)
 {
     const std::string anode_tn = cfg["anode"].asString();
-    log->debug("Gen::Reframer: using anode: \"{}\"", anode_tn);
+    log->debug("using anode: \"{}\"", anode_tn);
     m_anode = Factory::find_tn<IAnodePlane>(anode_tn);
 
     m_input_tags.clear();
@@ -64,6 +66,8 @@ bool Gen::Reframer::operator()(const input_pointer& inframe, output_pointer& out
 {
     if (!inframe) {
         outframe = nullptr;
+        log->debug("EOS at call={}", m_count);
+        ++m_count;
         return true;
     }
 
@@ -78,8 +82,7 @@ bool Gen::Reframer::operator()(const input_pointer& inframe, output_pointer& out
     auto all_traces = inframe->traces();
 
     std::stringstream report;
-    report << "Gen::Reframer: frame:" << inframe->ident() << " ";
-
+    report << "call=" << m_count << " frame=" << inframe->ident() << " ";
 
     // Get traces to consider
     std::vector<ITrace::pointer> traces;
@@ -149,5 +152,6 @@ bool Gen::Reframer::operator()(const input_pointer& inframe, output_pointer& out
     report << "out tag: \"" << m_frame_tag << "\"";
     log->debug(report.str());
 
+    ++m_count;
     return true;
 }

@@ -2,9 +2,9 @@
 
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/Array.h"
-#include "WireCellUtil/Logging.h"
 #include "WireCellUtil/Point.h"
 #include "WireCellUtil/NumpyHelper.h"
+#include "WireCellAux/Logger.h"
 #include "WireCellIface/SimpleDepo.h"
 
 #include <string>
@@ -19,8 +19,9 @@ WIRECELL_FACTORY(NumpyDepoLoader, WireCell::Sio::NumpyDepoLoader,
 using namespace WireCell;
 
 Sio::NumpyDepoLoader::NumpyDepoLoader()
-  : m_load_count(0)
-  , m_eos(1)
+    : Aux::Logger("NumpyDepoLoader", "io")
+    , m_load_count(0)
+    , m_eos(1)
 {
 }
 
@@ -48,8 +49,6 @@ using InfoArray = Eigen::Array<int, Eigen::Dynamic, 4>;
 
 bool Sio::NumpyDepoLoader::next()
 {
-    auto log = Log::logger("sio");
-
     ++m_load_count;
         
     // match names used by NDS
@@ -64,14 +63,14 @@ bool Sio::NumpyDepoLoader::next()
         WireCell::Numpy::load2d(data, data_name, fname);
     }
     catch (std::runtime_error& err) {
-        log->debug("Sio::NumpyDepoLoader: {}:{}: no such array, assuming end of input",
+        log->debug("{}:{}: no such array, assuming end of input",
                    fname, data_name);
         log->debug(err.what());
         return false;
     }
 
     if (data.cols() != 7) {
-        log->error("Sio::NumpyDepoLoader: {}:{}: depo data is not size 7",
+        log->error("{}:{}: depo data is not size 7",
                    fname, data_name);
         return false;
     }
@@ -83,13 +82,13 @@ bool Sio::NumpyDepoLoader::next()
         WireCell::Numpy::load2d(info, info_name, fname);
     }
     catch (std::runtime_error& err) {
-        log->error("Sio::NumpyDepoLoader: {}:{}: no such array",
+        log->error("{}:{}: no such array",
                    fname, info_name);
         log->error(err.what());
         return false;
     }
     if (info.cols() != 4) {
-        log->error("Sio::NumpyDepoLoader: {}:{}: depo info is not size 4",
+        log->error("{}:{}: depo info is not size 4",
                    fname, info_name);
         return false;
     }
@@ -97,12 +96,12 @@ bool Sio::NumpyDepoLoader::next()
 
 
     if (ndatas != ninfos) {
-        log->error("Sio::NumpyDepoLoader: {}: mismatch ndepo={} ninfo={}",
+        log->error("{}: mismatch ndepo={} ninfo={}",
                   fname, ndatas, ninfos);
         return false;
     }
     const size_t ndepos = ndatas;
-    log->debug("Sio::NumpyDepoLoader: load {} depos from frame {}", ndepos, data_name);
+    log->debug("load {} depos from frame {}", ndepos, data_name);
 
     size_t npositive = 0;
 
@@ -138,7 +137,7 @@ bool Sio::NumpyDepoLoader::next()
             // this depo is a prior
             const size_t other = info(ind, 3);
             if (other >= sdepos.size()) {
-                log->warn("Sio::NumpyDepoLoader: {}: depo ordering corrupt at {}: {} > {}",
+                log->warn("{}: depo ordering corrupt at {}: {} > {}",
                           fname, ind, other, sdepos.size());
                 return false;
             }
@@ -152,7 +151,7 @@ bool Sio::NumpyDepoLoader::next()
     }
     
     if (npositive) {
-        log->warn("Sio::NumpyDepoLoader: got {} positive depos out of {}, "
+        log->warn("got {} positive depos out of {}, "
                   "you probably want to use electrons not ions",
                   npositive, ndepos);
     }
@@ -164,7 +163,7 @@ bool Sio::NumpyDepoLoader::next()
             m_depos.push_back(idepo);
         }
     }
-    log->debug("Sio::NumpyDepoLoader: load complete");
+    log->debug("load complete");
     return true;
 }
 
@@ -173,25 +172,26 @@ bool Sio::NumpyDepoLoader::operator()(WireCell::IDepo::pointer& outdepo)
     outdepo = nullptr;
     if (m_depos.empty()) {
         if (m_eos == 0) {
+            log->debug("send EOS");
             m_eos = 1;          // we just finished a stream
             return true;        // so send null outdepo -> EOS
         }
         // We are outside a stream, try to initiate a new one
         bool ok = next();
         if (!ok or m_depos.empty()) { // failed to initiate
+            log->warn("failed to advance next={} with {} depos", ok, m_depos.size());
             m_depos.clear();
-            return false;       // we've gone off the rails
+            return false;       // the stream is dry
         }
         m_eos = 0;              // we are in a working stream
     }
 
     outdepo = m_depos.front();
     m_depos.pop_front();
-    auto log = Log::logger("sio");
     if (!outdepo) {
-        log->debug("depo loader got no depo");
+        log->debug("got no depo");
     }
-    // else {
+    // else {  // super verbose!
     //     log->debug("depo loader: t={} q={} x={}",
     //                outdepo->time(), outdepo->charge(), outdepo->pos().x());
     // }

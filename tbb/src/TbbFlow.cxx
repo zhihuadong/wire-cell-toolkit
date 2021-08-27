@@ -34,7 +34,7 @@ void TbbFlow::configure(const Configuration& cfg)
 
     m_dfpgraph.configure(cfg["edges"]);
 
-    l->info("TbbFlow::connect");
+    l->info("TbbFlow::connect with {} edges", cfg["edges"].size());
 
     for (auto thc : m_dfpgraph.connections()) {
         auto tail_tn = get<0>(thc);

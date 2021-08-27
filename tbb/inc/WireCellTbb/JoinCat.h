@@ -5,12 +5,16 @@
 #include "WireCellUtil/Testing.h"
 #include "WireCellTbb/NodeWrapper.h"
 
+#include <iostream> // fixme: for non-error handling
+
 namespace WireCellTbb {
 
     // Body for a TBB join node.
     template <typename TupleType>
     class JoinBody {
         WireCell::IJoinNodeBase::pointer m_wcnode;
+
+        mutable seqno_t m_seqno{0};
 
        public:
         typedef typename WireCell::IJoinNodeBase::any_vector any_vector;
@@ -22,63 +26,71 @@ namespace WireCellTbb {
             Assert(m_wcnode);
         }
 
-        boost::any operator()(const TupleType& tup) const
+        msg_t operator()(const TupleType& tup) const
         {
-            helper_type ih;
-            any_vector in = ih.as_any(tup);
-            boost::any ret;
-            // bool ok = (*m_wcnode)(in, ret);
-            (*m_wcnode)(in, ret);  // fixme: don't ignore the return code
-            return ret;
+            auto msg_vec = as_msg_vector(tup);
+            any_vector in;
+            for (auto& msg : msg_vec) {
+                in.push_back(msg.second);
+            }
+            wct_t out;
+            bool ok = (*m_wcnode)(in, out);
+            if (!ok) {
+                std::cerr << "TbbFlow: join node return false ignored\n";
+            }
+            return msg_t(m_seqno++, out);
         }
     };
 
     template <std::size_t N>
-    receiver_port_vector build_joiner(tbb::flow::graph& graph, WireCell::INode::pointer wcnode,
-                                      tbb::flow::graph_node*& joiner, tbb::flow::graph_node*& caller)
+    receiver_port_vector build_joiner(tbb::flow::graph& graph,
+                                      WireCell::INode::pointer wcnode,
+                                      std::vector<tbb::flow::graph_node*>& nodes)
     {
-        typedef typename WireCell::type_repeater<N, boost::any>::type TupleType;
+        typedef typename WireCell::type_repeater<N, msg_t>::type TupleType;
+
+        // this node takes user WC body and runs it after converting input tuple to vector
+        typedef tbb::flow::function_node<TupleType, msg_t> joining_node;
+        auto* fn = new joining_node(graph, 1 /*wcnode->concurrency()*/, JoinBody<TupleType>(wcnode));
 
         // this node is fully TBB and joins N receiver ports into a tuple
         typedef tbb::flow::join_node<TupleType> tbb_join_node_type;
-        tbb_join_node_type* jn = new tbb_join_node_type(graph);
-        joiner = jn;
-
-        // this node takes user WC body and runs it after converting input tuple to vector
-        typedef tbb::flow::function_node<TupleType, boost::any> joining_node;
-        joining_node* fn = new joining_node(graph, wcnode->concurrency(), JoinBody<TupleType>(wcnode));
-        caller = fn;
+        auto* jn = new tbb_join_node_type(graph);
 
         tbb::flow::make_edge(*jn, *fn);
 
-        // JoinNodeInputPorts<TupleType,N> ports;
-        // return ports(*jn);
+        auto* sn = new seq_node(graph, [](const msg_t& m) {return m.first;});
+        tbb::flow::make_edge(*fn, *sn);
+
+        nodes.push_back(sn);    // first
+        nodes.push_back(jn);
+        nodes.push_back(fn);
         return receiver_ports(*jn);
     }
 
     // Wrap the TBB (compound) node
     class JoinWrapper : public NodeWrapper {
-        tbb::flow::graph_node *m_joiner, *m_caller;
+        std::vector<tbb::flow::graph_node*> m_nodes;
         receiver_port_vector m_receiver_ports;
 
        public:
         JoinWrapper(tbb::flow::graph& graph, WireCell::INode::pointer wcnode)
-          : m_joiner(0)
-          , m_caller(0)
         {
             int nin = wcnode->input_types().size();
             // an exhaustive switch to convert from run-time to compile-time types and enumerations.
             Assert(nin > 0 && nin <= 3);  // fixme: exception instead?
-            if (1 == nin) m_receiver_ports = build_joiner<1>(graph, wcnode, m_joiner, m_caller);
-            if (2 == nin) m_receiver_ports = build_joiner<2>(graph, wcnode, m_joiner, m_caller);
-            if (3 == nin) m_receiver_ports = build_joiner<3>(graph, wcnode, m_joiner, m_caller);
+            if (1 == nin) m_receiver_ports = build_joiner<1>(graph, wcnode, m_nodes);
+            if (2 == nin) m_receiver_ports = build_joiner<2>(graph, wcnode, m_nodes);
+            if (3 == nin) m_receiver_ports = build_joiner<3>(graph, wcnode, m_nodes);
         }
 
-        virtual receiver_port_vector receiver_ports() { return m_receiver_ports; }
+        virtual receiver_port_vector receiver_ports() {
+            return m_receiver_ports;
+        }
 
         virtual sender_port_vector sender_ports()
         {
-            auto ptr = dynamic_cast<sender_type*>(m_caller);
+            auto ptr = dynamic_cast<sender_type*>(m_nodes[0]);
             return sender_port_vector{ptr};
         }
     };

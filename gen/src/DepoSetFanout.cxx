@@ -5,14 +5,16 @@
 
 #include <iostream>
 
-WIRECELL_FACTORY(DepoSetFanout, WireCell::Gen::DepoSetFanout, WireCell::IDepoSetFanout, WireCell::IConfigurable)
+WIRECELL_FACTORY(DepoSetFanout, WireCell::Gen::DepoSetFanout,
+                 WireCell::INamed,
+                 WireCell::IDepoSetFanout, WireCell::IConfigurable)
 
 using namespace WireCell;
 using namespace std;
 
 Gen::DepoSetFanout::DepoSetFanout(size_t multiplicity)
-  : m_multiplicity(multiplicity)
-  , log(Log::logger("glue"))
+    : Aux::Logger("DepoSetFanout", "glue")
+    , m_multiplicity(multiplicity)
 {
 }
 
@@ -29,7 +31,7 @@ void Gen::DepoSetFanout::configure(const WireCell::Configuration& cfg)
 {
     int m = get<int>(cfg, "multiplicity", (int) m_multiplicity);
     if (m <= 0) {
-        log->critical("Gen::DepoSetFanout multiplicity must be positive");
+        log->critical("multiplicity must be positive, got {}", m);
         THROW(ValueError() << errmsg{"DepoSetFanout multiplicity must be positive"});
     }
     m_multiplicity = m;
@@ -46,17 +48,18 @@ bool Gen::DepoSetFanout::operator()(const input_pointer& in, output_vector& outv
 {
     // Note: if "in" indicates EOS, just pass it on
     if (in) {
-        log->debug("Gen::DepoSetFanout #{}: fanout depo set {}",
+        log->debug("call={} fanout depo set {}",
                    m_count, in->ident());
     }
     else {
-        log->debug("Gen::DepoSetFanout #{}: see EOS", m_count);
+        log->debug("EOS at call={}", m_count);
     }
-    ++m_count;
 
     outv.resize(m_multiplicity);
     for (size_t ind = 0; ind < m_multiplicity; ++ind) {
         outv[ind] = in;
     }
+
+    ++m_count;
     return true;
 }

@@ -12,14 +12,15 @@
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/IAnodePlane.h"
 #include "WireCellUtil/Units.h"
-#include "WireCellUtil/Logging.h"
+#include "WireCellAux/Logger.h"
 #include <deque>
 
 namespace WireCell {
 
     namespace Gen {
 
-        class Digitizer : public IFrameFilter, public IConfigurable {
+        class Digitizer : public Aux::Logger,
+                          public IFrameFilter, public IConfigurable {
            public:
             Digitizer(const std::string& anode_tn = "AnodePlane",
                       int resolution = 12,  // bits of resolution
@@ -46,7 +47,7 @@ namespace WireCell {
             double m_gain;
             std::vector<double> m_fullscale, m_baselines;
             std::string m_frame_tag;
-            Log::logptr_t log;
+            size_t m_count{0};
         };
 
     }  // namespace Gen

@@ -28,8 +28,10 @@ void WireCell::LassoModel::Set_init_values(std::vector<double> values)
     }
 }
 
-void WireCell::LassoModel::Fit()
+std::vector<size_t> WireCell::LassoModel::Fit()
 {
+    std::vector<size_t> below_threshold;
+
     // initialize solution to zero unless user set beta already
     Eigen::VectorXd beta = _beta;
     if (0 == beta.size()) {
@@ -49,7 +51,8 @@ void WireCell::LassoModel::Fit()
     for (int j = 0; j < nbeta; j++) {
         norm(j) = X.col(j).squaredNorm();
         if (norm(j) < 1e-6) {
-            cerr << "warning: the " << j << "th variable is not used, please consider removing it." << endl;
+            //cerr << "warning: the " << j << "th variable is not used, please consider removing it." << endl;
+            below_threshold.push_back(j);
             norm(j) = 1;
         }
     }
@@ -119,6 +122,7 @@ void WireCell::LassoModel::Fit()
 
     // save results in the model
     Setbeta(beta);
+    return below_threshold;
 }
 
 double WireCell::LassoModel::chi2_l1() { return 2 * lambda * Getbeta().lpNorm<1>() * Gety().size(); }

@@ -12,13 +12,15 @@
 #include "custard/custard_boost.hpp"
 
 WIRECELL_FACTORY(ClusterFileSink, WireCell::Sio::ClusterFileSink,
-                 WireCell::IClusterSink, WireCell::IConfigurable)
+                 WireCell::INamed,
+                 WireCell::IClusterSink, WireCell::ITerminal,
+                 WireCell::IConfigurable)
 
 using namespace WireCell;
 
 Sio::ClusterFileSink::ClusterFileSink()
-  : m_drift_speed(1.6 * units::mm / units::us)
-  , log(Log::logger("io"))
+    : Aux::Logger("ClusterFileSink", "io")
+    , m_drift_speed(1.6 * units::mm / units::us)
 {
 }
 
@@ -26,13 +28,21 @@ Sio::ClusterFileSink::~ClusterFileSink()
 {
 }
 
+void Sio::ClusterFileSink::finalize()
+{
+    log->debug("closing {} after {} calls", m_outname, m_count);
+    m_out.pop();
+}
+
 WireCell::Configuration Sio::ClusterFileSink::default_configuration() const
 {
     Configuration cfg;
     // output json file.  A "%d" type format code may be included to be resolved by a cluster identifier.
     cfg["outname"] = m_outname;
-    // whether to also output any referenced frames
-    cfg["output_frame"] = m_output_frame;
+
+    // Whether to also output any referenced frames.
+    // cfg["output_frame"] = m_output_frame;
+
     // for conversion between time and "x" coordinate
     cfg["drift_speed"] = m_drift_speed;
     return cfg;
@@ -41,7 +51,7 @@ WireCell::Configuration Sio::ClusterFileSink::default_configuration() const
 void Sio::ClusterFileSink::configure(const WireCell::Configuration& cfg)
 {
     m_outname = get(cfg, "outname", m_outname);
-    m_output_frame = get(cfg, "output_frame", m_output_frame);
+    // m_output_frame = get(cfg, "output_frame", m_output_frame);
     m_drift_speed = get(cfg, "drift_speed", m_drift_speed);
 
     m_out.clear();
@@ -51,24 +61,33 @@ void Sio::ClusterFileSink::configure(const WireCell::Configuration& cfg)
     }
 }
 
-
-
 bool Sio::ClusterFileSink::operator()(const ICluster::pointer& cluster)
 {
+    if (!cluster) {             // EOS
+        log->debug("see EOS at call={}", m_count);
+        ++m_count;
+        return true;
+    }
     
-    auto cname = Aux::name(Aux::find_frame(cluster));
+    auto frame = Aux::find_frame(cluster);
+    auto cname = Aux::name(frame);
     cname += "_";
     cname += Aux::name(cluster);
+    cname += ".json";
 
     auto top = Aux::jsonify(cluster, m_drift_speed);
     std::stringstream topss;
     topss << top;
     auto tops = topss.str();
 
-    m_out << cname << "\n" << tops.size() << "\n" << tops.data();
 
-    if (m_output_frame) {
-        log->warn("ClusterFileSink: frame output not yet implemented");
-    }
+    log->debug("call={} output {} with {} bytes to {}",
+               m_count, cname, tops.size(), m_outname );
+
+    m_out << "name " << cname << "\n"
+          << "body " << tops.size() << "\n" << tops.data();
+    m_out.flush();
+
+    ++m_count;
     return true;
 }
