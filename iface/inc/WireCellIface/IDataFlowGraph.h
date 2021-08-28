@@ -14,10 +14,17 @@ namespace WireCell {
        public:
         virtual ~IDataFlowGraph();
 
+        /// Introduce a node to the graph.
+        virtual void add_node(INode::pointer inode,
+                              const std::string& label="") { };
+
         /// Connect tail and head nodes so data runs from given tail
         /// port number to given head port number Return false on
         /// error.
-        virtual bool connect(INode::pointer tail, INode::pointer head, size_t tail_port = 0, size_t head_port = 0) = 0;
+        virtual bool connect(INode::pointer tail,
+                             INode::pointer head,
+                             size_t tail_port = 0,
+                             size_t head_port = 0) = 0;
 
         /// Run the graph, return false on error.
         virtual bool run() = 0;

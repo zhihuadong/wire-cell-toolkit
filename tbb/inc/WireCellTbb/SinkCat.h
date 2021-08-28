@@ -12,19 +12,24 @@ namespace WireCellTbb {
     class SinkBody {
         WireCell::ISinkNodeBase::pointer m_wcnode;
 
-       public:
+        NodeMonitor m_nm;
+      public:
         ~SinkBody() {}
 
-        SinkBody(WireCell::INode::pointer wcnode)
+        SinkBody(WireCell::INode::pointer wcnode, NodeMonitor nm)
+            : m_nm(nm)
         {
             m_wcnode = std::dynamic_pointer_cast<WireCell::ISinkNodeBase>(wcnode);
         }
         tbb::flow::continue_msg operator()(const msg_t& in)
         {
+            m_nm(NodeState::enter);
             bool ok = (*m_wcnode)(in.second);
             if (!ok) {
+                m_nm(NodeState::error);
                 std::cerr << "TbbFlow: sink node return false ignored\n";
             }
+            m_nm(NodeState::exit);
             return {};
         }
     };
@@ -34,12 +39,14 @@ namespace WireCellTbb {
         sink_node* m_tbbnode;
 
       public:
-        SinkNodeWrapper(tbb::flow::graph& graph, WireCell::INode::pointer wcnode)
-            : m_tbbnode(new sink_node(graph, 1 /*wcnode->concurrency()*/, SinkBody(wcnode)))
+        SinkNodeWrapper(tbb::flow::graph& graph,
+                        WireCell::INode::pointer wcnode,
+                        NodeMonitor nm)
+            : m_tbbnode(new sink_node(graph, 1, SinkBody(wcnode, nm)))
         {
         }
-        ~SinkNodeWrapper() {
-            //delete m_tbbnode;
+        virtual ~SinkNodeWrapper() {
+            delete m_tbbnode;
         }
         virtual receiver_port_vector receiver_ports()
         {

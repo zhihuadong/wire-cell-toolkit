@@ -6,13 +6,15 @@
 
 #include <string>
 
-WIRECELL_FACTORY(TbbFlow, WireCellTbb::TbbFlow, WireCell::IApplication, WireCell::IConfigurable)
+WIRECELL_FACTORY(TbbFlow, WireCellTbb::TbbFlow,
+                 WireCell::INamed,
+                 WireCell::IApplication, WireCell::IConfigurable)
 
 using namespace WireCell;
 using namespace WireCellTbb;
 
 TbbFlow::TbbFlow()
-  : l(Log::logger("tbb"))
+    : Aux::Logger("TbbFlow","dfg")
 {
 }
 
@@ -34,18 +36,23 @@ void TbbFlow::configure(const Configuration& cfg)
 
     m_dfpgraph.configure(cfg["edges"]);
 
-    l->info("TbbFlow::connect with {} edges", cfg["edges"].size());
+    log->info("TbbFlow::connect with {} edges", cfg["edges"].size());
 
     for (auto thc : m_dfpgraph.connections()) {
         auto tail_tn = get<0>(thc);
         auto head_tn = get<1>(thc);
         auto conn = get<2>(thc);
 
-        l->debug("TbbFlow: Connect: {}:{} ( {} -> {} ) {}:{}", tail_tn.type, tail_tn.name, conn.tail, conn.head,
+        log->debug("TbbFlow: Connect: {}:{} ( {} -> {} ) {}:{}",
+                 tail_tn.type, tail_tn.name,
+                 conn.tail, conn.head,
                  head_tn.type, head_tn.name);
 
         INode::pointer tail_node = WireCell::Factory::lookup<INode>(tail_tn.type, tail_tn.name);
         INode::pointer head_node = WireCell::Factory::lookup<INode>(head_tn.type, head_tn.name);
+
+        m_dfp->add_node(tail_node, tail_tn.type + ":" + tail_tn.name);
+        m_dfp->add_node(head_node, head_tn.type + ":" + head_tn.name);
 
         m_dfp->connect(tail_node, head_node, conn.tail, conn.head);
     }
@@ -54,10 +61,10 @@ void TbbFlow::configure(const Configuration& cfg)
 void TbbFlow::execute()
 {
     if (!m_dfp) {
-        l->critical("TbbFlow: not configured");
+        log->critical("TbbFlow: not configured");
         return;
     }
 
-    l->info("TbbFlow: run: ");
+    log->info("TbbFlow: run: ");
     m_dfp->run();
 }

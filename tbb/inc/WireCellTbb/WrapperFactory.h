@@ -9,16 +9,22 @@ namespace WireCellTbb {
     // Make a node wrapper for every type of node category
     struct WrapperMaker {
         virtual ~WrapperMaker() {}
-        virtual Node operator()(tbb::flow::graph& g, WireCell::INode::pointer n) = 0;
+        virtual Node operator()(tbb::flow::graph& g,
+                                WireCell::INode::pointer n,
+                                NodeMonitor nm = [](NodeState /*ns*/){}) = 0;
     };
     template <class Wrapper>
     struct WrapperMakerT : public WrapperMaker {
         virtual ~WrapperMakerT() {}
-        virtual Node operator()(tbb::flow::graph& g, WireCell::INode::pointer n) { return Node(new Wrapper(g, n)); }
+        virtual Node operator()(tbb::flow::graph& g,
+                                WireCell::INode::pointer n,
+                                NodeMonitor nm = [](NodeState /*ns*/){}) {
+            return Node(new Wrapper(g, n, nm));
+        }
     };
 
     class WrapperFactory {
-       public:
+      public:
         WrapperFactory(tbb::flow::graph& graph);
 
         template <class Wrapper>
@@ -28,11 +34,12 @@ namespace WireCellTbb {
         }
 
         Node operator()(WireCell::INode::pointer wcnode);
+        Node operator()(WireCell::INode::pointer wcnode, NodeMonitor nm);
 
         typedef std::map<WireCell::INode::pointer, Node> WCNode2Wrapper;
         WCNode2Wrapper& seen() { return m_nodes; }
 
-       private:
+      private:
         typedef std::map<WireCell::INode::NodeCategory, WrapperMaker*> NodeMakers;
 
         tbb::flow::graph& m_graph;

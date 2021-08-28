@@ -14,9 +14,9 @@ using namespace WireCell;
 using namespace WireCellTbb;
 
 DataFlowGraph::DataFlowGraph(int max_threads)
-  : m_graph()
+  : Aux::Logger("DataFowGraph", "dfg")
+  , m_graph()
   , m_factory(m_graph)
-  , l(Log::logger("tbb"))
 {
 }
 
@@ -36,43 +36,54 @@ void DataFlowGraph::configure(const Configuration& cfg)
     }
 }
 
-bool DataFlowGraph::connect(INode::pointer tail, INode::pointer head, size_t sport, size_t rport)
+void DataFlowGraph::add_node(WireCell::INode::pointer inode,
+                             const std::string& label)
+{
+    Node node = m_factory(inode, [this, label](NodeState ns) {
+        log->debug("node={} state={}", label, ns);
+    });
+}
+
+bool DataFlowGraph::connect(INode::pointer tail, INode::pointer head,
+                            size_t sport, size_t rport)
 {
     using namespace WireCellTbb;
 
     Node mytail = m_factory(tail);
     if (!mytail) {
-        l->critical("DFP: failed to get tail node wrapper for {}", demangle(tail->signature()));
+        log->critical("DFP: failed to get tail node wrapper for {}",
+                      demangle(tail->signature()));
         return false;
     }
 
     Node myhead = m_factory(head);
     if (!myhead) {
-        l->critical("DFP: failed to get head node wrapper for {}", demangle(head->signature()));
+        log->critical("DFP: failed to get head node wrapper for {}",
+                      demangle(head->signature()));
         return false;
     }
 
     auto sports = mytail->sender_ports();
     if (sport < 0 || sports.size() <= sport) {
-        l->critical("DFP: bad sender port number: {}", sport);
+        log->critical("DFP: bad sender port number: {}", sport);
         return false;
     }
 
     auto rports = myhead->receiver_ports();
     if (rport < 0 || rports.size() <= rport) {
-        l->critical("DFP: bad receiver port number: {}", rport);
+        log->critical("DFP: bad receiver port number: {}", rport);
         return false;
     }
 
     sender_type* s = sports[sport];
     if (!s) {
-        l->critical("DFP: failed to get sender port {}", sport);
+        log->critical("DFP: failed to get sender port {}", sport);
         return false;
     }
 
     receiver_type* r = rports[rport];
     if (!s) {
-        l->critical("DFP: failed to get receiver port {}", rport);
+        log->critical("DFP: failed to get receiver port {}", rport);
         return false;
     }
 
@@ -83,7 +94,7 @@ bool DataFlowGraph::connect(INode::pointer tail, INode::pointer head, size_t spo
 bool DataFlowGraph::run()
 {
     for (auto it : m_factory.seen()) {
-        //l->debug("Initialize node of type: {}", demangle(it.first->signature()));
+        //log->debug("Initialize node of type: {}", demangle(it.first->signature()));
         it.second->initialize();
     }
 

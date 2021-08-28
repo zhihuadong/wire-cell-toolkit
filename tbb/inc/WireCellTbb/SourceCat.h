@@ -12,20 +12,25 @@ namespace WireCellTbb {
         WireCell::ISourceNodeBase::pointer m_wcnode;
 
         mutable seqno_t m_seqno{0};
+        NodeMonitor m_nm;
 
        public:
         ~SourceBody() {}
 
-        SourceBody(WireCell::INode::pointer wcnode)
+        SourceBody(WireCell::INode::pointer wcnode, NodeMonitor nm)
+            : m_nm(nm)
         {
             m_wcnode = std::dynamic_pointer_cast<WireCell::ISourceNodeBase>(wcnode);
         }
         msg_t operator()(tbb::flow_control& fc) {
+            m_nm(NodeState::enter);
             wct_t out;
             if ((*m_wcnode)(out)) {
+                m_nm(NodeState::exit);
                 return msg_t(m_seqno++, out);
             }
             fc.stop();
+            m_nm(NodeState::other);
             return {};
         }
     };
@@ -35,11 +40,15 @@ namespace WireCellTbb {
         src_node* m_tbbnode;
 
        public:
-        SourceNodeWrapper(tbb::flow::graph& graph, WireCell::INode::pointer wcnode)
-          : m_tbbnode(new src_node(graph, SourceBody(wcnode)))
+        SourceNodeWrapper(tbb::flow::graph& graph,
+                          WireCell::INode::pointer wcnode,
+                          NodeMonitor nm)
+            : m_tbbnode(new src_node(graph, SourceBody(wcnode, nm)))
         {
         }
-        ~SourceNodeWrapper() { delete m_tbbnode; }
+        virtual ~SourceNodeWrapper() {
+            delete m_tbbnode;
+        }
         virtual void initialize() { m_tbbnode->activate(); }
         virtual sender_port_vector sender_ports()
         {

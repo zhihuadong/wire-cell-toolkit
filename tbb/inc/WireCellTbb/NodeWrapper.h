@@ -37,6 +37,23 @@ namespace WireCellTbb {
     using sink_node = tbb::flow::function_node<msg_t>;
 
 
+
+    enum class NodeState {
+        other, enter, exit, error,
+
+    };
+    template<typename OStream>
+    OStream &operator<<(OStream &os, const NodeState &nc)
+    {
+        if (nc == NodeState::enter) return os << "enter";
+        if (nc == NodeState::exit) return os << "exit";
+        if (nc == NodeState::error) return os << "error";
+        return os << "other";
+    }
+
+    using NodeMonitor = std::function<void(NodeState)>;
+
+
     // A base facade which expose sender/receiver ports and provide
     // initialize hook.  There is one NodeWrapper for each node
     // category.

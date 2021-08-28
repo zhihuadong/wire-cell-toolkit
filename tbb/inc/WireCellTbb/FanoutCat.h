@@ -21,11 +21,14 @@ namespace WireCellTbb {
         // function_node to have concurrency=1.
         mutable size_t m_seqno{0};
 
-       public:
+        NodeMonitor m_nm;
+
+      public:
         typedef typename WireCell::IFanoutNodeBase::any_vector any_vector;
         typedef typename WireCell::type_repeater<N, msg_t>::type TupleType;
 
-        FanoutBody(WireCell::INode::pointer wcnode)
+        FanoutBody(WireCell::INode::pointer wcnode, NodeMonitor nm)
+            : m_nm(nm)
         {
             m_wcnode = std::dynamic_pointer_cast<WireCell::IFanoutNodeBase>(wcnode);
             Assert(m_wcnode);
@@ -33,9 +36,11 @@ namespace WireCellTbb {
 
         TupleType operator()(msg_t in) const
         {
+            m_nm(NodeState::enter);
             any_vector anyvec;
             bool ok = (*m_wcnode)(in.second, anyvec);
             if (!ok ) {
+                m_nm(NodeState::error);
                 std::cerr << "TbbFlow: fanout call fails\n";
             }
             msg_vector_t savec;
@@ -43,6 +48,7 @@ namespace WireCellTbb {
             for (auto& a : anyvec) {
                 savec.push_back(msg_t(seqno, a));
             }
+            m_nm(NodeState::exit);
             return WireCell::vectorToTuple<N>(savec);
         }
     };
@@ -52,6 +58,7 @@ namespace WireCellTbb {
     template <std::size_t N>
     sender_port_vector build_fanouter(tbb::flow::graph& graph,
                                       WireCell::INode::pointer wcnode,
+                                      NodeMonitor nm,
                                       std::vector<tbb::flow::graph_node*>& nodes)
     {
         using TupleType = typename WireCell::type_repeater<N, msg_t>::type;
@@ -59,7 +66,8 @@ namespace WireCellTbb {
 
         // This node takes user WC body and runs it after converting input verctor to tuple.
         // We force-set concurency=1 so as not to upset to seqno in the body.
-        auto* fn = new tuple_func_node(graph, 1 /*wcnode->concurrency()*/, FanoutBody<N>(wcnode));
+        auto* fn = new tuple_func_node(graph, 1,
+                                       FanoutBody<N>(wcnode, nm));
         // Below requires first to be the WCT body caller
         nodes.push_back(fn);
 
@@ -90,22 +98,27 @@ namespace WireCellTbb {
         std::vector<tbb::flow::graph_node*> m_nodes;
         sender_port_vector m_sender_ports;
 
-       public:
-        FanoutWrapper(tbb::flow::graph& graph, WireCell::INode::pointer wcnode)
+      public:
+        FanoutWrapper(tbb::flow::graph& graph,
+                      WireCell::INode::pointer wcnode,
+                      NodeMonitor nm)
         {
             int nout = wcnode->output_types().size();
             // an exhaustive switch to convert from run-time to compile-time types and enumerations.
             Assert(nout > 0 && nout <= 10);  // fixme: exception instead?
-            if (1 == nout) m_sender_ports = build_fanouter<1>(graph, wcnode, m_nodes);
-            if (2 == nout) m_sender_ports = build_fanouter<2>(graph, wcnode, m_nodes);
-            if (3 == nout) m_sender_ports = build_fanouter<3>(graph, wcnode, m_nodes);
-            if (4 == nout) m_sender_ports = build_fanouter<4>(graph, wcnode, m_nodes);
-            if (5 == nout) m_sender_ports = build_fanouter<5>(graph, wcnode, m_nodes);
-            if (6 == nout) m_sender_ports = build_fanouter<6>(graph, wcnode, m_nodes);
-            if (7 == nout) m_sender_ports = build_fanouter<7>(graph, wcnode, m_nodes);
-            if (8 == nout) m_sender_ports = build_fanouter<8>(graph, wcnode, m_nodes);
-            if (9 == nout) m_sender_ports = build_fanouter<9>(graph, wcnode, m_nodes);
-            if (10 == nout) m_sender_ports = build_fanouter<10>(graph, wcnode, m_nodes);
+            if (1 == nout) m_sender_ports = build_fanouter<1>(graph, wcnode, nm, m_nodes);
+            if (2 == nout) m_sender_ports = build_fanouter<2>(graph, wcnode, nm, m_nodes);
+            if (3 == nout) m_sender_ports = build_fanouter<3>(graph, wcnode, nm, m_nodes);
+            if (4 == nout) m_sender_ports = build_fanouter<4>(graph, wcnode, nm, m_nodes);
+            if (5 == nout) m_sender_ports = build_fanouter<5>(graph, wcnode, nm, m_nodes);
+            if (6 == nout) m_sender_ports = build_fanouter<6>(graph, wcnode, nm, m_nodes);
+            if (7 == nout) m_sender_ports = build_fanouter<7>(graph, wcnode, nm, m_nodes);
+            if (8 == nout) m_sender_ports = build_fanouter<8>(graph, wcnode, nm, m_nodes);
+            if (9 == nout) m_sender_ports = build_fanouter<9>(graph, wcnode, nm, m_nodes);
+            if (10 == nout) m_sender_ports = build_fanouter<10>(graph, wcnode, nm, m_nodes);
+        }
+        virtual ~FanoutWrapper()
+        {
         }
 
         virtual sender_port_vector sender_ports()

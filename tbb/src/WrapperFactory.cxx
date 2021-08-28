@@ -42,3 +42,20 @@ Node WrapperFactory::operator()(INode::pointer wcnode)
     m_nodes[wcnode] = node;
     return node;
 }
+Node WrapperFactory::operator()(INode::pointer wcnode, NodeMonitor nm)
+{
+    auto nit = m_nodes.find(wcnode);
+    if (nit != m_nodes.end()) {
+        return nit->second;        
+    }
+
+    auto mit = m_factory.find(wcnode->category());
+    if (mit == m_factory.end()) {
+        return nullptr;
+    }
+    auto maker = mit->second;
+
+    Node node = (*maker)(m_graph, wcnode, nm);
+    m_nodes[wcnode] = node;
+    return node;
+}
