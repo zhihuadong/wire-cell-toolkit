@@ -202,6 +202,14 @@ Json::Value WireCell::Persist::json2object(const std::string& text)
 //     return parser.loads(text);
 // }
 
+namespace {
+  auto to_chars(std::string const& str)
+  {
+    return const_cast<char*>(str.c_str());
+  }
+
+}
+
 WireCell::Persist::Parser::~Parser()
 {
     if (m_jvm) {
@@ -213,27 +221,27 @@ WireCell::Persist::Parser::~Parser()
 
 void WireCell::Persist::Parser::add_load_path(const std::string& path)
 {
-    jsonnet_jpath_add(m_jvm, path.c_str());
+    jsonnet_jpath_add(m_jvm, to_chars(path));
 }
 void WireCell::Persist::Parser::bind_ext_var(const std::string& key,
                                              const std::string& val)
 {
-    jsonnet_ext_var(m_jvm, key.c_str(), val.c_str());
+    jsonnet_ext_var(m_jvm, to_chars(key), to_chars(val));
 }
 void WireCell::Persist::Parser::bind_ext_code(const std::string& key,
                                               const std::string& val)
 {
-    jsonnet_ext_code(m_jvm, key.c_str(), val.c_str());
+    jsonnet_ext_code(m_jvm, to_chars(key), to_chars(val));
 }
 void WireCell::Persist::Parser::bind_tla_var(const std::string& key,
                                              const std::string& val)
 {
-    jsonnet_tla_var(m_jvm, key.c_str(), val.c_str());
+    jsonnet_tla_var(m_jvm, to_chars(key), to_chars(val));
 }
 void WireCell::Persist::Parser::bind_tla_code(const std::string& key,
                                               const std::string& val)
 {
-    jsonnet_tla_code(m_jvm, key.c_str(), val.c_str());
+    jsonnet_tla_code(m_jvm, to_chars(key), to_chars(val));
 }
 
 WireCell::Persist::Parser::Parser(const std::vector<std::string>& load_paths, const externalvars_t& extvar,
@@ -308,7 +316,7 @@ Json::Value WireCell::Persist::Parser::load(const std::string& filename)
 
     if (ext == ".jsonnet" or ext.empty()) {  // use libjsonnet++ file interface
         int rc=0;
-        char* jtext = jsonnet_evaluate_file(m_jvm, fname.c_str(), &rc);
+        char* jtext = jsonnet_evaluate_file(m_jvm, to_chars(fname), &rc);
         if (rc) {
             error(jtext);
             THROW(ValueError() << errmsg{jtext});
@@ -338,7 +346,7 @@ Json::Value WireCell::Persist::Parser::load(const std::string& filename)
 Json::Value WireCell::Persist::Parser::loads(const std::string& text)
 {
     int rc=0;
-    char* jtext = jsonnet_evaluate_snippet(m_jvm, "<stdin>", text.c_str(), &rc);
+    char* jtext = jsonnet_evaluate_snippet(m_jvm, to_chars("<stdin>"), to_chars(text), &rc);
     if (rc) {
         error(jtext);
         THROW(ValueError() << errmsg{jtext});
