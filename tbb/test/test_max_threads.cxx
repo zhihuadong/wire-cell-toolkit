@@ -1,3 +1,5 @@
+#include <cstdint>              // see test_tbb_info.cxx
+
 #include <tbb/info.h>
 #include <tbb/global_control.h>
 

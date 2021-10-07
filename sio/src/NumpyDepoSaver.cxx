@@ -3,6 +3,7 @@
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/Array.h"
 #include "WireCellUtil/NumpyHelper.h"
+#include "WireCellAux/DepoTools.h"
 
 #include <string>
 #include <vector>
@@ -16,7 +17,7 @@ using namespace WireCell;
 using WireCell::Numpy::save2d;
 
 Sio::NumpyDepoSaver::NumpyDepoSaver()
-  : m_save_count(0)
+    : Aux::Logger("NumpyDepoSaver", "io")
 {
 }
 
@@ -30,13 +31,16 @@ WireCell::Configuration Sio::NumpyDepoSaver::default_configuration() const
     // files are supported.  Writing is always in "append" mode.  It's
     // up to the user to delete a previous instance of the file if
     // it's old contents are not wanted.
-    cfg["filename"] = "wct-frame.npz";
-
+    cfg["filename"] = m_filename;
     return cfg;
 }
 
-void Sio::NumpyDepoSaver::configure(const WireCell::Configuration& config) { m_cfg = config; }
+void Sio::NumpyDepoSaver::configure(const WireCell::Configuration& config)
+{
+    m_filename = get<std::string>(config, "filename", m_filename);
+}
 
+#if 0                           // moved to DepoTools
 typedef std::tuple<IDepo::pointer, size_t, size_t> depo_gen_child;
 typedef std::vector<depo_gen_child> depos_with_prior;
 
@@ -57,6 +61,7 @@ static depos_with_prior flatten_depos(std::vector<WireCell::IDepo::pointer> depo
     }
     return ret;
 }
+#endif
 
 bool Sio::NumpyDepoSaver::operator()(const WireCell::IDepo::pointer& indepo, WireCell::IDepo::pointer& outdepo)
 {
@@ -69,10 +74,11 @@ bool Sio::NumpyDepoSaver::operator()(const WireCell::IDepo::pointer& indepo, Wir
 
     const size_t ndepos = m_depos.size();
     if (!ndepos) {
-        std::cerr << "NumpyDepoSaver: warning: EOS and no depos seen.\n";
+        log->warn("NumpyDepoSaver: warning: EOS at {} and no depos seen", m_save_count);
         return true;
     }
 
+#if 0                           // moved to DepoTools
     auto fdepos = flatten_depos(m_depos);
     const size_t nfdepos = fdepos.size();
 
@@ -100,10 +106,17 @@ bool Sio::NumpyDepoSaver::operator()(const WireCell::IDepo::pointer& indepo, Wir
         info(idepo, 2) = gen;
         info(idepo, 3) = child;
     }
+#else
+
+    Array::array_xxf data;
+    Array::array_xxi info;
+    Aux::fill(data, info, m_depos);
+#endif
+    log->debug("save ndepos={} at call={}", data.rows(), m_save_count);
     const std::string data_name = String::format("depo_data_%d", m_save_count);
     const std::string info_name = String::format("depo_info_%d", m_save_count);
 
-    const std::string fname = m_cfg["filename"].asString();
+    const std::string fname = m_filename;
     const std::string mode = "a";
 
     save2d(data, data_name, fname, mode);

@@ -5,13 +5,14 @@
 
 #include "WireCellIface/IDepoFilter.h"
 #include "WireCellIface/IConfigurable.h"
+#include "WireCellAux/Logger.h"
 
 namespace WireCell {
     namespace Sio {
 
         // This saver will buffer depos in memory until EOS is received.
-        class NumpyDepoSaver : public WireCell::IDepoFilter, public WireCell::IConfigurable {
-           public:
+        class NumpyDepoSaver : public Aux::Logger, public WireCell::IDepoFilter, public WireCell::IConfigurable {
+          public:
             NumpyDepoSaver();
             virtual ~NumpyDepoSaver();
 
@@ -23,9 +24,9 @@ namespace WireCell {
             virtual WireCell::Configuration default_configuration() const;
             virtual void configure(const WireCell::Configuration& config);
 
-           private:
-            Configuration m_cfg;
-            int m_save_count;  // count frames saved
+          private:
+            std::string m_filename{"wct-depos.npz"};
+            int m_save_count{0}; 
             std::vector<WireCell::IDepo::pointer> m_depos;
         };
 
