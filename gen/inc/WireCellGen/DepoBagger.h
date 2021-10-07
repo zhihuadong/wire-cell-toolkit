@@ -7,6 +7,8 @@
  *
  * This component is equivalent to the input action of the Ductor in
  * "fixed" mode.
+ *
+ * If the gate is kept as default [0,0] then all depos are bagged.
  */
 
 #ifndef WIRECELLGEN_DEPOBAGGER
@@ -40,7 +42,7 @@ namespace WireCell {
             int m_count{0};
 
             // The acceptance time gate
-            std::pair<double, double> m_gate;
+            std::pair<double, double> m_gate{0,0};
 
             // Temporary holding of accepted depos.
             IDepo::vector m_depos;

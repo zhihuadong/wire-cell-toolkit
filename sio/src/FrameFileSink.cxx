@@ -66,7 +66,7 @@ void Sio::FrameFileSink::configure(const WireCell::Configuration& cfg)
     m_out.clear();
     output_filters(m_out, m_outname);
     if (m_out.size() < 2) {     // must have at least get tar filter + file sink.
-        THROW(ValueError() << errmsg{"FrameFielSink: unsupported outname: " + m_outname});
+        THROW(ValueError() << errmsg{"FrameFileSink: unsupported outname: " + m_outname});
     }
 
     m_tags.clear();
