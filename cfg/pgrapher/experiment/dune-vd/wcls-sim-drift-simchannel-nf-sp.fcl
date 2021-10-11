@@ -34,11 +34,18 @@ physics :{
             // Make available parameters via Jsonnet's std.extVar()
             params: {
               # file: wires
+              # dunevd10kt-1x6x6-3view-wires-v1.json.bz2
+              # dunevd10kt-1x6x6-3view30deg-wires-v1.json.bz2
+              # dunevd10kt-1x6x6-2view-wires-v1.json.bz2
               files_wires: "dunevd10kt-1x6x6-3view30deg-wires-v1.json.bz2"
               # file: fields
-              # dune-garfield-1d565.json.bz2, dunevd-resp-isoc3views-18d92.json.bz2
+              # dunevd-resp-isoc3views-18d92.json.bz2 30,-30,90
+              # pcbro-response-avg-12d50.json.bz2 2view prototype
               files_fields: "dunevd-resp-isoc3views-18d92.json.bz2"
               # file: noise
+              # dunevd10kt-1x6x6-3view-noise-spectra-v1.json.bz2
+              # dunevd10kt-1x6x6-3view30deg-noise-spectra-v1.json.bz2
+              # dunevd10kt-1x6x6-2view-noise-spectra-v1.json.bz2
               files_noise: "dunevd10kt-1x6x6-3view30deg-noise-spectra-v1.json.bz2"
             }
             structs: {
