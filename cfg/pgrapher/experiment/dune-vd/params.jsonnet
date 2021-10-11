@@ -4,7 +4,7 @@
 local wc = import "wirecell.jsonnet";
 local base = import "pgrapher/common/params.jsonnet";
 
-function(response_plane) base {
+function(params) base {
     // This section will be overwritten in simparams.jsonnet
     det : {
 
@@ -14,7 +14,7 @@ function(response_plane) base {
         // Only one CRP is defined in this geometry 
         // CRMs are oneside anodes     
 
-        response_plane: response_plane,
+        response_plane: params.response_plane,
 
         local upper_crp_x = 325.00*wc.cm, //300.507*wc.cm,
         local upper_resp_x = upper_crp_x-self.response_plane,
@@ -36,7 +36,7 @@ function(response_plane) base {
     daq: super.daq {
 
         tick: 0.5*wc.us, // check this in the TDR, LArSoft
-        nticks: 9375, // 1.6 mm/us per 0.5 us assuming 6000 mm drift leght. 
+        nticks: params.nticks, //9375, // 1.6 mm/us per 0.5 us assuming 6000 mm drift leght. 
 
         //readout_time: self.tick*self.nticks,
         //nreadouts: 1,

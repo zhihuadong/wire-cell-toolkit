@@ -12,16 +12,21 @@ local wc = import 'wirecell.jsonnet';
 
 local io = import 'pgrapher/common/fileio.jsonnet';
 local tools_maker = import 'pgrapher/common/tools.jsonnet';
-local base = import 'pgrapher/experiment/dune-vd/params.jsonnet';
+local params_maker = import 'pgrapher/experiment/dune-vd/params.jsonnet';
 local response_plane = std.extVar('response_plane')*wc.cm;
-local params = base(response_plane) {
+local fcl_params = {
+    G4RefTime: std.extVar('G4RefTime') * wc.us,
+    response_plane: std.extVar('response_plane')*wc.cm,
+    nticks: std.extVar('nticks')
+};
+local params = params_maker(fcl_params) {
   lar: super.lar {
     // Longitudinal diffusion constant
-    DL: std.extVar('DL') * wc.cm2 / wc.s,
+    DL: std.extVar('DL') * wc.cm2 / wc.ns,
     // Transverse diffusion constant
-    DT: std.extVar('DT') * wc.cm2 / wc.s,
+    DT: std.extVar('DT') * wc.cm2 / wc.ns,
     // Electron lifetime
-    lifetime: std.extVar('lifetime') * wc.ms,
+    lifetime: std.extVar('lifetime') * wc.us,
     // Electron drift speed, assumes a certain applied E-field
     drift_speed: std.extVar('driftSpeed') * wc.mm / wc.us,
   },
@@ -31,8 +36,6 @@ local params = base(response_plane) {
       noise: std.extVar('files_noise'),
   },
 };
-
-local G4RefTime = std.extVar('G4RefTime') * wc.us;
 
 local tools = tools_maker(params);
 
@@ -156,7 +159,7 @@ local wcls_simchannel_sink = g.pnode({
     u_time_offset: 0.0 * wc.us,
     v_time_offset: 0.0 * wc.us,
     y_time_offset: 0.0 * wc.us,
-    g4_ref_time: G4RefTime,
+    g4_ref_time: fcl_params.G4RefTime,
     use_energy: true,
     response_plane: response_plane,
   },
@@ -229,7 +232,7 @@ local multipass = [
                 // nfmagnify_pipe[n],
                 sp_pipes[n],
                 // spmagnify_pipe[n],
-                // sinks.decon_pipe[n],
+                sinks.decon_pipe[n],
                 // sinks.debug_pipe[n], // use_roi_debug_mode=true in sp.jsonnet
              ],
              'multipass%d' % n)
