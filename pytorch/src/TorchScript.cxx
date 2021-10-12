@@ -50,7 +50,7 @@ void Pytorch::TorchScript::configure(const WireCell::Configuration& cfg)
         l->info("Model: {} loaded", m_cfg["model"].asString());
     }
     catch (const c10::Error& e) {
-        l->critical("error loading model: {}", m_cfg["model"].asString());
+        l->critical("error loading model: {}. {}", m_cfg["model"].asString(), e.what());
         exit(0);
     }
 }

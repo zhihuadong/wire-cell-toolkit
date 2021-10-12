@@ -35,7 +35,7 @@ def configure(cfg):
         cfg.env.CXXFLAGS += ['-DSPDLOG_COMPILED_LIB=1']
 
     print("Configured version", VERSION)
-
+    # print(cfg.env)
 
 def build(bld):
     bld.load('wcb')
