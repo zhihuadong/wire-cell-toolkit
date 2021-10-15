@@ -9,12 +9,13 @@
 #include "WireCellIface/ITensorSetFilter.h"
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/IFrameFilter.h"
-#include "WireCellUtil/Logging.h"
+#include "WireCellAux/Logger.h"
 
 namespace WireCell {
     namespace Pytorch {
 
-        class DNNROIFinding : public IFrameFilter, public IConfigurable {
+        class DNNROIFinding : public Aux::Logger,
+                              public IFrameFilter, public IConfigurable {
            public:
             DNNROIFinding();
             virtual ~DNNROIFinding();
@@ -38,10 +39,6 @@ namespace WireCell {
             ITensorSetFilter::pointer m_torch;  /// pointer to a TorchScript wrapper
 
             int m_save_count;  // count frames saved
-
-            /// SPD logger
-            Log::logptr_t l;
-            std::unordered_map<std::string, float> m_timers;
         };
     }  // namespace Pytorch
 }  // namespace WireCell

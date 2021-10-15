@@ -7,9 +7,15 @@
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/Array.h"
 #include "WireCellUtil/Exceptions.h"
+#include "WireCellUtil/TimeKeeper.h"
 
 #include <string>
 #include <vector>
+
+// fixme: this macro __SPELLING__ is reserved for compiler provided
+// macros but I think this is meant as a local macro.  But, I don't
+// think it technically colides.
+// https://gcc.gnu.org/onlinedocs/cpp/Standard-Predefined-Macros.html
 
 // #define __DEBUG__
 
@@ -26,8 +32,8 @@ WIRECELL_FACTORY(DNNROIFinding, WireCell::Pytorch::DNNROIFinding, WireCell::IFra
 using namespace WireCell;
 
 Pytorch::DNNROIFinding::DNNROIFinding()
-  : m_save_count(0)
-  , l(Log::logger("pytorch"))
+    : Aux::Logger("DNNROIFinding", "torch")
+    , m_save_count(0)
 {
 }
 
@@ -36,6 +42,11 @@ Pytorch::DNNROIFinding::~DNNROIFinding() {}
 void Pytorch::DNNROIFinding::configure(const WireCell::Configuration& cfg)
 {
     m_cfg = cfg;
+
+    if (m_cfg["intags"].size() == 0) {
+        log->critical("No intags provided!");
+        THROW(ValueError() << errmsg{"No intags provided!"});
+    }
 
     auto anode_tn = cfg["anode"].asString();
     m_anode = Factory::find_tn<IAnodePlane>(anode_tn);
@@ -53,12 +64,6 @@ void Pytorch::DNNROIFinding::configure(const WireCell::Configuration& cfg)
 
     auto torch_tn = cfg["torch_script"].asString();
     m_torch = Factory::find_tn<ITensorSetFilter>(torch_tn);
-
-    m_timers.insert({"frame2eigen", 0});
-    m_timers.insert({"eigen2tensor", 0});
-    m_timers.insert({"forward", 0});
-    m_timers.insert({"tensor2eigen", 0});
-    m_timers.insert({"h5", 0});
 }
 
 WireCell::Configuration Pytorch::DNNROIFinding::default_configuration() const
@@ -179,22 +184,15 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer& inframe, IFrame::
 {
     outframe = inframe;
     if (!inframe) {
-        l->debug("DNNROIFinding: EOS");
+        log->debug("EOS at call={}", m_save_count);
         outframe = nullptr;
         return true;
     }
 
-    if (m_cfg["intags"].size() == 0) {
-        THROW(ValueError() << errmsg{"No intags provided!"});
-    }
-
-    std::clock_t start;
-    double duration = 0;
+    TimeKeeper tk(fmt::format("call={}", m_save_count));
 
     // frame to eigen
     const unsigned int tick_per_slice = m_cfg["tick_per_slice"].asInt();
-    start = std::clock();
-    duration = 0;
     std::vector<Array::array_xxf> ch_eigen;
     for (auto jtag : m_cfg["intags"]) {
         const std::string tag = jtag.asString();
@@ -204,12 +202,8 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer& inframe, IFrame::
                                              m_cfg["nticks"].asInt()),
                               tick_per_slice, 1));
     }
-    duration += (std::clock() - start) / (double) CLOCKS_PER_SEC;
-    l->info("frame2eigen: {}", duration);
-    m_timers["frame2eigen"] += duration;
+    log->debug(tk(fmt::format("call={} frame2eigen", m_save_count)));
 
-    start = std::clock();
-    duration = 0;
     // eigen to tensor
     std::vector<torch::Tensor> ch;
     for (unsigned int i = 0; i < ch_eigen.size(); ++i) {
@@ -227,40 +221,32 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer& inframe, IFrame::
     std::vector<torch::jit::IValue> inputs;
     inputs.push_back(batch);
 
-    duration += (std::clock() - start) / (double) CLOCKS_PER_SEC;
-    l->info("eigen2tensor: {}", duration);
-    m_timers["eigen2tensor"] += duration;
+    log->debug(tk(fmt::format("call={} eigen2tensor", m_save_count)));
 
-    start = std::clock();
-    duration = 0;
     // Execute the model and turn its output into a tensor.
     auto iitens = Pytorch::to_itensor(inputs);
     ITensorSet::pointer oitens;
+
     (*m_torch)(iitens, oitens);
     if (oitens->tensors()->size() != 1) {
+        log->critical("call={} unexpected tensor size {} 1= 1", m_save_count, oitens->tensors()->size());
         THROW(ValueError() << errmsg{"oitens->tensors()->size()!=1"});
     }
     torch::Tensor output = Pytorch::from_itensor({oitens}).front().toTensor().cpu();
 
-    duration += (std::clock() - start) / (double) CLOCKS_PER_SEC;
-    l->info("forward: {}", duration);
-    m_timers["forward"] += duration;
+    log->debug(tk(fmt::format("call={} forward", m_save_count)));
 
-    start = std::clock();
-    duration = 0;
     // tensor to eigen
     Eigen::Map<Eigen::ArrayXXf> out_e(output[0][0].data<float>(), output.size(3), output.size(2));
     auto mask_e = Array::upsample(out_e, tick_per_slice, 0);
 
-    duration += (std::clock() - start) / (double) CLOCKS_PER_SEC;
-    l->info("tensor2eigen: {}", duration);
-    m_timers["tensor2eigen"] += duration;
+    log->debug(tk(fmt::format("call={} tensor2eigen", m_save_count)));
 
     // decon charge frame to eigen
     Array::array_xxf decon_charge_eigen =
         frame_to_eigen(inframe, m_cfg["decon_charge_tag"].asString(), m_anode, 1., 0., m_cfg["cbeg"].asInt(),
                        m_cfg["cend"].asInt(), m_cfg["tick0"].asInt(), m_cfg["nticks"].asInt());
-    // l->info("decon_charge_eigen: ncols: {} nrows: {}", decon_charge_eigen.cols(), decon_charge_eigen.rows()); // c600
+    // log->debug("decon_charge_eigen: ncols: {} nrows: {}", decon_charge_eigen.cols(), decon_charge_eigen.rows()); // c600
     // x r800
 
     // apply ROI
@@ -269,8 +255,6 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer& inframe, IFrame::
 
 #ifdef __DEBUG__
     // hdf5 eval
-    start = std::clock();
-    duration = 0;
     {
         std::lock_guard<std::mutex> guard(Hio::g_h5cpp_mutex);
         h5::fd_t fd = h5::open(m_cfg["evalfile"].asString(), H5F_ACC_RDWR);
@@ -283,13 +267,9 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer& inframe, IFrame::
         aname = String::format("/%d/frame_%s%d", m_save_count, "dlcharge", m_anode->ident());
         h5::write<float>(fd, aname, sp_charge.data(), h5::count{ncols, nrows}, h5::chunk{ncols, nrows} | h5::gzip{2});
     }
-    duration += (std::clock() - start) / (double) CLOCKS_PER_SEC;
-    l->info("h5: {}", duration);
-    m_timers["h5"] += duration;
+    log->debug(tk(fmt::format("call={} h5", m_save_count)));
 #endif
 
-    start = std::clock();
-    duration = 0;
     // eigen to frame
     ITrace::vector* itraces = new ITrace::vector;
     IFrame::trace_list_t trace_index;
@@ -301,17 +281,17 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer& inframe, IFrame::
     sframe->tag_frame("DNNROIFinding");
     sframe->tag_traces(m_cfg["outtag"].asString(), trace_index);
 
-    l->info("DNNROIFinding: produce {} traces: {}", itraces->size(), trace_index.size());
+    log->debug("call={} produce {} traces: {}", m_save_count, itraces->size(), trace_index.size());
 
     outframe = IFrame::pointer(sframe);
-    duration += (std::clock() - start) / (double) CLOCKS_PER_SEC;
-    l->info("eigen2frame: {}", duration);
 
+    log->debug(tk(fmt::format("call={} eigen2frame", m_save_count)));
+     
     ++m_save_count;
     return true;
 }
 
 // Local Variables:
 // mode: c++
-// c-basic-offset: 2
+// c-basic-offset: 4
 // End:

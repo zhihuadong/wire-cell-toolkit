@@ -119,8 +119,9 @@ IDepoSet::pointer Sio::DepoFileSource::next()
         dpig = &pig2;
         ipig = &pig1;
     }
-    log->debug("call={}, data header: {}", m_count, dpig->header().str());
-    log->debug("call={}, info header: {}", m_count, ipig->header().str());
+    /// Note, this emits have non-ascii chars from Numpy header
+    // log->debug("call={}, data header: {}", m_count, dpig->header().str());
+    // log->debug("call={}, info header: {}", m_count, ipig->header().str());
 
     using array_xxfrw = Eigen::Array<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
     array_xxfrw darr;
