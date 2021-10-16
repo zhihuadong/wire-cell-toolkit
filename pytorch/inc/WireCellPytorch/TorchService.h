@@ -7,6 +7,7 @@
 #include "WireCellIface/ITensorForward.h"
 #include "WireCellUtil/Logging.h"
 #include "WireCellAux/Logger.h"
+#include "WireCellUtil/Semaphore.h"
 
 #include <torch/script.h>  // One-stop header.
 
@@ -28,12 +29,16 @@ namespace WireCell::Pytorch {
 
       private:
 
-        bool m_gpu{true};     // true: use GPU, else CPU
+        // Mark which device is used
+        torch::Device m_dev;
 
         // for read-only access, claim is that .forward() is thread
         // safe.  However .forward() is not const so we must make this
         // mutable.
         mutable torch::jit::script::Module m_module;
+
+        mutable fast_semaphore m_sem;
+
     };
 }  // namespace WireCell::Pytorch
 

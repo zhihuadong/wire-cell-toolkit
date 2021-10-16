@@ -63,7 +63,11 @@ void Pytorch::DNNROIFinding::configure(const WireCell::Configuration& cfg)
 #endif
 
     auto torch_tn = cfg["torch_script"].asString();
-    m_torch = Factory::find_tn<ITensorSetFilter>(torch_tn);
+    
+    m_torch_script = Factory::find_maybe_tn<ITensorSetFilter>(torch_tn);
+    if (!m_torch_script) {
+        m_torch_service = Factory::find_tn<ITensorForward>(torch_tn);
+    }
 }
 
 WireCell::Configuration Pytorch::DNNROIFinding::default_configuration() const
@@ -180,6 +184,16 @@ namespace {
     }
 }  // namespace
 
+ITensorSet::pointer Pytorch::DNNROIFinding::forward(const ITensorSet::pointer& in)
+{
+    if (m_torch_service) {
+        return m_torch_service->forward(in);
+    }
+    ITensorSet::pointer out{nullptr};
+    (*m_torch_script)(in, out);
+    return out;
+}
+
 bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer& inframe, IFrame::pointer& outframe)
 {
     outframe = inframe;
@@ -225,11 +239,10 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer& inframe, IFrame::
 
     // Execute the model and turn its output into a tensor.
     auto iitens = Pytorch::to_itensor(inputs);
-    ITensorSet::pointer oitens;
-
-    (*m_torch)(iitens, oitens);
-    if (oitens->tensors()->size() != 1) {
-        log->critical("call={} unexpected tensor size {} 1= 1", m_save_count, oitens->tensors()->size());
+    ITensorSet::pointer oitens = forward(iitens);
+    if (!oitens or oitens->tensors()->size() != 1) {
+        log->critical("call={} unexpected tensor size {} 1= 1",
+                      m_save_count, oitens->tensors()->size());
         THROW(ValueError() << errmsg{"oitens->tensors()->size()!=1"});
     }
     torch::Tensor output = Pytorch::from_itensor({oitens}).front().toTensor().cpu();

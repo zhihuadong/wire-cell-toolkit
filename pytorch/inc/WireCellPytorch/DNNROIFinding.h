@@ -7,6 +7,7 @@
 
 #include "WireCellIface/IAnodePlane.h"
 #include "WireCellIface/ITensorSetFilter.h"
+#include "WireCellIface/ITensorForward.h"
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/IFrameFilter.h"
 #include "WireCellAux/Logger.h"
@@ -16,7 +17,7 @@ namespace WireCell {
 
         class DNNROIFinding : public Aux::Logger,
                               public IFrameFilter, public IConfigurable {
-           public:
+          public:
             DNNROIFinding();
             virtual ~DNNROIFinding();
 
@@ -32,11 +33,14 @@ namespace WireCell {
             /// executed once after node creation
             virtual void configure(const WireCell::Configuration &config);
 
-           private:
+          private:
             Configuration m_cfg;           /// copy of configuration
             IAnodePlane::pointer m_anode;  /// pointer to some APA, needed to associate chnnel ID to planes
 
-            ITensorSetFilter::pointer m_torch;  /// pointer to a TorchScript wrapper
+            // For now we will use one or the other
+            ITensorSetFilter::pointer m_torch_script{nullptr};
+            ITensorForward::pointer m_torch_service{nullptr}; 
+            ITensorSet::pointer forward(const ITensorSet::pointer& in);
 
             int m_save_count;  // count frames saved
         };
