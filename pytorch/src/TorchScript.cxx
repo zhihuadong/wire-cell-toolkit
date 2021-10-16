@@ -11,7 +11,7 @@ WIRECELL_FACTORY(TorchScript,
 using namespace WireCell;
 
 Pytorch::TorchScript::TorchScript()
-    : Aux::Logger("TorchService", "torch")
+    : Aux::Logger("TorchScript", "torch")
 {
 }
 
@@ -52,14 +52,17 @@ void Pytorch::TorchScript::configure(const WireCell::Configuration& cfg)
     // load Torch Script Model
     try {
         // Deserialize the ScriptModule from a file using torch::jit::load().
-        m_module = torch::jit::load(model_path);
         if (m_gpu) {
+            m_module = torch::jit::load(model_path, at::kCUDA);
             m_module.to(at::kCUDA);
         }
         else {
+            m_module = torch::jit::load(model_path);
             m_module.to(at::kCPU);
         }
-        log->debug("Model: {} loaded", model_path);
+        log->debug("Model: {} loaded on {}",
+                   model_path, m_gpu ? "GPU" : "CPU");
+
     }
     catch (const c10::Error& e) {
         log->critical("error loading model: {}. {}", model_path, e.what());
@@ -74,17 +77,27 @@ bool Pytorch::TorchScript::operator()(const ITensorSet::pointer& in, ITensorSet:
         return true;
     }
 
+    if (m_gpu) {
+        m_module.to(at::kCUDA);
+    }
+    else {
+        m_module.to(at::kCPU);
+    }
+
     double thread_wait_time_ms = 0;
 
     // for(int iloop=0; iloop<m_cfg["nloop"].asInt();++iloop) {
-    bool success = false;
-    while (!success) {
+    torch::IValue oival;
+    while (true) {
+        std::vector<torch::IValue> iival = Pytorch::from_itensor(in, m_gpu);
         try {
-            auto iival = Pytorch::from_itensor(in, m_gpu);
-            auto oival = m_module.forward(iival);
-            out = Pytorch::to_itensor({oival});
-
-            success = true;
+            oival = m_module.forward(iival);
+            break;
+        }
+        catch (const std::runtime_error& e) {
+            log->critical("error running model on {}: {}",
+                          m_gpu ? "GPU" : "CPU", e.what());
+            throw; // rethrow
         }
         catch (...) {
             int ms = m_wait_time / units::ms;
@@ -93,6 +106,8 @@ bool Pytorch::TorchScript::operator()(const ITensorSet::pointer& in, ITensorSet:
         }
     }
     // }
+
+    out = Pytorch::to_itensor({oival});
 
     log->debug("thread_wait_time: {} sec", thread_wait_time_ms / 1000.);
 
