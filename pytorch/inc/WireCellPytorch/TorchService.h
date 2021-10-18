@@ -37,7 +37,7 @@ namespace WireCell::Pytorch {
         // mutable.
         mutable torch::jit::script::Module m_module;
 
-        mutable fast_semaphore m_sem;
+        mutable FastSemaphore m_sem;
 
     };
 }  // namespace WireCell::Pytorch

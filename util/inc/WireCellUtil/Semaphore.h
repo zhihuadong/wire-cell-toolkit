@@ -12,28 +12,36 @@
 #include <mutex>
 #include <atomic>
 #include <condition_variable>
+#include <cassert>
 
 namespace WireCell {
 
     // https://vorbrodt.blog/2019/02/05/fast-semaphore/
     //
-    // The "fast" version below is indeed faster but both spin at MHz+
-    // on i7-9750.
-    class semaphore
+    // The "fast" version below is about 10x faster than the basic
+    // version if count is more than 1.  The base (or "fast" with
+    // count=1) runs at about a MHz.
+
+    class Semaphore
     {
       public:
-        semaphore(int count=0) noexcept
+
+        /// Create a semaphore with "count" initial spaces available
+        /// to grab.  If set to zero, no clients will be able to
+        /// acquire().
+        Semaphore(int count=0) noexcept
             : m_count(count) { assert(count > -1); }
 
-        // Call before any use of acquire() or release().  Note, this
-        // is number of *additional* threads so count=0 allows only
-        // one thread.
+        /// Set the semaphore count.  It is only safe to call this
+        /// prior to any acquire() or release().  It is safe to
+        /// increase the count via calls to release() not balanced by
+        /// calls to acquire().
         void set_count(int c)
         {
             m_count = c;
         }
 
-        // Grab the semaphore, blocks until space is available.
+        /// Grab the semaphore, blocks thread until space is available.
         void acquire() noexcept
         {
             std::unique_lock<std::mutex> lock(m_mutex);
@@ -41,7 +49,10 @@ namespace WireCell {
             --m_count;
         }
 
-        // Remove hold on the semaphore.
+        /// Make one more space available on the semaphore.  This must
+        /// be called by a client that previously called acquire() in
+        /// oder to release the semephore.  It may be called in
+        /// isolation to increase space on the semaphore.  
         void release() noexcept
         {
             {
@@ -57,15 +68,14 @@ namespace WireCell {
         std::condition_variable m_cv;
     };
 
-    class fast_semaphore
+    // See comments on semaphore above
+
+    class FastSemaphore
     {
       public:
-        fast_semaphore(int count) noexcept
+        FastSemaphore(int count) noexcept
             : m_count(count), m_semaphore(0) {}
  
-        // Call before any use of acquire() or release().  Note, this
-        // is number of *additional* threads so count=0 allows only
-        // one thread.
         void set_count(int c)
         {
             m_count = c;
@@ -91,7 +101,7 @@ namespace WireCell {
  
       private:
         std::atomic<int> m_count;
-        semaphore m_semaphore;
+        Semaphore m_semaphore;
     };
 }
 

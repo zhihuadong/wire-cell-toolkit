@@ -187,9 +187,11 @@ namespace {
 ITensorSet::pointer Pytorch::DNNROIFinding::forward(const ITensorSet::pointer& in)
 {
     if (m_torch_service) {
+        log->debug("call={} forward service", m_save_count);
         return m_torch_service->forward(in);
     }
     ITensorSet::pointer out{nullptr};
+    log->debug("call={} forward script", m_save_count);
     (*m_torch_script)(in, out);
     return out;
 }
