@@ -88,6 +88,8 @@ WireCell::Configuration Pytorch::DNNROIFinding::default_configuration() const
     cfg["tick0"] = 0;
     cfg["nticks"] = 6000;
 
+    cfg["charge_thresh"] = 0.7;
+
     // TorchScript model
     cfg["torch_script"] = "TorchScript:dnn_roi";
 
@@ -265,7 +267,7 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer& inframe, IFrame::
     // x r800
 
     // apply ROI
-    auto sp_charge = Array::mask(decon_charge_eigen.transpose(), mask_e, 0.7);
+    auto sp_charge = Array::mask(decon_charge_eigen.transpose(), mask_e, m_cfg["charge_thresh"].asFloat() /*0.7*/);
     sp_charge = Array::baseline_subtraction(sp_charge);
 
 #ifdef __DEBUG__
