@@ -12,15 +12,18 @@
 #include <string>
 #include <vector>
 
-// fixme: this macro __SPELLING__ is reserved for compiler provided
-// macros but I think this is meant as a local macro.  But, I don't
-// think it technically colides.
-// https://gcc.gnu.org/onlinedocs/cpp/Standard-Predefined-Macros.html
+// Uncomment to enable local writing of HDF5 file for debugging
+// purposes.  A temporary HDF5 dependency must be added in
+// wscript_build.  Do not commit with this.
 
-// #define __DEBUG__
+// #define DNNROI_HDF5_DEBUG
 
-#ifdef __DEBUG__
-#include "WireCellHio/Util.h"
+// FIXME: consider changing this to instead write out numpy.tar.bz2
+// streams which does not require HDF5 dependency and could then
+// become a dynamic option.
+
+#ifdef DNNROI_HDF5_DEBUG
+#include <h5cpp/all>
 #endif
 
 /// macro to register name - concrete pair in the NamedFactory
@@ -51,9 +54,8 @@ void Pytorch::DNNROIFinding::configure(const WireCell::Configuration& cfg)
     auto anode_tn = cfg["anode"].asString();
     m_anode = Factory::find_tn<IAnodePlane>(anode_tn);
 
-#ifdef __DEBUG__
+#ifdef DNNROI_HDF5_DEBUG
     {
-        std::lock_guard<std::mutex> guard(Hio::g_h5cpp_mutex);
         std::string fn = cfg["evalfile"].asString();
         if (fn.empty()) {
             THROW(ValueError() << errmsg{"Must provide output evalfile to DNNROIFinding"});
@@ -160,7 +162,8 @@ namespace {
         }
     }
 
-    Array::array_xxf frame_to_eigen(const IFrame::pointer& inframe, const std::string& tag,
+    Array::array_xxf frame_to_eigen(const ITrace::vector& traces,
+                                    //const IFrame::pointer& inframe, const std::string& tag,
                                     const IAnodePlane::pointer anode, const float scale = 1.0, const float offset = 0,
                                     const int win_cbeg = 0, const int win_cend = 800, const int tick0 = 0,
                                     const int nticks = 6000)
@@ -173,7 +176,7 @@ namespace {
         const size_t nrows = cend - cbeg + 1;
         Array::array_xxf arr = Array::array_xxf::Zero(nrows, ncols);
 
-        auto traces = Aux::tagged_traces(inframe, tag);
+        // auto traces = Aux::tagged_traces(inframe, tag);
         if (traces.empty()) {
             // std::cout << "[yuhw] frame " << inframe->frame_tags() << " has 0 " << tag << " traces!\n";
             return arr;
@@ -214,8 +217,12 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer& inframe, IFrame::
     std::vector<Array::array_xxf> ch_eigen;
     for (auto jtag : m_cfg["intags"]) {
         const std::string tag = jtag.asString();
+        auto traces = Aux::tagged_traces(inframe, tag);
+        if (traces.empty()) {
+            log->warn("call={} no traces for input tag {}, using zeros", m_save_count, tag);
+        }
         ch_eigen.push_back(
-            Array::downsample(frame_to_eigen(inframe, tag, m_anode, m_cfg["scale"].asFloat(), m_cfg["offset"].asFloat(),
+            Array::downsample(frame_to_eigen(traces, m_anode, m_cfg["scale"].asFloat(), m_cfg["offset"].asFloat(),
                                              m_cfg["cbeg"].asInt(), m_cfg["cend"].asInt(), m_cfg["tick0"].asInt(),
                                              m_cfg["nticks"].asInt()),
                               tick_per_slice, 1));
@@ -260,9 +267,18 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer& inframe, IFrame::
     log->debug(tk(fmt::format("call={} tensor2eigen", m_save_count)));
 
     // decon charge frame to eigen
-    Array::array_xxf decon_charge_eigen =
-        frame_to_eigen(inframe, m_cfg["decon_charge_tag"].asString(), m_anode, 1., 0., m_cfg["cbeg"].asInt(),
-                       m_cfg["cend"].asInt(), m_cfg["tick0"].asInt(), m_cfg["nticks"].asInt());
+    
+    Array::array_xxf decon_charge_eigen;
+    {
+        auto dctag = get<std::string>(m_cfg, "decon_charge_tag");
+        auto traces = Aux::tagged_traces(inframe, dctag);
+        if (traces.empty()) {
+            log->warn("call={} no traces for input tag {}, using zeros", m_save_count, dctag);
+        }
+        decon_charge_eigen =
+            frame_to_eigen(traces, m_anode, 1., 0., m_cfg["cbeg"].asInt(),
+                           m_cfg["cend"].asInt(), m_cfg["tick0"].asInt(), m_cfg["nticks"].asInt());
+    }
     // log->debug("decon_charge_eigen: ncols: {} nrows: {}", decon_charge_eigen.cols(), decon_charge_eigen.rows()); // c600
     // x r800
 
@@ -270,10 +286,9 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer& inframe, IFrame::
     auto sp_charge = Array::mask(decon_charge_eigen.transpose(), mask_e, m_cfg["charge_thresh"].asFloat() /*0.7*/);
     sp_charge = Array::baseline_subtraction(sp_charge);
 
-#ifdef __DEBUG__
+#ifdef DNNROI_HDF5_DEBUG
     // hdf5 eval
     {
-        std::lock_guard<std::mutex> guard(Hio::g_h5cpp_mutex);
         h5::fd_t fd = h5::open(m_cfg["evalfile"].asString(), H5F_ACC_RDWR);
         const unsigned long ncols = mask_e.cols();
         const unsigned long nrows = mask_e.rows();
