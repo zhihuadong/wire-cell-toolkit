@@ -11,8 +11,9 @@ namespace WireCell {
 
         /// Fan out 1 frame to N set at construction or configuration time.
         ///
-        /// This is not strictly a fanout as it takes tag rules so
-        /// each output frame may differ in terms of tags and traces.
+        /// If given no rules it works in a trivial manner to simply
+        /// forward the input frame to its outputs.  If rules are
+        /// given then the fanout applies tag filtering and rewriting.
         class FrameFanout : public Aux::Logger,
                             public IFrameFanout, public IConfigurable {
            public:
@@ -33,6 +34,7 @@ namespace WireCell {
             size_t m_multiplicity;
             size_t m_count{0};
 
+            bool m_trivial{false};
             tagrules::Context m_ft;
 
         };

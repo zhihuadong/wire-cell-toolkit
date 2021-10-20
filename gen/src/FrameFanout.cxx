@@ -22,11 +22,29 @@ WireCell::Configuration Gen::FrameFanout::default_configuration() const
     Configuration cfg;
     // How many output ports
     cfg["multiplicity"] = (int) m_multiplicity;
+    // If "tag_rules" is not given or empty then the frame is fanned
+    // out in a trivial manner.
+    // 
     // Tag rules are an array, one element per output port.  Each
     // element is an object keyed with "frame" or "trace".  Each of
     // their values are an object keyed by a regular expression
     // (regex) and with values that are a single tag or an array of
-    // tags.  See util/test_tagrules for examples.
+    // tags.
+    //
+    // The frame traces are forwarded in any case, tag filtering only
+    // affects tags (and their trace indices in the case of trace
+    // tags).
+    //
+    // Each frame tag found in the input is sent through the rules and
+    // the resulting output tags are added to the set of frame tags of
+    // the output.
+    //
+    // Trace tag work similarly.  Each trace tag is sent through the
+    // rules and tags that the trace rule returns will be placed in
+    // the output frame along with the trace index vector of the input
+    // trace tag. 
+    // 
+    // See util/test_tagrules for examples.
     cfg["tag_rules"] = Json::arrayValue;
     return cfg;
 }
@@ -38,7 +56,15 @@ void Gen::FrameFanout::configure(const WireCell::Configuration& cfg)
     }
     m_multiplicity = m;
 
-    m_ft.configure(cfg["tag_rules"]);
+    auto tr = cfg["tag_rules"];
+    if (tr.isNull() or tr.empty()) {
+        m_trivial = true;
+        log->debug("trivial {}-way fanout", m_multiplicity);
+        return;
+    }
+    m_trivial = false;
+    m_ft.configure(tr);
+    log->debug("rule based {}-way fanout", m_multiplicity);
 }
 
 std::vector<std::string> Gen::FrameFanout::output_types()
@@ -64,6 +90,29 @@ bool Gen::FrameFanout::operator()(const input_pointer& in, output_vector& outv)
         log->debug(taginfo.str());
         return true;
     }
+
+    if (m_trivial) {
+        for (size_t ind = 0; ind < m_multiplicity; ++ind) {
+            outv[ind] = in;
+        }
+        taginfo << "frame tags: [";
+        std::string comma="";
+        for (auto tag : in->frame_tags()) {
+            taginfo << comma << "\"" << tag << "\"";
+            comma=",";
+        }
+        taginfo << "] traces: " << in->traces()->size() << " tagged: [";
+        comma = "";
+        for (auto tag : in->trace_tags()) {
+            taginfo << comma << "\"" << tag << "\"";
+            comma=",";
+        }
+        taginfo << "]";
+        log->debug(taginfo.str());
+        return true;
+    }
+
+    // O.w. we are rule driven.
 
     auto fintags = in->frame_tags();
     // Add empty tag to allow rules to create an output tag even if none exist.
@@ -92,11 +141,12 @@ bool Gen::FrameFanout::operator()(const input_pointer& in, output_vector& outv)
             taginfo << comma << "\"" << ftag << "\"";
             comma = ",";
         }
-        taginfo << "], trace tags mapping:";
+        taginfo << "], trace tags mapping: {";
 
         for (auto inttag : in->trace_tags()) {
             tagrules::tagset_t touttags = m_ft.transform(ind, "trace", inttag);
             if (touttags.empty()) {
+                taginfo << " (\"" << inttag << "\") -> [skip]";
                 continue;
             }
             const auto& traces = in->tagged_traces(inttag);
@@ -111,6 +161,7 @@ bool Gen::FrameFanout::operator()(const input_pointer& in, output_vector& outv)
             }
             taginfo << "]";
         };
+        taginfo << " }";
 
         outv[ind] = IFrame::pointer(sfout);
     }
