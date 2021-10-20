@@ -34,18 +34,25 @@ WireCell::Configuration Sio::DepoFileSource::default_configuration() const
     // Input tar stream
     cfg["inname"] = m_inname;
 
+    // This will be multiplied to the "charge" of each depo.  Eg, it
+    // can be usfully set to -1 to accomodate diffierent conventions
+    // for electron charge sign.
+    cfg["scale"] = m_scale;
     return cfg;
 }
 
 void Sio::DepoFileSource::configure(const WireCell::Configuration& cfg)
 {
     m_inname = get(cfg, "inname", m_inname);
+    m_scale = get(cfg, "scale", m_scale);
 
     m_in.clear();
     input_filters(m_in, m_inname);
     if (m_in.size() < 2) {     // must have at least get tar filter + file source.
         THROW(ValueError() << errmsg{"DepoFielSource: unsupported inname: " + m_inname});
     }
+
+    log->debug("reading {} with scale={}", m_inname, m_scale);
 }
 
 // ident, type, tag, ext
@@ -173,7 +180,7 @@ IDepoSet::pointer Sio::DepoFileSource::next()
             Point(darr(ind, 2),  // x
                   darr(ind, 3),  // y
                   darr(ind, 4)), // z
-            darr(ind, 1),        // q
+            darr(ind, 1)*m_scale,// q
             nullptr,             // prior
             darr(ind, 5),        // extent_long
             darr(ind, 6),        // extent_tran

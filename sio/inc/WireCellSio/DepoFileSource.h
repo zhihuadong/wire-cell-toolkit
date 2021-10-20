@@ -50,6 +50,7 @@ namespace WireCell::Sio {
 
         IDepoSet::pointer next();
 
+        double m_scale{1.0};
         size_t m_count{0};
         bool m_eos_sent{false};
     };        
