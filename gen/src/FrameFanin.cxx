@@ -2,6 +2,8 @@
 
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/Exceptions.h"
+#include "WireCellAux/FrameTools.h"
+
 #include "WireCellIface/SimpleFrame.h"
 
 #include <iostream>
@@ -11,7 +13,8 @@ WIRECELL_FACTORY(FrameFanin, WireCell::Gen::FrameFanin, WireCell::IFrameFanin, W
 using namespace WireCell;
 
 Gen::FrameFanin::FrameFanin(size_t multiplicity)
-  : m_multiplicity(multiplicity)
+    : Aux::Logger("FrameFanin", "glue")
+    , m_multiplicity(multiplicity)
 {
 }
 Gen::FrameFanin::~FrameFanin() {}
@@ -41,6 +44,7 @@ void Gen::FrameFanin::configure(const WireCell::Configuration& cfg)
 {
     int m = get<int>(cfg, "multiplicity", (int) m_multiplicity);
     if (m <= 0) {
+        log->critical("illegal multiplicity: {}", m);
         THROW(ValueError() << errmsg{"FrameFanin multiplicity must be positive"});
     }
     m_multiplicity = m;
@@ -72,23 +76,24 @@ bool Gen::FrameFanin::operator()(const input_vector& invec, output_pointer& out)
             ++neos;
         }
     }
-    if (neos == invec.size()) {
-        return true;
-    }
+
     if (neos) {
-        std::cerr << "Gen::FrameFanin: " << neos << " input frames missing\n";
+        log->debug("EOS at call={} with {}", m_count, neos);
+        ++m_count;
+        return true;
     }
 
     if (invec.size() != m_multiplicity) {
-        std::cerr << "Gen::FrameFanin: got unexpected multiplicity, got:" << invec.size() << " want:" << m_multiplicity
-                  << std::endl;
-        THROW(ValueError() << errmsg{"unexpected multiplicity"});
+        log->critical("input vector size={} my multiplicity={}", invec.size(), m_multiplicity);
+        THROW(ValueError() << errmsg{"input vector size mismatch"});
     }
 
     std::vector<IFrame::trace_list_t> by_port(m_multiplicity);
 
-    // ...
     std::vector<std::tuple<tagrules::tag_t, IFrame::trace_list_t, IFrame::trace_summary_t> > stash;
+
+    std::stringstream info;
+    info << "call=" << m_count << " ";
 
     tagrules::tagset_t fouttags;
     ITrace::vector out_traces;
@@ -97,6 +102,8 @@ bool Gen::FrameFanin::operator()(const input_vector& invec, output_pointer& out)
         const size_t trace_offset = out_traces.size();
 
         const auto& fr = invec[iport];
+        info << "input " << iport << ": " << Aux::taginfo(fr) << " ";
+
         if (!one) {
             one = fr;
         }
@@ -110,18 +117,14 @@ bool Gen::FrameFanin::operator()(const input_vector& invec, output_pointer& out)
             fouttags.insert(fo.begin(), fo.end());
         }
 
+
         // collect transformed trace tags, any trace summary and their
         // offset trace indeices. annoying_factor *= 10;
         for (auto inttag : fr->trace_tags()) {
             tagrules::tagset_t touttags = m_ft.transform(iport, "trace", inttag);
             if (touttags.empty()) {
-                // std::cerr << "FrameFanin: no port trace tag for " << inttag << "\n";
                 continue;
             }
-            // std::cerr << "FrameFanin: port trace tags for " << inttag << ":\n";
-            // for (const auto& t : touttags) {
-            //     std::cerr << "\t" << t << "\n";
-            // }
 
             const auto& summary = fr->trace_summary(inttag);
             IFrame::trace_list_t outtrinds;
@@ -147,21 +150,22 @@ bool Gen::FrameFanin::operator()(const input_vector& invec, output_pointer& out)
     auto sf = new SimpleFrame(one->ident(), one->time(), out_traces, one->tick());
     for (size_t iport = 0; iport < m_multiplicity; ++iport) {
         if (m_tags[iport].size()) {
-            // std::cerr << "FrameFanin: tagging trace set: " << by_port[iport].size() << " traces from port "
-            //          << iport << " with " << m_tags[iport] << std::endl;
             sf->tag_traces(m_tags[iport], by_port[iport]);
         }
     }
+
     for (auto ftag : fouttags) {
-        // std::cerr << "FrameFanin: tagging frame: " << ftag << std::endl;
         sf->tag_frame(ftag);
     }
+
     for (auto ttt : stash) {
-        // std::cerr << "FrameFanin: tagging traces: "
-        //           << get<0>(ttt) << std::endl;
         sf->tag_traces(get<0>(ttt), get<1>(ttt), get<2>(ttt));
     }
 
     out = IFrame::pointer(sf);
+    info << "output: " << Aux::taginfo(out);
+    log->debug(info.str());
+
+    ++m_count;
     return true;
 }

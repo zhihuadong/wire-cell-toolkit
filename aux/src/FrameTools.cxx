@@ -214,8 +214,29 @@ void Aux::fill(Array::array_xxf& array, const ITrace::vector& traces, channel_li
 }
 
 
-void Aux::dump_frame(WireCell::IFrame::pointer frame)
+std::string Aux::taginfo(const WireCell::IFrame::pointer& frame)
 {
+    std::stringstream info;
+    info << "frame " << frame->ident() << " with "
+         << frame->traces()->size() << " traces tagged:[ ";
+    for (const auto& tag : frame->frame_tags()) {
+        info << tag << " ";
+    }
+    info << "] traces:[ ";
+    
+    for (const auto& tag : frame->trace_tags()) {
+        const auto& taglist = frame->tagged_traces(tag);
+        info << tag << ":" << taglist.size() << " ";
+    }
+    info << "]";
+    return info.str();
+}
+
+
+void Aux::dump_frame(WireCell::IFrame::pointer frame, Log::logptr_t log)
+{
+    std::stringstream info;
+
     auto traces = frame->traces();
     const size_t ntraces = traces->size();
     std::vector<double> means, rmses, lengths, tbins;
@@ -230,16 +251,16 @@ void Aux::dump_frame(WireCell::IFrame::pointer frame)
         tbins.push_back(trace->tbin());
 
         if (std::isnan(mr.second)) {
-            std::cerr << "Frame: channel " << trace->channel() << " rms is NaN\n";
+            info << "Frame: channel " << trace->channel() << " rms is NaN\n";
         }
 
         for (int ind = 0; ind < nsamps; ++ind) {
             float val = charge[ind];
             if (std::isnan(val)) {
-                std::cerr << "Frame: channel " << trace->channel() << " sample " << ind << " is NaN\n";
+                info << "Frame: channel " << trace->channel() << " sample " << ind << " is NaN\n";
             }
             if (std::isinf(val)) {
-                std::cerr << "Frame: channel " << trace->channel() << " sample " << ind << " is INF\n";
+                info << "Frame: channel " << trace->channel() << " sample " << ind << " is INF\n";
             }
         }
     }
@@ -247,11 +268,17 @@ void Aux::dump_frame(WireCell::IFrame::pointer frame)
     double totrms = sqrt(Waveform::sum(rmses));
     double meanlen = Waveform::sum(lengths) / ntraces;
     double meantbin = Waveform::sum(tbins) / ntraces;
-    std::cerr << "Frame: " << ntraces << " traces,"
-              << " <mean>=" << meanmean << " TotRMS=" << totrms << " <tbin>=" << meantbin << " <len>=" << meanlen
-              << std::endl;
+    info << "Frame: " << ntraces << " traces,"
+         << " <mean>=" << meanmean << " TotRMS=" << totrms << " <tbin>=" << meantbin << " <len>=" << meanlen
+         << "\n";
     for (auto it : frame->masks()) {
-        std::cerr << "\t" << it.first << " : " << it.second.size() << std::endl;
+        info << "\t" << it.first << " : " << it.second.size() << "\n";
+    }
+    if (log) {
+        log->debug(info.str());
+    }
+    else {
+        std::cerr << info.str();
     }
 }
 

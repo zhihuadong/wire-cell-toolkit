@@ -6,6 +6,7 @@
 
 #include "WireCellIface/IFrame.h"
 #include "WireCellUtil/Array.h"
+#include "WireCellUtil/Logging.h"
 
 namespace WireCell {
     namespace Aux {
@@ -13,8 +14,11 @@ namespace WireCell {
         /// Return a canonical name for the frame.
         std::string name(const WireCell::IFrame::pointer& frame);
 
-        // Print some info to cerr about frame
-        void dump_frame(WireCell::IFrame::pointer frame);
+        /// Print some info to cerr about frame.  If log is null, use stderr.
+        void dump_frame(WireCell::IFrame::pointer frame, Log::logptr_t log = nullptr);
+
+        /// Return brief info string summarizing frame and trace tag.
+        std::string taginfo(const WireCell::IFrame::pointer& frame);
 
         /// Return a vector of traces which have no trace tags.  Here,
         /// any frame tags are ignored.  Returned vector of traces has

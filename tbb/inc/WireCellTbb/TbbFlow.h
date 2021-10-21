@@ -5,15 +5,18 @@
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/IDataFlowGraph.h"
 #include "WireCellUtil/DfpGraph.h"
-#include "WireCellUtil/Logging.h"
+#include "WireCellAux/Logger.h"
 
 namespace WireCellTbb {
 
-    class TbbFlow : public WireCell::IApplication, public WireCell::IConfigurable {
+    class TbbFlow : public WireCell::Aux::Logger,
+                    public WireCell::IApplication,
+                    public WireCell::IConfigurable
+    {
         WireCell::IDataFlowGraph::pointer m_dfp;
         WireCell::DfpGraph m_dfpgraph;
 
-       public:
+      public:
         TbbFlow();
         virtual ~TbbFlow();
 
@@ -22,8 +25,6 @@ namespace WireCellTbb {
 
         virtual void execute();
 
-       private:
-        WireCell::Log::logptr_t l;
     };
 }  // namespace WireCellTbb
 

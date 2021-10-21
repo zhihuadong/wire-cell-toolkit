@@ -2,6 +2,7 @@
 
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/Exceptions.h"
+#include "WireCellAux/FrameTools.h"
 #include "WireCellIface/SimpleFrame.h"
 
 WIRECELL_FACTORY(FrameFanout, WireCell::Gen::FrameFanout,
@@ -78,54 +79,37 @@ bool Gen::FrameFanout::operator()(const input_pointer& in, output_vector& outv)
 {
     outv.resize(m_multiplicity);
 
-    std::stringstream taginfo;
-    taginfo << "#" << m_count << ": ";
+    std::stringstream info;
+    info << "call=" << m_count << ": ";
     ++m_count;
 
     if (!in) {  //  pass on EOS
         for (size_t ind = 0; ind < m_multiplicity; ++ind) {
             outv[ind] = in;
         }
-        taginfo << "see EOS";
-        log->debug(taginfo.str());
+        info << "see EOS";
+        log->debug(info.str());
         return true;
     }
 
     if (m_trivial) {
+        info << "input->output x"<<m_multiplicity<<": " << Aux::taginfo(in);
+        log->debug(info.str());
+
         for (size_t ind = 0; ind < m_multiplicity; ++ind) {
             outv[ind] = in;
         }
-        taginfo << "frame tags: [";
-        std::string comma="";
-        for (auto tag : in->frame_tags()) {
-            taginfo << comma << "\"" << tag << "\"";
-            comma=",";
-        }
-        taginfo << "] traces: " << in->traces()->size() << " tagged: [";
-        comma = "";
-        for (auto tag : in->trace_tags()) {
-            taginfo << comma << "\"" << tag << "\"";
-            comma=",";
-        }
-        taginfo << "]";
-        log->debug(taginfo.str());
         return true;
     }
 
     // O.w. we are rule driven.
 
+    info << "input: " << Aux::taginfo(in) << " ";
+
     auto fintags = in->frame_tags();
     // Add empty tag to allow rules to create an output tag even if none exist.
     // No equivalent should be made for trace tags.
     fintags.push_back("");
-
-    taginfo << "found input frame tags:[";
-    std::string comma="";
-    for (auto tag : fintags) {
-        taginfo << comma << "\"" << tag << "\"";
-        comma=",";
-    }
-    taginfo << "] traces: " << in->traces()->size() << " --> ";
 
     for (size_t ind = 0; ind < m_multiplicity; ++ind) {
         // Basic frame stays the same.
@@ -134,39 +118,29 @@ bool Gen::FrameFanout::operator()(const input_pointer& in, output_vector& outv)
         // Transform any frame tags based on a per output port ruleset
         auto fouttags = m_ft.transform(ind, "frame", fintags);
 
-        taginfo << " out#" << ind << ": frame tags:[";
-        comma = "";
         for (auto ftag : fouttags) {
             sfout->tag_frame(ftag);
-            taginfo << comma << "\"" << ftag << "\"";
-            comma = ",";
         }
-        taginfo << "], trace tags mapping: {";
 
         for (auto inttag : in->trace_tags()) {
             tagrules::tagset_t touttags = m_ft.transform(ind, "trace", inttag);
             if (touttags.empty()) {
-                taginfo << " (\"" << inttag << "\") -> [skip]";
                 continue;
             }
             const auto& traces = in->tagged_traces(inttag);
             const auto& summary = in->trace_summary(inttag);
 
-            taginfo << " (\"" << inttag << "\") -> [";
-            comma="";
             for (auto otag : touttags) {
                 sfout->tag_traces(otag, traces, summary);
-                taginfo << comma << "\"" << otag << "\"";
-                comma=",";
             }
-            taginfo << "]";
         };
-        taginfo << " }";
 
-        outv[ind] = IFrame::pointer(sfout);
+        auto out = IFrame::pointer(sfout);
+        info << "output " << ind << ": " << Aux::taginfo(out) << " ";
+        outv[ind] = out;
     }
 
-    log->debug(taginfo.str());
+    log->debug(info.str());
 
     return true;
 }
