@@ -85,8 +85,14 @@ WireCell::Configuration Pytorch::DNNROIFinding::default_configuration() const
     // offset for frame to eigen for DNN input
     cfg["offset"] = 0.0;
 
+    // Caution: channel counts here are relative to the first channel
+    // in the anode.  They are not detector-wide absolute channel IDs.
+    // FIXME: and this selection will totally break on any detector
+    // with non-contigous channel IDs w/in a plane.  Better to change
+    // this configuration to be a plane identifier.
     cfg["cbeg"] = 800;
     cfg["cend"] = 1600;
+
     cfg["tick0"] = 0;
     cfg["nticks"] = 6000;
 
@@ -212,6 +218,11 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer& inframe, IFrame::
 
     TimeKeeper tk(fmt::format("call={}", m_save_count));
 
+    const int cbeg = m_cfg["cbeg"].asInt();
+    const int cend = m_cfg["cend"].asInt();
+    const int tick0 = m_cfg["tick0"].asInt();
+    const int nticks = m_cfg["nticks"].asInt();
+
     // frame to eigen
     const unsigned int tick_per_slice = m_cfg["tick_per_slice"].asInt();
     std::vector<Array::array_xxf> ch_eigen;
@@ -221,13 +232,16 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer& inframe, IFrame::
         if (traces.empty()) {
             log->warn("call={} no traces for input tag {}, using zeros", m_save_count, tag);
         }
+        else { 
+            log->debug("call={} tag={} ntraces={}", m_save_count, tag, traces.size());
+        }
         ch_eigen.push_back(
             Array::downsample(frame_to_eigen(traces, m_anode, m_cfg["scale"].asFloat(), m_cfg["offset"].asFloat(),
-                                             m_cfg["cbeg"].asInt(), m_cfg["cend"].asInt(), m_cfg["tick0"].asInt(),
-                                             m_cfg["nticks"].asInt()),
+                                             cbeg, cend, tick0, nticks),
                               tick_per_slice, 1));
     }
-    log->debug(tk(fmt::format("call={} frame2eigen", m_save_count)));
+    log->debug(tk(fmt::format("call={} frame2eigen chans=[{},{}] ticks=[{},{}]",
+                              m_save_count, cbeg, cend, tick0, tick0+nticks)));
 
     // eigen to tensor
     std::vector<torch::Tensor> ch;
@@ -275,9 +289,11 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer& inframe, IFrame::
         if (traces.empty()) {
             log->warn("call={} no traces for input tag {}, using zeros", m_save_count, dctag);
         }
+        else { 
+            log->debug("call={} tag={} ntraces={}", m_save_count, dctag, traces.size());
+        }
         decon_charge_eigen =
-            frame_to_eigen(traces, m_anode, 1., 0., m_cfg["cbeg"].asInt(),
-                           m_cfg["cend"].asInt(), m_cfg["tick0"].asInt(), m_cfg["nticks"].asInt());
+            frame_to_eigen(traces, m_anode, 1., 0., cbeg, cend, tick0, nticks);
     }
     // log->debug("decon_charge_eigen: ncols: {} nrows: {}", decon_charge_eigen.cols(), decon_charge_eigen.rows()); // c600
     // x r800
@@ -305,8 +321,9 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer& inframe, IFrame::
     // eigen to frame
     ITrace::vector* itraces = new ITrace::vector;
     IFrame::trace_list_t trace_index;
-    eigen_to_traces(sp_charge, *itraces, trace_index, m_anode->channels().front() + m_cfg["cbeg"].asInt(),
-                    m_cfg["nticks"].asInt(), false);
+    eigen_to_traces(sp_charge, *itraces, trace_index,
+                    m_anode->channels().front() + cbeg,
+                    nticks, false);
 
     SimpleFrame* sframe = new SimpleFrame(inframe->ident(), inframe->time(), ITrace::shared_vector(itraces),
                                           inframe->tick(), inframe->masks());
