@@ -39,6 +39,7 @@ namespace WireCell::Aux {
 
         // The channel ident numbers we will select
         std::unordered_set<int> m_chids;
+
     };
 
 }  // namespace WireCell::Aux

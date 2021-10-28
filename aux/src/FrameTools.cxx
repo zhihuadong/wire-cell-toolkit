@@ -222,9 +222,11 @@ std::string Aux::taginfo(const WireCell::IFrame::pointer& frame)
     for (const auto& tag : frame->frame_tags()) {
         info << tag << " ";
     }
-    info << "] traces:[ ";
+
+    auto ttags = frame->trace_tags();
+    info << "] " << ttags.size() << " traces:[ ";
     
-    for (const auto& tag : frame->trace_tags()) {
+    for (const auto& tag : ttags) {
         const auto& taglist = frame->tagged_traces(tag);
         info << tag << ":" << taglist.size() << " ";
     }

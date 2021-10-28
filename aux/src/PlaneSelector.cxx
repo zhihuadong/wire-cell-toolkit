@@ -38,8 +38,10 @@ WireCell::Configuration Aux::PlaneSelector::default_configuration() const
     // "index" (which "index" being the default and current
     // interpretation).
 
-    /// Only traces with these tags will be considered.  If empty then
-    /// the frame as a whole is considered.
+    /// Input trace tags to consider for selection.  If this list is
+    /// empty, all traces are considered for selection and all input
+    /// tags will be transfered via tag rules.  If tags are given then
+    /// only input traces of these tags are considered.
     cfg["tags"] = Json::arrayValue;
 
     /// Rules to govern the output frame and trace tags based on input
@@ -64,6 +66,12 @@ void Aux::PlaneSelector::configure(const WireCell::Configuration& cfg)
     for (const auto& ichan : chans) {
         m_chids.insert(ichan->ident());
     }
+    {
+        auto chmm = std::minmax_element(m_chids.begin(), m_chids.end());
+        log->debug("anode={} plane={} nchans={} in=[{},{}]",
+                   anode_tn, wire_plane_index, m_chids.size(),
+                   *chmm.first, *chmm.second);
+    }
     
     auto jtags = cfg["tags"];
     m_tags.clear();
@@ -76,7 +84,8 @@ void Aux::PlaneSelector::configure(const WireCell::Configuration& cfg)
 }
 
 
-bool Aux::PlaneSelector::operator()(const input_pointer& in, output_pointer& out)
+bool Aux::PlaneSelector::operator()(const input_pointer& in,
+                                    output_pointer& out)
 {
     out = nullptr;
     if (!in) {
@@ -85,66 +94,66 @@ bool Aux::PlaneSelector::operator()(const input_pointer& in, output_pointer& out
         return true;  // eos
     }
 
-    ITrace::vector out_traces;
-
-    const auto& in_traces = in->traces();
-    const size_t nin = in_traces->size();
-
-    // Fill (smaller) output trace vector and map input to output
-    // trace indices.
-    std::unordered_map<size_t, size_t> in2out;
-    for (size_t in_ind = 0; in_ind < nin; ++in_ind) {
-        const auto& in_trace = in_traces->at(in_ind);
-        int chid = in_trace->channel();
-        if (m_chids.find(chid) == m_chids.end()) {
-            continue;
-        }
-        in2out[in_ind] = out_traces.size();
-        out_traces.push_back(in_trace);
+    IFrame::tag_list_t my_tags = m_tags;
+    if (my_tags.empty()) {
+        my_tags = in->trace_tags();
+        my_tags.push_back("");  // marker for "untagged traces"
     }
-    
-    // basic output frame ready
-    auto sf = new SimpleFrame(in->ident(), in->time(), out_traces, in->tick());
 
-    // tagged traces need to be filtered down with index translation
-    // to include only those traces in the smaller output frame.
-    for (const auto& tag : m_tags) {
-        IFrame::trace_list_t keep;
-        for (const auto& ind : in->tagged_traces(tag)) {
-            int chid = in_traces->at(ind)->channel();
-            auto got = in2out.find(chid);
-            if (got == in2out.end()) {
+    ITrace::vector out_traces;
+    std::map<std::string, IFrame::trace_list_t> tagged_indices;
+
+    for (const auto& my_tag : my_tags) {
+        ITrace::vector traces;
+        if (my_tag.empty()) {
+            traces = Aux::untagged_traces(in);
+        }
+        else {
+            traces = Aux::tagged_traces(in, my_tag);
+        }
+
+        IFrame::trace_list_t indices;
+        for (auto itrace : traces) {
+            int chid = itrace->channel();
+            if (m_chids.find(chid) == m_chids.end()) {
                 continue;
             }
-            keep.push_back(got->second);
-            // fixme: we are ignoring possible summaries....
+            indices.push_back(out_traces.size());
+            out_traces.push_back(itrace);
         }
 
-        if (keep.empty()) {
-            log->debug("call={} no traces remain for {}", m_count, tag);
-            continue;
-        }
-
-        auto new_tags = m_ft.transform(0, "trace", {tag});
+        auto new_tags = m_ft.transform(0, "trace", {my_tag});
         if (new_tags.empty()) {
-            new_tags.insert(tag);
+            log->debug("call={} no transform, keeping input tag: {}", m_count, my_tag);
+            new_tags.insert(my_tag);
         }
         for (auto new_tag : new_tags) {
-            sf->tag_traces(new_tag, keep);
+            tagged_indices[new_tag] = indices;
         }
+    }
+
+    auto sf = new SimpleFrame(in->ident(), in->time(), out_traces, in->tick());
+    for (auto& [new_tag,indices] : tagged_indices) {
+        sf->tag_traces(new_tag, indices);
     }
 
     std::vector<std::string> frame_tags = in->frame_tags();
-    if (frame_tags.empty()) { frame_tags.push_back(""); }
-    for (auto new_tag : m_ft.transform(0, "frame", frame_tags)) {    
+    if (frame_tags.empty()) {
+        frame_tags.push_back("");
+    }
+    auto new_tags = m_ft.transform(0, "frame", frame_tags);
+    for (auto new_tag : new_tags) {
+        if (new_tag.empty()) {
+            continue;
+        }
         sf->tag_frame(new_tag);
     }
-
     out = IFrame::pointer(sf);
 
-    std::stringstream info;
-    info << "input " << Aux::taginfo(in) << " output: " << Aux::taginfo(out);
-    log->debug(info.str());
+    log->debug("call={} input {}", m_count, Aux::taginfo(in));
+    log->debug("call={} output {}", m_count, Aux::taginfo(out));
 
+    ++m_count;
     return true;
 }
+

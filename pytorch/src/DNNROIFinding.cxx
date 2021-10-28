@@ -57,11 +57,24 @@ void Pytorch::DNNROIFinding::configure(const WireCell::Configuration& cfg)
         m_chset.insert(chid);
         m_chlist.push_back(chid);
     }
+    {
+        auto chmm = std::minmax_element(m_chset.begin(), m_chset.end());
+        log->debug("anode={} plane={} nchans={} in=[{},{}]",
+                   m_cfg.anode, m_cfg.plane, m_chset.size(),
+                   *chmm.first, *chmm.second);
+    }
+    m_cfg.sort_chanids = get(cfg, "sort_chanids", m_cfg.sort_chanids);
+    if (m_cfg.sort_chanids) {
+        std::sort(m_chlist.begin(), m_chlist.end());
+    }
 
     m_cfg.input_scale = get(cfg, "input_scale", m_cfg.input_scale);
     m_cfg.input_offset = get(cfg, "input_offset", m_cfg.input_offset);
     m_cfg.output_scale = get(cfg, "output_scale", m_cfg.output_scale);
     m_cfg.output_offset = get(cfg, "output_offset", m_cfg.output_offset);
+    if (m_cfg.output_scale != 1.0) {
+        log->debug("using output scale: {}", m_cfg.output_scale);
+    }
         
     m_cfg.tick0 = get(cfg, "tick0", m_cfg.tick0);
     m_cfg.nticks = get(cfg, "nticks", m_cfg.nticks);
@@ -122,6 +135,8 @@ WireCell::Configuration Pytorch::DNNROIFinding::default_configuration() const
     // see coments under DNNROIFindingCfg in header file
     cfg["anode"] = m_cfg.anode;
     cfg["plane"] = m_cfg.plane;
+    cfg["sort_chanids"] = m_cfg.sort_chanids;
+
     cfg["input_scale"] = m_cfg.input_scale;
     cfg["input_offset"] = m_cfg.input_offset;
     cfg["output_scale"] = m_cfg.output_scale;

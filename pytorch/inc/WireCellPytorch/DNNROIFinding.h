@@ -25,6 +25,12 @@ namespace WireCell {
             // channels span the data.
             int plane{0};
 
+            // If true, sort the selected channels by their channel ID
+            // value.  If false, the ordering given by the channel
+            // placement (ordered according to the so called "wire
+            // atachement number").
+            bool sort_chanids{false};
+
             // DNN needs consistent scaling with trained model.  This is
             // multiplied to the input charge values.
             double input_scale{1.0 / 4000};
