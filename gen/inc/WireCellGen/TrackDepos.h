@@ -4,7 +4,7 @@
 #include "WireCellIface/IDepoSource.h"
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellUtil/Units.h"
-#include "WireCellUtil/Logging.h"
+#include "WireCellAux/Logger.h"
 
 #include <tuple>
 #include <deque>
@@ -14,7 +14,8 @@ namespace WireCell {
     namespace Gen {
 
         /// A producer of depositions created from some number of simple, linear tracks.
-        class TrackDepos : public IDepoSource, public IConfigurable {
+        class TrackDepos : public Aux::Logger,
+                           public IDepoSource, public IConfigurable {
            public:
             /// Create tracks with depositions every stepsize and assumed
             /// to be traveling at clight.
@@ -44,7 +45,6 @@ namespace WireCell {
             std::deque<WireCell::IDepo::pointer> m_depos;
             std::vector<track_t> m_tracks;  // collect for posterity
             int m_count;
-            Log::logptr_t l;
         };
 
     }  // namespace Gen

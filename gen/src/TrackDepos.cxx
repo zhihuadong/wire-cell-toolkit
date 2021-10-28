@@ -15,10 +15,10 @@ using namespace std;
 using namespace WireCell;
 
 Gen::TrackDepos::TrackDepos(double stepsize, double clight)
-  : m_stepsize(stepsize)
-  , m_clight(clight)
-  , m_count(0)
-  , l(Log::logger("sim"))
+    : Aux::Logger("TrackDepos", "gen")
+    , m_stepsize(stepsize)
+    , m_clight(clight)
+    , m_count(0)
 {
 }
 
@@ -82,7 +82,7 @@ static std::string dump(IDepo::pointer d)
 
 void Gen::TrackDepos::add_track(double time, const WireCell::Ray& ray, double charge)
 {
-    l->debug("add_track({} us, ({} -> {})cm, {})", time / units::us, ray.first / units::cm, ray.second / units::cm,
+    log->debug("add_track({} us, ({} -> {})cm, {})", time / units::us, ray.first / units::cm, ray.second / units::cm,
              charge);
     m_tracks.push_back(track_t(time, ray, charge));
 
@@ -110,7 +110,7 @@ void Gen::TrackDepos::add_track(double time, const WireCell::Ray& ray, double ch
 
     // earliest first
     std::sort(m_depos.begin(), m_depos.end(), ascending_time);
-    l->debug("depos: {} over {}mm", m_depos.size(), length / units::mm);
+    log->debug("depos: {} over {}mm", m_depos.size(), length / units::mm);
 }
 
 bool Gen::TrackDepos::operator()(output_pointer& out)
@@ -122,7 +122,7 @@ bool Gen::TrackDepos::operator()(output_pointer& out)
     m_depos.pop_front();
 
     if (!out) {  // chirp
-        l->debug("EOS at call {}", m_count);
+        log->debug("EOS at call {}", m_count);
     }
 
     ++m_count;
