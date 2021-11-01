@@ -114,6 +114,10 @@ namespace WireCell {
         realseq_t magnitude(const compseq_t& seq);
         /// Return the phase or arg part of the sequence
         realseq_t phase(const compseq_t& seq);
+        /// Uplift a real sequence to a complex one (with zero imaginary parts)
+        compseq_t complex(const realseq_t& real);
+        /// Pack individual real/imag parts into complex sequence
+        compseq_t complex(const realseq_t& real, const realseq_t& imag);
 
         /// Increase (shift) sequence values by scalar
         template <typename Val>

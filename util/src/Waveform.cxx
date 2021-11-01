@@ -69,6 +69,22 @@ Waveform::realseq_t WireCell::Waveform::phase(const Waveform::compseq_t& seq)
     return c2r(seq, [](Waveform::complex_t c) { return std::arg(c); });
 }
 
+
+Waveform::compseq_t Waveform::complex(const Waveform::realseq_t& real)
+{
+    Waveform::realseq_t imag(real.size(), 0);
+    return Waveform::complex(real, imag);
+}
+
+Waveform::compseq_t Waveform::complex(const Waveform::realseq_t& real, const Waveform::realseq_t& imag)
+{
+    Waveform::compseq_t ret(real.size());
+    std::transform(real.begin(), real.end(), imag.begin(), ret.begin(),
+                   [](real_t re, real_t im) { return Waveform::complex_t(re,im); } );
+    return ret;
+}
+
+
 Waveform::real_t WireCell::Waveform::median(Waveform::realseq_t& wave) { return percentile(wave, 0.5); }
 
 Waveform::real_t WireCell::Waveform::median_binned(Waveform::realseq_t& wave) { return percentile_binned(wave, 0.5); }
