@@ -22,6 +22,7 @@ int main()
         THROW(ValueError() << errmsg{format("some error with value=%d msg=\"%s\"", value, omg)});
     }
     catch (ValueError& e) {
-        cerr << "caught ValueError: " << errstr(e) << endl;
+        cerr << "Caught:\n";
+        cerr << e.what() << "\n";
     }
 }
