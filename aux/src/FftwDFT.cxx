@@ -1,8 +1,12 @@
 #include "WireCellAux/FftwDFT.h"
+#include "WireCellUtil/NamedFactory.h"
+
 #include <fftw3.h>
 #include <mutex>
 #include <shared_mutex>
 #include <unordered_map>
+
+WIRECELL_FACTORY(FftwDFT, WireCell::Aux::FftwDFT, WireCell::IDFT)
 
 
 using namespace WireCell;
@@ -33,6 +37,8 @@ plan_type get_plan(std::shared_mutex& mutex, plan_map_t& plans, plan_key_t key)
 }
 
 
+// #include <iostream>             // debugging
+
 template<typename planner_function>
 void doit(std::shared_mutex& mutex, plan_map_t& plans, 
                 int fwdrev, plan_val_t* src, plan_val_t* dst, int stride, int nstrides,
@@ -45,6 +51,7 @@ void doit(std::shared_mutex& mutex, plan_map_t& plans,
         // Check again in case another thread snakes us.
         auto it = plans.find(key);
         if (it == plans.end()) {
+            //std::cerr << "make plan for " << key << std::endl;
             plan = make_plan();
             plans[key] = plan;
         }
@@ -111,3 +118,10 @@ void Aux::FftwDFT::inv2d(const complex_t* in, complex_t* out, int stride, int ns
         return fftwf_plan_dft_2d(stride, nstrides, src, dst, dir, FFTW_ESTIMATE|FFTW_PRESERVE_INPUT);
     });
 }
+Aux::FftwDFT::FftwDFT()
+{
+}
+Aux::FftwDFT::~FftwDFT()
+{
+}
+

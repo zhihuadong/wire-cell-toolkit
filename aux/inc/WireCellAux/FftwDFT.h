@@ -18,11 +18,11 @@ namespace WireCell::Aux {
 
         virtual 
         void fwd1d(const complex_t* in, complex_t* out,
-                   int stride) const = 0;
+                   int stride) const;
 
         virtual 
         void inv1d(const complex_t* in, complex_t* out,
-                   int stride) const = 0;
+                   int stride) const;
 
         // batched 1D ("1b") - rely on base implementation
 
@@ -30,10 +30,10 @@ namespace WireCell::Aux {
 
         virtual 
         void fwd2d(const complex_t* in, complex_t* out,
-                   int stride, int nstrides) const = 0;
+                   int stride, int nstrides) const;
         virtual 
         void inv2d(const complex_t* in, complex_t* out,
-                   int stride, int nstrides) const = 0;
+                   int stride, int nstrides) const;
 
 
     };

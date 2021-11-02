@@ -9,7 +9,8 @@
 #include <algorithm>
 #include <string>
 
-// for FFT
+// FIXME: remove the hard-wired Eigen::FFT related in favor of dynamic
+// DFT with Aux/DftTools.h.
 #include <Eigen/Core>
 #include <unsupported/Eigen/FFT>
 
