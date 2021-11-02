@@ -1,4 +1,5 @@
 #include "WireCellUtil/Waveform.h"
+#include "WireCellUtil/Exceptions.h"
 
 #include <algorithm>
 
@@ -92,11 +93,11 @@ Waveform::real_t WireCell::Waveform::median_binned(Waveform::realseq_t& wave) { 
 Waveform::real_t WireCell::Waveform::percentile(Waveform::realseq_t& wave, real_t percentage)
 {
     if (percentage < 0.0 or percentage > 1.0) {
-        return -9999;
+        THROW(ValueError() << errmsg{"percentage out of range"});
     }
     const size_t siz = wave.size();
     if (siz == 0) {
-        return -9999;
+        THROW(ValueError() << errmsg{"empty waveform"});
     }
     if (siz == 1) {
         return wave[0];
