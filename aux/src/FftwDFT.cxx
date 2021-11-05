@@ -41,7 +41,7 @@ plan_type get_plan(std::shared_mutex& mutex, plan_map_t& plans, plan_key_t key)
 
 template<typename planner_function>
 void doit(std::shared_mutex& mutex, plan_map_t& plans, 
-                int fwdrev, plan_val_t* src, plan_val_t* dst, int stride, int nstrides,
+                int fwdrev, plan_val_t* src, plan_val_t* dst, int nstrides, int stride,
                 planner_function make_plan)
 {
     auto key = make_key(fwdrev == FFTW_BACKWARD, src, dst, stride, nstrides);
@@ -77,7 +77,7 @@ void Aux::FftwDFT::fwd1d(const complex_t* in, complex_t* out, int stride) const
     static const int dir = FFTW_FORWARD;
     auto src = pval_cast(in);
     auto dst = pval_cast(out);
-    doit(mutex, plans, dir, src, dst, stride, 0, [&]( ) {
+    doit(mutex, plans, dir, src, dst, 0, stride, [&]( ) {
         return fftwf_plan_dft_1d(stride, src, dst, dir, FFTW_ESTIMATE|FFTW_PRESERVE_INPUT);
     });
 }
@@ -88,35 +88,46 @@ void Aux::FftwDFT::inv1d(const complex_t* in, complex_t* out, int stride) const
     static const int dir = FFTW_BACKWARD;
     auto src = pval_cast(in);
     auto dst = pval_cast(out);
-    doit(mutex, plans, dir, src, dst, stride, 0, [&]( ) {
+    doit(mutex, plans, dir, src, dst, 0, stride, [&]( ) {
         return fftwf_plan_dft_1d(stride, src, dst, dir, FFTW_ESTIMATE|FFTW_PRESERVE_INPUT);
     });
+
+    // reverse normalization
+    for (int ind=0; ind<stride; ++ind) {
+        out[ind] /= stride;
+    }
 }
 
 
-void Aux::FftwDFT::fwd2d(const complex_t* in, complex_t* out, int stride, int nstrides) const
+void Aux::FftwDFT::fwd2d(const complex_t* in, complex_t* out, int nstrides, int stride) const
 {
     static std::shared_mutex mutex;
     static plan_map_t plans;
     static const int dir = FFTW_FORWARD;
     auto src = pval_cast(in);
     auto dst = pval_cast(out);
-    doit(mutex, plans, dir, src, dst, stride, nstrides, [&]( ) {
+    doit(mutex, plans, dir, src, dst, nstrides, stride, [&]( ) {
         return fftwf_plan_dft_2d(stride, nstrides, src, dst, dir, FFTW_ESTIMATE|FFTW_PRESERVE_INPUT);
     });
 }
 
 
-void Aux::FftwDFT::inv2d(const complex_t* in, complex_t* out, int stride, int nstrides) const
+void Aux::FftwDFT::inv2d(const complex_t* in, complex_t* out, int nstrides, int stride) const
 {
     static std::shared_mutex mutex;
     static plan_map_t plans;
     static const int dir = FFTW_BACKWARD;
     auto src = pval_cast(in);
     auto dst = pval_cast(out);
-    doit(mutex, plans, dir, src, dst, stride, nstrides, [&]( ) {
+    doit(mutex, plans, dir, src, dst, nstrides, stride, [&]( ) {
         return fftwf_plan_dft_2d(stride, nstrides, src, dst, dir, FFTW_ESTIMATE|FFTW_PRESERVE_INPUT);
     });
+
+    // reverse normalization
+    const int ntot = stride*nstrides;
+    for (int ind=0; ind<ntot; ++ind) {
+        out[ind] /= ntot;
+    }
 }
 Aux::FftwDFT::FftwDFT()
 {

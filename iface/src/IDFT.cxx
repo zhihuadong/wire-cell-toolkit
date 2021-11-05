@@ -9,7 +9,7 @@ IDFT::~IDFT() {}
 // with some GPU FFTs, override these methods!
 
 void IDFT::fwd1b(const complex_t* in, complex_t* out,
-                 int stride, int nstrides) const
+                 int nstrides, int stride) const
 {
     for (int istride=0; istride<nstrides; ++istride) {
         fwd1d(in+istride*stride, out+istride*stride, stride);
@@ -17,7 +17,7 @@ void IDFT::fwd1b(const complex_t* in, complex_t* out,
 }
 
 void IDFT::inv1b(const complex_t* in, complex_t* out,
-                 int stride, int nstrides) const
+                 int nstrides, int stride) const
 {
     for (int istride=0; istride<nstrides; ++istride) {
         inv1d(in+istride*stride, out+istride*stride, stride);

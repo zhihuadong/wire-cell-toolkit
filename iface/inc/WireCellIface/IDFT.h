@@ -1,5 +1,19 @@
 /** 
     Interface to perform discrete single-precision Fourier transforms.
+
+    Note, implementations MUST NOT normalize forward transforms and
+    MUST normalize reverse/inverse transforms by 1/n where n is the
+    number of elements in the 1D array being reverse transformed.
+
+    The number "stride" describes how many elements of the array are
+    contiguous.  For "C-order" aka row-major ordering of 2D arrays,
+    stride is the size of a row, aka number of columns.
+
+    The number "nstrides" describe how many arrays of length "stride"
+    are placed end-to-end in the memory.  For "C-order" aka row-major
+    ordering of 2D arrays, the "nstrides" counts the size of the
+    columns, aka the number of rows.  With this ordering, the
+    (nstrides, stride) pair maps to the usual (nrows, ncols).
 */
 
 #ifndef WIRECELL_IDFT
@@ -34,20 +48,20 @@ namespace WireCell {
 
         virtual 
         void fwd1b(const complex_t* in, complex_t* out,
-                   int stride, int nstrides) const;
+                   int nstrides, int stride) const;
         virtual 
         void inv1b(const complex_t* in, complex_t* out,
-                   int stride, int nstrides) const;
+                   int nstrides, int stride) const;
 
 
         // 2D, transform both dimensions
 
         virtual 
         void fwd2d(const complex_t* in, complex_t* out,
-                   int stride, int nstrides) const = 0;
+                   int nstrides, int stride) const = 0;
         virtual 
         void inv2d(const complex_t* in, complex_t* out,
-                   int stride, int nstrides) const = 0;
+                   int nstrides, int stride) const = 0;
 
      };
 }

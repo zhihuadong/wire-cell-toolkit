@@ -31,8 +31,8 @@ void test_2d_zero(IDFT::pointer dft, int size = 1024)
     std::vector<IDFT::complex_t> inter(stride*nstrides,0);
     std::vector<IDFT::complex_t> freq(stride*nstrides,0);
 
-    dft->fwd2d(inter.data(), freq.data(), stride, nstrides);
-    dft->inv2d(freq.data(), inter.data(), stride, nstrides);
+    dft->fwd2d(inter.data(), freq.data(), nstrides, stride);
+    dft->inv2d(freq.data(), inter.data(), nstrides, stride);
 
     auto tot = Waveform::sum(inter);
     assert(std::real(tot) == 0);
@@ -48,8 +48,8 @@ void fwdrev(IDFT::pointer dft, int id, int ntimes, int size)
 
     while (ntimes) {
         //std::cerr << ntimes << "\n";
-        dft->fwd2d(inter.data(), freq.data(), stride, nstrides);
-        dft->inv2d(freq.data(), inter.data(), stride, nstrides);
+        dft->fwd2d(inter.data(), freq.data(), nstrides, stride);
+        dft->inv2d(freq.data(), inter.data(), nstrides, stride);
 
         --ntimes;        
         auto tot = Waveform::sum(inter);

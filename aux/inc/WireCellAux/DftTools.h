@@ -1,25 +1,6 @@
 /**
-   High level functions related to DFTs.
-
-   Most take an IDFT::pointer to a DFT implementation and return an
-   allocated result.  Use IDFT directly to control allocation.
-
-   There are std::vector and Eigen array functions.
-
-   Abbreviations:
-
-   - IS is interval space aka time / distance
-   - FS is frequency space aka frequency / periodicity 
-
-   Price to pay for simple API is a lack of optimizations:
-
-   - When a real valued array is invovled, all arrays are full size.
-     That is, no half-size optimization will be exposed to the caller.
-
-   - These functions tend to make more copies than may be needed if
-     IDFT is called directly.  In addition to real/complex conversion,
-     using std::vector or Eigen array instead of raw memory leads to
-     more copies.
+   This provides std::vector and Eigen::Array typed interface to an
+   IDFT.
  */
 
 #ifndef WIRECELL_AUX_DFTTOOLS
@@ -31,47 +12,46 @@
 
 namespace WireCell::Aux {
 
-    using real_t = IDFT::scalar_t;
     using complex_t = IDFT::complex_t;
 
     // std::vector based functions
 
-    using realvec_t = std::vector<real_t>;
-    using compvec_t = std::vector<complex_t>;
+    using dft_vector_t = std::vector<complex_t>;
 
     // 1D with vectors
 
-    // Transform a real IS, return same size FS.
-    compvec_t dft(IDFT::pointer dft, const realvec_t& seq);
-        
-    // Transform complex FS to IS and return real part
-    realvec_t idft(IDFT::pointer dft, const compvec_t& spec);
+    inline dft_vector_t fwd(IDFT::pointer dft, const dft_vector_t& seq)
+    {
+        dft_vector_t ret(seq.size());
+        dft->fwd1d(seq.data(), ret.data(), ret.size());
+        return ret;
+    }
 
-    compvec_t r2c(const realvec_t& r);
-    realvec_t c2r(const compvec_t& c);
-
+    inline dft_vector_t inv(IDFT::pointer dft, const dft_vector_t& spec)
+    {
+        dft_vector_t ret(spec.size());
+        dft->inv1d(spec.data(), ret.data(), ret.size());
+        return ret;
+    }
 
     // Eigen array based functions
 
-    /// Real 1D array
-    using array_xf = Eigen::ArrayXf;
-
-    /// Complex 1D array
-    using array_xc = Eigen::ArrayXcf;
-
-    /// A real, 2D array
-    using array_xxf = Eigen::ArrayXXf;
-
-    /// A complex, 2D array
-    using array_xxc = Eigen::ArrayXXcf;
+    /// A complex, 2D array.  Use Array::cast<type>() if you need to
+    /// convert to/from real.
+    using dft_array_t = Eigen::ArrayXXcf;
     
-    // 2D with Eigen arrays
+    // 2D with Eigen arrays.  Use eg arr.cast<complex_>() to provde
+    // from real or arr.cast<float>() to convert result to real.
 
-    // Transform a real IS, return same size FS.
-    array_xxc dft(IDFT::pointer dft, const array_xxf& arr);
+    // Transform both dimesions.
+    dft_array_t fwd(IDFT::pointer dft, const dft_array_t& arr);
+    dft_array_t inv(IDFT::pointer dft, const dft_array_t& arr);
 
-    // Transform complex FS to IS and return real part
-    array_xxf idft(IDFT::pointer dft, const array_xxc& arr);
+    // Transform one dimesions.  For example axis=0 transforms each
+    // logical row of the Eigen array so that column=0 of each row
+    // would hold the frequency=0 component of each row's spectrum.  
+    // array_xxc fwd(IDFT::pointer dft, const array_xxc& arr, int axis);
+    // array_xxc inv(IDFT::pointer dft, const array_xxc& arr, int axis);
 
 
 }

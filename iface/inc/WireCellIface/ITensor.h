@@ -19,7 +19,12 @@ namespace WireCell {
        public:
         /// Shape gives size of each dimension.  Size of shape give Ndim.
         typedef std::vector<size_t> shape_t;
-        /// Storage order.  Empty implies C order.
+        /// Storage order.  Empty implies C order.  If non-empty the
+        /// vector holds the "majority" of the dimension.  C-order
+        /// implies a vector of {1,0} which means if the array is
+        /// accessed as array[a][b] then "b" is most major and "a" is
+        /// next most major.  Ie, row-major.  A fortran order would be
+        /// given as {0,1}.
         typedef std::vector<size_t> order_t;
 
         /// The type of the element.

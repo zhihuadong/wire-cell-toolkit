@@ -30,10 +30,10 @@ namespace WireCell::Aux {
 
         virtual 
         void fwd2d(const complex_t* in, complex_t* out,
-                   int stride, int nstrides) const;
+                   int nstrides, int stride) const;
         virtual 
         void inv2d(const complex_t* in, complex_t* out,
-                   int stride, int nstrides) const;
+                   int nstrides, int stride) const;
 
 
     };
