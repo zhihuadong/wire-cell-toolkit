@@ -55,3 +55,61 @@ Aux::dft_array_t Aux::inv(IDFT::pointer dft, const Aux::dft_array_t& arr)
         dft->inv2d(in_data, out_data, nstrides, stride);
     });
 }
+
+#include <iostream> // debug
+
+template<typename trans>
+Aux::dft_array_t doit1b(const Aux::dft_array_t& arr, int axis, trans func)
+{
+    // We must provide a flat array with storage order such with
+    // logical axis-major ordering.
+    const Aux::complex_t* in_data = arr.data();
+    const int nrows = arr.rows(); // "logical"
+    const int ncols = arr.cols(); // shape
+
+    std::cerr << "nrows="<<nrows<<", ncols="<<ncols
+              << ", axis="<<axis<<", IsRowMajor:"<<arr.IsRowMajor<<"\n";
+
+    // If storage order matches "axis-major"
+    if ( (axis == 1 and arr.IsRowMajor)
+         or
+         (axis == 0 and not arr.IsRowMajor) ) {
+        Aux::dft_vector_t out_vec(nrows*ncols);
+        func(in_data, out_vec.data(), ncols, nrows);
+        if (arr.IsRowMajor) {
+            // note, returning makes a copy and will perform an actual
+            // storage order transpose.
+            return Eigen::Map<ROWM>(out_vec.data(), nrows, ncols);
+        }
+        return Eigen::Map<COLM>(out_vec.data(), nrows, ncols);
+    }
+    
+    // Either we have row-major and want column-major storage order or
+    // vice versa.
+
+    // Here, we must copy and not use "auto" to get actual storage
+    // order transpose and avoid the IsRowMajor flip optimization.
+    COLM flipped = arr.transpose();
+    COLM got = doit1b(flipped, (axis+1)%2, func);
+    return got.transpose();
+}
+
+Aux::dft_array_t Aux::fwd(IDFT::pointer dft, const Aux::dft_array_t& arr, int axis)
+{
+    return doit1b(arr, axis,
+                  [&](const complex_t* in_data,
+                      complex_t* out_data,
+                      int nstrides, int stride) {
+        dft->fwd1b(in_data, out_data, nstrides, stride);
+    });
+}
+
+Aux::dft_array_t Aux::inv(IDFT::pointer dft, const Aux::dft_array_t& arr, int axis)
+{
+    return doit1b(arr, axis,
+                  [&](const complex_t* in_data,
+                      complex_t* out_data,
+                      int nstrides, int stride) {
+        dft->inv1b(in_data, out_data, nstrides, stride);
+    });
+}

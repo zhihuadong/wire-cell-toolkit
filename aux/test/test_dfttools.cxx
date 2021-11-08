@@ -107,6 +107,36 @@ void test_2d_transpose(IDFT::pointer dft)
     
 }
 
+void test_1b(IDFT::pointer dft, int axis)
+{
+    const int nrows=8; 
+    const int ncols=4;
+    FA r = FA::Zero(nrows, ncols);
+    r(6,1) = 1.0;
+    dump("impulse", r);
+    std::cerr << r << std::endl;
+    auto c = Aux::fwd(dft, r.cast<complex_t>(), axis);
+    dump("spectra", c);
+    if (axis==0) {
+        
+    }
+    std::cerr << c << std::endl;
+}
+void test_1bt(IDFT::pointer dft, int axis)
+{
+    const int nrows=8; 
+    const int ncols=4;
+    FA r = FA::Zero(nrows, ncols);
+    r(6,1) = 1.0;
+    auto rc = r.cast<complex_t>();
+    auto rct = rc.transpose();
+    dump("impulse.T", rct);
+    std::cerr << rct << std::endl;
+    auto c = Aux::fwd(dft, rct, axis);
+    dump("spectra", c);
+    std::cerr << c << std::endl;
+}
+
 int main()
 {
     auto dft = std::make_shared<Aux::FftwDFT>();
@@ -114,6 +144,9 @@ int main()
     test_1d(dft);
     test_2d(dft);
     test_2d_transpose(dft);
-
+    test_1b(dft, 0);
+    test_1b(dft, 1);
+    test_1bt(dft, 0);
+    test_1bt(dft, 1);
     return 0;
 }

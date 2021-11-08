@@ -47,11 +47,21 @@ namespace WireCell::Aux {
     dft_array_t fwd(IDFT::pointer dft, const dft_array_t& arr);
     dft_array_t inv(IDFT::pointer dft, const dft_array_t& arr);
 
-    // Transform one dimesions.  For example axis=0 transforms each
-    // logical row of the Eigen array so that column=0 of each row
-    // would hold the frequency=0 component of each row's spectrum.  
-    // array_xxc fwd(IDFT::pointer dft, const array_xxc& arr, int axis);
-    // array_xxc inv(IDFT::pointer dft, const array_xxc& arr, int axis);
+    // Transform a 2D array along one axis.
+    //
+    // The axis identifies the logical array "dimension" over which
+    // the transform is applied.  For example, axis=1 means the
+    // transforms are applied along columns (ie, on a per-row basis).
+    // Note: this is the same convention as held by numpy.fft.
+    //
+    // The axis is interpreted in the "logical" sense Eigen arrays
+    // indexed as array(irow, icol).  Ie, the dimension traversing
+    // rows is axis 0 and the dimension traversing columns is axis 1.
+    // Note: internal storage order of an Eigen array may differ from
+    // the logical order and indeed that of the array template type
+    // order.  Neither is pertinent in setting the axis.
+    dft_array_t fwd(IDFT::pointer dft, const dft_array_t& arr, int axis);
+    dft_array_t inv(IDFT::pointer dft, const dft_array_t& arr, int axis);
 
 
 }
