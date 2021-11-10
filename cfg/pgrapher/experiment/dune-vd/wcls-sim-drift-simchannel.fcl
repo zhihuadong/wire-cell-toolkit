@@ -40,7 +40,8 @@ physics :{
               # dunevd10kt-1x6x6-3view-wires-v1.json.bz2
               # dunevd10kt-1x6x6-3view30deg-wires-v1.json.bz2
               # dunevd10kt-1x6x6-2view-wires-v1.json.bz2
-              files_wires: "dunevd10kt-1x6x6-3view30deg-wires-v1.json.bz2"
+              # dunevd10kt-1x8x14-3view-wires-v1.json.bz2
+              files_wires: "dunevd10kt-1x6x6-3view-wires-v1.json.bz2"
               # file: fields
               # dunevd-resp-isoc3views-18d92.json.bz2 30,-30,90
               # pcbro-response-avg-12d50.json.bz2 2view prototype
@@ -49,7 +50,7 @@ physics :{
               # dunevd10kt-1x6x6-3view-noise-spectra-v1.json.bz2
               # dunevd10kt-1x6x6-3view30deg-noise-spectra-v1.json.bz2
               # dunevd10kt-1x6x6-2view-noise-spectra-v1.json.bz2
-              files_noise: "dunevd10kt-1x6x6-3view30deg-noise-spectra-v1.json.bz2"
+              files_noise: "dunevd10kt-1x6x6-3view-noise-spectra-v1.json.bz2"
             }
             structs: {
               # number of time samples
@@ -66,6 +67,8 @@ physics :{
               G4RefTime: @local::dunefd_detectorclocks.G4RefTime
               # response plane [cm]
               response_plane: 18.92
+              # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
+              ncrm: 36
             }
 
          }
@@ -84,8 +87,9 @@ outputs: {
       fileName: "wcsim.root"
 
       outputCommands :   [
+         "drop *"
          // "drop *", "keep recob::Wires_*_*_*"
-         "keep *_*_*_*"
+         // "keep *_*_*_*"
          // "drop *_nfspl1_raw_*",
          // "drop *_nfspl1_threshold_*",
          // "drop *_nfspl1_wiener_*",

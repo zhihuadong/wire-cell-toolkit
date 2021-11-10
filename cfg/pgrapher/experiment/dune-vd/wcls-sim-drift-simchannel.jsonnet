@@ -7,7 +7,6 @@
 // Output is a Python numpy .npz file.
 
 local g = import 'pgraph.jsonnet';
-local f = import 'pgrapher/experiment/dune-vd/funcs.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
 local io = import 'pgrapher/common/fileio.jsonnet';
@@ -17,7 +16,8 @@ local response_plane = std.extVar('response_plane')*wc.cm;
 local fcl_params = {
     G4RefTime: std.extVar('G4RefTime') * wc.us,
     response_plane: std.extVar('response_plane')*wc.cm,
-    nticks: std.extVar('nticks')
+    nticks: std.extVar('nticks'),
+    ncrm: std.extVar('ncrm')
 };
 local params = params_maker(fcl_params) {
   lar: super.lar {
@@ -165,81 +165,32 @@ local wcls_simchannel_sink = g.pnode({
   },
 }, nin=1, nout=1, uses=tools.anodes);
 
-// local magoutput = 'protodune-data-check.root';
-// local magnify = import 'pgrapher/experiment/pdsp/magnify-sinks.jsonnet';
-// local sinks = magnify(tools, magoutput);
-
-local origmagnify = [ 
-  g.pnode({
-    type: 'MagnifySink',
-    name: 'origmag%d' % n,
-    data: {
-        output_filename: 'dune-vd-sim-check.root',
-        root_file_mode: 'UPDATE',
-        frames: ['orig%d' % n ],
-        trace_has_tag: false,
-        anode: wc.tn(tools.anodes[n]), 
-    },
-  }, nin=1, nout=1) for n in std.range(0, std.length(tools.anodes) - 1)];
-
-
-local origmagnify_pipe = [g.pipeline([origmagnify[n]], name='origmagnifypipes%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
-
-local nfmagnify = [ 
-  g.pnode({
-    type: 'MagnifySink',
-    name: 'nfmag%d' % n,
-    data: {
-        output_filename: 'dune-vd-sim-check.root',
-        root_file_mode: 'UPDATE',
-        frames: ['raw%d' % n ],
-        trace_has_tag: false,
-        anode: wc.tn(tools.anodes[n]), 
-    },
-  }, nin=1, nout=1) for n in std.range(0, std.length(tools.anodes) - 1)];
-
-
-local nfmagnify_pipe = [g.pipeline([nfmagnify[n]], name='spmagnifypipes%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
-
-local spmagnify = [ 
-  g.pnode({
-    type: 'MagnifySink',
-    name: 'spmag%d' % n,
-    data: {
-        output_filename: 'dune-vd-sim-check.root',
-        root_file_mode: 'UPDATE',
-        frames: ['gauss%d' % n ],
-        trace_has_tag: false,
-        anode: wc.tn(tools.anodes[n]), 
-    },
-  }, nin=1, nout=1) for n in std.range(0, std.length(tools.anodes) - 1)];
-
-
-local spmagnify_pipe = [g.pipeline([spmagnify[n]], name='spmagnifypipes%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
-
-
 local magoutput = 'dune-vd-sim-check.root';
 local magnify = import 'pgrapher/experiment/pdsp/magnify-sinks.jsonnet';
 local sinks = magnify(tools, magoutput);
 
 local multipass = [
   g.pipeline([
-                // wcls_simchannel_sink[n],
                 sn_pipes[n],
-                // origmagnify_pipe[n],
                 // sinks.orig_pipe[n],
                 // nf_pipes[n],
-                // nfmagnify_pipe[n],
                 // sp_pipes[n],
-                // spmagnify_pipe[n],
                 // sinks.decon_pipe[n],
                 // sinks.debug_pipe[n], // use_roi_debug_mode=true in sp.jsonnet
              ],
              'multipass%d' % n)
   for n in anode_iota
 ];
+
 local outtags = ['orig%d' % n for n in anode_iota];
-local bi_manifold = f.multifanpipe('DepoSetFanout', multipass, 'FrameFanin', 6, 'sn_mag', outtags);
+assert (fcl_params.ncrm == 36 || fcl_params.ncrm == 112) : "only ncrm == 36 or 112 are configured";
+local f = import 'pgrapher/experiment/dune-vd/funcs.jsonnet';
+// local bi_manifold = f.multifanpipe('DepoSetFanout', multipass, 'FrameFanin', 6, 'sn_mag', outtags);
+local bi_manifold =
+    if fcl_params.ncrm == 36
+    then f.multifanpipe('DepoSetFanout', multipass, 'FrameFanin', [1,6], [6,6], [1,6], [6,6], 'sn_mag', outtags)
+    else if fcl_params.ncrm == 112
+    then f.multifanpipe('DepoSetFanout', multipass, 'FrameFanin', [1,8,16], [8,2,7], [1,8,16], [8,2,7], 'sn_mag', outtags);
 
 local retagger = g.pnode({
   type: 'Retagger',
