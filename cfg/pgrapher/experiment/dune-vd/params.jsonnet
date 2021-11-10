@@ -19,6 +19,7 @@ function(params) base {
         local upper_crp_x = 325.00*wc.cm, //300.507*wc.cm,
         local upper_resp_x = upper_crp_x-self.response_plane,
         local cathode_x = -325.00*wc.cm,
+        local ncrm = if std.objectHas(params, 'ncrm') then params.ncrm else 36,
        
         volumes: [
             {
@@ -30,7 +31,7 @@ function(params) base {
                             response: upper_resp_x, 
                             cathode:  cathode_x
                         }, null ],
-            } for n in std.range(0, 35)], // 36 CRP
+            } for n in std.range(0, ncrm-1)], // std.range is inclusive, i.e. [0, crm-1],
     },
 
     daq: super.daq {
