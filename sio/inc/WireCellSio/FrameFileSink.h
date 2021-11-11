@@ -61,6 +61,9 @@ namespace WireCell::Sio {
         /// to 16 bit int.
         bool m_digitize{false};
 
+        bool m_dense{false};
+        int m_chbeg{0}, m_chend{0}, m_tbbeg{0}, m_tbend{0};
+
         // The output stream
         boost::iostreams::filtering_ostream m_out;
 

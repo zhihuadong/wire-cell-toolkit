@@ -1,6 +1,6 @@
 # -*- python -*-
 bld.smplpkg('WireCellTbb',
-            use='WireCellIface TBB',
+            use='WireCellAux TBB',
             test_use='PTHREAD')
 
 

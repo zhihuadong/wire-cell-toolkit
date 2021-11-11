@@ -56,6 +56,15 @@ WireCell::Configuration Sio::FrameFileSink::default_configuration() const
     // This number will be added to each scaled waveform sample before
     // casting to dtype.
     cfg["offset"] = 0.0;
+
+    // If the "dense" option is given the frame array will be extended
+    // and padded prior to output.  The value of "dense" should be an
+    // object with keys "chbeg" and "chend" which give half-inclusive
+    // range of channel IDs (chend is +1 past the last) and "tbbeg"
+    // and "tbend" which gives likewise is half-inclusive of "tbin"
+    // range.  Like with non-dense saving, the "offset" gives the
+    // padding value.
+
     return cfg;
 }
 
@@ -66,7 +75,7 @@ void Sio::FrameFileSink::configure(const WireCell::Configuration& cfg)
     m_out.clear();
     output_filters(m_out, m_outname);
     if (m_out.size() < 2) {     // must have at least get tar filter + file sink.
-        THROW(ValueError() << errmsg{"FrameFielSink: unsupported outname: " + m_outname});
+        THROW(ValueError() << errmsg{"FrameFileSink: unsupported outname: " + m_outname});
     }
 
     m_tags.clear();
@@ -76,11 +85,33 @@ void Sio::FrameFileSink::configure(const WireCell::Configuration& cfg)
     if (m_tags.empty()) {
         m_tags.push_back("*");
     }
+    std::string comma="";
+    std::string stags="";
+    for (const auto& tag : m_tags) {
+        stags += comma + tag;
+        comma = ",";
+    }
 
     m_digitize = get<bool>(cfg, "digitize", m_digitize);
     m_baseline = get(cfg, "baseline", m_baseline);
     m_scale = get(cfg, "scale", m_scale);
     m_offset = get(cfg, "offset", m_offset);
+
+    if (cfg["dense"].isNull() or cfg["dense"].empty()) {
+        log->debug("save {} with baseline={} scale={} offset={} digitize={} to {}",
+                   stags, m_baseline, m_scale, m_offset, m_digitize, m_outname);
+        return;
+    }
+    m_dense = true;
+    auto dense = cfg["dense"];
+    m_chbeg = dense["chbeg"].asInt();
+    m_chend = dense["chend"].asInt();
+    m_tbbeg = dense["tbbeg"].asInt();
+    m_tbend = dense["tbend"].asInt();
+    log->debug("save {} with baseline={} scale={} offset={} digitize={} ch=[{},{}] tbin=[{},{}] to {}",
+               stags, m_baseline, m_scale, m_offset, m_digitize,
+               m_chbeg, m_chend, m_tbbeg, m_tbend,
+               m_outname);
 }
 
 void Sio::FrameFileSink::one_tag(const IFrame::pointer& frame,
@@ -102,21 +133,32 @@ void Sio::FrameFileSink::one_tag(const IFrame::pointer& frame,
                    m_count, frame->ident(),traces.size(), tag);
         return;
     }
+
     log->debug("call={} frame={} ntraces={} tag=\"{}\"",
                m_count, frame->ident(),traces.size(), tag);
 
-
-    auto channels = Aux::channels(traces);
-    std::sort(channels.begin(), channels.end());
-    auto chbeg = channels.begin();
-    auto chend = std::unique(chbeg, channels.end());
-    auto tbinmm = Aux::tbin_range(traces);
+    Aux::channel_list channels;
+    std::pair<int, int> tbinmm;
+    if (m_dense) {
+        channels.resize(m_chend-m_chbeg, 0);
+        std::iota(channels.begin(), channels.end(), m_chbeg);
+        tbinmm = std::make_pair(m_tbbeg, m_tbend);
+    }
+    else {
+        auto tmp = Aux::channels(traces);
+        std::sort(tmp.begin(), tmp.end());
+        auto chbeg = tmp.begin();
+        auto chend = std::unique(chbeg, tmp.end());
+        channels.insert(channels.begin(), chbeg, chend);
+        tbinmm = Aux::tbin_range(traces);
+    }
+    
 
     const size_t ncols = tbinmm.second - tbinmm.first;
-    const size_t nrows = std::distance(chbeg, chend);
+    const size_t nrows = std::distance(channels.begin(), channels.end());
 
     Array::array_xxf arr = Array::array_xxf::Zero(nrows, ncols) + m_baseline;
-    Aux::fill(arr, traces, channels.begin(), chend, tbinmm.first);
+    Aux::fill(arr, traces, channels.begin(), channels.end(), tbinmm.first);
     arr = arr * m_scale + m_offset;
 
     {  // the 2D frame array

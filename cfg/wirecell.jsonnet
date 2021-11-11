@@ -318,7 +318,11 @@
     ///
     ///    anode: wc.tn(myanode),
     ///
-    tn(obj) :: if std.objectHas(obj, "name") && obj.name != "" then obj.type + ":" + obj.name else obj.type,
+    /// This function can also be applied to objects which happen to
+    /// be produced by pgraph.pnode()
+    tn(obj) :: if std.objectHas(obj, "name") && obj.name != ""
+               then obj.type + ":" + obj.name
+               else obj.type,
 
 
     // Return a new list where only the first occurrence of any object is kept.

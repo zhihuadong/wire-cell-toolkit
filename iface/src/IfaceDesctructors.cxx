@@ -85,6 +85,7 @@
 #include "WireCellIface/ISplitNode.h"
 #include "WireCellIface/IStripe.h"
 #include "WireCellIface/IStripeSet.h"
+#include "WireCellIface/ITensorForward.h"
 #include "WireCellIface/ITensorPacker.h"
 #include "WireCellIface/ITensorSetFilter.h"
 #include "WireCellIface/ITensorSetUnpacker.h"
@@ -181,6 +182,7 @@ ISourceNodeBase::~ISourceNodeBase() {}
 ISplitNodeBase::~ISplitNodeBase() {}
 IStripe::~IStripe() {}
 IStripeSet::~IStripeSet() {}
+ITensorForward::~ITensorForward() {}
 ITensorPacker::~ITensorPacker() {}
 ITensorSetFilter::~ITensorSetFilter() {}
 ITensorSetUnpacker::~ITensorSetUnpacker() {}

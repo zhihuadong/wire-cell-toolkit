@@ -216,6 +216,7 @@ void OmnibusSigProc::configure(const WireCell::Configuration& config)
     ss << "internal channel map for tags: gauss:\"" << m_gauss_tag << "\", wiener:\"" << m_wiener_tag
        << "\", frame:\"" << m_frame_tag << "\"\n";
 
+    // fixme: this loop is now available as Aux::plane_channels()
     for (auto face : m_anode->faces()) {
         if (!face) {   // A null face means one sided AnodePlane.
             continue;  // Can be "back" or "front" face.

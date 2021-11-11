@@ -2570,7 +2570,7 @@ void ROI_refinement::MultiPlaneProtection(const int plane, const IAnodePlane::po
                                           const double threshold, const int faceid, const int tick_resolution,
                                           const int wire_resolution, const int nbounds_layers)
 {
-    log->info("ROI_refinement::MultiPlaneProtection:");
+    //log->info("ROI_refinement::MultiPlaneProtection:");
     const double th2 = 500;
     LogDebug("th1: " << threshold << ", th2: " << th2);
     std::set<int> print_chids = {1441, 875};
@@ -2726,7 +2726,7 @@ void ROI_refinement::MultiPlaneROI(const int target_plane, const IAnodePlane::po
                                    ROI_formation &roi_form, const double threshold, const int faceid,
                                    const int tick_resolution, const int wire_resolution, const int nbounds_layers)
 {
-    log->info("ROI_refinement::MultiPlaneROI:");
+    //log->info("ROI_refinement::MultiPlaneROI:");
     const double th2 = 500;
     LogDebug("th1: " << threshold << ", th2: " << th2);
     std::set<int> print_chids = {1441, 875};
@@ -3114,5 +3114,5 @@ void ROI_refinement::ExtendROIs(int plane)
 
 // Local Variables:
 // mode: c++
-// c-basic-offset: 2
+// c-basic-offset: 4
 // End:
