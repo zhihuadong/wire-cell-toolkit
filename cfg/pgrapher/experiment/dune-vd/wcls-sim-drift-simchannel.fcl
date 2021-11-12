@@ -87,9 +87,9 @@ outputs: {
       fileName: "wcsim.root"
 
       outputCommands :   [
-         "drop *"
+         // "drop *"
          // "drop *", "keep recob::Wires_*_*_*"
-         // "keep *_*_*_*"
+         "keep *_*_*_*"
          // "drop *_nfspl1_raw_*",
          // "drop *_nfspl1_threshold_*",
          // "drop *_nfspl1_wiener_*",
