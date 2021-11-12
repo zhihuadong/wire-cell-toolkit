@@ -34,7 +34,8 @@ local channel_per_crm = std.extVar('channel_per_crm');
 local params_maker = import 'pgrapher/experiment/dune-vd/params.jsonnet';
 local fcl_params = {
     response_plane: std.extVar('response_plane')*wc.cm,
-    nticks: std.extVar('nticks')
+    nticks: std.extVar('nticks'),
+    ncrm: std.extVar('ncrm')
 };
 local params = params_maker(fcl_params) {
   lar: super.lar {
@@ -162,23 +163,6 @@ local chsel_pipes = [
   for n in std.range(0, std.length(tools.anodes) - 1)
 ];
 
-
-local spmagnify = [ 
-  g.pnode({
-    type: 'MagnifySink',
-    name: 'spmag%d' % n,
-    data: {
-        output_filename: 'dune-vd-sp-check.root',
-        root_file_mode: 'UPDATE',
-        frames: ['gauss%d' % n ],
-        trace_has_tag: false,
-        anode: wc.tn(tools.anodes[n]), 
-    },
-  }, nin=1, nout=1) for n in std.range(0, std.length(tools.anodes) - 1)];
-
-
-local spmagnify_pipe = [g.pipeline([spmagnify[n]], name='spmagnifypipes%d' % n) for n in anode_iota];
-
 local magoutput = 'dune-vd-sp-check.root';
 local magnify = import 'pgrapher/experiment/pdsp/magnify-sinks.jsonnet';
 local sinks = magnify(tools, magoutput);
@@ -187,7 +171,6 @@ local nfsp_pipes = [
   g.pipeline([
                chsel_pipes[n],
                sp_pipes[n],
-               // spmagnify_pipe[n],
                // sinks.decon_pipe[n],
              ],
              'nfsp_pipe_%d' % n)
@@ -195,9 +178,15 @@ local nfsp_pipes = [
 ];
 
 
+assert (fcl_params.ncrm == 36 || fcl_params.ncrm == 112) : "only ncrm == 36 or 112 are configured";
 local f = import 'pgrapher/experiment/dune-vd/funcs.jsonnet';
 local outtags = ['gauss%d' % n for n in std.range(0, std.length(tools.anodes) - 1)];
-local fanpipe = f.multifanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 6, 'sn_mag_nf', outtags);
+// local fanpipe = f.multifanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 6, 'sn_mag_nf', outtags);
+local fanpipe =
+    if fcl_params.ncrm == 36
+    then f.multifanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', [1,6], [6,6], [1,6], [6,6], 'sn_mag_nf', outtags)
+    else if fcl_params.ncrm == 112
+    then f.multifanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', [1,8,16], [8,2,7], [1,8,16], [8,2,7], 'sn_mag_nf', outtags);
 
 local retagger = g.pnode({
   type: 'Retagger',
