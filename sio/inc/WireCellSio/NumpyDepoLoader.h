@@ -15,6 +15,7 @@
 
 #include "WireCellIface/IDepoSource.h"
 #include "WireCellIface/IConfigurable.h"
+#include "WireCellAux/Logger.h"
 
 #include <deque>
 
@@ -22,8 +23,10 @@ namespace WireCell {
     namespace Sio {
 
         // This loader is the counterpart to NumpyDepoSaver.
-        class NumpyDepoLoader : public WireCell::IDepoSource, public WireCell::IConfigurable {
-           public:
+        class NumpyDepoLoader : public WireCell::Aux::Logger,
+                                public WireCell::IDepoSource,
+                                public WireCell::IConfigurable {
+          public:
             NumpyDepoLoader();
             virtual ~NumpyDepoLoader();
 
@@ -36,7 +39,7 @@ namespace WireCell {
             virtual WireCell::Configuration default_configuration() const;
             virtual void configure(const WireCell::Configuration& config);
 
-           private:
+          protected:
             // try to load next array
             bool next();
 

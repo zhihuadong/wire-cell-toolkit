@@ -2,15 +2,18 @@
 
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/Exceptions.h"
+#include "WireCellAux/FrameTools.h"
 #include "WireCellIface/SimpleFrame.h"
 
-WIRECELL_FACTORY(FrameFanout, WireCell::Gen::FrameFanout, WireCell::IFrameFanout, WireCell::IConfigurable)
+WIRECELL_FACTORY(FrameFanout, WireCell::Gen::FrameFanout,
+                 WireCell::INamed,
+                 WireCell::IFrameFanout, WireCell::IConfigurable)
 
 using namespace WireCell;
 
 Gen::FrameFanout::FrameFanout(size_t multiplicity)
-  : m_multiplicity(multiplicity)
-  , log(Log::logger("glue"))
+    : Aux::Logger("FrameFanout", "glue")
+    , m_multiplicity(multiplicity)
 {
 }
 Gen::FrameFanout::~FrameFanout() {}
@@ -20,11 +23,29 @@ WireCell::Configuration Gen::FrameFanout::default_configuration() const
     Configuration cfg;
     // How many output ports
     cfg["multiplicity"] = (int) m_multiplicity;
+    // If "tag_rules" is not given or empty then the frame is fanned
+    // out in a trivial manner.
+    // 
     // Tag rules are an array, one element per output port.  Each
     // element is an object keyed with "frame" or "trace".  Each of
     // their values are an object keyed by a regular expression
     // (regex) and with values that are a single tag or an array of
-    // tags.  See util/test_tagrules for examples.
+    // tags.
+    //
+    // The frame traces are forwarded in any case, tag filtering only
+    // affects tags (and their trace indices in the case of trace
+    // tags).
+    //
+    // Each frame tag found in the input is sent through the rules and
+    // the resulting output tags are added to the set of frame tags of
+    // the output.
+    //
+    // Trace tag work similarly.  Each trace tag is sent through the
+    // rules and tags that the trace rule returns will be placed in
+    // the output frame along with the trace index vector of the input
+    // trace tag. 
+    // 
+    // See util/test_tagrules for examples.
     cfg["tag_rules"] = Json::arrayValue;
     return cfg;
 }
@@ -36,7 +57,15 @@ void Gen::FrameFanout::configure(const WireCell::Configuration& cfg)
     }
     m_multiplicity = m;
 
-    m_ft.configure(cfg["tag_rules"]);
+    auto tr = cfg["tag_rules"];
+    if (tr.isNull() or tr.empty()) {
+        m_trivial = true;
+        log->debug("trivial {}-way fanout", m_multiplicity);
+        return;
+    }
+    m_trivial = false;
+    m_ft.configure(tr);
+    log->debug("rule based {}-way fanout", m_multiplicity);
 }
 
 std::vector<std::string> Gen::FrameFanout::output_types()
@@ -50,31 +79,37 @@ bool Gen::FrameFanout::operator()(const input_pointer& in, output_vector& outv)
 {
     outv.resize(m_multiplicity);
 
-    std::stringstream taginfo;
-    taginfo << "FrameFanout: #" << m_count << ": ";
+    std::stringstream info;
+    info << "call=" << m_count << ": ";
     ++m_count;
 
     if (!in) {  //  pass on EOS
         for (size_t ind = 0; ind < m_multiplicity; ++ind) {
             outv[ind] = in;
         }
-        taginfo << "see EOS";
-        log->debug(taginfo.str());
+        info << "see EOS";
+        log->debug(info.str());
         return true;
     }
+
+    if (m_trivial) {
+        info << "input->output x"<<m_multiplicity<<": " << Aux::taginfo(in);
+        log->debug(info.str());
+
+        for (size_t ind = 0; ind < m_multiplicity; ++ind) {
+            outv[ind] = in;
+        }
+        return true;
+    }
+
+    // O.w. we are rule driven.
+
+    info << "input: " << Aux::taginfo(in) << " ";
 
     auto fintags = in->frame_tags();
     // Add empty tag to allow rules to create an output tag even if none exist.
     // No equivalent should be made for trace tags.
     fintags.push_back("");
-
-    taginfo << "found input frame tags:[";
-    std::string comma="";
-    for (auto tag : fintags) {
-        taginfo << comma << "\"" << tag << "\"";
-        comma=",";
-    }
-    taginfo << "] traces: " << in->traces()->size() << " --> ";
 
     for (size_t ind = 0; ind < m_multiplicity; ++ind) {
         // Basic frame stays the same.
@@ -83,14 +118,9 @@ bool Gen::FrameFanout::operator()(const input_pointer& in, output_vector& outv)
         // Transform any frame tags based on a per output port ruleset
         auto fouttags = m_ft.transform(ind, "frame", fintags);
 
-        taginfo << " out#" << ind << ": frame tags:[";
-        comma = "";
         for (auto ftag : fouttags) {
             sfout->tag_frame(ftag);
-            taginfo << comma << "\"" << ftag << "\"";
-            comma = ",";
         }
-        taginfo << "], trace tags mapping:";
 
         for (auto inttag : in->trace_tags()) {
             tagrules::tagset_t touttags = m_ft.transform(ind, "trace", inttag);
@@ -100,20 +130,17 @@ bool Gen::FrameFanout::operator()(const input_pointer& in, output_vector& outv)
             const auto& traces = in->tagged_traces(inttag);
             const auto& summary = in->trace_summary(inttag);
 
-            taginfo << " (\"" << inttag << "\") -> [";
-            comma="";
             for (auto otag : touttags) {
                 sfout->tag_traces(otag, traces, summary);
-                taginfo << comma << "\"" << otag << "\"";
-                comma=",";
             }
-            taginfo << "]";
         };
 
-        outv[ind] = IFrame::pointer(sfout);
+        auto out = IFrame::pointer(sfout);
+        info << "output " << ind << ": " << Aux::taginfo(out) << " ";
+        outv[ind] = out;
     }
 
-    log->debug(taginfo.str());
+    log->debug(info.str());
 
     return true;
 }

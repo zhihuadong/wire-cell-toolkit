@@ -3,13 +3,14 @@
 
 #include "WireCellIface/IDepoSetFanout.h"
 #include "WireCellIface/IConfigurable.h"
-#include "WireCellUtil/Logging.h"
+#include "WireCellAux/Logger.h"
 
 namespace WireCell {
     namespace Gen {
 
         // Fan out 1 deposet to N set at construction or configuration time.
-        class DepoSetFanout : public IDepoSetFanout, public IConfigurable {
+        class DepoSetFanout : public Aux::Logger,
+                              public IDepoSetFanout, public IConfigurable {
            public:
             DepoSetFanout(size_t multiplicity = 0);
             virtual ~DepoSetFanout();
@@ -27,8 +28,6 @@ namespace WireCell {
            private:
             size_t m_multiplicity;
             size_t m_count{0};
-
-            Log::logptr_t log;
 
             
         };

@@ -4,7 +4,6 @@
 #include "WireCellIface/IPlaneImpactResponse.h"
 #include "WireCellGen/BinnedDiffusion_transform.h"
 #include "WireCellUtil/Array.h"
-#include "WireCellUtil/Logging.h"
 
 #include <Eigen/Sparse>
 
@@ -31,10 +30,10 @@ namespace WireCell {
             int m_start_tick;
             int m_end_tick;
 
-            Log::logptr_t log;
-
            public:
-            ImpactTransform(IPlaneImpactResponse::pointer pir, BinnedDiffusion_transform& bd);
+            ImpactTransform(IPlaneImpactResponse::pointer pir,
+                            BinnedDiffusion_transform& bd);
+
             virtual ~ImpactTransform();
 
             /// Return the wire's waveform.  If the response functions

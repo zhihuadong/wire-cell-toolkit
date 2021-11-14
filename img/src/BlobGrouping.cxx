@@ -6,13 +6,18 @@
 
 #include <boost/graph/connected_components.hpp>
 
-WIRECELL_FACTORY(BlobGrouping, WireCell::Img::BlobGrouping, WireCell::IClusterFilter, WireCell::IConfigurable)
+WIRECELL_FACTORY(BlobGrouping, WireCell::Img::BlobGrouping,
+                 WireCell::INamed,
+                 WireCell::IClusterFilter, WireCell::IConfigurable)
 
 using namespace WireCell;
 
 typedef std::unordered_map<WirePlaneLayer_t, cluster_indexed_graph_t> layer_graphs_t;
 
-Img::BlobGrouping::BlobGrouping() {}
+Img::BlobGrouping::BlobGrouping()
+    : Aux::Logger("BlobGrouping", "img")
+{
+}
 
 Img::BlobGrouping::~BlobGrouping() {}
 
@@ -86,6 +91,7 @@ static void fill_slice(cluster_indexed_graph_t& grind, ISlice::pointer islice)
 bool Img::BlobGrouping::operator()(const input_pointer& in, output_pointer& out)
 {
     if (!in) {
+        log->debug("EOS");
         out = nullptr;
         return true;
     }
@@ -95,6 +101,9 @@ bool Img::BlobGrouping::operator()(const input_pointer& in, output_pointer& out)
     for (auto islice : oftype<ISlice::pointer>(grind)) {
         fill_slice(grind, islice);
     }
+
+    log->debug("have {} graph nodes",
+               boost::num_vertices(grind.graph()));
 
     out = std::make_shared<SimpleCluster>(grind.graph());
     return true;

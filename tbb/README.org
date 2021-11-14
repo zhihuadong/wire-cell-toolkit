@@ -1,20 +1,120 @@
 #+TITLE: Wire Cell Interface to TBB flow graph
 
+Note, TBB docs seem to be under constant churn so expect links here to become dead.
+
 * Nodes
 
-TBB [[https://www.threadingbuildingblocks.org/docs/help/tbb_userguide/Predifined_Node_Types.htm#predefined_node_types][node types]]:
+[[https://spec.oneapi.io/versions/latest/elements/oneTBB/source/flow_graph.html#nodes][TBB nodes used]]:
 
-- =source_node= :: ( [[https://www.threadingbuildingblocks.org/docs/help/reference/flow_graph/source_node_cls.htm][ref]] [[https://www.threadingbuildingblocks.org/docs/help/tbb_userguide/use_source_node.htm][ex]] ) takes body object, activation
-- =function_node= :: ( [[https://www.threadingbuildingblocks.org/docs/help/reference/flow_graph/func_node_cls.htm][ref]] [[https://www.threadingbuildingblocks.org/docs/help/tbb_userguide/Nodes.htm][ex]] ) takes body object, concurrency limit, buffered input by default.
-- =multifunction_node= :: ( [[https://www.threadingbuildingblocks.org/docs/help/reference/flow_graph/multifunc_node_cls.htm][ref]] ) templated, =typedef= on in/out types.  Out is a =tbb::flow::tuple= which is a =std::tuple=, takes a body which is given a collection of output ports into which it may put actual output.
-- =composite_node= :: ( [[https://www.threadingbuildingblocks.org/docs/help/reference/flow_graph/composite_node_cls.htm][ref]] ) N-to-M external ports encapsulating a sub-graph of internal nodes
-- =join_node= :: ( [[https://www.threadingbuildingblocks.org/docs/help/reference/flow_graph/join_node_cls.htm][ref]] ) queued input (by default), sends tuple
+- =source_node= :: takes body object, activation
+- =function_node= :: takes body object, concurrency limit, buffered input by default.
+- =multifunction_node= ::  templated, =typedef= on in/out types.  Out is a =tbb::flow::tuple= which is a =std::tuple=, takes a body which is given a collection of output ports into which it may put actual output.
+- =composite_node= ::  N-to-M external ports encapsulating a sub-graph of internal nodes
+- =join_node= :: queued input (by default), sends tuple
+- ~split_node~ :: part of fanout
 
-Every TBB Node has 
+* Policy
 
-- number and types of input ports
-- number and types of output ports
+TBB ~flow_graph~ nodes follow policies as to their [[https://software.intel.com/content/www/us/en/develop/documentation/tbb-documentation/top/intel-threading-building-blocks-developer-reference/flow-graph/overview/fowarding-buffering-and-reception-policy.html][fowarding, buffering and reception]].
 
-TBB Body has
+Forwarding:
 
-- calling signature
+- broadcast-push :: the message will be pushed to as many successors
+  as will accept the message. If no successor accepts the message, the
+  fate of the message depends on the output *buffering* policy of the
+  node.
+
+- single-push :: if the message is accepted by a successor, no further
+  push of that message will occur.  This policy is unique to
+  buffer_node, queue_node, priority_queue_node and sequencer_node. If
+  no successor accepts the message, it will be retained for a possible
+  future push or pull.
+
+Buffering:
+
+- buffering :: if no successor accepts a message, it is stored so
+  subsequent node processing can use it. Nodes that buffer outputs
+  have "yes" in the column "try_get()?" below.
+
+- discarding :: if no successor accepts a message, it is discarded and
+  has no further effect on graph execution. Nodes that discard outputs
+  have "no" in the column "try_get()?" below.
+
+Reception
+
+- accept :: the node will deal with as many messages as are pushed to
+  it.
+
+- switch :: the message is not accepted, and the the state of the edge
+  will change from push to pull mode.
+
+There is then a table that summarizes the policies for each node.
+
+* Understanding the policy
+
+How to make sense of the policies, in part, requires to understand the
+TBB [[https://software.intel.com/content/www/us/en/develop/documentation/tbb-documentation/top/intel-threading-building-blocks-developer-guide/parallelizing-data-flow-and-dependence-graphs/basic-flow-graph-concepts/message-passing-protocol.html][Message Passing Protocol]].  The link explains well the idea of an
+edge being in either "push" or "pull" mode.  When in "push" the sender
+tries to "put" and if that fails the mode is set to "pull".  When in
+"pull" the receiver tries to "get" and if that fails the mode is set
+to "push".
+
+But, a change of mode is subject to the *buffering policy*.  If a
+preceding node with:
+
+- forwarding = broadcast-push
+- buffering = discarding (~try_get()~ = no)
+
+shares an edge with a successor node  with
+
+- reception = switch
+
+data may be dropped.  This will occur if the *preceding node* is any of:
+
+- ~function_node~
+- ~multifunction_node~
+- ~split_node~
+
+and the *succeeding node* is any of
+
+- ~function_node<rejecting>~
+- ~multifunction_node<rejecting>~
+
+Where the ~<rejecting>~ is a non-default template argument for function
+nodes.  The default ~<queueing>~ argument allows the function nodes have
+[[https://software.intel.com/content/www/us/en/develop/documentation/tbb-documentation/top/intel-threading-building-blocks-developer-reference/flow-graph/functional-nodes/functionnode-template-class.html][infinite input FIFO buffer]].  A consequence of using ~<queueing>~ is that
+RAM usage may grow without bound.
+
+* Out-of-order
+
+** Concurrency
+ 
+The [[https://spec.oneapi.io/versions/latest/elements/oneTBB/source/flow_graph/split_node_cls.html][TBB ~split_node~ ]] is used in part to execute WCT's ~IFanout~ nodes.
+It trails a ~function_node~ with a WCT body which is responsible to
+produce a tuple that is passed to the ~split_node~ to send each tuple
+element out a corresponding port.  The ~split_node~ has *discarding* and
+*broadcast-push* policy and it also has *unlimited concurrency*.  This
+concurrency means that ~split_node~ is a source of potentially
+out-of-order (OOO) data.  To correct that, following each ~split_node~
+output port is a ~sequencer_node~ which reorders based on a sequence
+number added by the original ~function_node~ calling the WCT fanout
+function body.  Because this seqno violates the WCT data model, a
+final ~function_node~ follows each ~sequencer_node~ which strips off the
+seqno.  So, each N-way fanout is really a 2*(N+1) subgraph.
+
+** Buffering
+
+Despite the TBB documentation saying ~function_node~ has a FIFO queue at
+its input, it behaves as if it has a unordered buffer.  This has been
+[[https://community.intel.com/t5/Intel-oneAPI-Threading-Building/Nondeterministic-processing-order-for-function-node-with/m-p/1164061][noticed by others and awaiting response by Intel]].  After fixing the
+above concurrency-related OOO, this can be observed in a WCT graph
+between two ~function_node~ of serial concurrency.
+
+The trial solution is to bolt on a ~sequencer_node~ after ~function_node~
+and similar.  This requires a full redefining of the data type used at
+the TBB node level.  Previously it shared the same type as with WCT
+nodes (~boost::any~) and now that is combined with a sequence number
+into a ~std::pair<size_t, boost::any>~.  Node bodies strip and discard
+any input seqno prior to passing the ~any~ for WCT node input.  Node
+bodies also maintain a seqno, incrementing on each call, and combined
+with WCT node output for TBB level output.

@@ -10,17 +10,19 @@
 
 #include <iostream>
 
-WIRECELL_FACTORY(AddNoise, WireCell::Gen::AddNoise, WireCell::IFrameFilter, WireCell::IConfigurable)
+WIRECELL_FACTORY(AddNoise, WireCell::Gen::AddNoise,
+                 WireCell::INamed,
+                 WireCell::IFrameFilter, WireCell::IConfigurable)
 
 using namespace std;
 using namespace WireCell;
 
 Gen::AddNoise::AddNoise(const std::string& model, const std::string& rng)
-  : m_model_tn(model)
+  : Aux::Logger("AddNoise", "gen")
+  , m_model_tn(model)
   , m_rng_tn(rng)
   , m_nsamples(9600)
   , m_rep_percent(0.02)  // replace 2% at a time
-  , log(Log::logger("sim"))
 {
 }
 
@@ -48,13 +50,15 @@ void Gen::AddNoise::configure(const WireCell::Configuration& cfg)
     m_nsamples = get<int>(cfg, "nsamples", m_nsamples);
     m_rep_percent = get<double>(cfg, "replacement_percentage", m_rep_percent);
 
-    log->debug("AddNoise: using IRandom: \"{}\", IChannelSpectrum: \"{}\"", m_rng_tn, m_model_tn);
+    log->debug("using IRandom: \"{}\", IChannelSpectrum: \"{}\"", m_rng_tn, m_model_tn);
 }
 
 bool Gen::AddNoise::operator()(const input_pointer& inframe, output_pointer& outframe)
 {
     if (!inframe) {
         outframe = nullptr;
+        log->debug("EOS at call={}", m_count);
+        ++m_count;
         return true;
     }
 
@@ -70,5 +74,8 @@ bool Gen::AddNoise::operator()(const input_pointer& inframe, output_pointer& out
         outtraces.push_back(trace);
     }
     outframe = make_shared<SimpleFrame>(inframe->ident(), inframe->time(), outtraces, inframe->tick());
+    log->debug("call={} frame={} {} traces",
+               m_count, inframe->ident(), outtraces.size());
+    ++m_count;
     return true;
 }

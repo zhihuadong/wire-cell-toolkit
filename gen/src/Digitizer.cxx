@@ -10,20 +10,24 @@
 #include "WireCellUtil/NamedFactory.h"
 #include <sstream>
 
-WIRECELL_FACTORY(Digitizer, WireCell::Gen::Digitizer, WireCell::IFrameFilter, WireCell::IConfigurable)
+WIRECELL_FACTORY(Digitizer, WireCell::Gen::Digitizer,
+                 WireCell::INamed,
+                 WireCell::IFrameFilter, WireCell::IConfigurable)
 
 using namespace std;
 using namespace WireCell;
 
-Gen::Digitizer::Digitizer(const std::string& anode, int resolution, double gain, std::vector<double> fullscale,
+Gen::Digitizer::Digitizer(const std::string& anode,
+                          int resolution, double gain,
+                          std::vector<double> fullscale,
                           std::vector<double> baselines)
-  : m_anode_tn(anode)
+  : Aux::Logger("Digitizer", "gen")
+  , m_anode_tn(anode)
   , m_resolution(resolution)
   , m_gain(gain)
   , m_fullscale(fullscale)
   , m_baselines(baselines)
   , m_frame_tag("")
-  , log(Log::logger("sim"))
 {
 }
 
@@ -64,8 +68,7 @@ void Gen::Digitizer::configure(const Configuration& cfg)
     m_frame_tag = get(cfg, "frame_tag", m_frame_tag);
 
     std::stringstream ss;
-    ss << "Gen::Digitizer: "
-       << "tag=\"" << m_frame_tag << "\", "
+    ss << "tag=\"" << m_frame_tag << "\", "
        << "resolution=" << m_resolution << " bits, "
        << "maxvalue=" << (1 << m_resolution) << " counts, "
        << "gain=" << m_gain << ", "
@@ -92,19 +95,20 @@ double Gen::Digitizer::digitize(double voltage)
 bool Gen::Digitizer::operator()(const input_pointer& vframe, output_pointer& adcframe)
 {
     if (!vframe) {  // EOS
-        log->debug("Gen::Digitizer: anode {}: see EOS", m_anode->ident());
+        log->debug("see EOS at call={}", m_count);
         adcframe = nullptr;
+        ++m_count;
         return true;
     }
 
     // fixme: maybe make this honor a tag
     auto vtraces = Aux::untagged_traces(vframe);
     if (vtraces.empty()) {
-        log->error("Gen::Digitizer: no traces in input frame {}", vframe->ident());
+        log->error("no traces in input frame {} at call={}",
+                   vframe->ident(), m_count);
+        ++m_count;
         return false;
     }
-    log->debug("Gen::Digitizer: traces: {} in input frame {} to frame tag \"{}\"",
-               vtraces.size(), vframe->ident(), m_frame_tag);
 
     // Get extent in channel and tbin
     auto channels = Aux::channels(vtraces);
@@ -127,7 +131,7 @@ bool Gen::Digitizer::operator()(const input_pointer& vframe, output_pointer& adc
         int ch = channels[irow];
         WirePlaneId wpid = m_anode->resolve(ch);
         if (!wpid.valid()) {
-            log->warn("Gen::Digitizer, got invalid WPID for channel {}: {}, skipping", ch, wpid);
+            log->warn("got invalid WPID for channel {}: {}, skipping", ch, wpid);
             continue;
         }
         const float baseline = m_baselines[wpid.index()];
@@ -146,5 +150,9 @@ bool Gen::Digitizer::operator()(const input_pointer& vframe, output_pointer& adc
     }
     adcframe = sframe;
 
+    log->debug("call={} traces={} frame={} outtag=\"{}\"",
+               m_count,
+               adctraces.size(), vframe->ident(), m_frame_tag);
+    ++m_count;
     return true;
 }

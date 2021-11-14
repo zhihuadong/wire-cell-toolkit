@@ -6,6 +6,9 @@
 
     Numpy is row-major.
 
+    This uses cnpy.  For alternative that uses custard/pigenc, see
+    sio/FrameFile{Sink,Source}.
+
  */
 
 #ifndef WIRECELL_UTIL_NUMPYHELPER

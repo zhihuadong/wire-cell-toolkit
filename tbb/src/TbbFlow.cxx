@@ -6,13 +6,14 @@
 
 #include <string>
 
-WIRECELL_FACTORY(TbbFlow, WireCellTbb::TbbFlow, WireCell::IApplication, WireCell::IConfigurable)
+WIRECELL_FACTORY(TbbFlow, WireCellTbb::TbbFlow,
+                 WireCell::IApplication, WireCell::IConfigurable)
 
 using namespace WireCell;
 using namespace WireCellTbb;
 
 TbbFlow::TbbFlow()
-  : l(Log::logger("tbb"))
+    : Aux::Logger("TbbFlow", "tbb")
 {
 }
 
@@ -34,14 +35,14 @@ void TbbFlow::configure(const Configuration& cfg)
 
     m_dfpgraph.configure(cfg["edges"]);
 
-    l->info("TbbFlow::connect");
+    log->debug("connecting graph with {} edges", cfg["edges"].size());
 
     for (auto thc : m_dfpgraph.connections()) {
         auto tail_tn = get<0>(thc);
         auto head_tn = get<1>(thc);
         auto conn = get<2>(thc);
 
-        l->debug("TbbFlow: Connect: {}:{} ( {} -> {} ) {}:{}", tail_tn.type, tail_tn.name, conn.tail, conn.head,
+        log->debug("connect: {}:{} ( {} -> {} ) {}:{}", tail_tn.type, tail_tn.name, conn.tail, conn.head,
                  head_tn.type, head_tn.name);
 
         INode::pointer tail_node = WireCell::Factory::lookup<INode>(tail_tn.type, tail_tn.name);
@@ -54,10 +55,10 @@ void TbbFlow::configure(const Configuration& cfg)
 void TbbFlow::execute()
 {
     if (!m_dfp) {
-        l->critical("TbbFlow: not configured");
+        log->critical("TbbFlow: not configured");
         return;
     }
 
-    l->info("TbbFlow: run: ");
+    log->debug("TbbFlow: run: ");
     m_dfp->run();
 }

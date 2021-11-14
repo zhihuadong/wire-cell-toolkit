@@ -1,19 +1,25 @@
 #include "WireCellImg/SumSlice.h"
 #include "WireCellImg/ImgData.h"
 #include "WireCellUtil/NamedFactory.h"
+#include "WireCellUtil/Logging.h"
 
 #include "WireCellAux/FrameTools.h"
 
-WIRECELL_FACTORY(SumSlicer, WireCell::Img::SumSlicer, WireCell::IFrameSlicer, WireCell::IConfigurable)
+WIRECELL_FACTORY(SumSlicer, WireCell::Img::SumSlicer,
+                 WireCell::INamed,
+                 WireCell::IFrameSlicer, WireCell::IConfigurable)
 
-WIRECELL_FACTORY(SumSlices, WireCell::Img::SumSlices, WireCell::IFrameSlices, WireCell::IConfigurable)
+WIRECELL_FACTORY(SumSlices, WireCell::Img::SumSlices,
+                 WireCell::INamed,
+                 WireCell::IFrameSlices, WireCell::IConfigurable)
 
 using namespace std;
 using namespace WireCell;
 
 Img::SumSliceBase::SumSliceBase()
-  : m_tick_span(4)
-  , m_tag("")
+    : Aux::Logger("SumSlice", "img")
+    , m_tick_span(4)
+    , m_tag("")
 {
 }
 Img::SumSliceBase::~SumSliceBase() {}
@@ -95,6 +101,7 @@ bool Img::SumSlicer::operator()(const input_pointer& in, output_pointer& out)
 bool Img::SumSlices::operator()(const input_pointer& in, output_queue& slices)
 {
     if (!in) {
+        log->debug("EOS");
         slices.push_back(nullptr);
         return true;  // eos
     }
@@ -108,13 +115,17 @@ bool Img::SumSlices::operator()(const input_pointer& in, output_queue& slices)
         auto s = sit.second;
 
         /// debug
-        double qtot = 0;
-        for (const auto& a : s->activity()) {
-            qtot += a.second;
-        }
+        // double qtot = 0;
+        // for (const auto& a : s->activity()) {
+        //     qtot += a.second;
+        // }
 
         slices.push_back(ISlice::pointer(s));
     }
 
+    log->debug("frame={}, make {} slices in [{},{}] from {}",
+               in->ident(), slices.size(),
+               slices.front()->ident(), slices.back()->ident(),
+               svcmap.size());
     return true;
 }

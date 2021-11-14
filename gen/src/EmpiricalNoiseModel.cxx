@@ -11,7 +11,10 @@
 
 #include <iostream>  // debug
 
-WIRECELL_FACTORY(EmpiricalNoiseModel, WireCell::Gen::EmpiricalNoiseModel, WireCell::IChannelSpectrum,
+WIRECELL_FACTORY(EmpiricalNoiseModel,
+                 WireCell::Gen::EmpiricalNoiseModel,
+                 WireCell::INamed,
+                 WireCell::IChannelSpectrum,
                  WireCell::IConfigurable)
 
 using namespace WireCell;
@@ -22,7 +25,8 @@ Gen::EmpiricalNoiseModel::EmpiricalNoiseModel(const std::string& spectra_file, c
                                               // const double gain_scale,
                                               // const double freq_scale,
                                               const std::string anode_tn, const std::string chanstat_tn)
-  : m_spectra_file(spectra_file)
+  : Aux::Logger("EmpericalNoiseModel", "gen")
+  , m_spectra_file(spectra_file)
   , m_nsamples(nsamples)
   , m_period(period)
   , m_wlres(wire_length_scale)
@@ -32,7 +36,6 @@ Gen::EmpiricalNoiseModel::EmpiricalNoiseModel(const std::string& spectra_file, c
   , m_anode_tn(anode_tn)
   , m_chanstat_tn(chanstat_tn)
   , m_amp_cache(4)
-  , log(Log::logger("sim"))
 {
     m_fft_length = fft_best_length(m_nsamples);
     //  m_fft_length = m_nsamples;
@@ -154,7 +157,7 @@ void Gen::EmpiricalNoiseModel::configure(const WireCell::Configuration& cfg)
         m_chanstat = Factory::find_tn<IChannelStatus>(m_chanstat_tn);
     }
 
-    log->debug("EmpiricalNoiseModel: using anode {}, chanstat {}", m_anode_tn, m_chanstat_tn);
+    log->debug("using anode {}, chanstat {}", m_anode_tn, m_chanstat_tn);
 
     m_spectra_file = get(cfg, "spectra_file", m_spectra_file);
 

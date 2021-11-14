@@ -42,6 +42,8 @@ namespace std {
     struct make_index_sequence<0, Is...> : index_sequence<Is...> {
     };
 }  // namespace std
+#else
+#include <utility>
 #endif  // assume C++14
 
 namespace WireCell {

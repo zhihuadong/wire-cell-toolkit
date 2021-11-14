@@ -1,0 +1,6 @@
+#+title: WCT usages of libtorch 
+
+We call this package "pytorch" but really it is C++.
+
+It holds components that depend on libtorch.
+

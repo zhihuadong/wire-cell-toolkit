@@ -60,7 +60,10 @@ std::vector<torch::IValue> Pytorch::from_itensor(const ITensorSet::pointer &inpu
         auto ten = torch::from_blob((float *) iten->data(), {(long) iten->shape()[0], (long) iten->shape()[1],
                                                              (long) iten->shape()[2], (long) iten->shape()[3]});
         if (gpu) {
-            ret.push_back(ten.cuda());
+            ten = ten.to(torch::Device(torch::kCUDA, 0));
+            assert(ten.device().type() == torch::kCUDA);
+            ret.push_back(ten);
+            //ret.push_back(ten.cuda());
         }
         else {
             ret.push_back(ten);

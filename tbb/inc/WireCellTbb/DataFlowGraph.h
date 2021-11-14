@@ -3,7 +3,7 @@
 
 #include "WireCellIface/IDataFlowGraph.h"
 #include "WireCellIface/IConfigurable.h"
-#include "WireCellUtil/Logging.h"
+#include "WireCellAux/Logger.h"
 #include "WireCellTbb/NodeWrapper.h"
 #include "WireCellTbb/WrapperFactory.h"
 
@@ -12,8 +12,11 @@
 
 namespace WireCellTbb {
 
-    class DataFlowGraph : public WireCell::IDataFlowGraph, public WireCell::IConfigurable {
-       public:
+    class DataFlowGraph : public WireCell::Aux::Logger,
+                          public WireCell::IDataFlowGraph,
+                          public WireCell::IConfigurable
+    {
+      public:
         DataFlowGraph(int max_threads = 0);
         virtual ~DataFlowGraph();
 
@@ -28,10 +31,10 @@ namespace WireCellTbb {
         virtual void configure(const WireCell::Configuration& config);
         virtual WireCell::Configuration default_configuration() const;
 
-       private:
+      private:
         tbb::flow::graph m_graph;    // here lives the TBB graph
         WrapperFactory m_factory;
-        WireCell::Log::logptr_t l;
+
         int m_thread_limit{0};  // 0 means no limit
     };
 

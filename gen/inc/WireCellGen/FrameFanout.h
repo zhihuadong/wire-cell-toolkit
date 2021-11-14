@@ -4,13 +4,18 @@
 #include "WireCellIface/IFrameFanout.h"
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellUtil/TagRules.h"
-#include "WireCellUtil/Logging.h"
+#include "WireCellAux/Logger.h"
 
 namespace WireCell {
     namespace Gen {
 
-        // Fan out 1 frame to N set at construction or configuration time.
-        class FrameFanout : public IFrameFanout, public IConfigurable {
+        /// Fan out 1 frame to N set at construction or configuration time.
+        ///
+        /// If given no rules it works in a trivial manner to simply
+        /// forward the input frame to its outputs.  If rules are
+        /// given then the fanout applies tag filtering and rewriting.
+        class FrameFanout : public Aux::Logger,
+                            public IFrameFanout, public IConfigurable {
            public:
             FrameFanout(size_t multiplicity = 0);
             virtual ~FrameFanout();
@@ -29,8 +34,9 @@ namespace WireCell {
             size_t m_multiplicity;
             size_t m_count{0};
 
+            bool m_trivial{false};
             tagrules::Context m_ft;
-            Log::logptr_t log;
+
         };
     }  // namespace Gen
 }  // namespace WireCell

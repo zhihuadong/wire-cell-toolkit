@@ -14,6 +14,7 @@
 #include "spdlog/spdlog.h"
 #include "spdlog/fmt/ostr.h"
 
+#include <memory>
 #include <string>
 
 namespace WireCell {
@@ -23,13 +24,11 @@ namespace WireCell {
         typedef std::shared_ptr<spdlog::logger> logptr_t;
         typedef std::shared_ptr<spdlog::sinks::sink> sinkptr_t;
 
-        // WCT maintains a collection of sinks associated with all
-        // loggers created through this API.  No sinks are added by
-        // default.  The WCT application should add some if output is
-        // wanted.  Note, all loggers made from here go to ALL sinks
-        // added.  If unique loggers->sinks mapping is needed,
-        // directly use calls in the spdlog:: namespace.
-        void add_sink(sinkptr_t sink, std::string level = "");
+        // WCT maintains a shared collection of sinks associated with
+        // its default loggers created through this API.  No sinks are
+        // added by default.  The WCT application should add some if
+        // output is wanted.  All sinks added will be applied to any
+        // subsequently made loggers by logger() below.
 
         // Add a log file sink with optional level.
         void add_file(std::string filename, std::string level = "");
@@ -40,20 +39,22 @@ namespace WireCell {
         // Add a standard err console sink with optional level.
         void add_stderr(bool color = true, std::string level = "");
 
-        // Get/make a logger by name.  If a logger by the name is not
-        // yet existing then it will be created and attached to all
-        // sinks that have been added prior to the call.  WCT
+        // Return a logger by name, making it if it does not yet
+        // exist.  If shared_sinks is true, the logger will be
+        // attached to a shared set of sinks created by prior calls to
+        // the above add_*() functions.  If false then copies of the
+        // previously added sinks will be attached (which will be
+        // needed if custom patterns will be set on the logger).  WCT
         // components are encouraged to may make unique loggers with
         // some short name related to the component type/name and hold
         // on to them for use in their code.
-        logptr_t logger(std::string name);
+        logptr_t logger(std::string name, bool share_sinks=true);
 
         // Set log level.  If which is empty the set level of logs.
         // Otherwise, set the given logger.
         void set_level(std::string level, std::string which = "");
 
-        // Set logging pattern.  If which is empty then
-        // set pattern of all sinks.  Otherwise, set the given logger.
+        // Set logging pattern the default or given logger's sinks.
         void set_pattern(std::string pattern, std::string which = "");
     }  // namespace Log
 

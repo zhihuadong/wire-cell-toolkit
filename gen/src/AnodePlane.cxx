@@ -16,15 +16,17 @@
 
 #include <string>
 
-WIRECELL_FACTORY(AnodePlane, WireCell::Gen::AnodePlane, WireCell::IAnodePlane, WireCell::IConfigurable)
+WIRECELL_FACTORY(AnodePlane, WireCell::Gen::AnodePlane,
+                 WireCell::INamed,
+                 WireCell::IAnodePlane, WireCell::IConfigurable)
 
 using namespace WireCell;
 using namespace std;
 using WireCell::String::format;
 
 Gen::AnodePlane::AnodePlane()
-  : m_ident(0)
-  , l(Log::logger("geom"))
+  : Aux::Logger("AnodePlane", "geom")
+  , m_ident(0)
 {
 }
 
@@ -104,20 +106,20 @@ void Gen::AnodePlane::configure(const WireCell::Configuration& cfg)
 
     // check for obsolete config params:
     if (!cfg["wires"].isNull()) {
-        l->warn("AnodePlane configuration is obsolete.");
-        l->warn("Use \"wire_store\" to name components instead of directly giving file names");
-        l->warn("This job will likely throw an exception next");
+        log->warn("AnodePlane configuration \"wires\" is obsolete.");
+        log->warn("Use \"wire_store\" to name components instead of directly giving file names");
+        log->warn("This job will likely throw an exception next");
     }
 
     // AnodePlane used to have the mistake of tight coupling with
     // field response functions.
     if (!cfg["fields"].isNull() or !cfg["field_response"].isNull()) {
-        l->warn("AnodePlane does not require any field response functions.");
+        log->warn("AnodePlane does not require any field response functions.");
     }
 
     auto jfaces = cfg["faces"];
     if (jfaces.isNull() or jfaces.empty() or (jfaces[0].isNull() and jfaces[1].isNull())) {
-        l->critical("at least two faces need to be defined, got:\n{}", jfaces);
+        log->critical("at least two faces need to be defined, got:\n{}", jfaces);
         THROW(ValueError() << errmsg{"AnodePlane: error in configuration"});
     }
 
@@ -126,7 +128,7 @@ void Gen::AnodePlane::configure(const WireCell::Configuration& cfg)
     // get wire schema
     const string ws_name = get<string>(cfg, "wire_schema");
     if (ws_name.empty()) {
-        l->critical("\"wire_schema\" parameter must specify an IWireSchema component");
+        log->critical("\"wire_schema\" parameter must specify an IWireSchema component");
         THROW(ValueError() << errmsg{"\"wire_schema\" parameter must specify an IWireSchema component"});
     }
     auto iws = Factory::find_tn<IWireSchema>(ws_name);  // throws if not found
@@ -154,12 +156,12 @@ void Gen::AnodePlane::configure(const WireCell::Configuration& cfg)
         auto jface = jfaces[(int) iface];
         if (jface.isNull()) {
             sensitive_face = false;
-            l->debug("anode {} face {} is not sensitive", m_ident, iface);
+            log->debug("anode {} face {} is not sensitive", m_ident, iface);
         }
         const double response_x = jface["response"].asDouble();
         const double anode_x = get(jface, "anode", response_x);
         const double cathode_x = jface["cathode"].asDouble();
-        l->debug("AnodePlane: X planes: \"cathode\"@ {}m, \"response\"@{}m, \"anode\"@{}m", cathode_x / units::m,
+        log->debug("X planes: \"cathode\"@ {}m, \"response\"@{}m, \"anode\"@{}m", cathode_x / units::m,
                  response_x / units::m, anode_x / units::m);
 
         IWirePlane::vector planes(nplanes);
@@ -170,7 +172,7 @@ void Gen::AnodePlane::configure(const WireCell::Configuration& cfg)
 
             WirePlaneId wire_plane_id(iplane2layer[iplane], iface, m_ident);
             if (wire_plane_id.index() < 0) {
-                l->critical("Bad wire plane id: {}", wire_plane_id.ident());
+                log->critical("Bad wire plane id: {}", wire_plane_id.ident());
                 THROW(ValueError() << errmsg{format("bad wire plane id: %d", wire_plane_id.ident())});
             }
 
@@ -207,7 +209,7 @@ void Gen::AnodePlane::configure(const WireCell::Configuration& cfg)
             const double pitchmax = wire_pitch_dirs.second.dot(wires[nwires - 1]->center() - plane_center);
             const Vector pimpos_origin(response_x, plane_center.y(), plane_center.z());
 
-            l->debug("AnodePlane: face:{}, plane:{}, origin:{} mm", iface, iplane, pimpos_origin / units::mm);
+            log->debug("face:{}, plane:{}, origin:{} mm", iface, iplane, pimpos_origin / units::mm);
 
             Pimpos* pimpos = new Pimpos(nwires, pitchmin, pitchmax, wire_pitch_dirs.first, wire_pitch_dirs.second,
                                         pimpos_origin, nimpacts);
@@ -244,7 +246,7 @@ void Gen::AnodePlane::configure(const WireCell::Configuration& cfg)
             //         sensvol(p2);
             //     }
 
-            //     l->debug("AnodePlane: face:{} with {} planes and sensvol: {}",
+            //     log->debug("face:{} with {} planes and sensvol: {}",
             //              ws_face.ident, planes.size(), sensvol.bounds());
 
             //     m_faces[iface] = make_shared<AnodeFace>(ws_face.ident, planes, sensvol);
@@ -284,7 +286,8 @@ void Gen::AnodePlane::configure(const WireCell::Configuration& cfg)
             sensvol(r1);
         }
 
-        l->debug("AnodePlane: face:{} with {} planes and sensvol: {}", ws_face.ident, planes.size(), sensvol.bounds());
+        log->debug("face:{} with {} planes and sensvol: {}",
+                   ws_face.ident, planes.size(), sensvol.bounds());
 
         m_faces[iface] = make_shared<AnodeFace>(ws_face.ident, planes, sensvol);
     }  // face

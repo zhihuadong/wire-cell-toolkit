@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
 
     tagrules::tagset_t tags;
     Configuration cfg;
-    if (argc == 2) {
+    if (argc > 1) {
         cfg = Persist::load(argv[1]);  // .jsonnet or .json file assumed
     }
     else {
@@ -76,13 +76,13 @@ int main(int argc, char* argv[])
             std::cout << "port:" << iport << ", categ:\"" << cat << "\": have tags:[";
             string comma = "";
             for (auto t : tags) {
-                std::cout << comma << t;
+                std::cout << comma << "\"" << t << "\"";
                 comma = ", ";
             }
             std::cout << "], got tags: [";
             comma = "";
             for (auto t : newtags) {
-                std::cout << comma << t;
+                std::cout << comma << "\"" << t << "\"";
                 comma = ", ";
             }
             std::cout << "], with rules:" << std::endl;

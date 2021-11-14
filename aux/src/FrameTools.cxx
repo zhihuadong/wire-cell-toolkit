@@ -15,6 +15,10 @@ using namespace WireCell;
 
 std::string Aux::name(const WireCell::IFrame::pointer& frame)
 {
+    if (!frame) {
+        return "(null frame)";
+    }
+
     std::stringstream ss;
     ss << "frame_" << frame->ident();
     return ss.str();
@@ -41,6 +45,9 @@ int Aux::frmtcmp(IFrame::pointer frame, double time)
 }
 std::pair<IFrame::pointer, IFrame::pointer> Aux::split(IFrame::pointer frame, double time)
 {
+    if (!frame) {
+        return std::pair<IFrame::pointer, IFrame::pointer>(nullptr, nullptr);
+    }
     int cmp = frmtcmp(frame, time);
     if (cmp < 0) {
         return std::pair<IFrame::pointer, IFrame::pointer>(frame, nullptr);
@@ -93,6 +100,10 @@ std::pair<IFrame::pointer, IFrame::pointer> Aux::split(IFrame::pointer frame, do
 
 ITrace::vector Aux::untagged_traces(IFrame::pointer frame)
 {
+    ITrace::vector ret;
+    if (!frame) {
+        return ret;
+    }
     auto traces = frame->traces();
     size_t ntraces = traces->size();
 
@@ -105,7 +116,6 @@ ITrace::vector Aux::untagged_traces(IFrame::pointer frame)
     std::iota(all.begin(), all.end(), 0);
     std::set_difference(all.begin(), all.end(), tagged.begin(), tagged.end(),
                         std::inserter(untagged, untagged.begin()));
-    ITrace::vector ret;
     for (size_t ind : untagged) {
         ret.push_back(traces->at(ind));
     }
@@ -114,10 +124,13 @@ ITrace::vector Aux::untagged_traces(IFrame::pointer frame)
 
 ITrace::vector Aux::tagged_traces(IFrame::pointer frame, IFrame::tag_t tag)
 {
+    ITrace::vector ret;
+    if (!frame) {
+        return ret;
+    }
     if (tag == "") {
         return untagged_traces(frame);
     }
-    ITrace::vector ret;
     auto const& all_traces = frame->traces();
     for (size_t index : frame->tagged_traces(tag)) {
         ret.push_back(all_traces->at(index));
@@ -201,8 +214,31 @@ void Aux::fill(Array::array_xxf& array, const ITrace::vector& traces, channel_li
 }
 
 
-void Aux::dump_frame(WireCell::IFrame::pointer frame)
+std::string Aux::taginfo(const WireCell::IFrame::pointer& frame)
 {
+    std::stringstream info;
+    info << "frame " << frame->ident() << " with "
+         << frame->traces()->size() << " traces tagged:[ ";
+    for (const auto& tag : frame->frame_tags()) {
+        info << tag << " ";
+    }
+
+    auto ttags = frame->trace_tags();
+    info << "] " << ttags.size() << " traces:[ ";
+    
+    for (const auto& tag : ttags) {
+        const auto& taglist = frame->tagged_traces(tag);
+        info << tag << ":" << taglist.size() << " ";
+    }
+    info << "]";
+    return info.str();
+}
+
+
+void Aux::dump_frame(WireCell::IFrame::pointer frame, Log::logptr_t log)
+{
+    std::stringstream info;
+
     auto traces = frame->traces();
     const size_t ntraces = traces->size();
     std::vector<double> means, rmses, lengths, tbins;
@@ -217,16 +253,16 @@ void Aux::dump_frame(WireCell::IFrame::pointer frame)
         tbins.push_back(trace->tbin());
 
         if (std::isnan(mr.second)) {
-            std::cerr << "Frame: channel " << trace->channel() << " rms is NaN\n";
+            info << "Frame: channel " << trace->channel() << " rms is NaN\n";
         }
 
         for (int ind = 0; ind < nsamps; ++ind) {
             float val = charge[ind];
             if (std::isnan(val)) {
-                std::cerr << "Frame: channel " << trace->channel() << " sample " << ind << " is NaN\n";
+                info << "Frame: channel " << trace->channel() << " sample " << ind << " is NaN\n";
             }
             if (std::isinf(val)) {
-                std::cerr << "Frame: channel " << trace->channel() << " sample " << ind << " is INF\n";
+                info << "Frame: channel " << trace->channel() << " sample " << ind << " is INF\n";
             }
         }
     }
@@ -234,11 +270,17 @@ void Aux::dump_frame(WireCell::IFrame::pointer frame)
     double totrms = sqrt(Waveform::sum(rmses));
     double meanlen = Waveform::sum(lengths) / ntraces;
     double meantbin = Waveform::sum(tbins) / ntraces;
-    std::cerr << "Frame: " << ntraces << " traces,"
-              << " <mean>=" << meanmean << " TotRMS=" << totrms << " <tbin>=" << meantbin << " <len>=" << meanlen
-              << std::endl;
+    info << "Frame: " << ntraces << " traces,"
+         << " <mean>=" << meanmean << " TotRMS=" << totrms << " <tbin>=" << meantbin << " <len>=" << meanlen
+         << "\n";
     for (auto it : frame->masks()) {
-        std::cerr << "\t" << it.first << " : " << it.second.size() << std::endl;
+        info << "\t" << it.first << " : " << it.second.size() << "\n";
+    }
+    if (log) {
+        log->debug(info.str());
+    }
+    else {
+        std::cerr << info.str();
     }
 }
 

@@ -3,13 +3,16 @@
 #include "WireCellUtil/Logging.h"
 
 #include "WireCellUtil/NamedFactory.h"
-WIRECELL_FACTORY(DepoBagger, WireCell::Gen::DepoBagger, WireCell::IDepoCollector, WireCell::IConfigurable)
+
+WIRECELL_FACTORY(DepoBagger, WireCell::Gen::DepoBagger,
+                 WireCell::INamed,
+                 WireCell::IDepoCollector, WireCell::IConfigurable)
+
 using namespace std;
 using namespace WireCell;
 
 Gen::DepoBagger::DepoBagger()
-  : m_count(0)
-  , m_gate(0, 0)
+  : Aux::Logger("DepoBagger", "gen")
 {
 }
 
@@ -28,14 +31,16 @@ WireCell::Configuration Gen::DepoBagger::default_configuration() const
 
 void Gen::DepoBagger::configure(const WireCell::Configuration& cfg)
 {
-    m_gate = std::pair<double, double>(cfg["gate"][0].asDouble(), cfg["gate"][1].asDouble());
+    if (! cfg["gate"].isNull()) {
+        m_gate = std::pair<double, double>(
+            cfg["gate"][0].asDouble(), cfg["gate"][1].asDouble());
+    }
 }
 
 bool Gen::DepoBagger::operator()(const input_pointer& depo, output_queue& deposetqueue)
 {
     if (!depo) {  // EOS
-        Log::logptr_t log(Log::logger("sim"));
-        log->debug("Gen::DepoBagger: send bag #{} with {} depos followed by EOS",
+        log->debug("send bag #{} with {} depos followed by EOS",
                    m_count, m_depos.size());
         // even if empty, must send out something to retain sync.
         auto out = std::make_shared<SimpleDepoSet>(m_count, m_depos);
@@ -47,7 +52,10 @@ bool Gen::DepoBagger::operator()(const input_pointer& depo, output_queue& depose
     }
 
     const double t = depo->time();
-    if (m_gate.first <= t and t < m_gate.second) {
+    if (m_gate.first == 0.0 and m_gate.second == 0.0) {
+        m_depos.push_back(depo);
+    }
+    else if (m_gate.first <= t and t < m_gate.second) {
         m_depos.push_back(depo);
     }
     return true;

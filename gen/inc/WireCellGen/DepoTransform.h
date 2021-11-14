@@ -11,12 +11,13 @@
 #include "WireCellIface/IAnodePlane.h"
 #include "WireCellIface/WirePlaneId.h"
 #include "WireCellIface/IDepo.h"
-#include "WireCellUtil/Logging.h"
+#include "WireCellAux/Logger.h"
 
 namespace WireCell {
     namespace Gen {
 
-        class DepoTransform : public IDepoFramer, public IConfigurable {
+        class DepoTransform : public Aux::Logger,
+                              public IDepoFramer, public IConfigurable {
            public:
             DepoTransform();
             virtual ~DepoTransform();
@@ -43,7 +44,7 @@ namespace WireCell {
             double m_nsigma;
             int m_frame_count;
             size_t m_count{0};
-            Log::logptr_t l;
+
         };
     }  // namespace Gen
 }  // namespace WireCell

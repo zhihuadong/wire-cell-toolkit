@@ -3,12 +3,14 @@
 
 #include "WireCellUtil/NamedFactory.h"
 
-WIRECELL_FACTORY(BlobSetSync, WireCell::Img::BlobSetSync, WireCell::IBlobSetFanin, WireCell::IConfigurable)
+WIRECELL_FACTORY(BlobSetSync, WireCell::Img::BlobSetSync,
+                 WireCell::INamed,
+                 WireCell::IBlobSetFanin, WireCell::IConfigurable)
 using namespace WireCell;
 
 Img::BlobSetSync::BlobSetSync()
-  : m_multiplicity(0)
-  , l(Log::logger("glue"))
+    : Aux::Logger("BlobSetSync", "glue")
+    , m_multiplicity(0)
 {
 }
 
@@ -25,7 +27,7 @@ void Img::BlobSetSync::configure(const WireCell::Configuration& cfg)
 {
     int m = get<int>(cfg, "multiplicity", (int) m_multiplicity);
     if (m <= 0) {
-        THROW(ValueError() << errmsg{"BlobSync multiplicity must be positive"});
+        THROW(ValueError() << errmsg{"BlobSetSync multiplicity must be positive"});
     }
     m_multiplicity = m;
 }
@@ -43,6 +45,7 @@ bool Img::BlobSetSync::operator()(const input_vector& invec, output_pointer& out
     out = IBlobSet::pointer(sbs);
 
     int neos = 0;
+    std::stringstream perset;
     for (const auto& ibs : invec) {
         if (!ibs) {
             ++neos;
@@ -56,12 +59,16 @@ bool Img::BlobSetSync::operator()(const input_vector& invec, output_pointer& out
         for (const auto& iblob : ibs->blobs()) {
             sbs->m_blobs.push_back(iblob);
         }
+        perset << " " << ibs->blobs().size();
     }
+    perset << " ";
     if (neos) {
         out = nullptr;
-        SPDLOG_LOGGER_TRACE(l, "BlobSetSink: EOS");
+        log->debug("EOS");
         return true;
     }
-    SPDLOG_LOGGER_TRACE(l, "BlobSetSink: sync'ed {} blobs", sbs->m_blobs.size());
+    // we get called a lot so make this a trace level!
+    SPDLOG_LOGGER_TRACE(log, "sync'ed {} blobs: {}",
+                        sbs->m_blobs.size(), perset.str());
     return true;
 }

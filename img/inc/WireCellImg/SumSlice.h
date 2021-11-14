@@ -30,6 +30,7 @@
 #include "WireCellIface/IFrameSlicer.h"
 #include "WireCellIface/IFrameSlices.h"
 #include "WireCellIface/IAnodePlane.h"
+#include "WireCellAux/Logger.h"
 
 #include <string>
 
@@ -41,7 +42,7 @@ namespace WireCell {
             class Slice;
         }  // namespace Data
 
-        class SumSliceBase : public IConfigurable {
+        class SumSliceBase : public Aux::Logger, public IConfigurable {
            public:
             SumSliceBase();
             virtual ~SumSliceBase();

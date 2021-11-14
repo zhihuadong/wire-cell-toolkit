@@ -14,9 +14,9 @@ using namespace WireCell;
 using namespace WireCellTbb;
 
 DataFlowGraph::DataFlowGraph(int max_threads)
-  : m_graph()
-  , m_factory(m_graph)
-  , l(Log::logger("tbb"))
+    : WireCell::Aux::Logger("DataFlowGraph", "tbb")
+    , m_graph()
+    , m_factory(m_graph)
 {
 }
 
@@ -40,39 +40,42 @@ bool DataFlowGraph::connect(INode::pointer tail, INode::pointer head, size_t spo
 {
     using namespace WireCellTbb;
 
+    const std::string tname = demangle(tail->signature());
+    const std::string hname = demangle(head->signature());
+
     Node mytail = m_factory(tail);
     if (!mytail) {
-        l->critical("DFP: failed to get tail node wrapper for {}", demangle(tail->signature()));
+        log->critical("no tail node wrapper for {}", tname);
         return false;
     }
 
     Node myhead = m_factory(head);
     if (!myhead) {
-        l->critical("DFP: failed to get head node wrapper for {}", demangle(head->signature()));
+        log->critical("no head node wrapper for {}", hname);
         return false;
     }
 
     auto sports = mytail->sender_ports();
     if (sport < 0 || sports.size() <= sport) {
-        l->critical("DFP: bad sender port number: {}", sport);
+        log->critical("bad sender port index: {} out of {} for {}", sport, sports.size(), tname);
         return false;
     }
 
     auto rports = myhead->receiver_ports();
     if (rport < 0 || rports.size() <= rport) {
-        l->critical("DFP: bad receiver port number: {}", rport);
+        log->critical("bad receiver port index: {} out of {} for {}", rport, rports.size(), hname);
         return false;
     }
 
     sender_type* s = sports[sport];
     if (!s) {
-        l->critical("DFP: failed to get sender port {}", sport);
+        log->critical("no sender port {} for {}", sport, tname);
         return false;
     }
 
     receiver_type* r = rports[rport];
     if (!s) {
-        l->critical("DFP: failed to get receiver port {}", rport);
+        log->critical("no receiver port {} for {}", rport, hname);
         return false;
     }
 
@@ -83,7 +86,7 @@ bool DataFlowGraph::connect(INode::pointer tail, INode::pointer head, size_t spo
 bool DataFlowGraph::run()
 {
     for (auto it : m_factory.seen()) {
-        l->debug("Initialize node of type: {}", demangle(it.first->signature()));
+        //log->debug("Initialize node of type: {}", demangle(it.first->signature()));
         it.second->initialize();
     }
 

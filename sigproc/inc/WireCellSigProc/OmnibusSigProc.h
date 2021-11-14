@@ -7,7 +7,7 @@
 #include "WireCellIface/IWaveform.h"
 #include "WireCellUtil/Waveform.h"
 #include "WireCellUtil/Array.h"
-#include "WireCellUtil/Logging.h"
+#include "WireCellAux/Logger.h"
 
 #include <list>
 
@@ -15,7 +15,8 @@ namespace WireCell {
     namespace SigProc {
 
         class SignalROI;  // forward declaration
-        class OmnibusSigProc : public WireCell::IFrameFilter, public WireCell::IConfigurable {
+        class OmnibusSigProc : public Aux::Logger,
+                               public WireCell::IFrameFilter, public WireCell::IConfigurable {
            public:
             OmnibusSigProc(
                 const std::string& anode_tn = "AnodePlane", const std::string& per_chan_resp_tn = "PerChannelResponse",
@@ -228,7 +229,7 @@ namespace WireCell {
             bool m_sparse;
 
             size_t m_count{0};
-            Log::logptr_t log;
+
         };
     }  // namespace SigProc
 }  // namespace WireCell

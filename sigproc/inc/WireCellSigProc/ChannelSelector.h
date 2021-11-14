@@ -8,7 +8,8 @@
 
 #include "WireCellIface/IFrameFilter.h"
 #include "WireCellIface/IConfigurable.h"
-#include "WireCellUtil/Logging.h"
+#include "WireCellUtil/TagRules.h"
+#include "WireCellAux/Logger.h"
 
 #include <string>
 #include <vector>
@@ -17,7 +18,10 @@
 namespace WireCell {
     namespace SigProc {
 
-        class ChannelSelector : public IFrameFilter, public IConfigurable {
+        class ChannelSelector : public Aux::Logger,
+                                public IFrameFilter,
+                                public IConfigurable
+        {
            public:
             ChannelSelector();
             virtual ~ChannelSelector();
@@ -35,8 +39,9 @@ namespace WireCell {
            private:
             std::vector<std::string> m_tags;
             std::unordered_set<int> m_channels;
-
-            Log::logptr_t log;
+            int m_count{0};
+            tagrules::Context m_ft;
+            bool m_use_rules{false};
         };
     }  // namespace SigProc
 }  // namespace WireCell

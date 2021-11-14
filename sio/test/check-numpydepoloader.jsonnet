@@ -5,7 +5,7 @@
 local wc = import "wirecell.jsonnet";
 local g = import "pgraph.jsonnet";
 
-function(infile)
+function(infile="wct-depos.npz")
 {
     local dl = g.pnode({
         type: 'NumpyDepoLoader',
