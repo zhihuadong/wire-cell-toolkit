@@ -6,7 +6,12 @@
 namespace WireCell::Aux {
 
     /** 
-        FftwDFT provides IDFT based on FFTW3.        
+        The FftwDFT component provides IDFT based on FFTW3.
+
+        All instances share a common thread-safe plan cache.  There is
+        no benefit to using more than one instance in a process.
+
+        See IDFT.h for important comments.
     */
     class FftwDFT : public IDFT {
       public:
@@ -18,23 +23,33 @@ namespace WireCell::Aux {
 
         virtual 
         void fwd1d(const complex_t* in, complex_t* out,
-                   int stride) const;
+                   int size) const;
 
         virtual 
         void inv1d(const complex_t* in, complex_t* out,
-                   int stride) const;
+                   int size) const;
 
-        // batched 1D ("1b") - rely on base implementation
+        virtual 
+        void fwd1b(const complex_t* in, complex_t* out,
+                   int nrows, int ncols, int axis) const;
 
-        // 2d
+        virtual 
+        void inv1b(const complex_t* in, complex_t* out,
+                   int nrows, int ncols, int axis) const;
 
         virtual 
         void fwd2d(const complex_t* in, complex_t* out,
-                   int nstrides, int stride) const;
+                   int nrows, int ncols) const;
         virtual 
         void inv2d(const complex_t* in, complex_t* out,
-                   int nstrides, int stride) const;
+                   int nrows, int ncols) const;
 
+        virtual
+        void transpose(const scalar_t* in, scalar_t* out,
+                       int nrows, int ncols) const;
+        virtual
+        void transpose(const complex_t* in, complex_t* out,
+                       int nrows, int ncols) const;
 
     };
 }

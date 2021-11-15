@@ -16,20 +16,20 @@ using COLM = Eigen::Array<Aux::complex_t, Eigen::Dynamic, Eigen::Dynamic, Eigen:
 template<typename trans>
 Aux::dft_array_t doit(const Aux::dft_array_t& arr, trans func)
 {
-    // Nominally, memory is in column-major order
+    // Nominally, eigen storage memory is in column-major order
     const Aux::complex_t* in_data = arr.data();
-    int stride = arr.rows();
-    int nstrides = arr.cols();
+    int ncols = arr.rows();
+    int nrows = arr.cols();
 
     // except when it isn't
     bool flipped = arr.IsRowMajor;
     if (flipped) {
-        stride = arr.cols();
-        nstrides = arr.rows();
+        ncols = arr.cols();
+        nrows = arr.rows();
     }
 
-    Aux::dft_vector_t out_vec(nstrides*stride);
-    func(in_data, out_vec.data(), nstrides, stride);
+    Aux::dft_vector_t out_vec(nrows*ncols);
+    func(in_data, out_vec.data(), nrows, ncols);
 
     if (flipped) {
         return Eigen::Map<ROWM>(out_vec.data(), arr.rows(), arr.cols());
@@ -42,8 +42,8 @@ Aux::dft_array_t Aux::fwd(IDFT::pointer dft, const Aux::dft_array_t& arr)
 {
     return doit(arr, [&](const complex_t* in_data,
                          complex_t* out_data,
-                         int nstrides, int stride) {
-        dft->fwd2d(in_data, out_data, nstrides, stride);
+                         int nrows, int ncols) {
+        dft->fwd2d(in_data, out_data, nrows, ncols);
     });
 }
 
@@ -51,8 +51,8 @@ Aux::dft_array_t Aux::inv(IDFT::pointer dft, const Aux::dft_array_t& arr)
 {
     return doit(arr, [&](const complex_t* in_data,
                          complex_t* out_data,
-                         int nstrides, int stride) {
-        dft->inv2d(in_data, out_data, nstrides, stride);
+                         int nrows, int ncols) {
+        dft->inv2d(in_data, out_data, nrows, ncols);
     });
 }
 
@@ -94,22 +94,38 @@ Aux::dft_array_t doit1b(const Aux::dft_array_t& arr, int axis, trans func)
     return got.transpose();
 }
 
+// Implementation notes for fwd()/inv():
+//
+// - We make an initial copy to get rid of any potential IsRowMajor
+//   optimization/confusion over storage order.  This suffers a copy
+//   but we need to allocate return anyways.
+//
+// - We then have column-wise storage order but IDFT assumes row-wise
+// - so we reverse (nrows, ncols) and meaning of axis.
+
 Aux::dft_array_t Aux::fwd(IDFT::pointer dft, const Aux::dft_array_t& arr, int axis)
 {
-    return doit1b(arr, axis,
-                  [&](const complex_t* in_data,
-                      complex_t* out_data,
-                      int nstrides, int stride) {
-        dft->fwd1b(in_data, out_data, nstrides, stride);
-    });
+    Aux::dft_array_t ret = arr; 
+    dft->fwd1b(ret.data(), ret.data(), ret.cols(), ret.rows(), !axis);
+    return ret;
+
+    // return doit1b(arr, axis,
+    //               [&](const complex_t* in_data,
+    //                   complex_t* out_data,
+    //                   int nrows, int ncols) {
+    //     dft->fwd1b(in_data, out_data, nrows, ncols);
+    // });
 }
 
 Aux::dft_array_t Aux::inv(IDFT::pointer dft, const Aux::dft_array_t& arr, int axis)
 {
-    return doit1b(arr, axis,
-                  [&](const complex_t* in_data,
-                      complex_t* out_data,
-                      int nstrides, int stride) {
-        dft->inv1b(in_data, out_data, nstrides, stride);
-    });
+    Aux::dft_array_t ret = arr; 
+    dft->inv1b(ret.data(), ret.data(), ret.cols(), ret.rows(), !axis);
+    return ret;
+    // return doit1b(arr, axis,
+    //               [&](const complex_t* in_data,
+    //                   complex_t* out_data,
+    //                   int nrows, int ncols) {
+    //     dft->inv1b(in_data, out_data, nrows, ncols);
+    // });
 }

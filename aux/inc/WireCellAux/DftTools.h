@@ -41,7 +41,7 @@ namespace WireCell::Aux {
     using dft_array_t = Eigen::ArrayXXcf;
     
     // 2D with Eigen arrays.  Use eg arr.cast<complex_>() to provde
-    // from real or arr.cast<float>() to convert result to real.
+    // from real or arr.real()() to convert result to real.
 
     // Transform both dimesions.
     dft_array_t fwd(IDFT::pointer dft, const dft_array_t& arr);
