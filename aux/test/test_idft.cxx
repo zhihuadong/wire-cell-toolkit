@@ -3,7 +3,8 @@
 #include "WireCellUtil/Waveform.h"
 #include "WireCellUtil/PluginManager.h"
 #include "WireCellIface/IConfigurable.h"
-#include "WireCellIface/IDFT.h"
+
+#include "aux_test_dft_helpers.h"
 
 #include <chrono>
 #include <vector>
@@ -13,31 +14,6 @@
 
 using namespace WireCell;
 
-const float eps = 1e-8;
-
-static void assert_impulse_at_index(const std::vector<IDFT::complex_t>& vec, size_t index=0)
-{
-    const size_t size = vec.size();
-    auto tot = Waveform::sum(vec);
-    assert(std::abs(std::real(tot) - 1.0) < eps);
-    assert(std::abs(std::real(vec[index]) - 1.0) < eps);
-    assert(std::abs(std::imag(tot))  < eps);
-    assert(std::abs(std::imag(vec[index])) < eps);
-    for (size_t ind=0; ind<size; ++ind) {
-        if (ind == index) continue;
-        assert(std::abs(std::real(vec[ind])) < eps);
-        assert(std::abs(std::imag(vec[ind])) < eps);
-    }
-}
-static void assert_flat_value(const std::vector<IDFT::complex_t>& vec, IDFT::scalar_t val = 1.0)
-{
-    const auto size = vec.size();
-    auto tot = Waveform::sum(vec);
-    assert(std::abs(std::abs(tot) - val*size) < eps);
-    for (const auto& v : vec) {
-        assert(std::abs(std::abs(v) - val) < eps);
-    }
-}
 
 static
 void test_1d_zero(IDFT::pointer dft, int size = 1024)
