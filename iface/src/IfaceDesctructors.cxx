@@ -74,6 +74,7 @@
 #include "WireCellIface/IRandom.h"
 #include "WireCellIface/IRecombinationModel.h"
 #include "WireCellIface/IScalarFieldSink.h"
+#include "WireCellIface/ISemaphore.h"
 #include "WireCellIface/ISequence.h"
 #include "WireCellIface/ISinkNode.h"
 #include "WireCellIface/ISlice.h"
@@ -172,6 +173,7 @@ IQueuedoutNodeBase::~IQueuedoutNodeBase() {}
 IRandom::~IRandom() {}
 IRecombinationModel::~IRecombinationModel() {}
 IScalarFieldSink::~IScalarFieldSink() {}
+ISemaphore::~ISemaphore() {}
 ISinkNodeBase::~ISinkNodeBase() {}
 ISlice::~ISlice() {}
 ISliceFanout::~ISliceFanout() {}
