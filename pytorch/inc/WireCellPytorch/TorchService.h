@@ -7,7 +7,7 @@
 #include "WireCellIface/ITensorForward.h"
 #include "WireCellUtil/Logging.h"
 #include "WireCellAux/Logger.h"
-#include "WireCellUtil/Semaphore.h"
+#include "WireCellPytorch/TorchContext.h"
 
 #include <torch/script.h>  // One-stop header.
 
@@ -29,15 +29,14 @@ namespace WireCell::Pytorch {
 
       private:
 
-        // Mark which device is used
-        torch::Device m_dev;
-
         // for read-only access, claim is that .forward() is thread
         // safe.  However .forward() is not const so we must make this
         // mutable.
         mutable torch::jit::script::Module m_module;
 
-        mutable FastSemaphore m_sem;
+        // Even though thread safe, we want to honor a per device
+        // semaphore to give user chance ot limit us.
+        TorchContext m_ctx;
 
     };
 }  // namespace WireCell::Pytorch
