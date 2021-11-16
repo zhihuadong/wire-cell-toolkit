@@ -1,8 +1,5 @@
 // Test IDFT implementations.
-#include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/Waveform.h"
-#include "WireCellUtil/PluginManager.h"
-#include "WireCellIface/IConfigurable.h"
 
 #include "aux_test_dft_helpers.h"
 
@@ -13,6 +10,7 @@
 #include <iostream>
 
 using namespace WireCell;
+using namespace WireCell::Aux::Test;
 
 
 static
@@ -21,9 +19,9 @@ void test_1d_zero(IDFT::pointer dft, int size = 1024)
     std::vector<IDFT::complex_t> inter(size,0), freq(size,0);
 
     dft->fwd1d(inter.data(), freq.data(), inter.size());
-    assert_flat_value(freq, 0);
+    assert_flat_value(freq, czero);
     dft->inv1d(freq.data(), inter.data(), freq.size());
-    assert_flat_value(inter, 0);
+    assert_flat_value(inter, czero); 
 }
 static
 void test_1d_impulse(IDFT::pointer dft, int size=1024)
@@ -76,18 +74,18 @@ static void assert_on_axis(const std::vector<IDFT::complex_t>& freq,
             auto val = std::abs(freq[ind]);
             if (axis) {
                 if (irow==0) {
-                    assert(std::abs(val - 1.0) < eps);
+                    assert_small(std::abs(val - 1.0));
                 }
                 else {
-                    assert(val < eps);
+                    assert_small(val);
                 }
             }
             else {
                 if (icol==0) {
-                    assert(std::abs(val - 1.0) < eps);
+                    assert_small(std::abs(val - 1.0));
                 }
                 else {
-                    assert(val < eps);
+                    assert_small(val);
                 }
             }
         }
@@ -197,24 +195,10 @@ void test_2d_transpose(IDFT::pointer dft, int nrows, int ncols)
 
 }
 
+
 int main(int argc, char* argv[])
 {
-    // fixme, add CLI parsing to add plugins, config and name another
-    // dft.  For now, just use the one in aux.
-    PluginManager& pm = PluginManager::instance();
-    pm.add("WireCellAux");
-    std::string dft_tn = "FftwDFT";
-
-    // creates
-    auto idft = Factory::lookup_tn<IDFT>(dft_tn);
-    assert(idft);
-    {                          // configure before use if configurable
-        auto icfg = Factory::find_maybe_tn<IConfigurable>(dft_tn);
-        if (icfg) {
-            auto cfg = icfg->default_configuration();
-            icfg->configure(cfg);
-        }
-    }
+    auto idft = make_dft_args(argc, argv);
 
     test_1d_zero(idft);
     test_1d_impulse(idft);

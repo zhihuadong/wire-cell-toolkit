@@ -120,14 +120,15 @@ void test_1b(IDFT::pointer dft, int axis, int nrows=8, int ncols=4)
 
 }
 
-int main()
+int main(int argc, char* argv[])
 {
-    auto dft = std::make_shared<Aux::FftwDFT>();
+    auto idft = make_dft_args(argc, argv);
 
-    test_1d_impulse(dft);
-    test_2d_impulse(dft);
-    test_2d_eigen_transpose(dft);
-    test_1b(dft, 0);
-    test_1b(dft, 1);
+    test_1d_impulse(idft);
+    test_2d_impulse(idft);
+    test_2d_eigen_transpose(idft);
+    test_1b(idft, 0);
+    test_1b(idft, 1);
+
     return 0;
 }
