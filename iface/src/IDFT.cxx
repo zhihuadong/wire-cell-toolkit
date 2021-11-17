@@ -66,7 +66,7 @@ void transpose_type(const ValueType* in, ValueType* out,
     const int size = nrows*ncols;
     const int mn1 = (size - 1);
     std::vector<bool> visited(size);
-    ValueType* first = out + size;
+    ValueType* first = out;
     const ValueType* last = first + size;
     ValueType* cycle = out;
     while (++cycle != last) {

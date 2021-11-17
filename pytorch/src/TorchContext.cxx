@@ -33,6 +33,6 @@ void TorchContext::connect(const std::string& devname,
         s_tn = semname;
     }
 
-    m_sem = Factory::find_tn<ISemaphore>(s_tn);
+    m_sem = Factory::lookup_tn<ISemaphore>(s_tn);
 }
 

@@ -11,7 +11,7 @@ WIRECELL_FACTORY(Semaphore,
 using namespace WireCell;
 
 Aux::Semaphore::Semaphore()
-    : m_sem(0)
+    : m_sem(1)
 {
 }
 Aux::Semaphore::~Semaphore()

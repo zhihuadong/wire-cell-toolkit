@@ -12,6 +12,17 @@
 using namespace WireCell;
 using namespace WireCell::Aux::Test;
 
+template<typename ValueType>
+void dump(ValueType* data, int nrows, int ncols, std::string msg="")
+{
+    std::cerr << msg << "("<<nrows<<","<<ncols<<")\n";
+    for (int irow=0; irow<nrows; ++irow) {
+        for (int icol=0; icol<ncols; ++icol) {
+            std::cerr << data[irow*ncols + icol] << " ";
+        }
+        std::cerr << "\n";
+    }
+}
 
 static
 void test_1d_zero(IDFT::pointer dft, int size = 1024)
@@ -95,13 +106,19 @@ static void assert_on_axis(const std::vector<IDFT::complex_t>& freq,
 void test_1b_impulse(IDFT::pointer dft, int axis, int nrows=128, int ncols=128)
 {
     const int size = nrows*ncols;
+    std::cerr << "1b impulse freq axis="<<axis << " nrows="<<nrows<<" ncols="<<ncols<<"\n";
 
     std::vector<IDFT::complex_t> inter(size,0), freq(size,0), back(size,0);
     inter[0] = 1.0;
+
     dft->fwd1b(inter.data(), freq.data(), nrows, ncols, axis);
+    dump(freq.data(), nrows, ncols, "freq");
     assert_on_axis(freq, axis, nrows, ncols);
+
     dft->inv1b(freq.data(), back.data(), nrows, ncols, axis);
+    dump(back.data(), nrows, ncols, "back");
     assert_impulse_at_index(back, 0);
+
 
     std::vector<IDFT::complex_t> inplace(size,0);
     inplace[0] = 1.0;
@@ -159,17 +176,6 @@ void test_2d_threads(IDFT::pointer dft, int nthreads, int nloops, int size = 102
               << " " << dt1.count() << std::endl;
 }
 
-template<typename ValueType>
-void dump(ValueType* data, int nrows, int ncols, std::string msg="")
-{
-    std::cerr << msg << "("<<nrows<<","<<ncols<<")\n";
-    for (int irow=0; irow<nrows; ++irow) {
-        for (int icol=0; icol<ncols; ++icol) {
-            std::cerr << data[irow*ncols + icol] << " ";
-        }
-        std::cerr << "\n";
-    }
-}
 
 template<typename ValueType>
 void test_2d_transpose(IDFT::pointer dft, int nrows, int ncols)
@@ -205,8 +211,10 @@ int main(int argc, char* argv[])
     test_2d_zero(idft);
     test_2d_impulse(idft);
 
-    test_1b_impulse(idft, 0);
-    test_1b_impulse(idft, 1);
+    test_1b_impulse(idft, 0, 2, 8);
+    test_1b_impulse(idft, 1, 2, 8);
+    test_1b_impulse(idft, 0, 8, 2);
+    test_1b_impulse(idft, 1, 8, 2);
 
     test_2d_transpose<IDFT::scalar_t>(idft, 2, 8);
     test_2d_transpose<IDFT::scalar_t>(idft, 8, 2);

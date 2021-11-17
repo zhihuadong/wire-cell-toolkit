@@ -5,7 +5,7 @@
 #include <torch/csrc/api/include/torch/fft.h>
 
 
-WIRECELL_FACTORY(FftwDFT, WireCell::Pytorch::DFT,
+WIRECELL_FACTORY(TorchDFT, WireCell::Pytorch::DFT,
                  WireCell::IDFT,
                  WireCell::IConfigurable)
 
@@ -50,24 +50,30 @@ void doit(const TorchContext& ctx,
 
     int64_t size = nrows*ncols;
 
-    auto options = torch::TensorOptions().device(ctx.device()).dtype(torch::kComplexFloat);
+    auto dtype = torch::TensorOptions().dtype(torch::kComplexFloat);
 
     // 1) in->src
     if (in != out) {            // from_blob() doesn't like const data
         memcpy(out, in, sizeof(IDFT::complex_t)*size);
     }
 
-    torch::Tensor src = torch::from_blob(out, {nrows, ncols}, options);
+    torch::Tensor src = torch::from_blob(out, {nrows, ncols}, dtype);
 
     // 2) dst = func(src)
+    src = src.to(ctx.device());
     auto dst = func(src);
-    dst = dst.cpu();
+
+    // Making contiguous costs a copy but gets the data in row-major
+    // so the (2nd) copy next actually gives correct results.  This
+    // corrects optimizations that libtorch makes for transpose (and
+    // others) eg when our func is 1b.  Alternatively, may avoid both
+    // copies by iterating over indices but presumably (?) that is
+    // slower.  Likewise we make contiguous on the device as that is
+    // presumably (?) faster when the device is GPU.
+    dst = dst.contiguous().cpu();
 
     // 3) dst->out
-    if (out != dst.data_ptr()) {
-        memcpy(out, dst.data_ptr(), sizeof(IDFT::complex_t)*size);
-    }
-        
+    memcpy(out, dst.data_ptr(), sizeof(IDFT::complex_t)*size);
 }
 
 
