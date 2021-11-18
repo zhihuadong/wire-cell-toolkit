@@ -9,11 +9,70 @@
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/IDFT.h"
 
+#include <ctime>                // std::clock
+#include <chrono>
+
+#include <string>
 #include <cassert>
+#include <fstream>
 #include <iostream>
+
+// note: likely will move in the future.
+#include "custard/nlohmann/json.hpp"
 
 namespace WireCell::Aux::Test {
 
+    using object_t = nlohmann::json;
+
+    // probably move this to util
+    struct Stopwatch {
+        using clock = std::chrono::high_resolution_clock;
+        using time_point = clock::time_point;
+        using function_type = std::function<void()>;
+
+        std::clock_t c_ini = std::clock();
+        time_point t_ini = clock::now();
+
+        object_t results;
+
+        Stopwatch(const object_t& first = object_t{}) {
+            (*this)([](){}, first);
+        }
+
+        // Run the func, add timing info to a "stopwatch" attribute of
+        // data and save data to results.  A pair of clock objects are
+        // saved, "clock" (std::clock) and "time" (std::chrono).  Each
+        // have "start" and "elapsed" which are the number of
+        // nanoseconds from creation of stopwatch and for just this
+        // job, respectively.
+        void operator()(function_type func, object_t data = object_t{})
+        {
+            auto c_now =std::clock();
+            auto t_now = clock::now();
+            func();
+            auto c_fin =std::clock();
+            auto t_fin = clock::now();
+            
+            double dc_now = 1e9 * (c_now - c_ini) / ((double) CLOCKS_PER_SEC);
+            double dc_fin = 1e9 * (c_fin - c_now) / ((double) CLOCKS_PER_SEC);
+            double dt_now = std::chrono::duration_cast<std::chrono::nanoseconds>(t_now - t_ini).count();
+            double dt_fin = std::chrono::duration_cast<std::chrono::nanoseconds>(t_fin - t_now).count();
+
+            data["stopwatch"]["clock"]["start"] = dc_now;
+            data["stopwatch"]["clock"]["elapsed"] = dc_fin;
+            data["stopwatch"]["time"]["start"] = dt_now;
+            data["stopwatch"]["time"]["elapsed"] = dt_fin;
+
+            results.push_back(data);
+        }        
+
+        void save(const std::string& jsonfile) {
+            std::ofstream fp(jsonfile.c_str());
+            fp << results.dump(4) << std::endl;
+        }
+            
+
+    };
 
     // fixme: add support for config
     IDFT::pointer make_dft(const std::string& tn="FftwDFT",
@@ -37,16 +96,23 @@ namespace WireCell::Aux::Test {
         }
         return idft;
     }
-    IDFT::pointer make_dft_args(int argc, char* argv[]) 
-    {
-        std::string dft_tn="FftwDFT";
-        std::string dft_pi="WireCellAux";
-        if (argc > 1) dft_tn = argv[1];
-        if (argc > 2) dft_pi = argv[2];
+    struct DftArgs {
+        std::string tn{"FftwDFT"};
+        std::string pi{"WireCellAux"};
+        std::string cfg_name{""};
         Configuration cfg;
+    };        
+
+    DftArgs make_dft_args(int argc, char* argv[]) 
+    {
+        DftArgs ret;
+
+        if (argc > 1) ret.tn = argv[1];
+        if (argc > 2) ret.pi = argv[2];
         if (argc > 3) {
             // Either we get directly a "data" object 
-            cfg = Persist::load(argv[3]);
+            ret.cfg_name = argv[3];
+            auto cfg = Persist::load(argv[3]);
             // or we go searching a list for matching type/name.
             if (cfg.isArray()) {
                 for (auto one : cfg) {
@@ -55,15 +121,17 @@ namespace WireCell::Aux::Test {
                     if (not n.empty()) {
                         tn = tn + ":" + n;
                     }
-                    if (tn == dft_tn) {
+                    if (tn == ret.tn) {
                         cfg = one["data"];
                         break;
                     }
                 }
             }
+            ret.cfg = cfg;
 
         }
-        return make_dft(dft_tn, dft_pi);
+        return ret;
+        //return make_dft(dft_tn, dft_pi, cfg);
     }
 
     const double default_eps = 1e-8;
