@@ -24,6 +24,8 @@ void doit(Stopwatch& sw, const std::string& name, int nrows, int ncols, transfor
 {
     const int size = nrows*ncols;
     const int ntimes = std::max(1, nominal / size);
+    std::cerr << name << ": (" << nrows << "," << ncols << ") x "<<ntimes<<"\n";
+
     std::vector<complex_t> in(size), out(size);
 
     sw([&](){func(in.data(), in.data());}, {
@@ -73,7 +75,6 @@ int main(int argc, char* argv[])
 
     std::vector<int> oned_sizes{500, 512, 1000, 1024, 4096, 6000, 8192, 10000, 16384};
     for (auto size : oned_sizes) {
-        std::cerr << "1d " << size << std::endl;
         doit(sw, "fwd1d", 1, size, [&](const complex_t* in, complex_t* out) {
             idft->fwd1d(in, out, size);
         });
@@ -84,32 +85,32 @@ int main(int argc, char* argv[])
     }
 
     // channel count from some detectors plus powers of 2
-    std::vector<int> twod_nrows{800, 960, 1024, 2048, 2400, 3456, 4096};
-    // tick count from some detectors plus powers of 2
-    std::vector<int> twod_ncols{2000, 4096, 6000, 8192, 9375, 9595, 9600, 10000, 16384};
-    for (int nrows : twod_nrows) {
-        for (int ncols : twod_ncols) {
-            std::cerr << "2d (" << nrows << "," << ncols << ")\n";
-            doit(sw, "fwd2d", nrows, ncols, [&](const complex_t* in, complex_t* out) {
-                idft->fwd2d(in, out, nrows, ncols);
-            });
-            doit(sw, "inv2d", nrows, ncols, [&](const complex_t* in, complex_t* out) {
-                idft->inv2d(in, out, nrows, ncols);
-            });
+    std::vector<std::pair<int,int>> twod_sizes{
+        {800,6000}, {960,6000}, // protodune u/v and w 3ms
+        {2400, 9595}, {3456, 9595}, // uboone u/v daq size
+        {1024, 1024}, {2048, 2048}, {4096, 4096}, // perfect powers of 2
+    };
+    for (auto& [nrows,ncols] : twod_sizes) {
 
-            doit(sw, "fwd1b0", nrows, ncols, [&](const complex_t* in, complex_t* out) {
-                idft->fwd1b(in, out, nrows, ncols, 0);
-            });
-            doit(sw, "inv1b0", nrows, ncols, [&](const complex_t* in, complex_t* out) {
-                idft->inv1b(in, out, nrows, ncols, 0);
-            });
-            doit(sw, "fwd1b1", nrows, ncols, [&](const complex_t* in, complex_t* out) {
-                idft->fwd1b(in, out, nrows, ncols, 1);
-            });
-            doit(sw, "inv1b1", nrows, ncols, [&](const complex_t* in, complex_t* out) {
-                idft->inv1b(in, out, nrows, ncols, 1);
-            });
-        }
+        doit(sw, "fwd2d", nrows, ncols, [&](const complex_t* in, complex_t* out) {
+            idft->fwd2d(in, out, nrows, ncols);
+        });
+        doit(sw, "inv2d", nrows, ncols, [&](const complex_t* in, complex_t* out) {
+            idft->inv2d(in, out, nrows, ncols);
+        });
+
+        doit(sw, "fwd1b0", nrows, ncols, [&](const complex_t* in, complex_t* out) {
+            idft->fwd1b(in, out, nrows, ncols, 0);
+        });
+        doit(sw, "inv1b0", nrows, ncols, [&](const complex_t* in, complex_t* out) {
+            idft->inv1b(in, out, nrows, ncols, 0);
+        });
+        doit(sw, "fwd1b1", nrows, ncols, [&](const complex_t* in, complex_t* out) {
+            idft->fwd1b(in, out, nrows, ncols, 1);
+        });
+        doit(sw, "inv1b1", nrows, ncols, [&](const complex_t* in, complex_t* out) {
+            idft->inv1b(in, out, nrows, ncols, 1);
+        });
     }
     
     sw.save(fname);
