@@ -5,6 +5,7 @@
 #include "WireCellUtil/PluginManager.h"
 #include "WireCellUtil/Exceptions.h"
 #include "WireCellUtil/Persist.h"
+#include "WireCellUtil/CLI11.hpp"
 
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/IDFT.h"
@@ -100,19 +101,27 @@ namespace WireCell::Aux::Test {
         std::string tn{"FftwDFT"};
         std::string pi{"WireCellAux"};
         std::string cfg_name{""};
+        std::string output{""};
         Configuration cfg;
     };        
 
-    DftArgs make_dft_args(int argc, char* argv[]) 
+    // remove command name from main()'s argc/argv[0]
+    int make_dft_args(DftArgs& args, int argc, char** argv) 
     {
-        DftArgs ret;
+        CLI::App app{"wct dft test"};
+        app.add_option("-o,--output", args.output,
+                   "Output file")->type_size(1)->allow_extra_args(false);
+        app.add_option("-p,--plugin", args.pi,
+                   "Plugin")->type_size(1)->allow_extra_args(false);
+        app.add_option("-t,--typename", args.tn,
+                   "Type or Type:Name of IDFT imp")->type_size(1)->allow_extra_args(false);
+        app.add_option("-c,--config", args.cfg_name,
+                   "Config file for IDFT imp")->type_size(1)->allow_extra_args(false);
+        CLI11_PARSE(app, argc, argv);
 
-        if (argc > 1) ret.tn = argv[1];
-        if (argc > 2) ret.pi = argv[2];
-        if (argc > 3) {
+        if (not args.cfg_name.empty()) {
             // Either we get directly a "data" object 
-            ret.cfg_name = argv[3];
-            auto cfg = Persist::load(argv[3]);
+            auto cfg = Persist::load(args.cfg_name);
             // or we go searching a list for matching type/name.
             if (cfg.isArray()) {
                 for (auto one : cfg) {
@@ -121,17 +130,15 @@ namespace WireCell::Aux::Test {
                     if (not n.empty()) {
                         tn = tn + ":" + n;
                     }
-                    if (tn == ret.tn) {
+                    if (tn == args.tn) {
                         cfg = one["data"];
                         break;
                     }
                 }
             }
-            ret.cfg = cfg;
-
+            args.cfg = cfg;
         }
-        return ret;
-        //return make_dft(dft_tn, dft_pi, cfg);
+        return 0;
     }
 
     const double default_eps = 1e-8;
