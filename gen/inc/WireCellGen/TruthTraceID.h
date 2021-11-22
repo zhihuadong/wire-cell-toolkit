@@ -10,6 +10,7 @@
 
 #include "WireCellIface/IAnodePlane.h"
 #include "WireCellIface/IRandom.h"
+#include "WireCellIface/IDFT.h"
 
 namespace WireCell {
     namespace Gen {
@@ -28,6 +29,7 @@ namespace WireCell {
 
             IAnodePlane::pointer m_anode;
             IRandom::pointer m_rng;
+            IDFT::pointer m_dft;
             IDepo::vector m_depos;
 
             double m_start_time;

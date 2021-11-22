@@ -1,7 +1,10 @@
+#include "WireCellGen/PlaneImpactResponse.h"
+
+#include "WireCellIface/IDFT.h"
+
 #include "WireCellUtil/PluginManager.h"
 #include "WireCellUtil/Testing.h"
 #include "WireCellUtil/NamedFactory.h"
-#include "WireCellGen/PlaneImpactResponse.h"
 #include "WireCellUtil/Units.h"
 #include "WireCellUtil/Logging.h"
 
@@ -16,6 +19,7 @@ int main(int argc, char* argv[]) {
     Log::set_level("debug");
 
     PluginManager& pm = PluginManager::instance();
+    pm.add("WireCellAux");
     pm.add("WireCellGen");
     pm.add("WireCellSigProc");
 
@@ -24,6 +28,9 @@ int main(int argc, char* argv[]) {
         response_file = argv[1];
     };
 
+    {
+        Factory::lookup_tn<IDFT>("FftwDFT");
+    }
     {
         auto icfg = Factory::lookup<IConfigurable>("FieldResponse");
         auto cfg = icfg->default_configuration();

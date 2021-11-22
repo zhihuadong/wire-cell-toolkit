@@ -73,7 +73,11 @@ namespace WireCell {
 
         /** Partial, 1D DFT and inverse DFT along one dimension of an
          * array.  Each row is transformed if dim=0, each column if
-         * dim=1.  The transfer is either real->complex (rc),
+         * dim=1.  
+         *
+         * NOTE: this is backward from numpy.fft and IDFT convention!.
+         *
+         * The transfer is either real->complex (rc),
          * complex->complex(cc) or complex->real(cr).
          *
          * The full 2D DFT should be used unless an intermediate

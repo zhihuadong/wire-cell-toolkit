@@ -4,7 +4,7 @@
 
 using namespace WireCell;
 
-Waveform::realseq_t Gen::Noise::generate_waveform(const std::vector<float>& spec, IRandom::pointer rng, double replace)
+Waveform::compseq_t Gen::Noise::generate_spectrum(const std::vector<float>& spec, IRandom::pointer rng, double replace)
 {
     // reuse randomes a bit to optimize speed.
     static std::vector<double> random_real_part;
@@ -49,6 +49,7 @@ Waveform::realseq_t Gen::Noise::generate_waveform(const std::vector<float>& spec
         noise_freq.at(i + int(spec.size()) - shift).imag(random_imag_part.at(i) * amplitude);
     }
 
-    Waveform::realseq_t noise_time = WireCell::Waveform::idft(noise_freq);
-    return noise_time;
+    return noise_freq;
+    // Waveform::realseq_t noise_time = WireCell::Waveform::idft(noise_freq);
+    // return noise_time;
 }

@@ -103,6 +103,7 @@ namespace WireCell {
             const std::vector<IImpactResponse::pointer>& irs() const { return m_ir; }
 
            private:
+
             std::string m_frname;
             std::vector<std::string> m_short;
             double m_overall_short_padding;
@@ -118,6 +119,7 @@ namespace WireCell {
             std::vector<IImpactResponse::pointer> m_ir;
             double m_half_extent, m_pitch, m_impact;
 
+            std::string m_dftname{"FftwDFT"};
             void build_responses();
         };
 

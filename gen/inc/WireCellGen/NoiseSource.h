@@ -11,6 +11,7 @@
 #include "WireCellIface/IFrameSource.h"
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/IRandom.h"
+#include "WireCellIface/IDFT.h"
 #include "WireCellIface/IAnodePlane.h"
 #include "WireCellIface/IChannelSpectrum.h"
 #include "WireCellUtil/Waveform.h"
@@ -36,6 +37,7 @@ namespace WireCell {
 
            private:
             IRandom::pointer m_rng;
+            IDFT::pointer m_dft;
             IAnodePlane::pointer m_anode;
             IChannelSpectrum::pointer m_model;
             double m_time, m_stop, m_readout, m_tick;

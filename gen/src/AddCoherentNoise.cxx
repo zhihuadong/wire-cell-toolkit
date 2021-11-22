@@ -7,6 +7,8 @@
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/FFTBestLength.h"
 
+#include "WireCellAux/DftTools.h"
+
 #include "Noise.h"
 
 #include <iostream>
@@ -54,6 +56,7 @@ WireCell::Configuration Gen::AddCoherentNoise::default_configuration() const
     cfg["random_fluctuation_amplitude"] = m_fluctuation;
     cfg["period"] = m_period;
     cfg["normalization"] = m_normalization;
+    cfg["dft"] = "FftwDFT";     // type-name for the DFT to use
 
     return cfg;
 }
@@ -67,6 +70,9 @@ void Gen::AddCoherentNoise::configure(const WireCell::Configuration& cfg)
     m_period = get<int>(cfg, "period", m_period);
     m_fluctuation = get<double>(cfg, "random_fluctuation_amplitude", m_fluctuation);
     m_normalization = get<int>(cfg, "normalization", m_normalization);
+
+    std::string dft_tn = get<std::string>(cfg, "dft", "FftwDFT");
+    m_dft = Factory::find_tn<IDFT>(dft_tn);
 
     m_fft_length = fft_best_length(m_nsamples);
     gen_elec_resp_default();
@@ -141,7 +147,8 @@ bool Gen::AddCoherentNoise::operator()(const input_pointer& inframe, output_poin
             noise_freq[i] = tc;
         }
 
-        Waveform::realseq_t wave = WireCell::Waveform::idft(noise_freq);
+        // Waveform::realseq_t wave = WireCell::Waveform::idft(noise_freq);
+        auto wave = Waveform::real(Aux::inv(m_dft, noise_freq));
 
         // Add signal (be careful to double counting with the incoherent noise)
         Waveform::increase(wave, intrace->charge());

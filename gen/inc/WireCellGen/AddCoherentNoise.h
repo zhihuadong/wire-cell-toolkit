@@ -7,6 +7,7 @@
 #include "WireCellIface/IFrameFilter.h"
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/IRandom.h"
+#include "WireCellIface/IDFT.h"
 #include "WireCellIface/IChannelSpectrum.h"
 #include "WireCellUtil/Waveform.h"
 #include "WireCellUtil/Logging.h"
@@ -36,6 +37,7 @@ namespace WireCell {
             typedef std::map<int, std::pair<int, std::vector<float>>> noise_map_t;
 
             IRandom::pointer m_rng;
+            IDFT::pointer m_dft;
 
             std::string m_spectra_file, m_rng_tn;
             int m_nsamples;

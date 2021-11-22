@@ -9,6 +9,8 @@
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/FFTBestLength.h"
 
+#include "WireCellAux/DftTools.h"
+
 #include <iostream>  // debug
 
 WIRECELL_FACTORY(EmpiricalNoiseModel,
@@ -89,6 +91,7 @@ WireCell::Configuration Gen::EmpiricalNoiseModel::default_configuration() const
     // cfg["gain_scale"] = m_gres;
     // cfg["freq_scale"] = m_fres;
     cfg["anode"] = m_anode_tn;  // name of IAnodePlane component
+    cfg["dft"] = "FftwDFT";     // type-name for the DFT to use
 
     return cfg;
 }
@@ -160,6 +163,9 @@ void Gen::EmpiricalNoiseModel::configure(const WireCell::Configuration& cfg)
     log->debug("using anode {}, chanstat {}", m_anode_tn, m_chanstat_tn);
 
     m_spectra_file = get(cfg, "spectra_file", m_spectra_file);
+
+    std::string dft_tn = get<std::string>(cfg, "dft", "FftwDFT");
+    m_dft = Factory::find_tn<IDFT>(dft_tn);
 
     m_nsamples = get(cfg, "nsamples", m_nsamples);
     m_fft_length = fft_best_length(m_nsamples);
@@ -352,7 +358,8 @@ const IChannelSpectrum::amplitude_t& Gen::EmpiricalNoiseModel::operator()(int ch
         if (resp1 == m_elec_resp_cache.end()) {
             Response::ColdElec elec_resp(10, ch_shaping);  // default at 1 mV/fC
             auto sig = elec_resp.generate(WireCell::Waveform::Domain(0, m_fft_length * m_period), m_fft_length);
-            auto filt = Waveform::dft(sig);
+            //auto filt = Waveform::dft(sig);
+            auto filt = Aux::fwd(m_dft, Waveform::complex(sig));
             auto ele_resp_amp = Waveform::magnitude(filt);
 
             ele_resp_amp.resize(m_elec_resp_freq.size());
@@ -365,7 +372,8 @@ const IChannelSpectrum::amplitude_t& Gen::EmpiricalNoiseModel::operator()(int ch
         if (resp2 == m_elec_resp_cache.end()) {
             Response::ColdElec elec_resp(10, db_shaping);  // default at 1 mV/fC
             auto sig = elec_resp.generate(WireCell::Waveform::Domain(0, m_fft_length * m_period), m_fft_length);
-            auto filt = Waveform::dft(sig);
+            // auto filt = Waveform::dft(sig);
+            auto filt = Aux::fwd(m_dft, Waveform::complex(sig));
             auto ele_resp_amp = Waveform::magnitude(filt);
 
             ele_resp_amp.resize(m_elec_resp_freq.size());
