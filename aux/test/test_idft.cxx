@@ -204,7 +204,10 @@ void test_2d_transpose(IDFT::pointer dft, int nrows, int ncols)
 
 int main(int argc, char* argv[])
 {
-    auto idft = make_dft_args(argc, argv);
+    DftArgs args;
+    int rc = make_dft_args(args, argc, argv);
+    if (rc) { return rc; }
+    auto idft = make_dft(args.tn, args.pi, args.cfg);
 
     test_1d_zero(idft);
     test_1d_impulse(idft);

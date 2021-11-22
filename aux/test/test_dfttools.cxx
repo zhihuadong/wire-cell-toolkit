@@ -122,7 +122,10 @@ void test_1b(IDFT::pointer dft, int axis, int nrows=8, int ncols=4)
 
 int main(int argc, char* argv[])
 {
-    auto idft = make_dft_args(argc, argv);
+    DftArgs args;
+    int rc = make_dft_args(args, argc, argv);
+    if (rc) { return rc; }
+    auto idft = make_dft(args.tn, args.pi, args.cfg);
 
     test_1d_impulse(idft);
     test_2d_impulse(idft);
