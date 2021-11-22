@@ -38,7 +38,7 @@ Aux::dft_array_t doit(const Aux::dft_array_t& arr, trans func)
 
 }
 
-Aux::dft_array_t Aux::fwd(IDFT::pointer dft, const Aux::dft_array_t& arr)
+Aux::dft_array_t Aux::fwd(const IDFT::pointer& dft, const Aux::dft_array_t& arr)
 {
     return doit(arr, [&](const complex_t* in_data,
                          complex_t* out_data,
@@ -47,7 +47,7 @@ Aux::dft_array_t Aux::fwd(IDFT::pointer dft, const Aux::dft_array_t& arr)
     });
 }
 
-Aux::dft_array_t Aux::inv(IDFT::pointer dft, const Aux::dft_array_t& arr)
+Aux::dft_array_t Aux::inv(const IDFT::pointer& dft, const Aux::dft_array_t& arr)
 {
     return doit(arr, [&](const complex_t* in_data,
                          complex_t* out_data,
@@ -103,7 +103,7 @@ Aux::dft_array_t doit1b(const Aux::dft_array_t& arr, int axis, trans func)
 // - We then have column-wise storage order but IDFT assumes row-wise
 // - so we reverse (nrows, ncols) and meaning of axis.
 
-Aux::dft_array_t Aux::fwd(IDFT::pointer dft, const Aux::dft_array_t& arr, int axis)
+Aux::dft_array_t Aux::fwd(const IDFT::pointer& dft, const Aux::dft_array_t& arr, int axis)
 {
     Aux::dft_array_t ret = arr; 
     dft->fwd1b(ret.data(), ret.data(), ret.cols(), ret.rows(), !axis);
@@ -117,7 +117,7 @@ Aux::dft_array_t Aux::fwd(IDFT::pointer dft, const Aux::dft_array_t& arr, int ax
     // });
 }
 
-Aux::dft_array_t Aux::inv(IDFT::pointer dft, const Aux::dft_array_t& arr, int axis)
+Aux::dft_array_t Aux::inv(const IDFT::pointer& dft, const Aux::dft_array_t& arr, int axis)
 {
     Aux::dft_array_t ret = arr; 
     dft->inv1b(ret.data(), ret.data(), ret.cols(), ret.rows(), !axis);

@@ -20,14 +20,14 @@ namespace WireCell::Aux {
 
     // 1D with vectors
 
-    inline dft_vector_t fwd(IDFT::pointer dft, const dft_vector_t& seq)
+    inline dft_vector_t fwd(const IDFT::pointer& dft, const dft_vector_t& seq)
     {
         dft_vector_t ret(seq.size());
         dft->fwd1d(seq.data(), ret.data(), ret.size());
         return ret;
     }
 
-    inline dft_vector_t inv(IDFT::pointer dft, const dft_vector_t& spec)
+    inline dft_vector_t inv(const IDFT::pointer& dft, const dft_vector_t& spec)
     {
         dft_vector_t ret(spec.size());
         dft->inv1d(spec.data(), ret.data(), ret.size());
@@ -44,8 +44,8 @@ namespace WireCell::Aux {
     // from real or arr.real()() to convert result to real.
 
     // Transform both dimesions.
-    dft_array_t fwd(IDFT::pointer dft, const dft_array_t& arr);
-    dft_array_t inv(IDFT::pointer dft, const dft_array_t& arr);
+    dft_array_t fwd(const IDFT::pointer& dft, const dft_array_t& arr);
+    dft_array_t inv(const IDFT::pointer& dft, const dft_array_t& arr);
 
     // Transform a 2D array along one axis.
     //
@@ -60,8 +60,8 @@ namespace WireCell::Aux {
     // Note: internal storage order of an Eigen array may differ from
     // the logical order and indeed that of the array template type
     // order.  Neither is pertinent in setting the axis.
-    dft_array_t fwd(IDFT::pointer dft, const dft_array_t& arr, int axis);
-    dft_array_t inv(IDFT::pointer dft, const dft_array_t& arr, int axis);
+    dft_array_t fwd(const IDFT::pointer& dft, const dft_array_t& arr, int axis);
+    dft_array_t inv(const IDFT::pointer& dft, const dft_array_t& arr, int axis);
 
 
 }
