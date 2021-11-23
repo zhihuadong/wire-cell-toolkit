@@ -28,7 +28,9 @@ namespace WireCell {
             int m_long_waveform_pad;
 
            public:
-            ImpactResponse(int impact, const Waveform::realseq_t& wf, int waveform_pad,
+            ImpactResponse(int impact,
+                           const Waveform::compseq_t& spectrum,
+                           const Waveform::realseq_t& wf, int waveform_pad,
                            const Waveform::realseq_t& long_wf, int long_waveform_pad)
               : m_impact(impact)
               , m_waveform(wf)
@@ -36,7 +38,7 @@ namespace WireCell {
               , m_long_waveform(long_wf)
               , m_long_waveform_pad(long_waveform_pad)
             {
-                m_spectrum = Waveform::dft(m_waveform);
+                // m_spectrum = Waveform::dft(m_waveform);
             }
 
             /// Frequency-domain spectrum of response

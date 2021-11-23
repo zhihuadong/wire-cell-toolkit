@@ -1,3 +1,7 @@
+#include "WireCellAux/DftTools.h"
+#include "WireCellUtil/NamedFactory.h"
+#include "WireCellUtil/PluginManager.h"
+
 #include "WireCellUtil/Waveform.h"
 #include "WireCellUtil/Units.h"
 #include "WireCellUtil/Response.h"
@@ -20,10 +24,11 @@ using namespace WireCell::Test;
 // The preferred display units for gain.
 const double GUnit = units::mV / units::fC;
 
-void draw_time_freq(MultiPdf& pdf, Waveform::realseq_t& res, const std::string& title, const Binning& tbins)
+void draw_time_freq(MultiPdf& pdf, const IDFT::pointer& idft,
+                    Waveform::realseq_t& res, const std::string& title, const Binning& tbins)
 {
-    Waveform::compseq_t spec = Waveform::dft(res);
-    Waveform::realseq_t res2 = Waveform::idft(spec);
+    Waveform::compseq_t spec = Aux::fwd_r2c(idft, res);
+    Waveform::realseq_t res2 = Aux::inv_c2r(idft, spec);
 
     TH1F h_wave("response", title.c_str(), tbins.nbins(), tbins.min() / units::us, tbins.max() / units::us);
     TH1F h_wave2("response2", title.c_str(), tbins.nbins(), tbins.min() / units::us, tbins.max() / units::us);
@@ -106,6 +111,10 @@ void draw_time_freq(MultiPdf& pdf, Waveform::realseq_t& res, const std::string& 
 
 int main(int argc, char* argv[])
 {
+    PluginManager& pm = PluginManager::instance();
+    pm.add("WireCellAux");
+    auto idft = Factory::lookup_tn<IDFT>("FftwDFT");
+
     const std::vector<double> gains = {7.8 * GUnit, 14.0 * GUnit};
     const std::vector<double> shapings = {1.0 * units::us, 2.0 * units::us};
 
@@ -123,7 +132,7 @@ int main(int argc, char* argv[])
 
         const double tshape_us = shapings[ind] / units::us;
         auto tit = Form("Cold Electronics Response at %.0fus peaking", tshape_us);
-        draw_time_freq(pdf, res, tit, tbins);
+        draw_time_freq(pdf, idft, res, tit, tbins);
     }
 
     // Look at RC filter
@@ -135,7 +144,7 @@ int main(int argc, char* argv[])
         Waveform::realseq_t res = rc.generate(tbins);
 
         auto tit = "RC Response at 1ms time constant";
-        draw_time_freq(pdf, res, tit, tbins);
+        draw_time_freq(pdf, idft, res, tit, tbins);
     }
     {
         Binning shifted(tbins.nbins(), tbins.min() + tick, tbins.max() + tick);
@@ -144,7 +153,7 @@ int main(int argc, char* argv[])
         Waveform::realseq_t res = rc.generate(shifted);
 
         auto tit = "RC Response at 1ms time constant (suppress delta)";
-        draw_time_freq(pdf, res, tit, tbins);
+        draw_time_freq(pdf, idft, res, tit, tbins);
     }
 
     // Look at SysResp (Gaussian smear)
@@ -152,7 +161,7 @@ int main(int argc, char* argv[])
         Response::SysResp gaus;
         Waveform::realseq_t res = gaus.generate(tbins);
         auto tit = "Response Gaussian smear by default";
-        draw_time_freq(pdf, res, tit, tbins);
+        draw_time_freq(pdf, idft, res, tit, tbins);
     }
     {
         double mag = 1.0;
@@ -163,7 +172,7 @@ int main(int argc, char* argv[])
         Response::SysResp gaus(tick, mag, smear);
         Waveform::realseq_t res = gaus.generate(ttt);
         auto tit = "Response Gaussian 2 us smear";
-        draw_time_freq(pdf, res, tit, ttt);
+        draw_time_freq(pdf, idft, res, tit, ttt);
     }
 
     // do timing tests
@@ -198,7 +207,7 @@ int main(int argc, char* argv[])
             double fwd_time = 0.0;
             for (int itry = 0; itry < ntries; ++itry) {
                 auto t1 = std::chrono::high_resolution_clock::now();
-                spec = Waveform::dft(res);
+                spec = Aux::fwd_r2c(idft, res);
                 auto t2 = std::chrono::high_resolution_clock::now();
                 fwd_time += std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count();
             }
@@ -207,7 +216,7 @@ int main(int argc, char* argv[])
             double rev_time = 0.0;
             for (int itry = 0; itry < ntries; ++itry) {
                 auto t1 = std::chrono::high_resolution_clock::now();
-                res = Waveform::idft(spec);
+                res = Aux::inv_c2r(idft, spec);
                 auto t2 = std::chrono::high_resolution_clock::now();
                 rev_time += std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count();
             }

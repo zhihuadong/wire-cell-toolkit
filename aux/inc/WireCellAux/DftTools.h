@@ -16,36 +16,87 @@ namespace WireCell::Aux {
 
     // std::vector based functions
 
-    using dft_vector_t = std::vector<complex_t>;
+    using real_vector_t = std::vector<float>;
+    using complex_vector_t = std::vector<complex_t>;
 
     // 1D with vectors
 
-    inline dft_vector_t fwd(const IDFT::pointer& dft, const dft_vector_t& seq)
+    // Perform forward c2c transform on vector.
+    inline complex_vector_t fwd(const IDFT::pointer& dft, const complex_vector_t& seq)
     {
-        dft_vector_t ret(seq.size());
+        complex_vector_t ret(seq.size());
         dft->fwd1d(seq.data(), ret.data(), ret.size());
         return ret;
     }
 
-    inline dft_vector_t inv(const IDFT::pointer& dft, const dft_vector_t& spec)
+    // Perform forward r2c transform on vector.
+    inline complex_vector_t fwd_r2c(const IDFT::pointer& dft, const real_vector_t& vec)
     {
-        dft_vector_t ret(spec.size());
+        complex_vector_t cvec(vec.size());
+        std::transform(vec.begin(), vec.end(), cvec.begin(),
+                       [](float re) { return Aux::complex_t(re,0.0); } );
+        return fwd(dft, cvec);
+    }
+
+    // Perform inverse c2c transform on vector.
+    inline complex_vector_t inv(const IDFT::pointer& dft, const complex_vector_t& spec)
+    {
+        complex_vector_t ret(spec.size());
         dft->inv1d(spec.data(), ret.data(), ret.size());
         return ret;
     }
+
+    // Perform inverse c2r transform on vector.
+    inline real_vector_t inv_c2r(const IDFT::pointer& dft, const complex_vector_t& spec)
+    {
+        auto cvec = inv(dft, spec);
+        real_vector_t rvec(cvec.size());
+        std::transform(cvec.begin(), cvec.end(), rvec.begin(),
+                       [](const Aux::complex_t& c) { return std::real(c); });
+        return rvec;
+        
+    }
+
+    // 1D high-level interface
+
+    /// Convovle in1 and in2.  Returned vecgtor has size sum of sizes
+    /// of in1 and in2 less one element in order to assure no periodic
+    /// aliasing.  Caller need not (should not) pad either input.
+    /// Caller is free to truncate result as required.
+    real_vector_t convolve(const IDFT::pointer& dft,
+                           const real_vector_t& in1,
+                           const real_vector_t& in2);
+
+
+    /// Replace response res1 in meas with response res2.
+    ///
+    /// This will compute the FFT of all three, in frequency space will form:
+    ///
+    ///     meas * resp2 / resp1
+    ///
+    /// apply the inverse FFT and return its real part.
+    ///
+    /// The output vector is long enough to assure no periodic
+    /// aliasing.  In general, caller should NOT pre-pad any input.
+    /// Any subsequent truncation of result is up to caller.
+    real_vector_t replace(const IDFT::pointer& dft,
+                          const real_vector_t& meas,
+                          const real_vector_t& res1,
+                          const real_vector_t& res2);
+
 
     // Eigen array based functions
 
     /// A complex, 2D array.  Use Array::cast<type>() if you need to
     /// convert to/from real.
-    using dft_array_t = Eigen::ArrayXXcf;
+    using complex_array_t = Eigen::ArrayXXcf;
     
     // 2D with Eigen arrays.  Use eg arr.cast<complex_>() to provde
     // from real or arr.real()() to convert result to real.
 
     // Transform both dimesions.
-    dft_array_t fwd(const IDFT::pointer& dft, const dft_array_t& arr);
-    dft_array_t inv(const IDFT::pointer& dft, const dft_array_t& arr);
+    complex_array_t fwd(const IDFT::pointer& dft, const complex_array_t& arr);
+    complex_array_t inv(const IDFT::pointer& dft, const complex_array_t& arr);
 
     // Transform a 2D array along one axis.
     //
@@ -60,9 +111,8 @@ namespace WireCell::Aux {
     // Note: internal storage order of an Eigen array may differ from
     // the logical order and indeed that of the array template type
     // order.  Neither is pertinent in setting the axis.
-    dft_array_t fwd(const IDFT::pointer& dft, const dft_array_t& arr, int axis);
-    dft_array_t inv(const IDFT::pointer& dft, const dft_array_t& arr, int axis);
-
+    complex_array_t fwd(const IDFT::pointer& dft, const complex_array_t& arr, int axis);
+    complex_array_t inv(const IDFT::pointer& dft, const complex_array_t& arr, int axis);
 
 }
 

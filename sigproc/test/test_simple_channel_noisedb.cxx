@@ -1,6 +1,9 @@
 #include "WireCellUtil/Testing.h"
 
 #include "WireCellSigProc/SimpleChannelNoiseDB.h"
+
+#include "WireCellUtil/PluginManager.h"
+#include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/Units.h"
 
 #include <iostream>
@@ -11,10 +14,15 @@ using namespace WireCell::SigProc;
 
 int main()
 {
+    PluginManager& pm = PluginManager::instance();
+    pm.add("WireCellAux");
+    Factory::lookup_tn<IDFT>("FftwDFT");
+
     const int nsamples = 5432;
     const double tick = 1.0 * units::ms;
 
     SimpleChannelNoiseDB cndb(tick, nsamples);
+    cndb.configure(cndb.default_configuration());
 
     Assert(cndb.sample_time() == tick);
     Assert(cndb.nominal_baseline(0) == 0.0);

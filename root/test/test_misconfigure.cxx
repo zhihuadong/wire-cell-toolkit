@@ -1,4 +1,6 @@
+#include "WireCellAux/DftTools.h"
 #include "WireCellIface/IFrameFilter.h"
+#include "WireCellIface/IDFT.h"
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/SimpleFrame.h"
 #include "WireCellIface/SimpleTrace.h"
@@ -117,8 +119,12 @@ TH2F* plot_frame(MultiPdf& pdf, IFrame::pointer frame, std::string name, double 
 int main(int argc, char* argv[])
 {
     PluginManager& pm = PluginManager::instance();
+    auto aux_pi = pm.add("WireCellAux");
+    assert(aux_pi);
     pm.add("WireCellGen");
     pm.add("WireCellRoot");
+
+    auto idft = Factory::lookup_tn<IDFT>("FftwDFT");
 
     int nsamples = 50;
     double gain, shaping, tick;
@@ -140,9 +146,9 @@ int main(int argc, char* argv[])
     auto resp = ce.generate(Binning(200, 0, 200 * tick));
     auto resp2 = ce.generate(Binning(400, 0, 400 * tick));
     auto resp3 = ce.generate(Binning(50, 0, 50 * tick));
-    auto resp_spec = Waveform::dft(resp);
-    auto resp_spec2 = Waveform::dft(resp2);
-    auto resp_spec3 = Waveform::dft(resp3);
+    auto resp_spec = Aux::fwd_r2c(idft, resp);
+    auto resp_spec2 = Aux::fwd_r2c(idft, resp2);
+    auto resp_spec3 = Aux::fwd_r2c(idft, resp3);
 
     ITrace::vector q_traces;
     ITrace::vector out_traces;
@@ -163,10 +169,10 @@ int main(int argc, char* argv[])
         q_traces.push_back(std::make_shared<SimpleTrace>(qchannel++, 0, q3));
         q_traces.push_back(std::make_shared<SimpleTrace>(qchannel++, 0, q4));
 
-        auto e1 = linear_convolve(q1, resp);
-        auto e2 = linear_convolve(q2, resp);
-        auto e3 = linear_convolve(q3, resp);
-        auto e4 = linear_convolve(q4, resp);
+        auto e1 = Aux::convolve(idft, q1, resp);
+        auto e2 = Aux::convolve(idft, q2, resp);
+        auto e3 = Aux::convolve(idft, q3, resp);
+        auto e4 = Aux::convolve(idft, q4, resp);
 
         out_traces.push_back(std::make_shared<SimpleTrace>(channel++, 0, e1));
         out_traces.push_back(std::make_shared<SimpleTrace>(channel++, 0, e2));

@@ -11,8 +11,8 @@
 
 // FIXME: remove the hard-wired Eigen::FFT related in favor of dynamic
 // DFT with Aux/DftTools.h.
-#include <Eigen/Core>
-#include <unsupported/Eigen/FFT>
+// #include <Eigen/Core>
+// #include <unsupported/Eigen/FFT>
 
 namespace WireCell {
 
@@ -193,49 +193,49 @@ namespace WireCell {
 
         /// Discrete Fourier transform of real sequence.  Returns full
         /// spectrum.  No normalization scaling applied
-        compseq_t dft(realseq_t seq);
+        // compseq_t dft(realseq_t seq);
 
         // Linear convolution, returns in1.size()+in2.size()-1.  If
         // truncate is false then the returned sequence will be
         // truncated to length that of the first input.  Otherwise the
         // function is symmetric between the two inputs.
-        realseq_t linear_convolve(Waveform::realseq_t in1, Waveform::realseq_t in2, bool truncate = true);
+        // realseq_t linear_convolve(Waveform::realseq_t in1, Waveform::realseq_t in2, bool truncate = true);
 
         // Replace old response in wave with new response.  If
         // truncate is false then the returned sequence will be the
         // length required for linear convolution.  This is the sum of
         // the sizes of all input less one and less the smallest.
-        realseq_t replace_convolve(Waveform::realseq_t wave, Waveform::realseq_t newres, Waveform::realseq_t oldres,
-                                   bool truncate = true);
+        // realseq_t replace_convolve(Waveform::realseq_t wave, Waveform::realseq_t newres, Waveform::realseq_t oldres,
+        //                            bool truncate = true);
 
         /// Inverse, discrete Fourier transform.  Expects full
         /// spectrum (twice Nyquist frequency).  Applies the
         /// 1/Nsamples normalization.
-        realseq_t idft(compseq_t spec);
+        // realseq_t idft(compseq_t spec);
 
         /// Return the smallest, most frequent value to appear in vector.
         short most_frequent(const std::vector<short>& vals);
 
-        class FFT {
-           public:
-            FFT() {}
-            inline compseq_t dft(realseq_t wave)
-            {
-                auto v = Eigen::Map<Eigen::VectorXf>(wave.data(), wave.size());
-                Eigen::VectorXcf ret = trans.fwd(v);
-                return compseq_t(ret.data(), ret.data() + ret.size());
-            }
-            inline realseq_t idft(compseq_t spec)
-            {
-                auto v = Eigen::Map<Eigen::VectorXcf>(spec.data(), spec.size());
-                Eigen::VectorXf ret;
-                trans.inv(ret, v);
-                return realseq_t(ret.data(), ret.data() + ret.size());
-            }
+        // class FFT {
+        //    public:
+        //     FFT() {}
+        //     inline compseq_t dft(realseq_t wave)
+        //     {
+        //         auto v = Eigen::Map<Eigen::VectorXf>(wave.data(), wave.size());
+        //         Eigen::VectorXcf ret = trans.fwd(v);
+        //         return compseq_t(ret.data(), ret.data() + ret.size());
+        //     }
+        //     inline realseq_t idft(compseq_t spec)
+        //     {
+        //         auto v = Eigen::Map<Eigen::VectorXcf>(spec.data(), spec.size());
+        //         Eigen::VectorXf ret;
+        //         trans.inv(ret, v);
+        //         return realseq_t(ret.data(), ret.data() + ret.size());
+        //     }
 
-           private:
-            Eigen::FFT<Waveform::real_t> trans;
-        };
+        //    private:
+        //     Eigen::FFT<Waveform::real_t> trans;
+        // };
 
     }  // namespace Waveform
 }  // namespace WireCell

@@ -1,4 +1,6 @@
 #include "WireCellAux/DftTools.h"
+#include <algorithm>
+
 
 using namespace WireCell;
 using namespace WireCell::Aux;
@@ -14,7 +16,7 @@ using ROWM = Eigen::Array<Aux::complex_t, Eigen::Dynamic, Eigen::Dynamic, Eigen:
 using COLM = Eigen::Array<Aux::complex_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor>;
 
 template<typename trans>
-Aux::dft_array_t doit(const Aux::dft_array_t& arr, trans func)
+Aux::complex_array_t doit(const Aux::complex_array_t& arr, trans func)
 {
     // Nominally, eigen storage memory is in column-major order
     const Aux::complex_t* in_data = arr.data();
@@ -28,7 +30,7 @@ Aux::dft_array_t doit(const Aux::dft_array_t& arr, trans func)
         nrows = arr.rows();
     }
 
-    Aux::dft_vector_t out_vec(nrows*ncols);
+    Aux::complex_vector_t out_vec(nrows*ncols);
     func(in_data, out_vec.data(), nrows, ncols);
 
     if (flipped) {
@@ -38,7 +40,7 @@ Aux::dft_array_t doit(const Aux::dft_array_t& arr, trans func)
 
 }
 
-Aux::dft_array_t Aux::fwd(const IDFT::pointer& dft, const Aux::dft_array_t& arr)
+Aux::complex_array_t Aux::fwd(const IDFT::pointer& dft, const Aux::complex_array_t& arr)
 {
     return doit(arr, [&](const complex_t* in_data,
                          complex_t* out_data,
@@ -47,7 +49,7 @@ Aux::dft_array_t Aux::fwd(const IDFT::pointer& dft, const Aux::dft_array_t& arr)
     });
 }
 
-Aux::dft_array_t Aux::inv(const IDFT::pointer& dft, const Aux::dft_array_t& arr)
+Aux::complex_array_t Aux::inv(const IDFT::pointer& dft, const Aux::complex_array_t& arr)
 {
     return doit(arr, [&](const complex_t* in_data,
                          complex_t* out_data,
@@ -56,10 +58,8 @@ Aux::dft_array_t Aux::inv(const IDFT::pointer& dft, const Aux::dft_array_t& arr)
     });
 }
 
-#include <iostream> // debug
-
 template<typename trans>
-Aux::dft_array_t doit1b(const Aux::dft_array_t& arr, int axis, trans func)
+Aux::complex_array_t doit1b(const Aux::complex_array_t& arr, int axis, trans func)
 {
     // We must provide a flat array with storage order such with
     // logical axis-major ordering.
@@ -67,14 +67,11 @@ Aux::dft_array_t doit1b(const Aux::dft_array_t& arr, int axis, trans func)
     const int nrows = arr.rows(); // "logical"
     const int ncols = arr.cols(); // shape
 
-    std::cerr << "nrows="<<nrows<<", ncols="<<ncols
-              << ", axis="<<axis<<", IsRowMajor:"<<arr.IsRowMajor<<"\n";
-
     // If storage order matches "axis-major"
     if ( (axis == 1 and arr.IsRowMajor)
          or
          (axis == 0 and not arr.IsRowMajor) ) {
-        Aux::dft_vector_t out_vec(nrows*ncols);
+        Aux::complex_vector_t out_vec(nrows*ncols);
         func(in_data, out_vec.data(), ncols, nrows);
         if (arr.IsRowMajor) {
             // note, returning makes a copy and will perform an actual
@@ -103,29 +100,76 @@ Aux::dft_array_t doit1b(const Aux::dft_array_t& arr, int axis, trans func)
 // - We then have column-wise storage order but IDFT assumes row-wise
 // - so we reverse (nrows, ncols) and meaning of axis.
 
-Aux::dft_array_t Aux::fwd(const IDFT::pointer& dft, const Aux::dft_array_t& arr, int axis)
+Aux::complex_array_t Aux::fwd(const IDFT::pointer& dft, 
+                              const Aux::complex_array_t& arr, 
+                              int axis)
 {
-    Aux::dft_array_t ret = arr; 
+    Aux::complex_array_t ret = arr; 
     dft->fwd1b(ret.data(), ret.data(), ret.cols(), ret.rows(), !axis);
     return ret;
-
-    // return doit1b(arr, axis,
-    //               [&](const complex_t* in_data,
-    //                   complex_t* out_data,
-    //                   int nrows, int ncols) {
-    //     dft->fwd1b(in_data, out_data, nrows, ncols);
-    // });
 }
 
-Aux::dft_array_t Aux::inv(const IDFT::pointer& dft, const Aux::dft_array_t& arr, int axis)
+Aux::complex_array_t Aux::inv(const IDFT::pointer& dft,
+                              const Aux::complex_array_t& arr,
+                              int axis)
 {
-    Aux::dft_array_t ret = arr; 
+    Aux::complex_array_t ret = arr; 
     dft->inv1b(ret.data(), ret.data(), ret.cols(), ret.rows(), !axis);
     return ret;
-    // return doit1b(arr, axis,
-    //               [&](const complex_t* in_data,
-    //                   complex_t* out_data,
-    //                   int nrows, int ncols) {
-    //     dft->inv1b(in_data, out_data, nrows, ncols);
-    // });
+}
+
+
+Aux::real_vector_t Aux::convolve(const IDFT::pointer& dft,
+                                 const Aux::real_vector_t& in1,
+                                 const Aux::real_vector_t& in2)
+{
+    size_t size = in1.size() + in2.size() - 1;
+    Aux::complex_vector_t cin1(size,0), cin2(size,0);
+
+    std::transform(in1.begin(), in1.end(), cin1.begin(),
+                   [](float re) { return Aux::complex_t(re,0.0); } );
+    std::transform(in2.begin(), in2.end(), cin2.begin(),
+                   [](float re) { return Aux::complex_t(re,0.0); } );
+
+    dft->fwd1d(cin1.data(), cin1.data(), size);
+    dft->fwd1d(cin2.data(), cin2.data(), size);
+
+    for (size_t ind=0; ind<size; ++ind) {
+        cin1[ind] *= cin2[ind];
+    }
+
+    Aux::real_vector_t ret(size);
+    std::transform(cin1.begin(), cin1.end(), ret.begin(),
+                   [](const complex_t& c) { return std::real(c); });
+    return ret;
+}
+
+Aux::real_vector_t Aux::replace(const IDFT::pointer& dft,
+                                const Aux::real_vector_t& meas,
+                                const Aux::real_vector_t& res1,
+                                const Aux::real_vector_t& res2)
+{
+    size_t sizes[3] = {meas.size(), res1.size(), res2.size()};
+    size_t size = sizes[0] + sizes[1] + sizes[2] - *std::min_element(sizes, sizes + 3) - 1;
+
+    Aux::complex_vector_t cmeas(size,0), cres1(size,0), cres2(size,0);
+    std::transform(meas.begin(), meas.end(), cmeas.begin(),
+                   [](float re) { return Aux::complex_t(re,0.0); } );
+    std::transform(res1.begin(), res1.end(), cres1.begin(),
+                   [](float re) { return Aux::complex_t(re,0.0); } );
+    std::transform(res2.begin(), res2.end(), cres2.begin(),
+                   [](float re) { return Aux::complex_t(re,0.0); } );
+
+    dft->fwd1d(cmeas.data(), cmeas.data(), size);
+    dft->fwd1d(cres1.data(), cres1.data(), size);
+    dft->fwd1d(cres2.data(), cres2.data(), size);
+
+    for (size_t ind=0; ind<size; ++ind) {
+        cmeas[ind] *= res2[ind]/res1[ind];
+    }
+    Aux::real_vector_t ret(size);
+    std::transform(cmeas.begin(), cmeas.end(), ret.begin(),
+                   [](const complex_t& c) { return std::real(c); });
+
+    return ret;
 }

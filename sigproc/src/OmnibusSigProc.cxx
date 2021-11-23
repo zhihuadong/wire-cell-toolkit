@@ -1,10 +1,9 @@
+#include "ROI_formation.h"
+#include "ROI_refinement.h"
+
 #include "WireCellSigProc/OmnibusSigProc.h"
 
-#include "WireCellUtil/NamedFactory.h"
-#include "WireCellUtil/Exceptions.h"
-#include "WireCellUtil/String.h"
-#include "WireCellUtil/FFTBestLength.h"
-#include "WireCellUtil/Waveform.h"
+#include "WireCellAux/DftTools.h"
 
 #include "WireCellIface/SimpleFrame.h"
 #include "WireCellIface/SimpleTrace.h"
@@ -13,8 +12,11 @@
 #include "WireCellIface/IFilterWaveform.h"
 #include "WireCellIface/IChannelResponse.h"
 
-#include "ROI_formation.h"
-#include "ROI_refinement.h"
+#include "WireCellUtil/NamedFactory.h"
+#include "WireCellUtil/Exceptions.h"
+#include "WireCellUtil/String.h"
+#include "WireCellUtil/FFTBestLength.h"
+#include "WireCellUtil/Waveform.h"
 
 #include "WireCellUtil/NamedFactory.h"
 
@@ -120,6 +122,9 @@ void OmnibusSigProc::configure(const WireCell::Configuration& config)
     m_fine_time_offset = get(config, "ftoffset", m_fine_time_offset);
     m_coarse_time_offset = get(config, "ctoffset", m_coarse_time_offset);
     m_anode_tn = get(config, "anode", m_anode_tn);
+
+    std::string dft_tn = get<std::string>(config, "dft", "FftwDFT");
+    m_dft = Factory::find_tn<IDFT>(dft_tn);
 
     // m_nticks = get(config,"nticks",m_nticks);
     if (!config["nticks"].isNull()) {
@@ -262,6 +267,7 @@ WireCell::Configuration OmnibusSigProc::default_configuration() const
 {
     Configuration cfg;
     cfg["anode"] = m_anode_tn;
+    cfg["dft"] = "FftwDFT";     // type-name for the DFT to use
     cfg["ftoffset"] = m_fine_time_offset;
     cfg["ctoffset"] = m_coarse_time_offset;
     // cfg["nticks"] = m_nticks;
@@ -756,7 +762,8 @@ void OmnibusSigProc::init_overall_response(IFrame::pointer frame)
     // auto ewave = ce.generate(tbins);
     auto ewave = (*m_elecresponse).waveform_samples(tbins);
     Waveform::scale(ewave, m_inter_gain * m_ADC_mV * (-1));
-    elec = Waveform::dft(ewave);
+    // elec = Waveform::dft(ewave);
+    elec = Aux::fwd_r2c(m_dft, ewave);
 
     std::complex<float> fine_period(fravg.period, 0);
 
@@ -782,18 +789,29 @@ void OmnibusSigProc::init_overall_response(IFrame::pointer frame)
     for (int iplane = 0; iplane < 3; ++iplane) {
         auto arr = Response::as_array(fravg.planes[iplane], fine_nwires, fine_nticks);
 
+
+        int nrows = 0;
+        int ncols = 0;
+
         // do FFT for response ...
-        Array::array_xxc c_data = Array::dft_rc(arr, 0);
-        int nrows = c_data.rows();
-        int ncols = c_data.cols();
+        // Array::array_xxc c_data = Array::dft_rc(arr, 0);
+        {
+            Array::array_xxc c_data = arr.cast<IDFT::complex_t>();
+            c_data = Aux::fwd(m_dft, c_data, 1);
 
-        for (int irow = 0; irow < nrows; ++irow) {
-            for (int icol = 0; icol < ncols; ++icol) {
-                c_data(irow, icol) = c_data(irow, icol) * elec.at(icol) * fine_period;
+            nrows = c_data.rows();
+            ncols = c_data.cols();
+
+            for (int irow = 0; irow < nrows; ++irow) {
+                for (int icol = 0; icol < ncols; ++icol) {
+                    c_data(irow, icol) = c_data(irow, icol) * elec.at(icol) * fine_period;
+                }
             }
-        }
 
-        arr = Array::idft_cr(c_data, 0);
+            // arr = Array::idft_cr(c_data, 0);
+            c_data = Aux::inv(m_dft, c_data, 1);
+            arr = c_data.real();
+        }
 
         // figure out how to do fine ... shift (good ...)
         int fine_time_shift = m_fine_time_offset / fravg.period;
@@ -883,7 +901,8 @@ void OmnibusSigProc::decon_2D_init(int plane)
 {
     // data part ...
     // first round of FFT on time
-    m_c_data[plane] = Array::dft_rc(m_r_data[plane], 0);
+    // m_c_data[plane] = Array::dft_rc(m_r_data[plane], 0);
+    m_c_data[plane] = Aux::fwd(m_dft, m_r_data[plane].cast<IDFT::complex_t>(), 1);
 
     // now apply the ch-by-ch response ...
     if (!m_per_chan_resp.empty()) {
@@ -909,13 +928,15 @@ void OmnibusSigProc::decon_2D_init(int plane)
 
         // const auto ewave = ce.generate(tbins);
         auto ewave = (*m_elecresponse).waveform_samples(tbins);
-        const WireCell::Waveform::compseq_t elec = Waveform::dft(ewave);
+        // const WireCell::Waveform::compseq_t elec = Waveform::dft(ewave);
+        const WireCell::Waveform::compseq_t elec = Aux::fwd_r2c(m_dft, ewave);
 
         for (auto och : m_channel_range[plane]) {
             // const auto& ch_resp = cr->channel_response(och.ident);
             Waveform::realseq_t tch_resp = cr->channel_response(och.ident);
             tch_resp.resize(m_fft_nticks, 0);
-            const WireCell::Waveform::compseq_t ch_elec = Waveform::dft(tch_resp);
+            // const WireCell::Waveform::compseq_t ch_elec = Waveform::dft(tch_resp);
+            const WireCell::Waveform::compseq_t ch_elec = Aux::fwd_r2c(m_dft, tch_resp);
 
             const int irow = och.wire + m_pad_nwires[plane];
             for (int icol = 0; icol != m_c_data[plane].cols(); icol++) {
@@ -931,7 +952,8 @@ void OmnibusSigProc::decon_2D_init(int plane)
     }
 
     // second round of FFT on wire
-    m_c_data[plane] = Array::dft_cc(m_c_data[plane], 1);
+    // m_c_data[plane] = Array::dft_cc(m_c_data[plane], 1);
+    m_c_data[plane] = Aux::fwd(m_dft, m_c_data[plane], 0);
 
     // response part ...
     Array::array_xxf r_resp = Array::array_xxf::Zero(m_r_data[plane].rows(), m_fft_nticks);
@@ -942,9 +964,11 @@ void OmnibusSigProc::decon_2D_init(int plane)
     }
 
     // do first round FFT on the resposne on time
-    Array::array_xxc c_resp = Array::dft_rc(r_resp, 0);
+    // Array::array_xxc c_resp = Array::dft_rc(r_resp, 0);
     // do second round FFT on the response on wire
-    c_resp = Array::dft_cc(c_resp, 1);
+    // c_resp = Array::dft_cc(c_resp, 1);
+    Array::array_xxc c_resp = r_resp.cast<IDFT::complex_t>();
+    Aux::fwd(m_dft, c_resp);
 
     // make ratio to the response and apply wire filter
     m_c_data[plane] = m_c_data[plane] / c_resp;
@@ -968,10 +992,10 @@ void OmnibusSigProc::decon_2D_init(int plane)
     }
 
     // do the first round of inverse FFT on wire
-    m_c_data[plane] = Array::idft_cc(m_c_data[plane], 1);
-
+    //m_c_data[plane] = Array::idft_cc(m_c_data[plane], 1);
     // do the second round of inverse FFT on time
-    m_r_data[plane] = Array::idft_cr(m_c_data[plane], 0);
+    //m_r_data[plane] = Array::idft_cr(m_c_data[plane], 0);
+    m_r_data[plane] = Aux::inv(m_dft, m_c_data[plane]).real();
 
     // do the shift in wire
     const int nrows = m_r_data[plane].rows();
@@ -995,7 +1019,9 @@ void OmnibusSigProc::decon_2D_init(int plane)
         m_r_data[plane].block(0, 0, nrows, time_shift) = arr2;
         m_r_data[plane].block(0, time_shift, nrows, ncols - time_shift) = arr1;
     }
-    m_c_data[plane] = Array::dft_rc(m_r_data[plane], 0);
+    // m_c_data[plane] = Array::dft_rc(m_r_data[plane], 0);
+    m_c_data[plane] = Aux::fwd(m_dft, m_r_data[plane].cast<IDFT::complex_t>(), 1);
+
 }
 
 void OmnibusSigProc::decon_2D_ROI_refine(int plane)
@@ -1016,7 +1042,9 @@ void OmnibusSigProc::decon_2D_ROI_refine(int plane)
     }
 
     // do the second round of inverse FFT on wire
-    Array::array_xxf tm_r_data = Array::idft_cr(c_data_afterfilter, 0);
+    // Array::array_xxf tm_r_data = Array::idft_cr(c_data_afterfilter, 0);
+    Array::array_xxf tm_r_data = Aux::inv(m_dft, c_data_afterfilter, 1).real();
+
     m_r_data[plane] = tm_r_data.block(m_pad_nwires[plane], 0, m_nwires[plane], m_nticks);
     restore_baseline(m_r_data[plane]);
 }
@@ -1057,7 +1085,9 @@ void OmnibusSigProc::decon_2D_tightROI(int plane)
     }
 
     // do the second round of inverse FFT on wire
-    Array::array_xxf tm_r_data = Array::idft_cr(c_data_afterfilter, 0);
+    // Array::array_xxf tm_r_data = Array::idft_cr(c_data_afterfilter, 0);
+    Array::array_xxf tm_r_data = Aux::inv(m_dft, c_data_afterfilter, 1).real();
+
     m_r_data[plane] = tm_r_data.block(m_pad_nwires[plane], 0, m_nwires[plane], m_nticks);
     restore_baseline(m_r_data[plane]);
 }
@@ -1099,7 +1129,9 @@ void OmnibusSigProc::decon_2D_tighterROI(int plane)
     }
 
     // do the second round of inverse FFT on wire
-    Array::array_xxf tm_r_data = Array::idft_cr(c_data_afterfilter, 0);
+    // Array::array_xxf tm_r_data = Array::idft_cr(c_data_afterfilter, 0);
+    Array::array_xxf tm_r_data = Aux::inv(m_dft, c_data_afterfilter, 1).real();
+
     m_r_data[plane] = tm_r_data.block(m_pad_nwires[plane], 0, m_nwires[plane], m_nticks);
     restore_baseline(m_r_data[plane]);
 }
@@ -1176,7 +1208,9 @@ void OmnibusSigProc::decon_2D_looseROI(int plane)
     }
 
     // do the second round of inverse FFT on wire
-    Array::array_xxf tm_r_data = Array::idft_cr(c_data_afterfilter, 0);
+    // Array::array_xxf tm_r_data = Array::idft_cr(c_data_afterfilter, 0);
+    Array::array_xxf tm_r_data = Aux::inv(m_dft, c_data_afterfilter, 1).real();
+
     m_r_data[plane] = tm_r_data.block(m_pad_nwires[plane], 0, m_nwires[plane], m_nticks);
     restore_baseline(m_r_data[plane]);
 }
@@ -1221,7 +1255,9 @@ void OmnibusSigProc::decon_2D_looseROI_debug_mode(int plane)
     }
 
     // do the second round of inverse FFT on wire
-    Array::array_xxf tm_r_data = Array::idft_cr(c_data_afterfilter, 0);
+    // Array::array_xxf tm_r_data = Array::idft_cr(c_data_afterfilter, 0);
+    Array::array_xxf tm_r_data = Aux::inv(m_dft, c_data_afterfilter, 1).real();
+
     m_r_data[plane] = tm_r_data.block(m_pad_nwires[plane], 0, m_nwires[plane], m_nticks);
     restore_baseline(m_r_data[plane]);
 }
@@ -1282,7 +1318,8 @@ void OmnibusSigProc::decon_2D_hits(int plane)
     }
 
     // do the second round of inverse FFT on wire
-    Array::array_xxf tm_r_data = Array::idft_cr(c_data_afterfilter, 0);
+    // Array::array_xxf tm_r_data = Array::idft_cr(c_data_afterfilter, 0);
+    Array::array_xxf tm_r_data = Aux::inv(m_dft, c_data_afterfilter, 1).real();
     m_r_data[plane] = tm_r_data.block(m_pad_nwires[plane], 0, m_nwires[plane], m_nticks);
     if (plane == 2) {
         restore_baseline(m_r_data[plane]);
@@ -1315,7 +1352,8 @@ void OmnibusSigProc::decon_2D_charge(int plane)
     }
 
     // do the second round of inverse FFT on wire
-    Array::array_xxf tm_r_data = Array::idft_cr(c_data_afterfilter, 0);
+    // Array::array_xxf tm_r_data = Array::idft_cr(c_data_afterfilter, 0);
+    Array::array_xxf tm_r_data = Aux::inv(m_dft, c_data_afterfilter, 1).real();
     m_r_data[plane] = tm_r_data.block(m_pad_nwires[plane], 0, m_nwires[plane], m_nticks);
     if (plane == 2) {
         restore_baseline(m_r_data[plane]);
@@ -1571,5 +1609,5 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
 
 // Local Variables:
 // mode: c++
-// c-basic-offset: 2
+// c-basic-offset: 4
 // End:

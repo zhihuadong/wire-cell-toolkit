@@ -21,6 +21,8 @@
 #include "WireCellIface/IFrameFilter.h"
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/IChannelResponse.h"
+#include "WireCellIface/IDFT.h"
+
 #include "WireCellUtil/Waveform.h"
 
 #include <unordered_set>
@@ -46,6 +48,8 @@ namespace WireCell {
             int m_nsamples;
             WireCell::Waveform::realseq_t m_from;
             bool m_truncate;
+            IDFT::pointer m_dft;
+
         };
     }  // namespace Gen
 }  // namespace WireCell

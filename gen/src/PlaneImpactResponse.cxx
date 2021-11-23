@@ -112,7 +112,7 @@ void Gen::PlaneImpactResponse::build_responses()
         // note: we are ignoring waveform_start which will introduce
         // an arbitrary phase shift....
         // auto spec = Waveform::dft(wave);
-        auto spec = Aux::fwd(dft, Waveform::complex(wave));
+        auto spec = Aux::fwd_r2c(dft, wave);
         for (size_t ibin = 0; ibin < n_short_length; ++ibin) {
             short_spec[ibin] *= spec[ibin];
         }
@@ -139,14 +139,14 @@ void Gen::PlaneImpactResponse::build_responses()
         // note: we are ignoring waveform_start which will introduce
         // an arbitrary phase shift....
         // auto spec = Waveform::dft(wave);
-        auto spec = Aux::fwd(dft, Waveform::complex(wave));
+        auto spec = Aux::fwd_r2c(dft, wave);
         for (size_t ibin = 0; ibin < n_long_length; ++ibin) {
             long_spec[ibin] *= spec[ibin];
         }
     }
     WireCell::Waveform::realseq_t long_wf;
     if (nlong > 0) {
-        long_wf = Waveform::real(Aux::inv(dft, long_spec));
+        long_wf = Aux::inv_c2r(dft, long_spec);
     }
     const auto& fr = ifr->field_response();
     const auto& pr = *fr.plane(m_plane_ident);
@@ -233,7 +233,7 @@ void Gen::PlaneImpactResponse::build_responses()
             wave[bin] += induced_charge;
         }
         // WireCell::Waveform::compseq_t spec = Waveform::dft(wave);
-        WireCell::Waveform::compseq_t spec = Aux::fwd(dft, Waveform::complex(wave));
+        WireCell::Waveform::compseq_t spec = Aux::fwd_r2c(dft, wave);
 
         // Convolve with short responses
         if (nshort) {
@@ -242,13 +242,15 @@ void Gen::PlaneImpactResponse::build_responses()
             }
         }
         // Waveform::realseq_t wf = Waveform::idft(spec);
-        Waveform::realseq_t wf = Waveform::real(Aux::inv(dft, spec));
+        Waveform::realseq_t wf = Aux::inv_c2r(dft, spec);
 
         wf.resize(m_nbins, 0);
+        spec = Aux::fwd_r2c(dft, wf);
 
         IImpactResponse::pointer ir =
             std::make_shared<Gen::ImpactResponse>(
-                ipath, wf, m_overall_short_padding / m_tick,
+                ipath,
+                spec, wf, m_overall_short_padding / m_tick,
                 long_wf, m_long_padding / m_tick);
         m_ir.push_back(ir);
     }

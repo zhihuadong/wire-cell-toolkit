@@ -202,7 +202,7 @@ void Gen::TruthTraceID::process(output_queue& frames)
 
                     // Waveform::realseq_t wave(nsamples, 0.0);
                     // wave = Waveform::idft(total_spectrum);
-                    Waveform::realseq_t wave = Waveform::real(Aux::inv(m_dft, total_spectrum));
+                    Waveform::realseq_t wave = Aux::inv_c2r(m_dft, total_spectrum);
                     auto mm = Waveform::edge(wave);
                     if (mm.first == (int) wave.size()) {
                         continue;

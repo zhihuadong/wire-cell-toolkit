@@ -1,3 +1,6 @@
+#include "WireCellAux/DftTools.h"
+#include "WireCellUtil/NamedFactory.h"
+#include "WireCellUtil/PluginManager.h"
 
 #include "WireCellUtil/Response.h"
 #include "WireCellUtil/Waveform.h"
@@ -67,6 +70,10 @@ std::vector<TH1F*> plot_wave(TCanvas& canvas, int padnum, std::string name, std:
 
 int main(int argc, char* argv[])
 {
+    PluginManager& pm = PluginManager::instance();
+    pm.add("WireCellAux");
+    auto idft = Factory::lookup_tn<IDFT>("FftwDFT");
+
     if (argc < 2) {
         std::cerr << "This test requires an Wire Cell Field Response input file." << std::endl;
         return 0;
@@ -126,16 +133,16 @@ int main(int argc, char* argv[])
             }
 
             // frequency space
-            Waveform::compseq_t charge_spectrum = Waveform::dft(electrons);
-            Waveform::compseq_t raw_response_spectrum = Waveform::dft(raw_response);
-            Waveform::compseq_t response_spectrum = Waveform::dft(response);
+            Waveform::compseq_t charge_spectrum = Aux::fwd_r2c(idft, electrons);
+            Waveform::compseq_t raw_response_spectrum = Aux::fwd_r2c(idft, raw_response);
+            Waveform::compseq_t response_spectrum = Aux::fwd_r2c(idft, response);
 
             // convolve
             Waveform::compseq_t conv_spectrum(nticks, Waveform::complex_t(0.0, 0.0));
             for (int ind = 0; ind < nticks; ++ind) {
                 conv_spectrum[ind] = response_spectrum[ind] * charge_spectrum[ind];
             }
-            Waveform::realseq_t conv = Waveform::idft(conv_spectrum);
+            Waveform::realseq_t conv = Aux::inv_c2r(idft, conv_spectrum);
             for (int ind = 0; ind < nticks; ++ind) {
                 conv[ind] /= nticks;
             }

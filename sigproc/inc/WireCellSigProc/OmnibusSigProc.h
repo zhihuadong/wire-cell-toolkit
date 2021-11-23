@@ -1,13 +1,17 @@
 #ifndef WIRECELLSIGPROC_OMNIBUSSIGPROC
 #define WIRECELLSIGPROC_OMNIBUSSIGPROC
 
+#include "WireCellAux/Logger.h"
+
 #include "WireCellIface/IFrameFilter.h"
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/IAnodePlane.h"
+#include "WireCellIface/IDFT.h"
 #include "WireCellIface/IWaveform.h"
+
 #include "WireCellUtil/Waveform.h"
 #include "WireCellUtil/Array.h"
-#include "WireCellAux/Logger.h"
+
 
 #include <list>
 
@@ -230,6 +234,7 @@ namespace WireCell {
 
             size_t m_count{0};
 
+            IDFT::pointer m_dft;
         };
     }  // namespace SigProc
 }  // namespace WireCell
@@ -237,5 +242,5 @@ namespace WireCell {
 #endif
 // Local Variables:
 // mode: c++
-// c-basic-offset: 2
+// c-basic-offset: 4
 // End:

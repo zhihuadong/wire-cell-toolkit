@@ -5,6 +5,8 @@
 #include "WireCellSigProc/Microboone.h"
 #include "WireCellSigProc/Derivations.h"
 
+#include "WireCellAux/DftTools.h"
+
 #include "WireCellUtil/NamedFactory.h"
 
 #include <cmath>
@@ -48,7 +50,9 @@ double filter_low_loose(double freq) { return 1 - exp(-pow(freq / 0.005, 2)); }
 bool Microboone::Subtract_WScaling(WireCell::IChannelFilter::channel_signals_t& chansig,
                                    const WireCell::Waveform::realseq_t& medians,
                                    const WireCell::Waveform::compseq_t& respec, int res_offset,
-                                   std::vector<std::vector<int> >& rois, float decon_limit1, float roi_min_max_ratio,
+                                   std::vector<std::vector<int> >& rois,
+                                   const IDFT::pointer& dft,
+                                   float decon_limit1, float roi_min_max_ratio,
                                    float rms_threshold)
 {
     double ave_coef = 0;
@@ -134,7 +138,8 @@ bool Microboone::Subtract_WScaling(WireCell::IChannelFilter::channel_signals_t& 
             }
 
             // do the deconvolution with a very loose low-frequency filter
-            WireCell::Waveform::compseq_t signal_roi_freq = WireCell::Waveform::dft(signal_roi);
+            // WireCell::Waveform::compseq_t signal_roi_freq = WireCell::Waveform::dft(signal_roi);
+            WireCell::Waveform::compseq_t signal_roi_freq = Aux::fwd_r2c(dft, signal_roi);
             WireCell::Waveform::shrink(signal_roi_freq, respec);
             for (size_t i = 0; i != signal_roi_freq.size(); i++) {
                 double freq;
@@ -148,7 +153,8 @@ bool Microboone::Subtract_WScaling(WireCell::IChannelFilter::channel_signals_t& 
                 std::complex<float> factor = filter_time(freq) * filter_low_loose(freq);
                 signal_roi_freq.at(i) = signal_roi_freq.at(i) * factor;
             }
-            WireCell::Waveform::realseq_t signal_roi_decon = WireCell::Waveform::idft(signal_roi_freq);
+            // WireCell::Waveform::realseq_t signal_roi_decon = WireCell::Waveform::idft(signal_roi_freq);
+            WireCell::Waveform::realseq_t signal_roi_decon = Aux::inv_c2r(dft, signal_roi_freq);
 
             if (rms_threshold) {
                 std::pair<double, double> temp = Derivations::CalcRMS(signal_roi_decon);
@@ -267,7 +273,9 @@ bool Microboone::Subtract_WScaling(WireCell::IChannelFilter::channel_signals_t& 
 }
 
 std::vector<std::vector<int> > Microboone::SignalProtection(WireCell::Waveform::realseq_t& medians,
-                                                            const WireCell::Waveform::compseq_t& respec, int res_offset,
+                                                            const WireCell::Waveform::compseq_t& respec,
+                                                            const IDFT::pointer& dft,
+                                                            int res_offset,
                                                             int pad_f, int pad_b, float upper_decon_limit,
                                                             float decon_lf_cutoff, float upper_adc_limit,
                                                             float protection_factor, float min_adc_limit)
@@ -342,7 +350,8 @@ std::vector<std::vector<int> > Microboone::SignalProtection(WireCell::Waveform::
     if (respec.size() > 0 && (respec.at(0).real() != 1 || respec.at(0).imag() != 0) && res_offset != 0) {
         // std::cout << nbin << std::endl;
 
-        WireCell::Waveform::compseq_t medians_freq = WireCell::Waveform::dft(medians);
+        // WireCell::Waveform::compseq_t medians_freq = WireCell::Waveform::dft(medians);
+        WireCell::Waveform::compseq_t medians_freq = Aux::fwd_r2c(dft, medians);
         WireCell::Waveform::shrink(medians_freq, respec);
 
         for (size_t i = 0; i != medians_freq.size(); i++) {
@@ -357,7 +366,8 @@ std::vector<std::vector<int> > Microboone::SignalProtection(WireCell::Waveform::
             std::complex<float> factor = filter_time(freq) * filter_low(freq, decon_lf_cutoff);
             medians_freq.at(i) = medians_freq.at(i) * factor;
         }
-        WireCell::Waveform::realseq_t medians_decon = WireCell::Waveform::idft(medians_freq);
+        // WireCell::Waveform::realseq_t medians_decon = WireCell::Waveform::idft(medians_freq);
+        WireCell::Waveform::realseq_t medians_decon = Aux::inv_c2r(dft, medians_freq);
 
         temp = Derivations::CalcRMS(medians_decon);
         mean = temp.first;
@@ -394,58 +404,6 @@ std::vector<std::vector<int> > Microboone::SignalProtection(WireCell::Waveform::
                 }
             }
         }
-
-        // // second-level decon ...
-        // medians_freq = WireCell::Waveform::dft(medians);
-        // WireCell::Waveform::realseq_t  respec_time = WireCell::Waveform::idft(respec);
-        // for (size_t i=0;i!=respec_time.size();i++){
-        //     if (respec_time.at(i)<0) respec_time.at(i) = 0;
-        // }
-        // WireCell::Waveform::compseq_t respec_freq = WireCell::Waveform::dft(respec_time);
-        // WireCell::Waveform::shrink(medians_freq,respec_freq);
-        // for (size_t i=0;i!=medians_freq.size();i++){
-        //     double freq;
-        //     // assuming 2 MHz digitization
-        //     if (i <medians_freq.size()/2.){
-        // 	freq = i/(1.*medians_freq.size())*2.;
-        //     }else{
-        // 	freq = (medians_freq.size() - i)/(1.*medians_freq.size())*2.;
-        //     }
-        //     std::complex<float> factor = filter_time(freq)*filter_low(freq, decon_lf_cutoff);
-        //     medians_freq.at(i) = medians_freq.at(i) * factor;
-        // }
-        // medians_decon = WireCell::Waveform::idft(medians_freq);
-
-        // temp = Derivations::CalcRMS(medians_decon);
-        // mean = temp.first;
-        // rms = temp.second;
-
-        // //	if (protection_factor*rms > upper_decon_limit){
-        // limit = protection_factor*rms;
-        // // }else{
-        // //     limit = upper_decon_limit;
-        // // }
-
-        // for (int j=0;j!=nbin;j++) {
-        //     float content = medians_decon.at(j);
-        //     if ((content-mean)>limit){
-        // 	int time_bin = j + res_offset;
-        // 	if (time_bin >= nbin) time_bin -= nbin;
-        // 	//	medians.at(time_bin) = 0;
-        // 	signalsBool.at(time_bin) = true;
-        // 	// add the front and back padding
-        // 	for (int k=0;k!=pad_b;k++){
-        // 	    int bin = time_bin+k+1;
-        // 	    if (bin > nbin-1) bin = nbin-1;
-        // 	    signalsBool.at(bin) = true;
-        // 	}
-        // 	for (int k=0;k!=pad_f;k++){
-        // 	    int bin = time_bin-k-1;
-        // 	    if (bin <0) { bin = 0; }
-        // 	    signalsBool.at(bin) = true;
-        // 	}
-        //     }
-        // }
     }
 
     // {
@@ -482,75 +440,6 @@ std::vector<std::vector<int> > Microboone::SignalProtection(WireCell::Waveform::
             flag_replace[roi.front()] = false;
         }
     }
-
-    //     // use ROI to get a new waveform
-    //     WireCell::Waveform::realseq_t medians_roi(nbin,0);
-    //     for (auto roi: rois){
-    // 	const int bin0 = std::max(roi.front()-1, 0);
-    // 	const int binf = std::min(roi.back()+1, nbin-1);
-    // 	const double m0 = medians[bin0];
-    // 	const double mf = medians[binf];
-    // 	const double roi_run = binf - bin0;
-    // 	const double roi_rise = mf - m0;
-    // 	for (auto bin : roi) {
-    // 	    const double m = m0 + (bin - bin0)/roi_run*roi_rise;
-    // 	    medians_roi.at(bin) = medians.at(bin) - m;
-    // 	}
-    //     }
-    //     // do the deconvolution with a very loose low-frequency filter
-    //     WireCell::Waveform::compseq_t medians_roi_freq = WireCell::Waveform::dft(medians_roi);
-    //     WireCell::Waveform::shrink(medians_roi_freq,respec);
-    //     for (size_t i=0;i!=medians_roi_freq.size();i++){
-    // 	double freq;
-    // 	// assuming 2 MHz digitization
-    // 	if (i <medians_roi_freq.size()/2.){
-    // 	    freq = i/(1.*medians_roi_freq.size())*2.;
-    // 	}else{
-    // 	    freq = (medians_roi_freq.size() - i)/(1.*medians_roi_freq.size())*2.;
-    // 	}
-    // 	std::complex<float> factor = filter_time(freq)*filter_low_loose(freq);
-    // 	medians_roi_freq.at(i) = medians_roi_freq.at(i) * factor;
-    //     }
-    //     WireCell::Waveform::realseq_t medians_roi_decon = WireCell::Waveform::idft(medians_roi_freq);
-
-    //     // judge if a roi is good or not ...
-    //     //shift things back properly
-    //     for (auto roi: rois){
-    //     	const int bin0 = std::max(roi.front()-1, 0);
-    //     	const int binf = std::min(roi.back()+1, nbin-1);
-    //     	flag_replace[roi.front()] = false;
-
-    // 	double max_val = 0;
-    // 	double min_val = 0;
-    // 	// double max_adc_val=0;
-    // 	// double min_adc_val=0;
-
-    // 	for (int i=bin0; i<=binf; i++){
-    //     	    int time_bin = i-res_offset;
-    //     	    if (time_bin <0) time_bin += nbin;
-    // 	    if (time_bin >=nbin) time_bin -= nbin;
-
-    // 	    if (i==bin0){
-    // 		max_val = medians_roi_decon.at(time_bin);
-    // 		min_val = medians_roi_decon.at(time_bin);
-    // 		// max_adc_val = medians.at(i);
-    // 		// min_adc_val = medians.at(i);
-    // 	    }else{
-    // 		if (medians_roi_decon.at(time_bin) > max_val) max_val = medians_roi_decon.at(time_bin);
-    // 		if (medians_roi_decon.at(time_bin) < min_val) min_val = medians_roi_decon.at(time_bin);
-    // 		// if (medians.at(i) > max_adc_val) max_adc_val = medians.at(i);
-    // 		// if (medians.at(i) < min_adc_val) min_adc_val = medians.at(i);
-    // 	    }
-    //     	}
-
-    // 	//std::cout << "Xin: " << upper_decon_limit1 << std::endl;
-    // 	//	if ( max_val > upper_decon_limit1)
-    // 	//	if ( max_val > 0.04 && fabs(min_val) < 0.6*max_val)
-    // 	//if (max_val > 0.06 && fabs(min_val) < 0.6*max_val)
-    // 	if (max_val > 0.06)
-    // 	    flag_replace[roi.front()] = true;
-    //     }
-    // }
 
     // Replace medians for above regions with interpolation on values
     // just outside each region.
@@ -885,6 +774,9 @@ void Microboone::ConfigFilterBase::configure(const WireCell::Configuration& cfg)
     m_anode = Factory::find_tn<IAnodePlane>(m_anode_tn);
     m_noisedb_tn = get(cfg, "noisedb", m_noisedb_tn);
     m_noisedb = Factory::find_tn<IChannelNoiseDatabase>(m_noisedb_tn);
+    std::string dft_tn = get<std::string>(cfg, "dft", "FftwDFT");
+    m_dft = Factory::find_tn<IDFT>(dft_tn);
+
     // std::cerr << "ConfigFilterBase: \n" << cfg << "\n";
 }
 WireCell::Configuration Microboone::ConfigFilterBase::default_configuration() const
@@ -892,6 +784,7 @@ WireCell::Configuration Microboone::ConfigFilterBase::default_configuration() co
     Configuration cfg;
     cfg["anode"] = m_anode_tn;
     cfg["noisedb"] = m_noisedb_tn;
+    cfg["dft"] = "FftwDFT";     // type-name for the DFT to use
     return cfg;
 }
 
@@ -945,7 +838,8 @@ WireCell::Waveform::ChannelMaskMap Microboone::CoherentNoiseSub::apply(channel_s
 
     // do the signal protection and adaptive baseline
     std::vector<std::vector<int> > rois =
-        Microboone::SignalProtection(medians, respec, res_offset, pad_f, pad_b, decon_limit, decon_lf_cutoff, adc_limit,
+        Microboone::SignalProtection(medians, respec, m_dft,
+                                     res_offset, pad_f, pad_b, decon_limit, decon_lf_cutoff, adc_limit,
                                      protection_factor, min_adc_limit);
 
     // if (achannel == 3840){
@@ -959,7 +853,9 @@ WireCell::Waveform::ChannelMaskMap Microboone::CoherentNoiseSub::apply(channel_s
     // << medians.at(101) << std::endl;
 
     // calculate the scaling coefficient and subtract
-    Microboone::Subtract_WScaling(chansig, medians, respec, res_offset, rois, decon_limit1, roi_min_max_ratio,
+    Microboone::Subtract_WScaling(chansig, medians, respec, res_offset, rois, 
+                                  m_dft,
+                                  decon_limit1, roi_min_max_ratio,
                                   m_rms_threshold);
 
     // WireCell::IChannelFilter::signal_t& signal = chansig.begin()->second;
@@ -1045,7 +941,8 @@ WireCell::Waveform::ChannelMaskMap Microboone::OneChannelNoise::apply(int ch, si
         }
     }
 
-    auto spectrum = WireCell::Waveform::dft(signal);
+    // auto spectrum = WireCell::Waveform::dft(signal);
+    auto spectrum = Aux::fwd_r2c(m_dft, signal);
     // std::cerr << "OneChannelNoise: "<<ch<<" dft spectral sum="<<Waveform::sum(spectrum)<<"\n";
 
     bool is_partial = m_check_partial(spectrum);  // Xin's "IS_RC()"
@@ -1089,7 +986,8 @@ WireCell::Waveform::ChannelMaskMap Microboone::OneChannelNoise::apply(int ch, si
 
     // remove the DC component
     spectrum.front() = 0;
-    signal = WireCell::Waveform::idft(spectrum);
+    // signal = WireCell::Waveform::idft(spectrum);
+    signal = Aux::inv_c2r(m_dft, spectrum);
 
     // std::cerr << "OneChannelNoise: "<<ch<<" after dft: sigsum="<<Waveform::sum(signal)<<"\n";
 
@@ -1339,6 +1237,8 @@ void Microboone::OneChannelStatus::configure(const WireCell::Configuration& cfg)
     if (!m_anode) {
         THROW(KeyError() << errmsg{"failed to get IAnodePlane: " + m_anode_tn});
     }
+    std::string dft_tn = get<std::string>(cfg, "dft", "FftwDFT");
+    m_dft = Factory::find_tn<IDFT>(dft_tn);
     // std::cerr << "OneChannelStatus: \n" << cfg << "\n";
 }
 WireCell::Configuration Microboone::OneChannelStatus::default_configuration() const
@@ -1349,6 +1249,7 @@ WireCell::Configuration Microboone::OneChannelStatus::default_configuration() co
     cfg["Nbins"] = m_nbins;
     cfg["Cut"] = m_cut;
     cfg["anode"] = m_anode_tn;
+    cfg["dft"] = "FftwDFT";     // type-name for the DFT to use
     return cfg;
 }
 
@@ -1414,7 +1315,8 @@ bool Microboone::OneChannelStatus::ID_lf_noisy(signal_t& sig) const
     //     temp_sig.at(i)=i;
     // }
     // do FFT
-    Waveform::compseq_t sig_freq = Waveform::dft(temp_sig);
+    // Waveform::compseq_t sig_freq = Waveform::dft(temp_sig);
+    Waveform::compseq_t sig_freq = Aux::fwd_r2c(m_dft, temp_sig);    
     for (int i = 0; i != m_nbins; i++) {
         content += abs(sig_freq.at(i + 1));
     }

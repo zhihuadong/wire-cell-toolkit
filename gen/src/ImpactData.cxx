@@ -57,9 +57,9 @@ void Gen::ImpactData::calculate(const IDFT::pointer& dft, int nticks) const
     }
 
     // m_spectrum = Waveform::dft(m_waveform);
-    m_spectrum = Aux::fwd(dft, Waveform::complex(m_waveform));
+    m_spectrum = Aux::fwd_r2c(dft, m_waveform);
     // m_weight_spectrum = Waveform::dft(m_weights);
-    m_weight_spectrum = Aux::fwd(dft, Waveform::complex(m_weights));
+    m_weight_spectrum = Aux::fwd_r2c(dft, m_weights);
 }
 
 // std::pair<int,int> Gen::ImpactData::strip() const

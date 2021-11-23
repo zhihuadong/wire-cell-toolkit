@@ -155,7 +155,7 @@ Gen::ImpactTransform::ImpactTransform(IPlaneImpactResponse::pointer pir,
                 Waveform::compseq_t rs1 = m_vec_map_resp.at(i)[0]->spectrum();
                 // do a inverse FFT
                 // Waveform::realseq_t rs1_t = Waveform::idft(rs1);
-                Waveform::realseq_t rs1_t = Waveform::real(Aux::inv(m_dft, rs1));
+                Waveform::realseq_t rs1_t = Aux::inv_c2r(m_dft, rs1);
                 // pick the first xxx ticks
                 Waveform::realseq_t rs1_reduced(m_end_tick - m_start_tick, 0);
                 for (int icol = 0; icol != m_end_tick - m_start_tick; icol++) {
@@ -164,7 +164,7 @@ Gen::ImpactTransform::ImpactTransform(IPlaneImpactResponse::pointer pir,
                 }
                 // do a FFT
                 // rs1 = Waveform::dft(rs1_reduced);
-                rs1 = Aux::fwd(m_dft, Waveform::complex(rs1_reduced));
+                rs1 = Aux::fwd_r2c(m_dft, rs1_reduced);
 
                 for (int icol = 0; icol != m_end_tick - m_start_tick; icol++) {
                     resp_f_w(0, icol) = rs1[icol];
@@ -174,24 +174,24 @@ Gen::ImpactTransform::ImpactTransform(IPlaneImpactResponse::pointer pir,
             for (int irow = 0; irow != m_num_pad_wire; irow++) {
                 Waveform::compseq_t rs1 = m_vec_map_resp.at(i)[irow + 1]->spectrum();
                 // Waveform::realseq_t rs1_t = Waveform::idft(rs1);
-                Waveform::realseq_t rs1_t = Waveform::real(Aux::inv(m_dft, rs1));
+                Waveform::realseq_t rs1_t = Aux::inv_c2r(m_dft, rs1);
                 Waveform::realseq_t rs1_reduced(m_end_tick - m_start_tick, 0);
                 for (int icol = 0; icol != m_end_tick - m_start_tick; icol++) {
                     if (icol >= int(rs1_t.size())) break;
                     rs1_reduced.at(icol) = rs1_t[icol];
                 }
                 // rs1 = Waveform::dft(rs1_reduced);
-                rs1 = Aux::fwd(m_dft, Waveform::complex(rs1_reduced));
+                rs1 = Aux::fwd_r2c(m_dft, rs1_reduced);
                 Waveform::compseq_t rs2 = m_vec_map_resp.at(i)[-irow - 1]->spectrum();
                 // Waveform::realseq_t rs2_t = Waveform::idft(rs2);
-                Waveform::realseq_t rs2_t = Waveform::real(Aux::inv(m_dft, rs2));
+                Waveform::realseq_t rs2_t = Aux::inv_c2r(m_dft, rs2);
                 Waveform::realseq_t rs2_reduced(m_end_tick - m_start_tick, 0);
                 for (int icol = 0; icol != m_end_tick - m_start_tick; icol++) {
                     if (icol >= int(rs2_t.size())) break;
                     rs2_reduced.at(icol) = rs2_t[icol];
                 }
                 //rs2 = Waveform::dft(rs2_reduced);
-                rs2 = Aux::fwd(m_dft, Waveform::complex(rs2_reduced));
+                rs2 = Aux::fwd_r2c(m_dft, rs2_reduced);
                 for (int icol = 0; icol != m_end_tick - m_start_tick; icol++) {
                     resp_f_w(irow + 1, icol) = rs1[icol];
                     resp_f_w(end_ch - start_ch - 1 - irow + 2 * npad_wire, icol) = rs2[icol];
@@ -255,7 +255,7 @@ Gen::ImpactTransform::ImpactTransform(IPlaneImpactResponse::pointer pir,
 
                 // do a inverse FFT
                 // Waveform::realseq_t rs1_t = Waveform::idft(rs1);
-                Waveform::realseq_t rs1_t = Waveform::real(Aux::inv(m_dft, rs1));
+                Waveform::realseq_t rs1_t = Aux::inv_c2r(m_dft, rs1);
                 // pick the first xxx ticks
                 Waveform::realseq_t rs1_reduced(m_end_tick - m_start_tick, 0);
                 // std::cout << rs1.size() << " " << nsamples << " " << m_end_tick << " " <<  m_start_tick << std::endl;
@@ -266,7 +266,7 @@ Gen::ImpactTransform::ImpactTransform(IPlaneImpactResponse::pointer pir,
                 }
                 // do a FFT
                 // rs1 = Waveform::dft(rs1_reduced);
-                rs1 = Aux::fwd(m_dft, Waveform::complex(rs1_reduced));
+                rs1 = Aux::fwd_r2c(m_dft, rs1_reduced);
 
                 for (int icol = 0; icol != m_end_tick - m_start_tick; icol++) {
                     //   std::cout << icol << " " << rs1[icol] << " " << temp_resp_f_w(0,icol) << std::endl;
@@ -276,24 +276,24 @@ Gen::ImpactTransform::ImpactTransform(IPlaneImpactResponse::pointer pir,
             for (int irow = 0; irow != m_num_pad_wire; irow++) {
                 Waveform::compseq_t rs1 = m_vec_map_resp.at(i)[irow + 1]->spectrum();
                 // Waveform::realseq_t rs1_t = Waveform::idft(rs1);
-                Waveform::realseq_t rs1_t = Waveform::real(Aux::inv(m_dft, rs1));
+                Waveform::realseq_t rs1_t = Aux::inv_c2r(m_dft, rs1);
                 Waveform::realseq_t rs1_reduced(m_end_tick - m_start_tick, 0);
                 for (int icol = 0; icol != m_end_tick - m_start_tick; icol++) {
                     if (icol >= int(rs1_t.size())) break;
                     rs1_reduced.at(icol) = rs1_t[icol];
                 }
                 // rs1 = Waveform::dft(rs1_reduced);
-                rs1 = Aux::fwd(m_dft, Waveform::complex(rs1_reduced));
+                rs1 = Aux::fwd_r2c(m_dft, rs1_reduced);
                 Waveform::compseq_t rs2 = m_vec_map_resp.at(i)[-irow - 1]->spectrum();
                 // Waveform::realseq_t rs2_t = Waveform::idft(rs2);
-                Waveform::realseq_t rs2_t = Waveform::real(Aux::inv(m_dft, rs2));
+                Waveform::realseq_t rs2_t = Aux::inv_c2r(m_dft, rs2);
                 Waveform::realseq_t rs2_reduced(m_end_tick - m_start_tick, 0);
                 for (int icol = 0; icol != m_end_tick - m_start_tick; icol++) {
                     if (icol >= int(rs2_t.size())) break;
                     rs2_reduced.at(icol) = rs2_t[icol];
                 }
                 // rs2 = Waveform::dft(rs2_reduced);
-                rs2 = Aux::fwd(m_dft, Waveform::complex(rs2_reduced));
+                rs2 = Aux::fwd_r2c(m_dft, rs2_reduced);
                 for (int icol = 0; icol != m_end_tick - m_start_tick; icol++) {
                     resp_f_w(irow + 1, icol) = rs1[icol];
                     resp_f_w(end_ch - start_ch - 1 - irow + 2 * npad_wire, icol) = rs2[icol];
@@ -349,14 +349,14 @@ Waveform::realseq_t Gen::ImpactTransform::waveform(int iwire) const
             Waveform::realseq_t long_resp = m_pir->closest(0)->long_aux_waveform();
             long_resp.resize(nlength, 0);
             // Waveform::compseq_t spec = Waveform::dft(wf);
-            Waveform::compseq_t spec = Aux::fwd(m_dft, Waveform::complex(wf));
+            Waveform::compseq_t spec = Aux::fwd_r2c(m_dft, wf);
             // Waveform::compseq_t long_spec = Waveform::dft(long_resp);
-            Waveform::compseq_t long_spec = Aux::fwd(m_dft, Waveform::complex(long_resp));
+            Waveform::compseq_t long_spec = Aux::fwd_r2c(m_dft, long_resp);
             for (size_t i = 0; i != nlength; i++) {
                 spec.at(i) *= long_spec.at(i);
             }
             // wf = Waveform::idft(spec);
-            wf = Waveform::real(Aux::inv(m_dft, spec));
+            wf = Aux::inv_c2r(m_dft, spec);
             wf.resize(nsamples, 0);
         }
 

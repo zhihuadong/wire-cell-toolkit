@@ -1,20 +1,21 @@
 #include "WireCellSig/Decon2DFilter.h"
 #include "WireCellSig/Util.h"
 
+#include "WireCellAux/SimpleTensorSet.h"
+#include "WireCellAux/SimpleTensor.h"
+#include "WireCellAux/Util.h"
+#include "WireCellAux/TensUtil.h"
+#include "WireCellAux/DftTools.h"
+
+#include "WireCellIface/ITensorSet.h"
+#include "WireCellIface/IFilterWaveform.h"
+
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/String.h"
 #include "WireCellUtil/Array.h"
 #include "WireCellUtil/Response.h"
 #include "WireCellUtil/FFTBestLength.h"
 #include "WireCellUtil/Exceptions.h"
-
-#include "WireCellIface/ITensorSet.h"
-#include "WireCellIface/IFilterWaveform.h"
-
-#include "WireCellAux/SimpleTensorSet.h"
-#include "WireCellAux/SimpleTensor.h"
-#include "WireCellAux/Util.h"
-#include "WireCellAux/TensUtil.h"
 
 WIRECELL_FACTORY(Decon2DFilter, WireCell::Sig::Decon2DFilter, WireCell::ITensorSetFilter, WireCell::IConfigurable)
 
@@ -28,11 +29,17 @@ Sig::Decon2DFilter::Decon2DFilter()
 Configuration Sig::Decon2DFilter::default_configuration() const
 {
     Configuration cfg;
-
+    cfg["dft"] = "FftwDFT";     // type-name for the DFT to use
     return cfg;
 }
 
-void Sig::Decon2DFilter::configure(const WireCell::Configuration &cfg) { m_cfg = cfg; }
+void Sig::Decon2DFilter::configure(const WireCell::Configuration &cfg)
+{
+    std::string dft_tn = get<std::string>(cfg, "dft", "FftwDFT");
+    m_dft = Factory::find_tn<IDFT>(dft_tn);
+
+    m_cfg = cfg;
+}
 
 bool Sig::Decon2DFilter::operator()(const ITensorSet::pointer &in, ITensorSet::pointer &out)
 {
@@ -111,7 +118,9 @@ bool Sig::Decon2DFilter::operator()(const ITensorSet::pointer &in, ITensorSet::p
     }
 
     // do the second round of inverse FFT on wire
-    Array::array_xxf tm_r_data = Array::idft_cr(c_data_afterfilter, 0);
+    // Array::array_xxf tm_r_data = Array::idft_cr(c_data_afterfilter, 0);
+    Array::array_xxf tm_r_data = Aux::inv(m_dft, c_data_afterfilter, 1).real();
+
     Array::array_xxf r_data = tm_r_data.block(m_pad_nwires, 0, m_nwires, m_nticks);
     Sig::restore_baseline(r_data);
 

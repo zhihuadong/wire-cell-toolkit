@@ -1,5 +1,14 @@
 #include "WireCellSig/Decon2DResponse.h"
 
+#include "WireCellAux/SimpleTensorSet.h"
+#include "WireCellAux/SimpleTensor.h"
+#include "WireCellAux/Util.h"
+#include "WireCellAux/TensUtil.h"
+#include "WireCellAux/DftTools.h"
+
+#include "WireCellIface/ITensorSet.h"
+#include "WireCellIface/IFilterWaveform.h"
+
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/String.h"
 #include "WireCellUtil/Array.h"
@@ -7,13 +16,6 @@
 #include "WireCellUtil/FFTBestLength.h"
 #include "WireCellUtil/Exceptions.h"
 
-#include "WireCellIface/ITensorSet.h"
-#include "WireCellIface/IFilterWaveform.h"
-
-#include "WireCellAux/SimpleTensorSet.h"
-#include "WireCellAux/SimpleTensor.h"
-#include "WireCellAux/Util.h"
-#include "WireCellAux/TensUtil.h"
 
 WIRECELL_FACTORY(Decon2DResponse, WireCell::Sig::Decon2DResponse, WireCell::ITensorSetFilter, WireCell::IConfigurable)
 
@@ -27,7 +29,7 @@ Sig::Decon2DResponse::Decon2DResponse()
 Configuration Sig::Decon2DResponse::default_configuration() const
 {
     Configuration cfg;
-
+    cfg["dft"] = "FftwDFT";     // type-name for the DFT to use
     return cfg;
 }
 
@@ -56,6 +58,9 @@ void Sig::Decon2DResponse::configure(const WireCell::Configuration &cfg)
     if (!m_fresp) {
         THROW(ValueError() << errmsg{"Sig::Decon2DResponse::configure !m_fresp"});
     }
+
+    std::string dft_tn = get<std::string>(cfg, "dft", "FftwDFT");
+    m_dft = Factory::find_tn<IDFT>(dft_tn);
 }
 
 namespace {
@@ -121,7 +126,8 @@ std::vector<Waveform::realseq_t> Sig::Decon2DResponse::init_overall_response(con
     Response::ColdElec ce(m_gain, m_shaping_time);
     auto ewave = ce.generate(tbins);
     Waveform::scale(ewave, m_inter_gain * m_ADC_mV * (-1));
-    elec = Waveform::dft(ewave);
+    // elec = Waveform::dft(ewave);
+    elec = Aux::fwd_r2c(m_dft, ewave);
 
     std::complex<float> fine_period(fravg.period, 0);
 
@@ -144,7 +150,10 @@ std::vector<Waveform::realseq_t> Sig::Decon2DResponse::init_overall_response(con
     auto arr = Response::as_array(fravg.planes[iplane], fine_nwires, fine_nticks);
 
     // do FFT for response ...
-    Array::array_xxc c_data = Array::dft_rc(arr, 0);
+    // Array::array_xxc c_data = Array::dft_rc(arr, 0);
+    Array::array_xxc c_data = arr.cast<IDFT::complex_t>();
+    c_data = Aux::fwd(m_dft, c_data, 1);
+
     int nrows = c_data.rows();
     int ncols = c_data.cols();
 
@@ -154,7 +163,8 @@ std::vector<Waveform::realseq_t> Sig::Decon2DResponse::init_overall_response(con
         }
     }
 
-    arr = Array::idft_cr(c_data, 0);
+    // arr = Array::idft_cr(c_data, 0);
+    arr = Aux::inv(m_dft, c_data, 1).real();
 
     // figure out how to do fine ... shift (good ...)
     int fine_time_shift = m_fine_time_offset / fravg.period;
@@ -262,7 +272,9 @@ bool Sig::Decon2DResponse::operator()(const ITensorSet::pointer &in, ITensorSet:
     log->debug("r_data: {} {}", r_data.rows(), r_data.cols());
 
     // first round of FFT on time
-    auto c_data = Array::dft_rc(r_data, 0);
+    // auto c_data = Array::dft_rc(r_data, 0);
+    WireCell::Array::array_xxc c_data = r_data.cast<IDFT::complex_t>();
+    c_data = Aux::fwd(m_dft, c_data, 1);
 
     if (m_cresp) {
         log->debug("Decon2DResponse: applying ch-by-ch electronics response correction");
@@ -275,12 +287,14 @@ bool Sig::Decon2DResponse::operator()(const ITensorSet::pointer &in, ITensorSet:
         Response::ColdElec ce(m_gain, m_shaping_time);
 
         const auto ewave = ce.generate(tbins);
-        const WireCell::Waveform::compseq_t elec = Waveform::dft(ewave);
+        // const WireCell::Waveform::compseq_t elec = Waveform::dft(ewave);
+        const WireCell::Waveform::compseq_t elec = Aux::fwd_r2c(m_dft, ewave);
 
         for (int irow = 0; irow != c_data.rows(); irow++) {
             Waveform::realseq_t tch_resp = m_cresp->channel_response(ch_arr[irow]);
             tch_resp.resize(m_fft_nticks, 0);
-            const WireCell::Waveform::compseq_t ch_elec = Waveform::dft(tch_resp);
+            // const WireCell::Waveform::compseq_t ch_elec = Waveform::dft(tch_resp);
+            const WireCell::Waveform::compseq_t ch_elec = Aux::fwd_r2c(m_dft, tch_resp);
 
             // FIXME figure this out
             // const int irow = och.wire + m_pad_nwires;
@@ -298,7 +312,8 @@ bool Sig::Decon2DResponse::operator()(const ITensorSet::pointer &in, ITensorSet:
     log->trace("TRACE {}", __LINE__);
 
     // second round of FFT on wire
-    c_data = Array::dft_cc(c_data, 1);
+    // c_data = Array::dft_cc(c_data, 1);
+    c_data = Aux::fwd(m_dft, c_data, 0);
 
     // response part ...
     Array::array_xxf r_resp = Array::array_xxf::Zero(r_data.rows(), m_fft_nticks);
@@ -310,9 +325,12 @@ bool Sig::Decon2DResponse::operator()(const ITensorSet::pointer &in, ITensorSet:
     log->trace("TRACE {}", __LINE__);
 
     // do first round FFT on the resposne on time
-    Array::array_xxc c_resp = Array::dft_rc(r_resp, 0);
+    //Array::array_xxc c_resp = Array::dft_rc(r_resp, 0);
     // do second round FFT on the response on wire
-    c_resp = Array::dft_cc(c_resp, 1);
+    //c_resp = Array::dft_cc(c_resp, 1);
+
+    Array::array_xxc c_resp = r_resp.cast<IDFT::complex_t>();
+    c_resp = Aux::fwd(m_dft, c_resp);
 
     // make ratio to the response and apply wire filter
     c_data = c_data / c_resp;
@@ -337,10 +355,11 @@ bool Sig::Decon2DResponse::operator()(const ITensorSet::pointer &in, ITensorSet:
     log->trace("TRACE {}", __LINE__);
 
     // do the first round of inverse FFT on wire
-    c_data = Array::idft_cc(c_data, 1);
-
+    // c_data = Array::idft_cc(c_data, 1);
     // do the second round of inverse FFT on time
-    r_data = Array::idft_cr(c_data, 0);
+    // r_data = Array::idft_cr(c_data, 0);
+    c_data = Aux::inv(m_dft, c_data);
+    r_data = c_data.real();
 
     // do the shift in wire
     const int nrows = r_data.rows();
@@ -364,7 +383,9 @@ bool Sig::Decon2DResponse::operator()(const ITensorSet::pointer &in, ITensorSet:
         r_data.block(0, 0, nrows, time_shift) = arr2;
         r_data.block(0, time_shift, nrows, ncols - time_shift) = arr1;
     }
-    c_data = Array::dft_rc(r_data, 0);
+    // c_data = Array::dft_rc(r_data, 0);
+    c_data = Aux::fwd(m_dft, r_data.cast<IDFT::complex_t>(), 1);
+
     log->trace("TRACE {}", __LINE__);
 
     // Eigen to TensorSet

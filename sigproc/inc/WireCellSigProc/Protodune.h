@@ -5,14 +5,16 @@
 #ifndef WIRECELLSIGPROC_PROTODUNE
 #define WIRECELLSIGPROC_PROTODUNE
 
-#include "WireCellUtil/Waveform.h"
-#include "WireCellUtil/Bits.h"
+#include "WireCellSigProc/Diagnostics.h"
+
 #include "WireCellIface/IChannelFilter.h"
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/IChannelNoiseDatabase.h"
 #include "WireCellIface/IAnodePlane.h"
+#include "WireCellIface/IDFT.h"
 
-#include "WireCellSigProc/Diagnostics.h"
+#include "WireCellUtil/Waveform.h"
+#include "WireCellUtil/Bits.h"
 
 namespace WireCell {
     namespace SigProc {
@@ -20,10 +22,13 @@ namespace WireCell {
 
             bool LinearInterpSticky(WireCell::Waveform::realseq_t& signal, std::vector<std::pair<int, int> >& st_ranges,
                                     float stky_sig_like_val, float stky_sig_like_rms);
-            bool FftInterpSticky(WireCell::Waveform::realseq_t& signal, std::vector<std::pair<int, int> >& st_ranges);
-            bool FftShiftSticky(WireCell::Waveform::realseq_t& signal, double toffset,
+            bool FftInterpSticky(const IDFT::pointer& dft,
+                                 WireCell::Waveform::realseq_t& signal, std::vector<std::pair<int, int> >& st_ranges);
+            bool FftShiftSticky(const IDFT::pointer& dft,
+                                WireCell::Waveform::realseq_t& signal, double toffset,
                                 std::vector<std::pair<int, int> >& st_ranges);
-            bool FftScaling(WireCell::Waveform::realseq_t& signal, int nsamples);
+            bool FftScaling(const IDFT::pointer& dft,
+                            WireCell::Waveform::realseq_t& signal, int nsamples);
 
             // hold common config stuff
             class ConfigFilterBase : public WireCell::IConfigurable {
@@ -43,6 +48,7 @@ namespace WireCell {
                 std::string m_anode_tn, m_noisedb_tn;
                 IAnodePlane::pointer m_anode;
                 IChannelNoiseDatabase::pointer m_noisedb;
+                IDFT::pointer m_dft;
             };
 
             /** Microboone/ProtoDUNE style noise subtraction.
@@ -77,6 +83,7 @@ namespace WireCell {
                 std::string m_anode_tn, m_noisedb_tn;
                 IAnodePlane::pointer m_anode;
                 IChannelNoiseDatabase::pointer m_noisedb;
+                IDFT::pointer m_dft;
 
                 std::map<int, std::vector<short int> > m_extra_stky;  // ch to extra sticky codes
                 float m_stky_sig_like_val;

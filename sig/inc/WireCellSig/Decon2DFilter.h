@@ -6,6 +6,8 @@
 
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/ITensorSetFilter.h"
+#include "WireCellIface/IDFT.h"
+
 #include "WireCellUtil/Logging.h"
 
 namespace WireCell {
@@ -25,6 +27,7 @@ namespace WireCell {
            private:
             Log::logptr_t log;
             Configuration m_cfg;  /// copy of configuration
+            IDFT::pointer m_dft;
         };
     }  // namespace Sig
 }  // namespace WireCell

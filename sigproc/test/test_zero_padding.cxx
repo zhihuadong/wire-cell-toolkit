@@ -1,6 +1,10 @@
 // Example for FFT resampling with zero-padding tricks
 #include "WireCellUtil/Waveform.h"
 
+#include "WireCellAux/DftTools.h"
+#include "WireCellUtil/NamedFactory.h"
+#include "WireCellUtil/PluginManager.h"
+
 #include <algorithm>
 
 // for FFT
@@ -14,10 +18,14 @@ using namespace WireCell;
 
 int main()
 {
+    PluginManager& pm = PluginManager::instance();
+    pm.add("WireCellAux");
+    auto idft = Factory::lookup_tn<IDFT>("FftwDFT");
+
     std::vector<float> a = {1, 2, 3, 2, 1};
     // can be sampled to 10 ticks: 1 , 1.35279 , 2 , 2.69443 , 3 , 2.69443 , 2 , 1.35279 , 1 , 0.905573
 
-    auto tran = WireCell::Waveform::dft(a);
+    auto tran = Aux::fwd_r2c(idft, a);
 
     std::cout << " tran = " << std::endl;
     std::cout << tran.size() << std::endl;
@@ -48,7 +56,7 @@ int main()
     std::cout << std::endl;
 
     // inverse FFT
-    auto b = WireCell::Waveform::idft(tran);
+    auto b = Aux::inv_c2r(idft, tran);
     float scale = tran.size() / inSmps;
     //
     std::cout << " b = " << std::endl;

@@ -1,9 +1,13 @@
 #include "WireCellGen/PerChannelVariation.h"
+
+#include "WireCellAux/DftTools.h"
+
+#include "WireCellIface/SimpleFrame.h"
+#include "WireCellIface/SimpleTrace.h"
+
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/Response.h"
 #include "WireCellUtil/Waveform.h"
-#include "WireCellIface/SimpleFrame.h"
-#include "WireCellIface/SimpleTrace.h"
 
 #include <string>
 
@@ -41,11 +45,15 @@ WireCell::Configuration Gen::PerChannelVariation::default_configuration() const
     /// ch-by-ch electronics responses by calibration
     cfg["per_chan_resp"] = "";
 
+    cfg["dft"] = "FftwDFT";     // type-name for the DFT to use
     return cfg;
 }
 
 void Gen::PerChannelVariation::configure(const WireCell::Configuration& cfg)
 {
+    std::string dft_tn = get<std::string>(cfg, "dft", "FftwDFT");
+    m_dft = Factory::find_tn<IDFT>(dft_tn);
+
     m_per_chan_resp = get<std::string>(cfg, "per_chan_resp", "");
 
     if (!m_per_chan_resp.empty()) {
@@ -63,6 +71,7 @@ void Gen::PerChannelVariation::configure(const WireCell::Configuration& cfg)
 
     m_truncate = cfg["truncate"].asBool();
 }
+
 
 bool Gen::PerChannelVariation::operator()(const input_pointer& in, output_pointer& out)
 {
@@ -86,11 +95,14 @@ bool Gen::PerChannelVariation::operator()(const input_pointer& in, output_pointe
     size_t ntraces = traces->size();
     ITrace::vector out_traces(ntraces);
     for (size_t ind = 0; ind < ntraces; ++ind) {
-        auto trace = traces->at(ind);
+        const auto& trace = traces->at(ind);
         auto chid = trace->channel();
         Waveform::realseq_t tch_resp = m_cr->channel_response(chid);
-        tch_resp.resize(m_nsamples, 0);
-        auto wave = Waveform::replace_convolve(trace->charge(), tch_resp, m_from, m_truncate);
+        // tch_resp.resize(m_nsamples, 0);
+        // auto wave = Waveform::replace_convolve(trace->charge(), tch_resp, m_from, m_truncate);
+        const auto& charge = trace->charge();
+        auto wave = Aux::replace(m_dft, charge, tch_resp, m_from);
+        wave.resize(charge.size());
         out_traces[ind] = std::make_shared<SimpleTrace>(chid, trace->tbin(), wave);
     }
 

@@ -69,88 +69,88 @@ bool same(const arrtype& a1, const arrtype& a2, double eps = 1.0e-6)
     return (diff <= eps);
 }
 
-void test_partial(ExecMon& em)
-{
-    const int nrows = 300;
-    const int ncols = 1000;
+// void test_partial(ExecMon& em)
+// {
+//     const int nrows = 300;
+//     const int ncols = 1000;
 
-    auto arr = my_great_array(em, nrows, ncols);
-    em("test_partial: make array");
+//     auto arr = my_great_array(em, nrows, ncols);
+//     em("test_partial: make array");
 
-    auto spec = dft(arr);
-    auto spec_rc = dft_rc(arr);
-    auto spec_cc = dft_cc(spec_rc);
-    em("test_partial: forward");
+//     auto spec = dft(arr);
+//     auto spec_rc = dft_rc(arr);
+//     auto spec_cc = dft_cc(spec_rc);
+//     em("test_partial: forward");
 
-    auto arr2 = idft(spec);
-    auto arr2_cc = idft_cc(spec_cc);
-    auto arr2_cr = idft_cr(arr2_cc);
-    em("test_partial: reverse");
+//     auto arr2 = idft(spec);
+//     auto arr2_cc = idft_cc(spec_cc);
+//     auto arr2_cr = idft_cr(arr2_cc);
+//     em("test_partial: reverse");
 
-    Assert(same(spec, spec_cc));
-    Assert(same(arr, arr2));
-    Assert(same(arr2, arr2_cr));
+//     Assert(same(spec, spec_cc));
+//     Assert(same(arr, arr2));
+//     Assert(same(arr2, arr2_cr));
 
-    const int nrounds = 100;
+//     const int nrounds = 100;
 
-    for (int count = 0; count < nrounds; ++count) {
-        auto spec = dft(arr);
-        auto orig = idft(spec);
-    }
-    em("test_partial: direct round trip");
-    for (int count = 0; count < nrounds; ++count) {
-        auto spec_rc = dft_rc(arr);
-        auto spec_cc = dft_cc(spec_rc);
-        auto arr2_cc = idft_cc(spec_cc);
-        auto arr2_cr = idft_cr(arr2_cc);
-    }
-    em("test_partial: partial round trip");
-}
+//     for (int count = 0; count < nrounds; ++count) {
+//         auto spec = dft(arr);
+//         auto orig = idft(spec);
+//     }
+//     em("test_partial: direct round trip");
+//     for (int count = 0; count < nrounds; ++count) {
+//         auto spec_rc = dft_rc(arr);
+//         auto spec_cc = dft_cc(spec_rc);
+//         auto arr2_cc = idft_cc(spec_cc);
+//         auto arr2_cr = idft_cr(arr2_cc);
+//     }
+//     em("test_partial: partial round trip");
+// }
 
-void test_dft(ExecMon& em)
-{
-    const int nrows = 300;
-    const int ncols = 1000;
+// void test_dft(ExecMon& em)
+// {
+//     const int nrows = 300;
+//     const int ncols = 1000;
 
-    const int nrounds = 100;
+//     const int nrounds = 100;
 
-    auto arr = my_great_array(em, nrows, ncols);
-    em("dft: make array");
-    for (int count = 0; count < nrounds; ++count) {
-        auto spec = dft(arr);
-        auto orig = idft(spec);
-    }
-    em("dft with floats");
-#ifdef WCT_HACK_FOR_FFTW_NO_SP
-    for (int count = 0; count < nrounds; ++count) {
-        auto spec = dftd(arr);
-        auto orig = idftd(spec);
-    }
-    em("dft up/down cast through doubles");
-#endif
-}
+//     auto arr = my_great_array(em, nrows, ncols);
+//     em("dft: make array");
+//     for (int count = 0; count < nrounds; ++count) {
+//         auto spec = dft(arr);
+//         auto orig = idft(spec);
+//     }
+//     em("dft with floats");
+// #ifdef WCT_HACK_FOR_FFTW_NO_SP
+//     for (int count = 0; count < nrounds; ++count) {
+//         auto spec = dftd(arr);
+//         auto orig = idftd(spec);
+//     }
+//     em("dft up/down cast through doubles");
+// #endif
+// }
 
-void test_deconv(ExecMon& em)
-{
-    const int nrows = 300;
-    const int ncols = 1000;
+// void test_deconv(ExecMon& em)
+// {
+//     const int nrows = 300;
+//     const int ncols = 1000;
 
-    em("deconv: start");
-    auto arr = my_great_array(em, nrows, ncols);
-    em("deconv: got array");
-    array_xxc filt = Eigen::ArrayXXcf::Zero(nrows, ncols) + 1.0;
-    em("deconv: got filter");
-    auto deco = deconv(arr, filt);
-    em("deconv: done");  // 38ms opt, 274 debug
+//     em("deconv: start");
+//     auto arr = my_great_array(em, nrows, ncols);
+//     em("deconv: got array");
+//     array_xxc filt = Eigen::ArrayXXcf::Zero(nrows, ncols) + 1.0;
+//     em("deconv: got filter");
+//     auto deco = deconv(arr, filt);
+//     em("deconv: done");  // 38ms opt, 274 debug
 
-    array_xxf diff = arr - deco;
-    em("deconv: diff");
+//     array_xxf diff = arr - deco;
+//     em("deconv: diff");
 
-    double norm = diff.matrix().norm();
-    em("deconv: norm");
-    cerr << "got norm of diff " << norm << endl;
-    Assert(norm < 0.001);
-}
+//     double norm = diff.matrix().norm();
+//     em("deconv: norm");
+//     cerr << "got norm of diff " << norm << endl;
+//     Assert(norm < 0.001);
+// }
 
 void test_division(ExecMon& em)
 {
@@ -200,11 +200,11 @@ int main()
 {
     WireCell::ExecMon em;
 
-    test_partial(em);
+    // test_partial(em);
     test_copy(em);
     test_return(em);
-    test_dft(em);
-    test_deconv(em);
+    // test_dft(em);
+    // test_deconv(em);
     test_division(em);
     test_division_complex(em);
 

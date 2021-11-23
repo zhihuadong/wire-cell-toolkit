@@ -1,13 +1,16 @@
 #include "WireCellSigProc/L1SPFilter.h"
 
+#include "WireCellAux/DftTools.h"
+#include "WireCellAux/FrameTools.h"
+
 #include "WireCellIface/SimpleFrame.h"
 #include "WireCellIface/IFieldResponse.h"
 
-#include "WireCellUtil/NamedFactory.h"
-#include "WireCellAux/FrameTools.h"
-
 #include "WireCellRess/LassoModel.h"
 #include "WireCellRess/ElasticNetModel.h"
+
+#include "WireCellUtil/NamedFactory.h"
+
 #include <Eigen/Dense>
 
 #include <numeric>
@@ -54,7 +57,8 @@ void L1SPFilter::init_resp()
         Response::ColdElec ce(m_gain, m_shaping);
         auto ewave = ce.generate(tbins);
         Waveform::scale(ewave, m_postgain * m_ADC_mV * (-1));  // ADC to electron ...
-        elec = Waveform::dft(ewave);
+        //elec = Waveform::dft(ewave);
+        elec = Aux::fwd_r2c(m_dft, ewave); 
 
         std::complex<float> fine_period(fravg.period, 0);
 
@@ -62,8 +66,10 @@ void L1SPFilter::init_resp()
         WireCell::Waveform::realseq_t resp_V = fravg.planes[1].paths[0].current;
         WireCell::Waveform::realseq_t resp_W = fravg.planes[2].paths[0].current;
 
-        auto spectrum_V = WireCell::Waveform::dft(resp_V);
-        auto spectrum_W = WireCell::Waveform::dft(resp_W);
+        // auto spectrum_V = WireCell::Waveform::dft(resp_V);
+        auto spectrum_V = Aux::fwd_r2c(m_dft, resp_V);
+        // auto spectrum_W = WireCell::Waveform::dft(resp_W);
+        auto spectrum_W = Aux::fwd_r2c(m_dft, resp_W);
 
         WireCell::Waveform::scale(spectrum_V, elec);
         WireCell::Waveform::scale(spectrum_W, elec);
@@ -72,8 +78,10 @@ void L1SPFilter::init_resp()
         WireCell::Waveform::scale(spectrum_W, fine_period);
 
         // Now this response is ADC for 1 electron .
-        resp_V = WireCell::Waveform::idft(spectrum_V);
-        resp_W = WireCell::Waveform::idft(spectrum_W);
+        // resp_V = WireCell::Waveform::idft(spectrum_V);
+        resp_V = Aux::inv_c2r(m_dft, spectrum_V);
+        // resp_W = WireCell::Waveform::idft(spectrum_W);
+        resp_W = Aux::inv_c2r(m_dft, spectrum_W);
 
         // convolute with V and Y average responses ...
         double intrinsic_time_offset = fravg.origin / fravg.speed;
@@ -153,6 +161,8 @@ WireCell::Configuration L1SPFilter::default_configuration() const
     cfg["fine_time_offset"] = m_fine_time_offset;
     cfg["coarse_time_offset"] = m_coarse_time_offset;
 
+    cfg["dft"] = "FftwDFT";     // type-name for the DFT to use
+
     return cfg;
 }
 
@@ -167,6 +177,9 @@ void L1SPFilter::configure(const WireCell::Configuration& cfg)
 
     m_fine_time_offset = get(cfg, "fine_time_offset", m_fine_time_offset);
     m_coarse_time_offset = get(cfg, "coarse_time_offset", m_coarse_time_offset);
+
+    std::string dft_tn = get<std::string>(cfg, "dft", "FftwDFT");
+    m_dft = Factory::find_tn<IDFT>(dft_tn);
 }
 
 bool L1SPFilter::operator()(const input_pointer& in, output_pointer& out)
@@ -196,19 +209,6 @@ bool L1SPFilter::operator()(const input_pointer& in, output_pointer& out)
     // l1_lambda << " " << l1_epsilon << " " << l1_niteration << " " << l1_decon_limit << " " << l1_resp_scale << " " <<
     // l1_col_scale << " " << l1_ind_scale << std::endl;
     init_resp();
-
-    // std::cout << (*lin_V)(0*units::us) << " " << (*lin_W)(0*units::us) << std::endl;
-    // std::cout << (*lin_V)(1*units::us) << " " << (*lin_W)(1*units::us) << std::endl;
-    //    for (size_t i=0; i!=resp_V.size(); i++){
-    // std::cout << (i*fravg.period - intrinsic_time_offset - m_coarse_time_offset + m_fine_time_offset)/units::us << "
-    // " << resp_V.at(i) << " " << resp_W.at(i) << " " << ewave.at(i) << std::endl;
-    //}
-    // std::complex<float> fine_period(fravg.period,0);
-    // int fine_nticks = Response::as_array(fravg.planes[0]).cols();
-    //    Waveform::realseq_t ftbins(fine_nticks);
-    // for (int i=0;i!=fine_nticks;i++){
-    //  ftbins.at(i) = i * fravg.period;
-    //}
 
     auto adctraces = Aux::tagged_traces(in, adctag);
     auto sigtraces = Aux::tagged_traces(in, sigtag);

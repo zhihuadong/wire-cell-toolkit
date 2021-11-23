@@ -4,6 +4,7 @@
 #include "WireCellIface/IChannelNoiseDatabase.h"
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/IAnodePlane.h"
+#include "WireCellIface/IDFT.h"
 #include "WireCellIface/IFieldResponse.h"
 #include "WireCellIface/WirePlaneId.h"
 
@@ -167,6 +168,7 @@ namespace WireCell {
             std::unordered_map<int, shared_filter_t> m_response_cache;
 
             Log::logptr_t log;
+            IDFT::pointer m_dft;
         };
     }  // namespace SigProc
 

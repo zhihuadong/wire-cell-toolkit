@@ -111,7 +111,7 @@ bool Gen::NoiseSource::operator()(IFrame::pointer& frame)
 
         //Waveform::realseq_t noise = Gen::Noise::generate_waveform(spec, m_rng, m_rep_percent);
         auto cnoise = Gen::Noise::generate_spectrum(spec, m_rng, m_rep_percent);
-        auto noise = Waveform::real(Aux::inv(m_dft, cnoise));
+        auto noise = Aux::inv_c2r(m_dft, cnoise);
 
         //	std::cout << noise.size() << " " << nsamples << std::endl;
         noise.resize(m_nsamples, 0);

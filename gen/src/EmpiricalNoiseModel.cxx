@@ -359,7 +359,7 @@ const IChannelSpectrum::amplitude_t& Gen::EmpiricalNoiseModel::operator()(int ch
             Response::ColdElec elec_resp(10, ch_shaping);  // default at 1 mV/fC
             auto sig = elec_resp.generate(WireCell::Waveform::Domain(0, m_fft_length * m_period), m_fft_length);
             //auto filt = Waveform::dft(sig);
-            auto filt = Aux::fwd(m_dft, Waveform::complex(sig));
+            auto filt = Aux::fwd_r2c(m_dft, sig);
             auto ele_resp_amp = Waveform::magnitude(filt);
 
             ele_resp_amp.resize(m_elec_resp_freq.size());
@@ -373,7 +373,7 @@ const IChannelSpectrum::amplitude_t& Gen::EmpiricalNoiseModel::operator()(int ch
             Response::ColdElec elec_resp(10, db_shaping);  // default at 1 mV/fC
             auto sig = elec_resp.generate(WireCell::Waveform::Domain(0, m_fft_length * m_period), m_fft_length);
             // auto filt = Waveform::dft(sig);
-            auto filt = Aux::fwd(m_dft, Waveform::complex(sig));
+            auto filt = Aux::fwd_r2c(m_dft, sig);
             auto ele_resp_amp = Waveform::magnitude(filt);
 
             ele_resp_amp.resize(m_elec_resp_freq.size());

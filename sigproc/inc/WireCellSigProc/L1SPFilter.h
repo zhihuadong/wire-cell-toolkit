@@ -8,9 +8,11 @@
 
 #include "WireCellIface/IFrameFilter.h"
 #include "WireCellIface/IConfigurable.h"
+#include "WireCellIface/IDFT.h"
 
-#include "WireCellUtil/Interpolate.h"
 #include "WireCellIface/SimpleTrace.h"
+#include "WireCellUtil/Interpolate.h"
+
 
 namespace WireCell {
     namespace SigProc {
@@ -38,6 +40,7 @@ namespace WireCell {
 
            private:
             Configuration m_cfg;
+            IDFT::pointer m_dft;
 
             double m_gain;
             double m_shaping;

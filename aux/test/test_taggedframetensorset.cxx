@@ -12,6 +12,8 @@
 #include "WireCellUtil/Testing.h"
 #include "WireCellUtil/Logging.h"
 
+#include <Eigen/Core>
+
 using namespace WireCell;
 
 int main()

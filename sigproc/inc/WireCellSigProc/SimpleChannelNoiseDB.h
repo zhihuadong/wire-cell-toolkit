@@ -2,6 +2,8 @@
 #define WIRECELLSIGPROC_SIMPLECHANNELNOISEDB
 
 #include "WireCellIface/IChannelNoiseDatabase.h"
+#include "WireCellIface/IConfigurable.h"
+#include "WireCellIface/IDFT.h"
 
 #include "WireCellUtil/Waveform.h"
 #include "WireCellUtil/Units.h"
@@ -14,13 +16,18 @@
 namespace WireCell {
     namespace SigProc {
 
-        class SimpleChannelNoiseDB : public WireCell::IChannelNoiseDatabase {
+        class SimpleChannelNoiseDB : public WireCell::IConfigurable, 
+                                     public WireCell::IChannelNoiseDatabase {
            public:
             /// Create a simple channel noise DB for digitized waveforms
             /// with the given size and number of samples.  Default is for
             /// microboone.
             SimpleChannelNoiseDB(double tick = 0.5 * units::us, int nsamples = 9600);
             virtual ~SimpleChannelNoiseDB();
+
+            /// IConfigurable
+            virtual void configure(const WireCell::Configuration& config);
+            virtual WireCell::Configuration default_configuration() const;
 
             // IChannelNoiseDatabase
             virtual double sample_time() const { return m_tick; }
@@ -143,6 +150,8 @@ namespace WireCell {
 
             std::vector<channel_group_t> m_channel_groups;
             channel_group_t m_bad_channels;
+
+            IDFT::pointer m_dft;
         };
     }  // namespace SigProc
 

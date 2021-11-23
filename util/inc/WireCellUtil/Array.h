@@ -68,8 +68,8 @@ namespace WireCell {
 
             const_shared_array_xxf arr2 = idft(*spec);
          */
-        array_xxc dft(const array_xxf& arr);
-        array_xxf idft(const array_xxc& arr);
+        // array_xxc dft(const array_xxf& arr);
+        // array_xxf idft(const array_xxc& arr);
 
         /** Partial, 1D DFT and inverse DFT along one dimension of an
          * array.  Each row is transformed if dim=0, each column if
@@ -102,10 +102,10 @@ namespace WireCell {
          *     auto tmp = idft_cc(xxc, 1);
          *     auto xxf = idft_rc(tmp, 0);
          */
-        array_xxc dft_rc(const array_xxf& arr, int dim = 0);
-        array_xxc dft_cc(const array_xxc& arr, int dim = 1);
-        array_xxc idft_cc(const array_xxc& arr, int dim = 1);
-        array_xxf idft_cr(const array_xxc& arr, int dim = 0);
+        // array_xxc dft_rc(const array_xxf& arr, int dim = 0);
+        // array_xxc dft_cc(const array_xxc& arr, int dim = 1);
+        // array_xxc idft_cc(const array_xxc& arr, int dim = 1);
+        // array_xxf idft_cr(const array_xxc& arr, int dim = 0);
 
         /** Perform 2D deconvolution.
 
@@ -115,7 +115,7 @@ namespace WireCell {
             perform an 2D inverse DFT.
 
          */
-        array_xxf deconv(const array_xxf& arr, const array_xxc& filter);
+        // array_xxf deconv(const array_xxf& arr, const array_xxc& filter);
 
         /** downsample a 2D array along one axis by k
          *  simple average of all numbers in a bin

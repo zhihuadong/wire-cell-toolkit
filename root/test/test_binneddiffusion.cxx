@@ -1,3 +1,5 @@
+#include "WireCellAux/DftTools.h"
+
 #include "WireCellGen/BinnedDiffusion.h"
 #include "WireCellIface/SimpleDepo.h"
 #include "WireCellUtil/ExecMon.h"
@@ -30,11 +32,14 @@ struct Meta {
     ExecMon em;
     const char* name;
 
-    Meta(const char* name)
+    IDFT::pointer idft;
+
+    Meta(const char* name, IDFT::pointer idft)
       //: theApp(new TApplication (name,0,0))
       : canvas(new TCanvas("canvas", "canvas", 500, 500))
       , em(name)
       , name(name)
+      , idft(idft)
     {
         print("[");
     }
@@ -74,7 +79,7 @@ void test_track(Meta& meta, double charge, double track_time, const Ray& track_r
     const auto rbins = pimpos.region_binning();
     const auto ibins = pimpos.impact_binning();
 
-    Gen::BinnedDiffusion bd(pimpos, tbins, ndiffision_sigma, fluctuate);
+    Gen::BinnedDiffusion bd(pimpos, meta.idft, tbins, ndiffision_sigma, fluctuate);
 
     auto track_start = track_ray.first;
     auto track_dir = ray_unit(track_ray);
@@ -231,18 +236,20 @@ int main(int argc, char* argv[])
 {
     PluginManager& pm = PluginManager::instance();
     pm.add("WireCellGen");
+    pm.add("WireCellAux");
     {
         auto rngcfg = Factory::lookup<IConfigurable>("Random");
         auto cfg = rngcfg->default_configuration();
         rngcfg->configure(cfg);
     }
     auto rng = Factory::lookup<IRandom>("Random");
+    auto idft = Factory::lookup_tn<IDFT>("FftwDFT");
 
     const char* me = argv[0];
 
     TFile* rootfile = TFile::Open(Form("%s.root", me), "RECREATE");
 
-    Meta meta(me);
+    Meta meta(me, idft);
     gStyle->SetOptStat(0);
 
     const double track_time = t0 + 10 * units::ns;

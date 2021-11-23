@@ -1,3 +1,7 @@
+#include "WireCellAux/DftTools.h"
+#include "WireCellUtil/NamedFactory.h"
+#include "WireCellUtil/PluginManager.h"
+
 #include "WireCellUtil/Waveform.h"
 #include "WireCellUtil/Units.h"
 #include "WireCellUtil/Response.h"
@@ -25,6 +29,10 @@ const double GUnit = units::mV / units::fC;
 
 int main(int argc, char** argv)
 {
+    PluginManager& pm = PluginManager::instance();
+    pm.add("WireCellAux");
+    auto idft = Factory::lookup_tn<IDFT>("FftwDFT");
+
     int nInputs = 0;
     int nBegin = 0;
     int nEnd = 0;
@@ -123,7 +131,8 @@ int main(int argc, char** argv)
             // fwd_time /= ntries;
 
             auto t1 = std::chrono::high_resolution_clock::now();
-            Array::dft_cc(test_array, 0);
+            // Array::dft_cc(test_array, 0);
+            Aux::fwd(idft, test_array, 1);
             auto t2 = std::chrono::high_resolution_clock::now();
             fwd_time = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count() / ntries;
 
@@ -131,7 +140,9 @@ int main(int argc, char** argv)
             // for (int itry=0; itry<ntries; ++itry) {
             auto t3 = std::chrono::high_resolution_clock::now();
             // 	res = Waveform::idft(spec);
-            Array::idft_cc(test_array, 0);
+            // Array::idft_cc(test_array, 0);
+            Aux::inv(idft, test_array, 1);
+
             auto t4 = std::chrono::high_resolution_clock::now();
             rev_time = std::chrono::duration_cast<std::chrono::nanoseconds>(t4 - t3).count() / ntries;
             // }
