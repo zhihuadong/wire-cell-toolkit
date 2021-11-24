@@ -80,7 +80,7 @@ local origmagnify_pipe = [g.pipeline([origmagnify[n]], name='origmagnifypipes%d'
 local sn_pipes = sim.splusn_pipelines;
 
 local sp_maker = import 'pgrapher/experiment/dune-vd/sp.jsonnet';
-local sp = sp_maker(params, tools);
+local sp = sp_maker(params, tools, { use_roi_debug_mode: false,} );
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
 local spmagnify = [ 
@@ -97,12 +97,19 @@ g.pnode({
   }, nin=1, nout=1) for n in std.range(0, std.length(tools.anodes) - 1)];
 local spmagnify_pipe = [g.pipeline([spmagnify[n]], name='spmagnifypipes%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
+local magoutput = 'sim-check.root';
+local magnify = import 'pgrapher/experiment/pdsp/magnify-sinks.jsonnet';
+local sinks = magnify(tools, magoutput);
+
 local parallel_pipes = [
   g.pipeline([ 
                 sn_pipes[n],
-                origmagnify_pipe[n],
+                // origmagnify_pipe[n],
+                sinks.orig_pipe[n],
                 sp_pipes[n],
-                spmagnify_pipe[n],
+                // spmagnify_pipe[n],
+                sinks.decon_pipe[n],
+                sinks.debug_pipe[n], // use_roi_debug_mode=true in sp.jsonnet
           ], 
           'parallel_pipe_%d' % n) 
   for n in std.range(0, std.length(tools.anodes) - 1)];
