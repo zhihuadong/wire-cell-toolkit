@@ -58,11 +58,11 @@ local wcls = wcls_maker(params, tools);
 //local nf_maker = import "pgrapher/experiment/pdsp/nf.jsonnet";
 //local chndb_maker = import "pgrapher/experiment/pdsp/chndb.jsonnet";
 
-//local planemaps = {
-//  dunevd_3view: {"1":0, "2":3, "4":2},
-//  default: {"1":0, "2":1, "4":2}
-//};
-//local planemap = planemaps[std.extVar("geo_planeid_labels")];
+local planemaps = {
+ dunevd_3view: {"1":0, "2":3, "4":2},
+ default: {"1":0, "2":1, "4":2}
+};
+local planemap = planemaps[std.extVar("geo_planeid_labels")];
 
 //local chndbm = chndb_maker(params, tools);
 //local chndb = if epoch == "dynamic" then chndbm.wcls_multi(name="") else chndbm.wct(epoch);
@@ -123,7 +123,7 @@ local wcls_output = {
     name: 'spsaver',
     data: {
       // anode: wc.tn(tools.anode),
-      // plane_map: planemap,
+      plane_map: planemap,
       anode: wc.tn(mega_anode),
       digitize: false,  // true means save as RawDigit, else recob::Wire
       frame_tags: ['gauss', 'wiener'],
