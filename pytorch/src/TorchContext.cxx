@@ -27,6 +27,7 @@ void TorchContext::connect(const std::string& devname,
         }
         m_dev = torch::Device(torch::kCUDA, devnum);
     }
+    m_devname = devname;
 
     std::string s_tn = "Semaphore:torch-" + devname;
     if (not semname.empty()) {

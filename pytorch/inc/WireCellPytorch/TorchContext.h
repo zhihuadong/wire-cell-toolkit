@@ -38,7 +38,7 @@ namespace WireCell::Pytorch {
       private:
 
         torch::Device m_dev{torch::kCPU};
-        std::string m_devname;
+        std::string m_devname{""};
         ISemaphore::pointer m_sem;
      };
 

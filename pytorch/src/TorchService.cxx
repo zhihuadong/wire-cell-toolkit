@@ -49,19 +49,20 @@ void Pytorch::TorchService::configure(const WireCell::Configuration& cfg)
         m_module = torch::jit::load(model_path, m_ctx.device());
     }
     catch (const c10::Error& e) {
-        log->critical("error loading model: {} to {}: {}",
+        log->critical("error loading model: \"{}\" to device \"{}\": {}",
                       model_path, dev, e.what());
         throw;                  // rethrow
     }
 
-    log->debug("loaded model {} to {}", model_path, dev);
+    log->debug("loaded model \"{}\" to device \"{}\"",
+               model_path, m_ctx.devname());
 }
 
 ITensorSet::pointer Pytorch::TorchService::forward(const ITensorSet::pointer& in) const
 {
     TorchSemaphore sem(m_ctx);
 
-    log->debug("running model on {}", m_ctx.devname());
+    log->debug("running model on device: \"{}\"", m_ctx.devname());
 
     torch::NoGradGuard no_grad;
 
@@ -72,7 +73,7 @@ ITensorSet::pointer Pytorch::TorchService::forward(const ITensorSet::pointer& in
         oival = m_module.forward(iival);
     }
     catch (const std::runtime_error& err) {
-        log->error("error running model on {}: {}",
+        log->error("error running model on device \"{}\": {}",
                    m_ctx.devname(), err.what());
         return nullptr;
     }

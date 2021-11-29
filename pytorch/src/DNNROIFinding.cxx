@@ -234,7 +234,8 @@ bool Pytorch::DNNROIFinding::operator()(const IFrame::pointer& inframe, IFrame::
     std::vector<torch::jit::IValue> inputs;
     inputs.push_back(batch);
 
-    log->debug(tk(fmt::format("call={} calling model", m_save_count)));
+    log->debug(tk(fmt::format("call={} calling model \"{}\"",
+                              m_save_count, m_cfg.forward)));
 
     // Execute the model and turn its output into a tensor.
     auto iitens = Pytorch::to_itensor(inputs);

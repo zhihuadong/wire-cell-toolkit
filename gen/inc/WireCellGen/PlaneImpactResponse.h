@@ -33,6 +33,7 @@ namespace WireCell {
                            const Waveform::realseq_t& wf, int waveform_pad,
                            const Waveform::realseq_t& long_wf, int long_waveform_pad)
               : m_impact(impact)
+              , m_spectrum(spectrum)
               , m_waveform(wf)
               , m_waveform_pad(waveform_pad)
               , m_long_waveform(long_wf)
