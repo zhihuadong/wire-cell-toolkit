@@ -561,36 +561,6 @@ bool Protodune::FftScaling(const IDFT::pointer& dft,
  * Classes
  */
 
-/*
- * Configuration base class used for a couple filters
- */
-Protodune::ConfigFilterBase::ConfigFilterBase(const std::string& anode, const std::string& noisedb)
-  : m_anode_tn(anode)
-  , m_noisedb_tn(noisedb)
-{
-}
-Protodune::ConfigFilterBase::~ConfigFilterBase() {}
-void Protodune::ConfigFilterBase::configure(const WireCell::Configuration& cfg)
-{
-    m_anode_tn = get(cfg, "anode", m_anode_tn);
-    m_anode = Factory::find_tn<IAnodePlane>(m_anode_tn);
-    m_noisedb_tn = get(cfg, "noisedb", m_noisedb_tn);
-    m_noisedb = Factory::find_tn<IChannelNoiseDatabase>(m_noisedb_tn);
-
-    std::string dft_tn = get<std::string>(cfg, "dft", "FftwDFT");
-    m_dft = Factory::find_tn<IDFT>(dft_tn);
-
-    // std::cerr << "ConfigFilterBase: \n" << cfg << "\n";
-}
-WireCell::Configuration Protodune::ConfigFilterBase::default_configuration() const
-{
-    Configuration cfg;
-    cfg["anode"] = m_anode_tn;
-    cfg["noisedb"] = m_noisedb_tn;
-    cfg["dft"] = "FftwDFT";     // type-name for the DFT to use
-    return cfg;
-}
-
 Protodune::StickyCodeMitig::StickyCodeMitig(const std::string& anode, const std::string& noisedb,
                                             float stky_sig_like_val, float stky_sig_like_rms, int stky_max_len)
   : m_anode_tn(anode)
@@ -745,8 +715,10 @@ WireCell::Waveform::ChannelMaskMap Protodune::StickyCodeMitig::apply(channel_sig
     return WireCell::Waveform::ChannelMaskMap();
 }
 
+
 Protodune::OneChannelNoise::OneChannelNoise(const std::string& anode, const std::string& noisedb)
-  : ConfigFilterBase(anode, noisedb)
+  : m_anode_tn(anode)
+  , m_noisedb_tn(noisedb)
   , m_check_partial()  // fixme, here too.
   , m_resmp()
 {
@@ -757,12 +729,11 @@ void Protodune::OneChannelNoise::configure(const WireCell::Configuration& cfg)
 {
     m_anode_tn = get(cfg, "anode", m_anode_tn);
     m_anode = Factory::find_tn<IAnodePlane>(m_anode_tn);
-    if (!m_anode) {
-        THROW(KeyError() << errmsg{"failed to get IAnodePlane: " + m_anode_tn});
-    }
-
     m_noisedb_tn = get(cfg, "noisedb", m_noisedb_tn);
     m_noisedb = Factory::find_tn<IChannelNoiseDatabase>(m_noisedb_tn);
+
+    std::string dft_tn = get<std::string>(cfg, "dft", "FftwDFT");
+    m_dft = Factory::find_tn<IDFT>(dft_tn);
 
     m_resmp.clear();
     auto jext = cfg["resmp"];
@@ -781,6 +752,7 @@ WireCell::Configuration Protodune::OneChannelNoise::default_configuration() cons
     Configuration cfg;
     cfg["anode"] = m_anode_tn;
     cfg["noisedb"] = m_noisedb_tn;
+    cfg["dft"] = "FftwDFT";     // type-name for the DFT to use
     return cfg;
 }
 
