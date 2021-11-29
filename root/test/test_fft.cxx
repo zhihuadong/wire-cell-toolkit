@@ -178,25 +178,30 @@ int main(int argc, char* argv[])
     // do timing tests
     {
         TGraph* timings[4] = {new TGraph, new TGraph, new TGraph, new TGraph};
+        TGraph* timings_1st[4] = {new TGraph, new TGraph, new TGraph, new TGraph};
 
         // Some popular choices with powers-of-two sprinkled in
-        std::vector<int> nsampleslist{128,   256,  400,  480,  // protoDUNE U/V and W channels per plane
-                                      512,
-                                      800,  // protoDUNE, sum of U or V channels for both faces
-                                      960,  // protoDUNE, sum of W channels (or wires) for both faces
-                                      1024,
-                                      1148,  // N wires in U/V plane for protodune
-                                      2048,
-                                      2400,  // number of channels in U or V in microboone
-                                      2560,  // DUNE, total APA channels
-                                      3456,  // number of channels in microboone's W
-                                      4096,
-                                      6000,  // one choice of nticks for protoDUNE
-                                      8192,
-                                      8256,                     // total microboone channels
-                                      9592,  9594, 9595, 9600,  // various microboone readout lengths
-                                      10000,                    // 5 ms at 2MHz readout
-                                      10240, 16384};
+        std::vector<int> nsampleslist{
+            128, 256,        // small powers of 2
+            400, 480,        // protoDUNE U/V and W channels per plane
+            512,
+            800,                // protoDUNE, all U or V channels
+            960,                // protoDUNE, all W channels
+            1024,
+            1148,               // what's this?
+            2000,  // iceberg
+            2048,
+            2400,  // number of channels in U or V in microboone
+            2560,  // DUNE, total APA channels
+            3456,  // number of channels in microboone's W
+            4096,
+            6000,  // one choice of nticks for protoDUNE
+            8192,
+            8256,                     // total microboone channels
+            9587,                     // prime near MB nticks
+            9592,  9594, 9595, 9600,  // various MB nticks
+            10000,                    // 5 ms at 2MHz readout
+            10240, 16384};
         const int ntries = 1000;
         for (auto nsamps : nsampleslist) {
             Response::ColdElec ce(gains[1], shapings[1]);
@@ -204,6 +209,14 @@ int main(int argc, char* argv[])
             Waveform::realseq_t res = ce.generate(bins);
             Waveform::compseq_t spec;
 
+
+            double fwd_time_1st = 0.0;
+            {
+                auto t1 = std::chrono::high_resolution_clock::now();
+                spec = Aux::fwd_r2c(idft, res);
+                auto t2 = std::chrono::high_resolution_clock::now();
+                fwd_time_1st += std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count();
+            }
             double fwd_time = 0.0;
             for (int itry = 0; itry < ntries; ++itry) {
                 auto t1 = std::chrono::high_resolution_clock::now();
@@ -213,6 +226,13 @@ int main(int argc, char* argv[])
             }
             fwd_time /= ntries;
 
+            double rev_time_1st = 0.0;
+            {
+                auto t1 = std::chrono::high_resolution_clock::now();
+                res = Aux::inv_c2r(idft, spec);
+                auto t2 = std::chrono::high_resolution_clock::now();
+                rev_time_1st = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count();
+            }
             double rev_time = 0.0;
             for (int itry = 0; itry < ntries; ++itry) {
                 auto t1 = std::chrono::high_resolution_clock::now();
@@ -233,45 +253,93 @@ int main(int argc, char* argv[])
             timings[1]->SetPoint(timings[1]->GetN(), nsamps, fwd_time / nsamps);
             timings[2]->SetPoint(timings[2]->GetN(), nsamps, rev_time);
             timings[3]->SetPoint(timings[3]->GetN(), nsamps, rev_time / nsamps);
+
+            timings_1st[0]->SetPoint(timings_1st[0]->GetN(), nsamps, fwd_time_1st);
+            timings_1st[1]->SetPoint(timings_1st[1]->GetN(), nsamps, fwd_time_1st / (fwd_time));
+            timings_1st[2]->SetPoint(timings_1st[2]->GetN(), nsamps, rev_time_1st);
+            timings_1st[3]->SetPoint(timings_1st[3]->GetN(), nsamps, rev_time_1st / (rev_time));
+
         }
 
         pdf.canvas.Clear();
         pdf.canvas.Divide(1, 2);
 
-        auto text = new TText;
         {
-            auto pad = pdf.canvas.cd(1);
-            pad->SetGridx();
-            pad->SetGridy();
-            pad->SetLogx();
-            auto graph = timings[0];
-            auto frame = graph->GetHistogram();
-            frame->SetTitle("Fwd/rev DFT timing (absolute)");
-            frame->GetXaxis()->SetTitle("number of samples");
-            frame->GetYaxis()->SetTitle("time (ns)");
-            timings[0]->Draw("AL");
-            timings[2]->Draw("L");
-            for (int ind = 0; ind < graph->GetN(); ++ind) {
-                auto x = graph->GetX()[ind];
-                auto y = graph->GetY()[ind];
-                text->DrawText(x, y, Form("%.0f", x));
+            auto text = new TText;
+            {
+                auto pad = pdf.canvas.cd(1);
+                pad->SetGridx();
+                pad->SetGridy();
+                pad->SetLogx();
+                pad->SetLogy();
+                auto graph = timings[0];
+                auto frame = graph->GetHistogram();
+                frame->SetTitle("Fwd/rev DFT timing (absolute)");
+                frame->GetXaxis()->SetTitle("number of samples");
+                frame->GetYaxis()->SetTitle("time [ns]");
+                timings[0]->Draw("AL");
+                timings[2]->Draw("L");
+                for (int ind = 0; ind < graph->GetN(); ++ind) {
+                    auto x = graph->GetX()[ind];
+                    auto y = graph->GetY()[ind];
+                    text->DrawText(x, y, Form("%.0f", x));
+                }
             }
+
+            {
+                auto pad = pdf.canvas.cd(2);
+                pad->SetGridx();
+                pad->SetGridy();
+                pad->SetLogx();
+                auto frame = timings[1]->GetHistogram();
+                frame->SetTitle("Fwd/rev DFT timing (relative to size)");
+                frame->GetXaxis()->SetTitle("number of samples");
+                frame->GetYaxis()->SetTitle("time per sample [ns/samp]");
+                timings[1]->Draw("AL");
+                timings[3]->Draw("L");
+            }
+            pdf();
         }
+
+        pdf.canvas.Clear();
+        pdf.canvas.Divide(1, 2);
 
         {
-            auto pad = pdf.canvas.cd(2);
-            pad->SetGridx();
-            pad->SetGridy();
-            pad->SetLogx();
-            auto frame = timings[1]->GetHistogram();
-            frame->SetTitle("Fwd/rev DFT timing (relative)");
-            frame->GetXaxis()->SetTitle("number of samples");
-            frame->GetYaxis()->SetTitle("time per sample (ns/samp)");
-            timings[1]->Draw("AL");
-            timings[3]->Draw("L");
-        }
-        pdf();
-    }
+            auto text = new TText;
+            {
+                auto pad = pdf.canvas.cd(1);
+                pad->SetGridx();
+                pad->SetGridy();
+                pad->SetLogx();
+                pad->SetLogy();
+                auto graph = timings_1st[0];
+                auto frame = graph->GetHistogram();
+                frame->SetTitle("fwd/rev DFT timing, ''cold'' (plan+exec) (absolute time)");
+                frame->GetXaxis()->SetTitle("number of samples");
+                frame->GetYaxis()->SetTitle("time [ns]");
+                timings_1st[0]->Draw("AL");
+                timings_1st[2]->Draw("L");
+                for (int ind = 0; ind < graph->GetN(); ++ind) {
+                    auto x = graph->GetX()[ind];
+                    auto y = graph->GetY()[ind];
+                    text->DrawText(x, y, Form("%.0f", x));
+                }
+            }
 
+            {
+                auto pad = pdf.canvas.cd(2);
+                pad->SetGridx();
+                pad->SetGridy();
+                pad->SetLogx();
+                auto frame = timings_1st[1]->GetHistogram();
+                frame->SetTitle("Fwd/rev DFT timing (cold/warm relative)");
+                frame->GetXaxis()->SetTitle("number of samples");
+                frame->GetYaxis()->SetTitle("relative time [ns / ns]");
+                timings_1st[1]->Draw("AL");
+                timings_1st[3]->Draw("L");
+            }
+            pdf();
+        }
+    }
     return 0;
 }
