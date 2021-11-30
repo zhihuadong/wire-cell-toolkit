@@ -1,0 +1,223 @@
+/** Run IDFT operations on input array, write result
+
+    Usage:
+
+    check_idft -c cfg.[json|jsonnet] -o out.tar.bz2 [-p pi -t tn] in.tar.bz2 ...
+
+    The configuration file should be a sequence of objects describing
+    transformations.  Each object with these keys:
+
+    - src : source array name 
+    - dst : destination array name
+    - op : operator name, see below.
+
+    The operator is given as a keyword which encodes 
+
+    - DIR : the direction of the transform, one in {fwd, inv}
+    - R : the rank of the transform (not array), on in {1, 2}
+    - V : a variant of "batched" ("b") or full dimensional ("d")
+    - A : an optional "axis" number in {0,1} for bached
+    - C : an optional conversion between real and complex, in {"r2c", "c2r"}
+
+    Some examples:
+
+    All complex input and complex output:
+
+    - fwd1d :: 1D forward transform on a 1D array
+    - inv2d :: 2D transform on a 2D array
+    - fwd1b1 :: 1D forward transform on axis=1 (each row is transformed) on a 2D array
+
+    Mixed real/complex
+
+    - fwd1d_r2c :: fwd1d on 1D real array producing complex array
+    - inv2d_c2r :: inv2d on 2D complex array producing real array
+
+ */
+
+
+#include "aux_test_dft_helpers.h"
+#include "WireCellUtil/Stream.h"
+#include "WireCellAux/DftTools.h"
+
+#include <boost/iostreams/filtering_stream.hpp>
+
+#include <map>
+#include <string>
+#include <complex>
+#include <algorithm>
+
+using namespace WireCell;
+using namespace WireCell::Stream;
+using namespace WireCell::Aux::Test;
+
+using array_xxf = Eigen::Array<float, Eigen::Dynamic, Eigen::Dynamic>;
+using complex_t = std::complex<float>;
+using array_xxc = Eigen::Array<complex_t, Eigen::Dynamic, Eigen::Dynamic>;
+
+// may hold any dtype and shape
+using pig_array = pigenc::File;
+using array_store = std::map<std::string, pig_array>;
+
+using dft_op = std::function<pig_array(pig_array)>;
+using op_lu_t = std::map<std::string, dft_op>;
+
+using vector_xf = std::vector<float>;
+using vector_xc = std::vector<complex_t>;
+
+
+static
+vector_xf v_c2r(const vector_xc& cvec)
+{
+    vector_xf ret(cvec.size());
+    std::transform(cvec.begin(), cvec.end(), ret.begin(),
+                   [](complex_t c) { return std::real(c); });
+    return ret;
+}
+static
+vector_xc v_c2r(const vector_xf& rvec)
+{
+    vector_xc cret(rvec.size());
+    std::transform(rvec.begin(), rvec.end(), cret.begin(),
+                   [](float re) { return complex_t(re, 0); });
+    return cret;
+}
+
+
+template<typename Scalar>
+static std::vector<Scalar> p2v(const pig_array& pa)
+{
+    auto vec = pa.as_vec<Scalar>();
+    if (vec.empty()) {
+        throw std::runtime_error("p2v type mismatch");
+    }
+    return vec;
+}
+template<typename Scalar>
+pig_array v2p(const std::vector<Scalar>& vec)
+{
+    std::vector<char> data((const char*)vec.data(),
+                           (const char*)vec.data() + sizeof(Scalar)*vec.size());
+    pig_array pa;
+    pa.set<complex_t>(data, {vec.size()});
+    return pa;
+}
+
+
+template<typename Scalar>
+Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> p2a(const pig_array& pa)
+{
+    Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> arr;
+    bool ok = pigenc::eigen::load(pa, arr);
+    if (!ok) {
+        throw std::runtime_error("p2a type mismatch");
+    }
+    return arr;
+}
+template<typename Scalar>
+pig_array a2p(const Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic>& arr)
+{
+    pig_array pa;
+    pigenc::eigen::dump(pa, arr);
+    return pa;
+}
+
+
+pig_array dispatch(const IDFT::pointer& dft, const pig_array& pa, const std::string& op)
+{
+    if (op == "fwd1d") 
+        return v2p<complex_t>(Aux::fwd(dft, p2v<complex_t>(pa)));
+
+    if (op == "inv1d") 
+        return v2p<complex_t>(Aux::fwd(dft, p2v<complex_t>(pa)));
+            
+    if (op == "fwd1d_r2c") 
+        return v2p<complex_t>(Aux::fwd_r2c(dft, p2v<float>(pa)));
+
+    if (op == "inv1d_c2r") 
+        return v2p<float>(Aux::inv_c2r(dft, p2v<complex_t>(pa)));
+
+}
+
+int main(int argc, char* argv[])
+{
+    DftArgs args;
+    int rc = make_dft_args(args, argc, argv);
+    if (rc) { return rc; }
+
+    if (args.positional.empty()) {
+        std::cerr << "need at least one input file" << std::endl;
+        return 0;
+    }
+    if (args.output.empty()) {
+        std::cerr << "need output file" << std::endl;
+        return 0;
+    }
+    if (args.cfg.empty()) {
+        std::cerr << "need configuration" << std::endl;
+        return 0;
+    }
+    std::cerr << args.cfg << std::endl;
+    
+    auto idft = make_dft(args.tn, args.pi, args.cfg);
+
+    array_store arrs;
+
+    // Slurp in arrays.
+    for (const auto& sname : args.positional) {
+        boost::iostreams::filtering_istream ins;
+        std::cerr << "openning: "<<sname<<"\n";
+        ins.clear();
+        input_filters(ins, sname);
+        if (ins.size() < 2) {     // expect bz2 + tar filters + file source.
+            std::cerr << "Unexpected file format with: "<<sname<<"\n";
+            return 1;
+        }
+            
+        std::string fname{""};
+        size_t fsize{0};
+        custard::read(ins, fname, fsize);
+        if (ins.eof()) {
+            std::cerr << "EOF on custard head read\n";
+            break;
+        }
+        if (!ins) {
+            std::cerr << "ERROR unpacking tar header " << strerror(errno) << std::endl;
+            return -1;
+        }
+        std::cerr << "Unpacking " << fname << " " << fsize << std::endl;
+        
+        pigenc::File pig;
+        pig.read(ins);
+        if (!ins) {
+            std::cerr << "ERROR unpacking pig " << strerror(errno) << std::endl;
+            return -1;
+        }
+        std::cerr << "Read in " << fname << " with dtype=" << pig.header().dtype() << std::endl;
+
+        arrs[fname] = pig;
+    }
+
+    for (auto one : args.cfg) {
+        auto src = one["src"].asString();
+        auto it = arrs.find(src);
+        if (it == arrs.end()) {
+            std::cerr << "no src array: " << src << std::endl;
+            continue;
+        }
+
+        auto op = one["op"].asString();
+        auto darr = dispatch(idft, it->second, op);
+
+        auto dst = one["dst"];
+        if (darr.header().array_size() == 0) {
+            std::cerr << "failed: " << op <<  "(" << src << ") -> " << dst << "\n";
+            continue;
+        }
+
+        // write dst
+        std::cerr << "fixme: not (yet) writing: " << dst << std::endl;
+
+    }
+
+    return 0;
+}

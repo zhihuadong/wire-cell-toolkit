@@ -6,6 +6,9 @@
 local wc = import "wirecell.jsonnet";
 
 {
+    // Default DFT uses FFTW3
+    dft : { type: "FftwDFT" },
+
     // Configure "wire" geometry and channel map to load from file
     wires(filename) :: {
         type:"WireSchemaFile",

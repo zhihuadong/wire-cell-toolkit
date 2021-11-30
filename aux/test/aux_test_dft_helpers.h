@@ -102,6 +102,7 @@ namespace WireCell::Aux::Test {
         std::string pi{"WireCellAux"};
         std::string cfg_name{""};
         std::string output{""};
+        std::vector<std::string> positional;
         Configuration cfg;
     };        
 
@@ -110,13 +111,15 @@ namespace WireCell::Aux::Test {
     {
         CLI::App app{"wct dft test"};
         app.add_option("-o,--output", args.output,
-                   "Output file")->type_size(1)->allow_extra_args(false);
+                       "Output file")->type_size(1)->allow_extra_args(false);
         app.add_option("-p,--plugin", args.pi,
-                   "Plugin")->type_size(1)->allow_extra_args(false);
+                       "Plugin")->type_size(1)->allow_extra_args(false);
         app.add_option("-t,--typename", args.tn,
-                   "Type or Type:Name of IDFT imp")->type_size(1)->allow_extra_args(false);
+                       "Type or Type:Name of IDFT imp")->type_size(1)->allow_extra_args(false);
         app.add_option("-c,--config", args.cfg_name,
-                   "Config file for IDFT imp")->type_size(1)->allow_extra_args(false);
+                       "Config file for IDFT imp")->type_size(1)->allow_extra_args(false);
+        app.add_option("arguments", args.positional,
+                       "Any positional arguments");
         CLI11_PARSE(app, argc, argv);
 
         if (not args.cfg_name.empty()) {

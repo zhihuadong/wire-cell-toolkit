@@ -11,6 +11,9 @@ local hs = import "pgrapher/common/helpers.jsonnet";
 local wires = hs.aux.wires(params.files.wires);
 local anodes = hs.aux.anodes(wires, params.det.volumes);
 
+// IDFT
+local dft = {type: 'FftwDFT'};
+
 // simulation
 
 // kinematics: ideal line source

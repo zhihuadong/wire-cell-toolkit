@@ -54,7 +54,6 @@ namespace WireCell::Aux {
         std::transform(cvec.begin(), cvec.end(), rvec.begin(),
                        [](const Aux::complex_t& c) { return std::real(c); });
         return rvec;
-        
     }
 
     // 1D high-level interface
