@@ -50,8 +50,9 @@ using namespace WireCell;
 using namespace WireCell::Stream;
 using namespace WireCell::Aux::Test;
 
-using array_xxf = Eigen::Array<float, Eigen::Dynamic, Eigen::Dynamic>;
-using complex_t = std::complex<float>;
+using scalar_t = float;
+using array_xxf = Eigen::Array<scalar_t, Eigen::Dynamic, Eigen::Dynamic>;
+using complex_t = std::complex<scalar_t>;
 using array_xxc = Eigen::Array<complex_t, Eigen::Dynamic, Eigen::Dynamic>;
 
 // may hold any dtype and shape
@@ -61,31 +62,15 @@ using array_store = std::map<std::string, pig_array>;
 using dft_op = std::function<pig_array(pig_array)>;
 using op_lu_t = std::map<std::string, dft_op>;
 
-using vector_xf = std::vector<float>;
+using vector_xf = std::vector<scalar_t>;
 using vector_xc = std::vector<complex_t>;
-
-
-static
-vector_xf v_c2r(const vector_xc& cvec)
-{
-    vector_xf ret(cvec.size());
-    std::transform(cvec.begin(), cvec.end(), ret.begin(),
-                   [](complex_t c) { return std::real(c); });
-    return ret;
-}
-static
-vector_xc v_c2r(const vector_xf& rvec)
-{
-    vector_xc cret(rvec.size());
-    std::transform(rvec.begin(), rvec.end(), cret.begin(),
-                   [](float re) { return complex_t(re, 0); });
-    return cret;
-}
-
 
 template<typename Scalar>
 static std::vector<Scalar> p2v(const pig_array& pa)
 {
+    if (pa.header().shape().size() != 1) {
+        throw std::runtime_error("p2v rank mismatch");
+    }
     auto vec = pa.as_vec<Scalar>();
     if (vec.empty()) {
         throw std::runtime_error("p2v type mismatch");
@@ -106,6 +91,9 @@ pig_array v2p(const std::vector<Scalar>& vec)
 template<typename Scalar>
 Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> p2a(const pig_array& pa)
 {
+    if (pa.header().shape().size() != 2) {
+        throw std::runtime_error("p2a rank mismatch");
+    }
     Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic> arr;
     bool ok = pigenc::eigen::load(pa, arr);
     if (!ok) {
@@ -122,8 +110,11 @@ pig_array a2p(const Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic>& arr)
 }
 
 
+
 pig_array dispatch(const IDFT::pointer& dft, const pig_array& pa, const std::string& op)
 {
+    // vector
+
     if (op == "fwd1d") 
         return v2p<complex_t>(Aux::fwd(dft, p2v<complex_t>(pa)));
 
@@ -131,11 +122,38 @@ pig_array dispatch(const IDFT::pointer& dft, const pig_array& pa, const std::str
         return v2p<complex_t>(Aux::fwd(dft, p2v<complex_t>(pa)));
             
     if (op == "fwd1d_r2c") 
-        return v2p<complex_t>(Aux::fwd_r2c(dft, p2v<float>(pa)));
+        return v2p<complex_t>(Aux::fwd_r2c(dft, p2v<scalar_t>(pa)));
 
     if (op == "inv1d_c2r") 
-        return v2p<float>(Aux::inv_c2r(dft, p2v<complex_t>(pa)));
+        return v2p<scalar_t>(Aux::inv_c2r(dft, p2v<complex_t>(pa)));
 
+    // array
+
+    if (op == "fwd2d")
+        return a2p<complex_t>(Aux::fwd(dft, p2a<complex_t>(pa)));
+
+    if (op == "inv2d")
+        return a2p<complex_t>(Aux::inv(dft, p2a<complex_t>(pa)));
+
+    if (op == "fwd2d_r2c")
+        return a2p<complex_t>(Aux::fwd_r2c(dft, p2a<scalar_t>(pa)));
+
+    if (op == "inv2d_c2r")
+        return a2p<scalar_t>(Aux::inv_c2r(dft, p2a<complex_t>(pa)));
+
+    if (op == "fwd1b0")
+        return a2p<complex_t>(Aux::fwd(dft, p2a<complex_t>(pa), 0));
+
+    if (op == "fwd1b1")
+        return a2p<complex_t>(Aux::fwd(dft, p2a<complex_t>(pa), 1));
+
+    if (op == "inv1b0")
+        return a2p<complex_t>(Aux::inv(dft, p2a<complex_t>(pa), 0));
+
+    if (op == "inv1b1")
+        return a2p<complex_t>(Aux::inv(dft, p2a<complex_t>(pa), 1));
+
+    return pig_array();
 }
 
 int main(int argc, char* argv[])
@@ -166,35 +184,45 @@ int main(int argc, char* argv[])
     for (const auto& sname : args.positional) {
         boost::iostreams::filtering_istream ins;
         std::cerr << "openning: "<<sname<<"\n";
-        ins.clear();
+
         input_filters(ins, sname);
         if (ins.size() < 2) {     // expect bz2 + tar filters + file source.
             std::cerr << "Unexpected file format with: "<<sname<<"\n";
             return 1;
         }
             
-        std::string fname{""};
-        size_t fsize{0};
-        custard::read(ins, fname, fsize);
-        if (ins.eof()) {
-            std::cerr << "EOF on custard head read\n";
-            break;
-        }
-        if (!ins) {
-            std::cerr << "ERROR unpacking tar header " << strerror(errno) << std::endl;
-            return -1;
-        }
-        std::cerr << "Unpacking " << fname << " " << fsize << std::endl;
-        
-        pigenc::File pig;
-        pig.read(ins);
-        if (!ins) {
-            std::cerr << "ERROR unpacking pig " << strerror(errno) << std::endl;
-            return -1;
-        }
-        std::cerr << "Read in " << fname << " with dtype=" << pig.header().dtype() << std::endl;
+        while (true) {
+            std::string fname{""};
+            size_t fsize{0};
+            custard::read(ins, fname, fsize);
+            if (ins.eof()) {
+                break;
+            }
+            if (!ins) {
+                std::cerr << "ERROR unpacking tar header " << strerror(errno) << std::endl;
+                return -1;
+            }
 
-        arrs[fname] = pig;
+            pigenc::File pig;
+            pig.read(ins);
+            if (!ins) {
+                std::cerr << "ERROR unpacking pig " << strerror(errno) << std::endl;
+                return -1;
+            }
+            auto npy = fname.find(".npy");
+            if (npy != std::string::npos) {
+                fname = fname.substr(0, npy);
+            }
+            std::cerr << "\tread " << fname << " with dtype=" << pig.header().dtype() << std::endl;
+
+            arrs[fname] = pig;
+        }
+    }
+
+    boost::iostreams::filtering_ostream outs;
+    output_filters(outs, args.output);
+    if (outs.size() < 2) {     // must have at least get tar filter + file sink.
+        std::cerr << "Unexpected file format: " << args.output << "\n";
     }
 
     for (auto one : args.cfg) {
@@ -206,18 +234,35 @@ int main(int argc, char* argv[])
         }
 
         auto op = one["op"].asString();
+        auto dst = one["dst"].asString();
+        std::cerr << op << "(" << src << ") -> " << dst << std::endl;
         auto darr = dispatch(idft, it->second, op);
 
-        auto dst = one["dst"];
-        if (darr.header().array_size() == 0) {
+        auto siz = darr.header().array_size();
+        if (siz == 0) {
             std::cerr << "failed: " << op <<  "(" << src << ") -> " << dst << "\n";
             continue;
         }
 
-        // write dst
-        std::cerr << "fixme: not (yet) writing: " << dst << std::endl;
 
+        auto fsiz = darr.header().file_size();
+        auto npy = dst.find(".npy");
+        if (npy == std::string::npos) {
+            dst = dst + ".npy";
+        }
+        std::cerr << "writing: " << dst << "(" << fsiz << " B) to " << args.output << std::endl;
+        custard::write(outs, dst, fsiz);
+        if (!outs) {
+            std::cerr << "failed to write " << dst
+                      << "(" << fsiz << ") to "
+                      << args.output << std::endl;
+            continue;
+        }
+        darr.write(outs);
+        outs.flush();
     }
+
+    outs.pop();
 
     return 0;
 }

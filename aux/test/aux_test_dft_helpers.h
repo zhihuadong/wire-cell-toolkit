@@ -5,10 +5,11 @@
 #include "WireCellUtil/PluginManager.h"
 #include "WireCellUtil/Exceptions.h"
 #include "WireCellUtil/Persist.h"
-#include "WireCellUtil/CLI11.hpp"
 
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/IDFT.h"
+
+#include <boost/program_options.hpp>
 
 #include <ctime>                // std::clock
 #include <chrono>
@@ -109,23 +110,49 @@ namespace WireCell::Aux::Test {
     // remove command name from main()'s argc/argv[0]
     int make_dft_args(DftArgs& args, int argc, char** argv) 
     {
-        CLI::App app{"wct dft test"};
-        app.add_option("-o,--output", args.output,
-                       "Output file")->type_size(1)->allow_extra_args(false);
-        app.add_option("-p,--plugin", args.pi,
-                       "Plugin")->type_size(1)->allow_extra_args(false);
-        app.add_option("-t,--typename", args.tn,
-                       "Type or Type:Name of IDFT imp")->type_size(1)->allow_extra_args(false);
-        app.add_option("-c,--config", args.cfg_name,
-                       "Config file for IDFT imp")->type_size(1)->allow_extra_args(false);
-        app.add_option("arguments", args.positional,
-                       "Any positional arguments");
-        CLI11_PARSE(app, argc, argv);
+        // compilation times: po:19s, cli11:26s
+        namespace po = boost::program_options;
 
-        if (not args.cfg_name.empty()) {
-            // Either we get directly a "data" object 
+        po::options_description desc("Options");
+        desc.add_options()("help,h", "IDFT tests [options] [arguments]")
+            ("output,o", po::value< std::string >(), "output file")
+            ("plugin,p", po::value< std::string >(), "plugin holding a IDFT")
+            ("typename,t", po::value< std::string >(), "type[:name] of the IDFT to use")
+            ("config,c",  po::value< std::string >(), "configuration file")
+            ("args",  po::value< std::vector<std::string> >(), "positional arguments")
+            ;
+        po::positional_options_description pos_desc;
+        pos_desc.add("args", -1);
+
+        auto parsed = po::command_line_parser(argc, argv)
+            .options(desc)
+            .positional(pos_desc)
+            .run();
+        po::variables_map opts;
+        po::store(parsed, opts);
+        po::notify(opts);
+
+        if (opts.count("help")) {
+            std::cout << desc << "\n";
+            return 1;
+        }
+        
+        if (opts.count("output")) {
+            args.output = opts["output"].as< std::string> ();
+        }
+        if (opts.count("plugin") ) {
+            args.pi = opts["plugin"].as< std::string >();
+        }
+        if (opts.count("typename")) {
+            args.tn = opts["typename"].as< std::string> ();
+        }
+        if (opts.count("args")) {
+            args.positional = opts["args"].as< std::vector<std::string> >();
+        }
+        if (opts.count("config")) {
+            args.cfg_name = opts["config"].as< std::string> ();
             auto cfg = Persist::load(args.cfg_name);
-            // or we go searching a list for matching type/name.
+
             if (cfg.isArray()) {
                 for (auto one : cfg) {
                     std::string tn = get<std::string>(one, "type");
@@ -140,7 +167,7 @@ namespace WireCell::Aux::Test {
                 }
             }
             args.cfg = cfg;
-        }
+        }        
         return 0;
     }
 
