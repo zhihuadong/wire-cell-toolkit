@@ -118,6 +118,17 @@ Aux::complex_array_t Aux::inv(const IDFT::pointer& dft,
     return ret;
 }
 
+Aux::complex_array_t Aux::fwd_r2c(const IDFT::pointer& dft,
+                                  const real_array_t& arr)
+{
+    return Aux::fwd(dft, arr.cast<Aux::complex_t>());
+}
+Aux::real_array_t Aux::inv_c2r(const IDFT::pointer& dft,
+                               const complex_array_t& arr)
+{
+    return Aux::inv(dft, arr).real();
+}
+
 
 Aux::real_vector_t Aux::convolve(const IDFT::pointer& dft,
                                  const Aux::real_vector_t& in1,

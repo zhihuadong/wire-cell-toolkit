@@ -86,8 +86,9 @@ namespace WireCell::Aux {
 
     // Eigen array based functions
 
-    /// A complex, 2D array.  Use Array::cast<type>() if you need to
-    /// convert to/from real.
+    /// 2D array types.  Note, use Array::cast<complex_t>() if you
+    /// need to convert rom real or arr.real() to convert to real.
+    using real_array_t = Eigen::ArrayXXf;
     using complex_array_t = Eigen::ArrayXXcf;
     
     // 2D with Eigen arrays.  Use eg arr.cast<complex_>() to provde
@@ -96,6 +97,12 @@ namespace WireCell::Aux {
     // Transform both dimesions.
     complex_array_t fwd(const IDFT::pointer& dft, const complex_array_t& arr);
     complex_array_t inv(const IDFT::pointer& dft, const complex_array_t& arr);
+
+    // As above but internally convert input or output.  These are
+    // just syntactic sugar hiding a .cast<complex_t>() or a .real()
+    // call.
+    complex_array_t fwd_r2c(const IDFT::pointer& dft, const real_array_t& arr);
+    real_array_t inv_c2r(const IDFT::pointer& dft, const complex_array_t& arr);
 
     // Transform a 2D array along one axis.
     //
@@ -112,6 +119,11 @@ namespace WireCell::Aux {
     // order.  Neither is pertinent in setting the axis.
     complex_array_t fwd(const IDFT::pointer& dft, const complex_array_t& arr, int axis);
     complex_array_t inv(const IDFT::pointer& dft, const complex_array_t& arr, int axis);
+
+
+    // Fixme: possible additions
+    // - superposition of 2 reals for 2x speedup
+    // - r2c / c2r for 1b
 
 }
 
