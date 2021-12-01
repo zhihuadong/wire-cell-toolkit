@@ -1,6 +1,8 @@
 #include "WireCellAux/DftTools.h"
 #include <algorithm>
 
+#include <iostream>             // debugging
+
 
 using namespace WireCell;
 using namespace WireCell::Aux;
@@ -18,26 +20,18 @@ using COLM = Eigen::Array<Aux::complex_t, Eigen::Dynamic, Eigen::Dynamic, Eigen:
 template<typename trans>
 Aux::complex_array_t doit(const Aux::complex_array_t& arr, trans func)
 {
-    // Nominally, eigen storage memory is in column-major order
     const Aux::complex_t* in_data = arr.data();
-    int ncols = arr.rows();
-    int nrows = arr.cols();
+    Aux::complex_vector_t out_vec(arr.rows()*arr.cols());
 
-    // except when it isn't
-    bool flipped = arr.IsRowMajor;
-    if (flipped) {
-        ncols = arr.cols();
-        nrows = arr.rows();
-    }
+    std::cerr << "dft::doit: (" << arr.rows() << "," << arr.cols() << ") IsRowMajor:" << arr.IsRowMajor << std::endl;
 
-    Aux::complex_vector_t out_vec(nrows*ncols);
-    func(in_data, out_vec.data(), nrows, ncols);
-
-    if (flipped) {
+    if (arr.IsRowMajor) {
+        func(in_data, out_vec.data(), arr.cols(), arr.rows());
         return Eigen::Map<ROWM>(out_vec.data(), arr.rows(), arr.cols());
     }
-    return Eigen::Map<COLM>(out_vec.data(), arr.rows(), arr.cols());
 
+    func(in_data, out_vec.data(), arr.rows(), arr.cols());
+    return Eigen::Map<COLM>(out_vec.data(), arr.rows(), arr.cols());
 }
 
 Aux::complex_array_t Aux::fwd(const IDFT::pointer& dft, const Aux::complex_array_t& arr)
@@ -58,38 +52,38 @@ Aux::complex_array_t Aux::inv(const IDFT::pointer& dft, const Aux::complex_array
     });
 }
 
-template<typename trans>
-Aux::complex_array_t doit1b(const Aux::complex_array_t& arr, int axis, trans func)
-{
-    // We must provide a flat array with storage order such with
-    // logical axis-major ordering.
-    const Aux::complex_t* in_data = arr.data();
-    const int nrows = arr.rows(); // "logical"
-    const int ncols = arr.cols(); // shape
+// template<typename trans>
+// Aux::complex_array_t doit1b(const Aux::complex_array_t& arr, int axis, trans func)
+// {
+//     // We must provide a flat array with storage order such with
+//     // logical axis-major ordering.
+//     const Aux::complex_t* in_data = arr.data();
+//     const int nrows = arr.rows(); // "logical"
+//     const int ncols = arr.cols(); // shape
 
-    // If storage order matches "axis-major"
-    if ( (axis == 1 and arr.IsRowMajor)
-         or
-         (axis == 0 and not arr.IsRowMajor) ) {
-        Aux::complex_vector_t out_vec(nrows*ncols);
-        func(in_data, out_vec.data(), ncols, nrows);
-        if (arr.IsRowMajor) {
-            // note, returning makes a copy and will perform an actual
-            // storage order transpose.
-            return Eigen::Map<ROWM>(out_vec.data(), nrows, ncols);
-        }
-        return Eigen::Map<COLM>(out_vec.data(), nrows, ncols);
-    }
+//     // If storage order matches "axis-major"
+//     if ( (axis == 1 and arr.IsRowMajor)
+//          or
+//          (axis == 0 and not arr.IsRowMajor) ) {
+//         Aux::complex_vector_t out_vec(nrows*ncols);
+//         func(in_data, out_vec.data(), ncols, nrows);
+//         if (arr.IsRowMajor) {
+//             // note, returning makes a copy and will perform an actual
+//             // storage order transpose.
+//             return Eigen::Map<ROWM>(out_vec.data(), nrows, ncols);
+//         }
+//         return Eigen::Map<COLM>(out_vec.data(), nrows, ncols);
+//     }
     
-    // Either we have row-major and want column-major storage order or
-    // vice versa.
+//     // Either we have row-major and want column-major storage order or
+//     // vice versa.
 
-    // Here, we must copy and not use "auto" to get actual storage
-    // order transpose and avoid the IsRowMajor flip optimization.
-    COLM flipped = arr.transpose();
-    COLM got = doit1b(flipped, (axis+1)%2, func);
-    return got.transpose();
-}
+//     // Here, we must copy and not use "auto" to get actual storage
+//     // order transpose and avoid the IsRowMajor flip optimization.
+//     COLM flipped = arr.transpose();
+//     COLM got = doit1b(flipped, (axis+1)%2, func);
+//     return got.transpose();
+// }
 
 // Implementation notes for fwd()/inv():
 //

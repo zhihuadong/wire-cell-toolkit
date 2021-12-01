@@ -153,7 +153,7 @@ pig_array dispatch(const IDFT::pointer& dft, const pig_array& pa, const std::str
     if (op == "inv1b1")
         return a2p<complex_t>(Aux::inv(dft, p2a<complex_t>(pa), 1));
 
-    return pig_array();
+    return pa;
 }
 
 int main(int argc, char* argv[])
@@ -213,7 +213,13 @@ int main(int argc, char* argv[])
             if (npy != std::string::npos) {
                 fname = fname.substr(0, npy);
             }
-            std::cerr << "\tread " << fname << " with dtype=" << pig.header().dtype() << std::endl;
+            std::cerr << "\tread " << fname
+                      << " with dtype=" << pig.header().dtype()
+                      << " shape: (";
+            for (auto dim : pig.header().shape()) {
+                std::cerr << " " << dim;
+            }
+            std::cerr << " )" << std::endl;
 
             arrs[fname] = pig;
         }
@@ -250,7 +256,14 @@ int main(int argc, char* argv[])
         if (npy == std::string::npos) {
             dst = dst + ".npy";
         }
-        std::cerr << "writing: " << dst << "(" << fsiz << " B) to " << args.output << std::endl;
+        std::cerr << "\twrite " << dst
+                  << " with dtype=" << darr.header().dtype()
+                  << " shape: (";
+        for (auto dim : darr.header().shape()) {
+            std::cerr << " " << dim;
+        }
+        std::cerr << " ) to " << args.output << std::endl;
+
         custard::write(outs, dst, fsiz);
         if (!outs) {
             std::cerr << "failed to write " << dst
