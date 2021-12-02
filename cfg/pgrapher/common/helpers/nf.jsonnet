@@ -2,13 +2,17 @@ local wc = import "wirecell.jsonnet";
 local pg = import "pgraph.jsonnet";
 local u = import "utils.jsonnet";
 
-function(anode, fr, chndb, nsamples, tick=0.5*wc.us, rms_cuts=[])
+local default_dft = { type: 'FftwDFT' };
+
+function(anode, fr, chndb, nsamples, tick=0.5*wc.us, rms_cuts=[], dft=default_dft)
     local single = {
         type: 'pdOneChannelNoise',
         name: u.idents(anode),
+        uses: [dft],
         data: {
             noisedb: wc.tn(chndb),
             anode: wc.tn(anode),
+            dft: wc.tn(dft),
             resmp: [
             ],
         },

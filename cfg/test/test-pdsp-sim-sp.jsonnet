@@ -1,5 +1,5 @@
 // This provides a main wire-cell config file to exercise
-// sim+sigproc+dnnroi.  When run it will produce tar files of frames
+// sim+sigproc (no dnnroi).  When run it will produce tar files of frames
 // data as numpy arrays.  Ionization pattern is from ideal line
 // source.
 
@@ -12,8 +12,7 @@ local wires = hs.aux.wires(params.files.wires);
 local anodes = hs.aux.anodes(wires, params.det.volumes);
 
 // IDFT
-//local dft = {type: 'FftwDFT'};
-local dft = {type: 'TorchDFT', data: { device: 'cpu' }};
+local dft = {type: 'FftwDFT'};
 
 // simulation
 
@@ -39,7 +38,7 @@ local er = hs.aux.cer(params.elec.shaping, params.elec.gain,
                       params.elec.postgain,
                       params.daq.nticks, params.daq.tick);
 local rc = hs.aux.rc(1.0*wc.ms, params.daq.nticks, params.daq.tick);
-local pirs = hs.gen.pirs(sim_fr, [er], [rc], dft=dft);
+local pirs = hs.gen.pirs(sim_fr, [er], [rc]);
 
 // sp fr may differ from sim fr (as it does from real fr)
 local sp_fr = hs.aux.fr(if std.length(params.files.fields)>1
@@ -49,23 +48,7 @@ local sp_fr = hs.aux.fr(if std.length(params.files.fields)>1
 local sp_filters = import "pgrapher/experiment/pdsp/sp-filters.jsonnet";
 local adcpermv = hs.utils.adcpermv(params.adc);
 local chndbf = import "pgrapher/experiment/pdsp/ocndb-perfect.jsonnet";
-local chndb(anode) = chndbf(anode, sp_fr, params.nf.nsamples, dft=dft);
-local dnnroi_override = {
-    sparse: true,
-    use_roi_debug_mode: true,
-    use_multi_plane_protection: true,
-    process_planes: [0, 1, 2]
-};
-
-local ts = {
-    type: "TorchService",
-    name: "dnnroi",
-    data: {
-        model: "unet-l23-cosmic500-e50.ts",
-        device: "cpu",
-        concurrency: 1,
-    },
-};
+local chndb(anode) = chndbf(anode, sp_fr, params.nf.nsamples);
 
 // little function to return a frame file tap or sink (if cap is
 // true).  This bakes in PDSP-specific array bounds!
@@ -83,19 +66,15 @@ local out(anode, prefix, tag_pats, digitize=false, cap=false) =
 
 local anode_pipeline(anode, prefix) = pg.pipeline([
     // sim
-    hs.gen.signal(anode, pirs, params.daq, params.lar, rnd=random, dft=dft),
-    hs.gen.noise(anode, params.files.noise, params.daq, rnd=random, dft=dft),
+    hs.gen.signal(anode, pirs, params.daq, params.lar, rnd=random),
+    hs.gen.noise(anode, params.files.noise, params.daq, rnd=random),
     hs.gen.digi(anode, params.adc),
     out(anode, prefix, ["orig"], true),
         
     // nf+sp
-    hs.nf(anode, sp_fr, chndb(anode), params.nf.nsamples, params.daq.tick, dft=dft),
-    hs.sp(anode, sp_fr, er, sp_filters, adcpermv, override=dnnroi_override, dft=dft),
-    out(anode, prefix, ["wiener","gauss"]),
-
-    // // dnnroi
-    hs.dnnroi(anode, ts, output_scale=1.2),
-    out(anode, prefix, ["dnnsp"], cap=true),
+    hs.nf(anode, sp_fr, chndb(anode), params.nf.nsamples, params.daq.tick),
+    hs.sp(anode, sp_fr, er, sp_filters, adcpermv),
+    out(anode, prefix, ["wiener","gauss"], cap=true),
 ]);
 
 function(prefix="test-pdsp-ssd") 
@@ -103,6 +82,3 @@ function(prefix="test-pdsp-ssd")
     local body = pg.fan.fanout('DepoSetFanout', pipes);
     local graph = pg.pipeline([depos, drifter, body]);
     hs.utils.main(graph, 'TbbFlow', ['WireCellPytorch'])
-
-    
-
