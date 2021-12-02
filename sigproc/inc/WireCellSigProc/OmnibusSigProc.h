@@ -65,9 +65,18 @@ namespace WireCell {
 
             void decon_2D_looseROI_debug_mode(int plane);
 
-            // save data into the out frame and collect the indices
-            void save_data(ITrace::vector& itraces, IFrame::trace_list_t& indices, int plane,
-                           const std::vector<float>& perwire_rmses, IFrame::trace_summary_t& threshold);
+            // for debugging, check current state of working data
+            void check_data(int plane, const std::string& loglabel);
+
+            // Copy elements from m_r_data, mess with them, and store
+            // result into traces.  Update indices.  Fixme: best if we
+            // were to factor saving and munging!
+            void save_data(ITrace::vector& itraces,
+                           IFrame::trace_list_t& indices,
+                           int plane,
+                           const std::vector<float>& perwire_rmses,
+                           IFrame::trace_summary_t& threshold,
+                           const std::string& loglabel);
 
             // save ROI into the out frame (set use_roi_debug_mode=true)
             void save_roi(ITrace::vector& itraces, IFrame::trace_list_t& indices, int plane,
@@ -233,6 +242,7 @@ namespace WireCell {
             bool m_sparse;
 
             size_t m_count{0};
+            int m_verbose{0};
 
             IDFT::pointer m_dft;
         };
