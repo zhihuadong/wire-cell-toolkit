@@ -83,7 +83,7 @@ pig_array v2p(const std::vector<Scalar>& vec)
     std::vector<char> data((const char*)vec.data(),
                            (const char*)vec.data() + sizeof(Scalar)*vec.size());
     pig_array pa;
-    pa.set<complex_t>(data, {vec.size()});
+    pa.set<Scalar>(data, {vec.size()});
     return pa;
 }
 
@@ -119,7 +119,7 @@ pig_array dispatch(const IDFT::pointer& dft, const pig_array& pa, const std::str
         return v2p<complex_t>(Aux::fwd(dft, p2v<complex_t>(pa)));
 
     if (op == "inv1d") 
-        return v2p<complex_t>(Aux::fwd(dft, p2v<complex_t>(pa)));
+        return v2p<complex_t>(Aux::inv(dft, p2v<complex_t>(pa)));
             
     if (op == "fwd1d_r2c") 
         return v2p<complex_t>(Aux::fwd_r2c(dft, p2v<scalar_t>(pa)));
@@ -153,7 +153,11 @@ pig_array dispatch(const IDFT::pointer& dft, const pig_array& pa, const std::str
     if (op == "inv1b1")
         return a2p<complex_t>(Aux::inv(dft, p2a<complex_t>(pa), 1));
 
-    return pa;
+    if (op == "" or op == "noop" or op == "no-op") {
+        return pa;
+    }
+
+    throw std::runtime_error("unsupported op: " + op);
 }
 
 int main(int argc, char* argv[])
@@ -246,7 +250,7 @@ int main(int argc, char* argv[])
 
         auto siz = darr.header().array_size();
         if (siz == 0) {
-            std::cerr << "failed: " << op <<  "(" << src << ") -> " << dst << "\n";
+            std::cerr << "failed: " << op <<  "(" << src << ") -> " << dst << " (zero size)\n";
             continue;
         }
 
@@ -266,9 +270,10 @@ int main(int argc, char* argv[])
 
         custard::write(outs, dst, fsiz);
         if (!outs) {
+            std::cerr << "stream error: " << strerror(errno) << std::endl;
             std::cerr << "failed to write " << dst
                       << "(" << fsiz << ") to "
-                      << args.output << std::endl;
+                      << args.output << "\n" << one << std::endl;
             continue;
         }
         darr.write(outs);
