@@ -23,7 +23,7 @@ Aux::complex_array_t doit(const Aux::complex_array_t& arr, trans func)
     const Aux::complex_t* in_data = arr.data();
     Aux::complex_vector_t out_vec(arr.rows()*arr.cols());
 
-    std::cerr << "dft::doit: (" << arr.rows() << "," << arr.cols() << ") IsRowMajor:" << arr.IsRowMajor << std::endl;
+    // std::cerr << "dft::doit: (" << arr.rows() << "," << arr.cols() << ") IsRowMajor:" << arr.IsRowMajor << std::endl;
 
     if (arr.IsRowMajor) {
         func(in_data, out_vec.data(), arr.cols(), arr.rows());
