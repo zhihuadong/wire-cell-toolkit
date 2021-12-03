@@ -11,11 +11,11 @@ function(params, tools)
     wct: function(epoch="before") {
         type: "OmniChannelNoiseDB",
         name: "ocndb%s"%epoch,
-        data :
+        data : {dft: wc.tn(tools.dft)}
         if epoch == "perfect"
         then perfect(params, tools.anode, tools.field)
         else base(params, tools.anode, tools.field, rms_cuts[epoch]),
-        uses: [tools.anode, tools.field],    // pnode extension
+        uses: [tools.anode, tools.field, tools.dft],
     },
 
     wcls: function(epoch="before") {

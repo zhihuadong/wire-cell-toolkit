@@ -102,6 +102,7 @@ local aux = import "aux.jsonnet";
                 name: u.idents(anode),
                 data: {
                     rng: wc.tn(rnd),
+                    dft: wc.tn(dft),
                     anode: wc.tn(anode),
                     pirs: [wc.tn(p) for p in pirs],
                     fluctuate: true,
@@ -111,7 +112,6 @@ local aux = import "aux.jsonnet";
                     start_time: 0,
                     tick: daq.tick,
                     nsigma: 3,
-                    dft: wc.tn(dft),
                 },
             }, nin=1, nout=1, uses=pirs + [anode, rnd, dft]),
 

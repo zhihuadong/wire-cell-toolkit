@@ -98,18 +98,19 @@ local g = import "pgraph.jsonnet";
 
         
     // Make a noise model bound to an anode and a channel status
-    local make_noise_model = function(anode, csdb) {
+    local make_noise_model = function(anode, csdb, dft={type:"FftwDFT"}) {
         type: "EmpiricalNoiseModel",
         name: "empericalnoise%s"% csdb.name,
         data: {
             anode: wc.tn(anode),
+            dft: wc.tn(dft),
             chanstat: wc.tn(csdb),
             spectra_file: params.files.noise,
             nsamples: params.daq.nticks,
             period: params.daq.tick,
             wire_length_scale: 1.0*wc.cm, // optimization binning
         },
-        uses: [anode, csdb],
+        uses: [anode, dft, csdb],
     },
 
 
@@ -118,7 +119,8 @@ local g = import "pgraph.jsonnet";
         type: "NoiseSource",
         name: "%s%s"%[anode.name, model.name],
         data: params.daq {
-            rng: wc.tn(tools.random),
+            rng: wc.tn(tools.random), // this is going to fail, is this file even used?
+            dft: wc.tn(dft),
             model: wc.tn(model),
 	    anode: wc.tn(anode),
 
@@ -127,7 +129,7 @@ local g = import "pgraph.jsonnet";
             readout_time: params.daq.readout_time,
             sample_period: params.daq.tick,
             first_frame_number: params.daq.first_frame_number,
-        }}, nin=0, nout=1, uses=[anode, model]),
+        }}, nin=0, nout=1, uses=[anode, model, dft]),
 
 
     local noise_summer = g.pnode({

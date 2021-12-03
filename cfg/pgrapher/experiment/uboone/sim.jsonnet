@@ -82,13 +82,14 @@ function(params, tools)
         name: "empericalnoise%s"% csdb.name,
         data: {
             anode: wc.tn(anode),
+            dft: wc.tn(tools.dft),
             chanstat: wc.tn(csdb),
             spectra_file: params.files.noise,
             nsamples: params.daq.nticks,
             period: params.daq.tick,
             wire_length_scale: 1.0*wc.cm, // optimization binning
         },
-        uses: [anode, csdb],
+        uses: [anode, csdb, tools.dft],
     },
 
 
@@ -98,10 +99,11 @@ function(params, tools)
         name: "addnoise%s"%[model.name],
         data: {
             rng: wc.tn(tools.random),
+            dft: wc.tn(tools.dft),
             model: wc.tn(model),
 	    nsamples: params.daq.nticks,
 	    replacement_percentage: 0.02, // random optimization
-        }}, nin=1, nout=1, uses=[model]),
+        }}, nin=1, nout=1, uses=[tools.random, tools.dft, model]),
 
     ret: {
         signal : signal,

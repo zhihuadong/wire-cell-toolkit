@@ -1,19 +1,22 @@
-// This file is part of wire-cell-cfg.
+// This file is part of wire-cell-toolkit/cfg/.
 //
 // This file provides a base data structure to define parameters that
 // span all currently supported WCT functionality.  Not every
-// parameter will be used and not all value here is valid.  The
-// parameters are named and factored into sub-objects in order to be
-// sympathetic to how the C++ components are structured and name their
-// configuration paramters.  As such it's often possible to build a
-// component configuration object by inheriting from one or more
-// sub-objects in the parameter structure.  For most jobs, this
-// structure should be derived and overriden before being passed to
-// functions that produce other configuration structures.
+// parameter will be used and not every value here may be valid for
+// your use and should be overridden.  The parameters are named and
+// factored into sub-objects in order to be sympathetic to how the C++
+// components are structured and name their configuration paramters.
+// As such it's often possible to build a component configuration
+// object by inheriting from one or more sub-objects in the parameter
+// structure.  For most jobs, this structure should be derived and
+// overriden before being passed to functions that produce other
+// configuration structures.
+//
 
 local wc = import "wirecell.jsonnet";
 
 {
+
     // Parameters relevant to the bulk liquid argon volume.
     lar : {
         // Longitudinal diffusion constant

@@ -69,6 +69,7 @@ function(params, tools)
         name:name,
         data: {
             rng: wc.tn(tools.random),
+            dft: wc.tn(tools.dft),
             anode: wc.tn(anode),
             pirs: std.map(function(pir) wc.tn(pir), pirs),
             fluctuate: params.sim.fluctuate,
@@ -79,7 +80,7 @@ function(params, tools)
             tick: params.daq.tick,
             nsigma: 3,
         },
-    }, nin=1, nout=1, uses=[anode, tools.random] + pirs),
+    }, nin=1, nout=1, uses=[anode, tools.random, tools.dft] + pirs),
 
     // This may look similar to above but above is expected to diverge
     make_depozipper :: function(name, anode, pirs) g.pnode({
@@ -261,9 +262,10 @@ function(params, tools)
 
                 // fixme: these should probably be set from params.
                 nsamples: 50,   // number of samples of the response
-                truncate:true // result is extended by nsamples, tuncate clips that off
+                truncate:true, // result is extended by nsamples, tuncate clips that off
+                dft: wc.tn(tools.dft),
             }
-        }, nin=1, nout=1),
+        }, nin=1, nout=1, uses[tools.dft]),
 
         local merge = g.pnode({
             type: "FrameMerger",

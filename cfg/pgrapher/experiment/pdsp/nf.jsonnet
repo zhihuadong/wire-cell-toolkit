@@ -10,7 +10,7 @@ function(params, anode, chndbobj, n, name='', dft=default_dft) {
     local single = {
         type: 'pdOneChannelNoise',
         name: name,
-        uses: [dft],
+        uses: [dft, chndbobj, anode],
         data: {
             noisedb: wc.tn(chndbobj),
             anode: wc.tn(anode),
@@ -25,15 +25,18 @@ function(params, anode, chndbobj, n, name='', dft=default_dft) {
     local grouped = {
         type: 'mbCoherentNoiseSub',
         name: name,
+        uses: [dft, chndbobj, anode],
         data: {
             noisedb: wc.tn(chndbobj),
             anode: wc.tn(anode),
+            dft: wc.tn(dft),
             rms_threshold: 0.0,
         },
     },
     local sticky = {
         type: 'pdStickyCodeMitig',
         name: name,
+        uses: [dft, chndbobj, anode],
         data: {
             extra_stky: [
                 {channels: std.range(n * 2560, (n + 1) * 2560 - 1), bits: [0,1,63]},
@@ -46,6 +49,7 @@ function(params, anode, chndbobj, n, name='', dft=default_dft) {
             ],
             noisedb: wc.tn(chndbobj),
             anode: wc.tn(anode),
+            dft: wc.tn(dft),
             stky_sig_like_val: 15.0,
             stky_sig_like_rms: 2.0,
             stky_max_len: 10,
@@ -54,6 +58,7 @@ function(params, anode, chndbobj, n, name='', dft=default_dft) {
     local gaincalib = {
         type: 'pdRelGainCalib',
         name: name,
+        uses: [chndbobj, anode],
         data: {
             noisedb: wc.tn(chndbobj),
             anode: wc.tn(anode),
