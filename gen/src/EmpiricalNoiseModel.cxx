@@ -48,8 +48,6 @@ Gen::EmpiricalNoiseModel::~EmpiricalNoiseModel() {}
 
 void Gen::EmpiricalNoiseModel::gen_elec_resp_default()
 {
-    // double shaping[5]={1,1.1,2,2.2,3}; // us
-
     // calculate the frequencies ...
     m_elec_resp_freq.resize(m_fft_length, 0);
     for (unsigned int i = 0; i != m_elec_resp_freq.size(); i++) {
@@ -61,21 +59,7 @@ void Gen::EmpiricalNoiseModel::gen_elec_resp_default()
             m_elec_resp_freq.at(i) = (m_elec_resp_freq.size() - i) / (m_elec_resp_freq.size() * 1.0) * 1. /
                                      m_period;  // the second half is useless ...
         }
-
-        // if (m_elec_resp_freq.at(i) > 1./m_period / 2.){
-        //   m_elec_resp_freq.resize(i);
-        //   break;
-        // }
     }
-
-    // for (int i=0;i!=5;i++){
-    //   Response::ColdElec elec_resp(1, shaping[i]); // default at 1 mV/fC
-    //   auto sig   =   elec_resp.generate(WireCell::Waveform::Domain(0, m_fft_length*m_period), m_fft_length);
-    //   auto filt   = Waveform::dft(sig);
-    //   int nconfig = shaping[i]/ 0.1;
-    //   auto ele_resp_amp = Waveform::magnitude(filt);
-    //   m_elec_resp_cache[nconfig] = ele_resp_amp;
-    // }
 }
 
 WireCell::Configuration Gen::EmpiricalNoiseModel::default_configuration() const
@@ -358,7 +342,6 @@ const IChannelSpectrum::amplitude_t& Gen::EmpiricalNoiseModel::operator()(int ch
         if (resp1 == m_elec_resp_cache.end()) {
             Response::ColdElec elec_resp(10, ch_shaping);  // default at 1 mV/fC
             auto sig = elec_resp.generate(WireCell::Waveform::Domain(0, m_fft_length * m_period), m_fft_length);
-            //auto filt = Waveform::dft(sig);
             auto filt = Aux::fwd_r2c(m_dft, sig);
             auto ele_resp_amp = Waveform::magnitude(filt);
 
@@ -372,7 +355,6 @@ const IChannelSpectrum::amplitude_t& Gen::EmpiricalNoiseModel::operator()(int ch
         if (resp2 == m_elec_resp_cache.end()) {
             Response::ColdElec elec_resp(10, db_shaping);  // default at 1 mV/fC
             auto sig = elec_resp.generate(WireCell::Waveform::Domain(0, m_fft_length * m_period), m_fft_length);
-            // auto filt = Waveform::dft(sig);
             auto filt = Aux::fwd_r2c(m_dft, sig);
             auto ele_resp_amp = Waveform::magnitude(filt);
 

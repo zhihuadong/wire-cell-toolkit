@@ -183,7 +183,6 @@ OmniChannelNoiseDB::shared_filter_t OmniChannelNoiseDB::parse_rcrc(Json::Value j
     // auto signal = rcres.generate(WireCell::Binning(m_nsamples, 0, m_nsamples*m_tick));
     auto signal = rcres.generate(WireCell::Waveform::Domain(0, m_nsamples * m_tick), m_nsamples);
 
-    // Waveform::compseq_t spectrum = Waveform::dft(signal);
     Waveform::compseq_t spectrum = Aux::fwd_r2c(m_dft, signal);
 
     // get the square of it because there are two RC filters
@@ -259,9 +258,7 @@ OmniChannelNoiseDB::shared_filter_t OmniChannelNoiseDB::get_reconfig(double from
     auto to_sig = to_ce.generate(WireCell::Waveform::Domain(0, m_nsamples * m_tick), m_nsamples);
     auto from_sig = from_ce.generate(WireCell::Waveform::Domain(0, m_nsamples * m_tick), m_nsamples);
 
-    // auto to_filt = Waveform::dft(to_sig);
     auto to_filt = Aux::fwd_r2c(m_dft, to_sig);
-    // auto from_filt = Waveform::dft(from_sig);
     auto from_filt = Aux::fwd_r2c(m_dft, from_sig);
 
     // auto from_filt_sum = Waveform::sum(from_filt);
@@ -322,7 +319,6 @@ OmniChannelNoiseDB::shared_filter_t OmniChannelNoiseDB::parse_response(Json::Val
                 waveform[ind] += current[ind];
             }
         }
-        // auto spectrum = WireCell::Waveform::dft(waveform);
         auto spectrum = Aux::fwd_r2c(m_dft, waveform);
         auto ret = std::make_shared<filter_t>(spectrum);
         m_response_cache[wpid.ident()] = ret;
@@ -345,7 +341,6 @@ OmniChannelNoiseDB::shared_filter_t OmniChannelNoiseDB::parse_response(Json::Val
             waveform[ind] = jwave[ind].asFloat();
         }
 
-        // auto spectrum = WireCell::Waveform::dft(waveform);
         auto spectrum = Aux::fwd_r2c(m_dft, waveform);
         auto ret = std::make_shared<filter_t>(spectrum);
         m_waveform_cache[id] = ret;

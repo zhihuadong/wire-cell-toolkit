@@ -147,7 +147,6 @@ bool Gen::AddCoherentNoise::operator()(const input_pointer& inframe, output_poin
             noise_freq[i] = tc;
         }
 
-        // Waveform::realseq_t wave = WireCell::Waveform::idft(noise_freq);
         auto wave = Waveform::real(Aux::inv(m_dft, noise_freq));
 
         // Add signal (be careful to double counting with the incoherent noise)

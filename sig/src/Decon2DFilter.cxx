@@ -118,7 +118,6 @@ bool Sig::Decon2DFilter::operator()(const ITensorSet::pointer &in, ITensorSet::p
     }
 
     // do the second round of inverse FFT on wire
-    // Array::array_xxf tm_r_data = Array::idft_cr(c_data_afterfilter, 0);
     Array::array_xxf tm_r_data = Aux::inv(m_dft, c_data_afterfilter, 1).real();
 
     Array::array_xxf r_data = tm_r_data.block(m_pad_nwires, 0, m_nwires, m_nticks);

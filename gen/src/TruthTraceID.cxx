@@ -200,8 +200,6 @@ void Gen::TruthTraceID::process(output_queue& frames)
                     }
                     bindiff.erase(0, min_impact);
 
-                    // Waveform::realseq_t wave(nsamples, 0.0);
-                    // wave = Waveform::idft(total_spectrum);
                     Waveform::realseq_t wave = Aux::inv_c2r(m_dft, total_spectrum);
                     auto mm = Waveform::edge(wave);
                     if (mm.first == (int) wave.size()) {

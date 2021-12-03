@@ -50,6 +50,4 @@ Waveform::compseq_t Gen::Noise::generate_spectrum(const std::vector<float>& spec
     }
 
     return noise_freq;
-    // Waveform::realseq_t noise_time = WireCell::Waveform::idft(noise_freq);
-    // return noise_time;
 }

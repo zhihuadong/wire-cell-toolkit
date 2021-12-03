@@ -111,7 +111,6 @@ void Gen::PlaneImpactResponse::build_responses()
         }
         // note: we are ignoring waveform_start which will introduce
         // an arbitrary phase shift....
-        // auto spec = Waveform::dft(wave);
         auto spec = Aux::fwd_r2c(dft, wave);
         for (size_t ibin = 0; ibin < n_short_length; ++ibin) {
             short_spec[ibin] *= spec[ibin];
@@ -138,7 +137,6 @@ void Gen::PlaneImpactResponse::build_responses()
         }
         // note: we are ignoring waveform_start which will introduce
         // an arbitrary phase shift....
-        // auto spec = Waveform::dft(wave);
         auto spec = Aux::fwd_r2c(dft, wave);
         for (size_t ibin = 0; ibin < n_long_length; ++ibin) {
             long_spec[ibin] *= spec[ibin];
@@ -232,7 +230,6 @@ void Gen::PlaneImpactResponse::build_responses()
             // sum up over coarse ticks.
             wave[bin] += induced_charge;
         }
-        // WireCell::Waveform::compseq_t spec = Waveform::dft(wave);
         WireCell::Waveform::compseq_t spec = Aux::fwd_r2c(dft, wave);
 
         // Convolve with short responses
@@ -241,7 +238,6 @@ void Gen::PlaneImpactResponse::build_responses()
                 spec[find] *= short_spec[find];
             }
         }
-        // Waveform::realseq_t wf = Waveform::idft(spec);
         Waveform::realseq_t wf = Aux::inv_c2r(dft, spec);
 
         wf.resize(m_nbins, 0);
