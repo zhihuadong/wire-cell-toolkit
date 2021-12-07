@@ -1,6 +1,7 @@
 #include "WireCellGen/ImpactTransform.h"
 #include "WireCellUtil/Testing.h"
 #include "WireCellUtil/FFTBestLength.h"
+#include "omp.h"
 
 #include <iostream>  // debugging.
 using namespace std;
@@ -22,9 +23,9 @@ Gen::ImpactTransform::ImpactTransform(IPlaneImpactResponse::pointer pir, BinnedD
     m_num_pad_wire = std::round((m_pir->nwires() - 1) / 2.);         // 10
 
     const auto pimpos = m_bd.pimpos();
-    //  const int nsamples = m_bd.tbins().nbins();
-    // const auto rb = pimpos.region_binning();
-    // const int nwires = rb.nbins();
+      const int nsamples = m_bd.tbins().nbins();
+     const auto rb = pimpos.region_binning();
+     const int nwires = rb.nbins();
 
     //
 
@@ -37,6 +38,11 @@ Gen::ImpactTransform::ImpactTransform(IPlaneImpactResponse::pointer pir, BinnedD
         else {
             rel_cen_imp_pos = -m_pir->pitch() / 2. + m_pir->impact() * i - 1e-9;
         }
+	
+//	std::cout<<",_pir->pitch() rel_cen_imp_pos, m_pir->impact()  "<<
+//	       m_pir->pitch() << " " <<	rel_cen_imp_pos <<" "
+//		<< m_pir->impact() <<" "<< m_pir->nwires()<<std::endl ;
+
         m_vec_impact.push_back(std::round(rel_cen_imp_pos / m_pir->impact()));
         std::map<int, IImpactResponse::pointer> map_resp;  // already in freq domain
 
@@ -44,8 +50,8 @@ Gen::ImpactTransform::ImpactTransform(IPlaneImpactResponse::pointer pir, BinnedD
             map_resp[j - m_num_pad_wire] = m_pir->closest(rel_cen_imp_pos - (j - m_num_pad_wire) * m_pir->pitch());
             Waveform::compseq_t response_spectrum = map_resp[j - m_num_pad_wire]->spectrum();
 
-            //	std::cout << i << " " << j << " " << rel_cen_imp_pos - (j-m_num_pad_wire)*m_pir->pitch()<< " " <<
-            //response_spectrum.size() << std::endl;
+       //    	std::cout << i << " " << j << " " << rel_cen_imp_pos - (j-m_num_pad_wire)*m_pir->pitch()<< " " <<
+//            response_spectrum.size() << std::endl;
         }
         // std::cout << m_vec_impact.back() << std::endl;
         // std::cout << rel_cen_imp_pos << std::endl;
@@ -65,18 +71,20 @@ Gen::ImpactTransform::ImpactTransform(IPlaneImpactResponse::pointer pir, BinnedD
 
     // now work on the charge part ...
     // trying to sampling ...
+    auto t0 = omp_get_wtime() ;
     m_bd.get_charge_vec(m_vec_vec_charge, m_vec_impact);
-    // std::cout << nwires << " " << nsamples << std::endl;
+    std::cout<<"Timing-get_charge_vec()  " << omp_get_wtime() -t0 <<std::endl ;
+    //std::cout << nwires << " " << nsamples << std::endl;
 
     // for (size_t i=0;i!=m_vec_vec_charge.size();i++){
     //   std::cout << m_vec_vec_charge[i].size() << std::endl;
-    // }
+     //}
 
     // length and width ...
 
     //
+    auto t1 = omp_get_wtime() ;
 
-    //    std::cout << nwires << " " << nsamples << std::endl;
     std::pair<int, int> impact_range = m_bd.impact_bin_range(m_bd.get_nsigma());
     std::pair<int, int> time_range = m_bd.time_bin_range(m_bd.get_nsigma());
 
@@ -358,6 +366,9 @@ Gen::ImpactTransform::ImpactTransform(IPlaneImpactResponse::pointer pir, BinnedD
     Array::array_xxf real_m_decon_data = acc_data_f_w.real();
     Array::array_xxf img_m_decon_data = acc_data_f_w.imag().colwise().reverse();
     m_decon_data = real_m_decon_data + img_m_decon_data;
+
+    auto t2 =omp_get_wtime();
+    std::cout<<"Timing-FFT-etc "<< t2-t1 <<std::endl ;
 
     // std::cout << real_m_decon_data(40,5182) << " " << img_m_decon_data(40,5182) << std::endl;
     //    std::cout << real_m_decon_data(40,5182-m_start_tick) << " " << img_m_decon_data(40,5182-m_start_tick) <<

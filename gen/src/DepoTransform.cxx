@@ -47,6 +47,8 @@
 #include "WireCellUtil/Units.h"
 #include "WireCellUtil/Point.h"
 
+#include <omp.h>
+
 WIRECELL_FACTORY(DepoTransform, WireCell::Gen::DepoTransform, WireCell::IDepoFramer, WireCell::IConfigurable)
 
 using namespace WireCell;
@@ -142,11 +144,13 @@ bool Gen::DepoTransform::operator()(const input_pointer& in, output_pointer& out
         return true;
     }
 
+    auto t00 = omp_get_wtime() ;
     auto depos = in->depos();
 
     Binning tbins(m_readout_time / m_tick, m_start_time, m_start_time + m_readout_time);
     ITrace::vector traces;
     for (auto face : m_anode->faces()) {
+    auto t0 = omp_get_wtime() ;
         // Select the depos which are in this face's sensitive volume
         IDepo::vector face_depos, dropped_depos;
         auto bb = face->sensitive();
@@ -181,8 +185,10 @@ bool Gen::DepoTransform::operator()(const input_pointer& in, output_pointer& out
                 dropped_depos.back()->time() / units::ms, ray.first / units::cm, ray.second / units::cm);
         }
 
+    auto t1 =omp_get_wtime();
         int iplane = -1;
         for (auto plane : face->planes()) {
+    auto t2 =omp_get_wtime();
             ++iplane;
 
             const Pimpos* pimpos = plane->pimpos();
@@ -198,9 +204,11 @@ bool Gen::DepoTransform::operator()(const input_pointer& in, output_pointer& out
             auto& wires = plane->wires();
 
             auto pir = m_pirs.at(iplane);
+    auto t3 =omp_get_wtime();
             Gen::ImpactTransform transform(pir, bindiff);
 
             const int nwires = pimpos->region_binning().nbins();
+    auto t4 =omp_get_wtime();
             for (int iwire = 0; iwire < nwires; ++iwire) {
                 auto wave = transform.waveform(iwire);
 
@@ -216,11 +224,18 @@ bool Gen::DepoTransform::operator()(const input_pointer& in, output_pointer& out
                 auto trace = make_shared<SimpleTrace>(chid, tbin, charge);
                 traces.push_back(trace);
             }
+    auto t5 =omp_get_wtime();
+    std::cout<<"Timing-DepoTransForm_p1 "<< t1-t0 <<std::endl ;
+    std::cout<<"Timing-DepoTransForm_BD "<< t3-t2 <<std::endl ;
+    std::cout<<"Timing-DepoTransForm_Transform_Matrix "<< t4-t3 <<std::endl ;
+    std::cout<<"Timing-DepoTransForm_NwireLoop "<< t5-t4 <<std::endl ;
         }
     }
 
     auto frame = make_shared<SimpleFrame>(m_frame_count, m_start_time, traces, m_tick);
     ++m_frame_count;
     out = frame;
+    auto t6 = omp_get_wtime();
+    std::cout<<"Timing-DepoTransForm_Operator_total " <<t6-t00 <<std::endl ;
     return true;
 }

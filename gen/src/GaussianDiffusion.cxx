@@ -174,6 +174,7 @@ void Gen::GaussianDiffusion::set_sampling(const Binning& tbin,  // overall time 
             ret(ip, it) = (float) val;
         }
     }
+    //std::cout<<"RAWSUM: " << raw_sum << " (0, 0)=" << ret(0, 0) <<std::endl ; 
 
     // Depo charge should be in units of "e" so negative, but
     // explicitly track sign in case positive charge is given.
@@ -182,9 +183,11 @@ void Gen::GaussianDiffusion::set_sampling(const Binning& tbin,  // overall time 
 
     // normalize to total charge
     ret *= depo_charge / raw_sum;
-
+   // std::cout<<"pt(0,0)_norm=" << ret <<std::endl ;
     double fluc_sum = 0;
+    
     if (fluctuate) {
+    //if (0) {
         double unfluc_sum = 0;
 
         for (size_t ip = 0; ip < npss; ++ip) {
@@ -234,6 +237,8 @@ void Gen::GaussianDiffusion::set_sampling(const Binning& tbin,  // overall time 
     }
 
     m_patch = ret;
+    //std::cout<<"xxxx" <<std::endl ;;
+    //std::cout<<m_patch<<std::endl ;
 }
 
 void Gen::GaussianDiffusion::clear_sampling()

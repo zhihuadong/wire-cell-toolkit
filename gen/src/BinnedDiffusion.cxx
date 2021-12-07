@@ -97,8 +97,8 @@ void Gen::BinnedDiffusion::add(std::shared_ptr<GaussianDiffusion> gd, int bin)
              << " charge=" << gd->depo()->charge() / units::eplus << " eles"
              << ", for bin " << bin << " t=[" << mm.first / units::us << "," << mm.second / units::us << "]us\n";
     }
-    m_diffs.insert(gd);
-    // m_diffs.push_back(gd);
+    //m_diffs.insert(gd);
+     m_diffs.push_back(gd);
 }
 
 void Gen::BinnedDiffusion::erase(int begin_impact_number, int end_impact_number)

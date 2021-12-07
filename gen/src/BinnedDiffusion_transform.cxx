@@ -4,6 +4,8 @@
 
 #include <iostream>  // debug
 #include <unordered_map>
+#include <omp.h>
+
 using namespace std;
 
 using namespace WireCell;
@@ -88,7 +90,8 @@ bool Gen::BinnedDiffusion_transform::add(IDepo::pointer depo, double sigma_time,
     //   //   if (bin == bin_beg)  m_diffs.insert(gd);
     //   this->add(gd, bin);
     // }
-    m_diffs.insert(gd);
+    //m_diffs.insert(gd);
+    m_diffs.push_back(gd);
     return true;
 }
 
@@ -230,6 +233,7 @@ void Gen::BinnedDiffusion_transform::get_charge_vec(
     const auto ib = m_pimpos.impact_binning();
 
     // map between reduced impact # to array #
+    std::cout<<"CPU code: Get_charge_vec()"<<std::endl;
 
     std::map<int, int> map_redimp_vec;
     std::vector<std::unordered_map<long int, int> > vec_map_pair_pos;
@@ -275,11 +279,18 @@ void Gen::BinnedDiffusion_transform::get_charge_vec(
     //    diff->set_sampling(m_tbins, ib, m_nsigma, m_fluctuate, m_calcstrat);
     //    m_diffs1.insert(diff);
     // }
+    double td1 =0.0 ;
+    double td2 =0.0 ;
 
+    auto t0=omp_get_wtime() ;
+ 
     for (auto diff : m_diffs) {
         //    std::cout << diff->depo()->time() << std::endl
         // diff->set_sampling(m_tbins, ib, m_nsigma, 0, m_calcstrat);
+    auto t1=omp_get_wtime() ;
         diff->set_sampling(m_tbins, ib, m_nsigma, m_fluctuate, m_calcstrat);
+    auto t2=omp_get_wtime() ;
+    td1 += t2-t1 ;
         counter++;
 
         const auto patch = diff->patch();
@@ -291,12 +302,16 @@ void Gen::BinnedDiffusion_transform::get_charge_vec(
         const int np = patch.rows();
         const int nt = patch.cols();
 
-        // std::cout << np << " " << nt << std::endl;
+        //std::cout <<"Patch "<<counter-1<< " NPNT " << np << " " << nt << std::endl;
+	//for( int k1=0; k1<nt ; k1++)
+	//for (int k2=0; k2<np ; k2++)
+	//	std::cout<<"PatchValues(0,0): "<<patch(0,0) <<std::endl ;
 
         for (int pbin = 0; pbin != np; pbin++) {
             int abs_pbin = pbin + poffset_bin;
             if (abs_pbin < min_imp || abs_pbin >= max_imp) continue;
             double weight = qweight[pbin];
+//	    std::cout<<"weight["<<pbin<<"]="<<qweight[pbin] <<std::endl ;
             auto const channel = map_imp_ch[abs_pbin];
             auto const redimp = map_imp_redimp[abs_pbin];
             auto const array_num_redimp = map_redimp_vec[redimp];
@@ -312,6 +327,7 @@ void Gen::BinnedDiffusion_transform::get_charge_vec(
                 int abs_tbin = tbin + toffset_bin;
                 double charge = patch(pbin, tbin);
 
+//                std::cout<<"Charge["<<pbin<<","<<tbin<<"]="<<charge<<std::endl ;
                 // if (map_imp_ch[abs_pbin]==1459){
                 //   std::cout << pbin+poffset_bin << " " << pbin << " " << tbin << " " << charge << " " << std::endl;
                 // }
@@ -382,10 +398,14 @@ void Gen::BinnedDiffusion_transform::get_charge_vec(
                 it->clear();
             }
         }
-
+     td2 += omp_get_wtime() -t2;
+     
         diff->clear_sampling();
         // need to figure out wire #, time #, charge, and weight ...
     }
+    std::cout<<"scatteradd+set_sampling_time: "<<omp_get_wtime()-t0<<std::endl;
+    std::cout <<" Timing-SetSampling: " << td1 << std::endl;
+    std::cout<<" Timing-ScatterAdd: "<< td2 <<std::endl ;  
 
     //
 }
