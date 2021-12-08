@@ -11,7 +11,6 @@ physics :{
          wcls_main: {
             tool_type: WCLS
             apps: ["Pgrapher"]
-            # apps: ["TbbFlow"]
 
             logsinks: ["stdout:info", "wcls-sim-drift-simchannel.log:debug"]
             loglevels: ["debug"]
@@ -19,9 +18,7 @@ physics :{
             plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
 
             // needs to be found via your WIRECELL_PATH
-            # configs: ["pgrapher/experiment/dune-vd/wcls-sim-drift-simchannel-3view.json"]
-            # configs: ["pgrapher/experiment/dune-vd/wcls-sim-drift-simchannel-3view30deg.json"]
-            configs: ["pgrapher/experiment/dune-vd/wcls-sim-drift-simchannel-2view.json"]
+            configs: ["pgrapher/experiment/dune10kt-1x2x6/wcls-sim-drift-simchannel-nf-sp.jsonnet"]
 
 
             // Contract note: these exact "type:name" must be used to identify
@@ -29,15 +26,26 @@ physics :{
 
             inputers: ["wclsSimDepoSource:"]
             outputers: [
-               "wclsSimChannelSink:postdrift",
-               "wclsFrameSaver:simdigits"
+                "wclsSimChannelSink:postdrift",
+                "wclsFrameSaver:spsignals"
             ]
 
             // Make available parameters via Jsonnet's std.extVar()
             params: {
             }
             structs: {
+              # Longitudinal diffusion constant [cm2/s]
+              DL: 4.0
+              # Transverse diffusion constant [cm2/s]
+              DT: 8.8
+              # Electron lifetime [ms]
+              lifetime: 10.4
+              # Electron drift speed, assumes a certain applied E-field [mm/us]
+              driftSpeed: 1.565
+              # G4RefTime [us]
+              G4RefTime: @local::dunefd_detectorclocks.G4RefTime
             }
+
          }
       }
    }
@@ -56,12 +64,6 @@ outputs: {
       outputCommands :   [
          // "drop *", "keep recob::Wires_*_*_*"
          "keep *_*_*_*"
-         // "drop *_nfspl1_raw_*",
-         // "drop *_nfspl1_threshold_*",
-         // "drop *_nfspl1_wiener_*",
-         // "drop *_nfspl1_gauss_*",
-         // "drop *_wcNoiseFilter_*_*",
-         // "drop *_daq_*_*"
       ]
 
    }
