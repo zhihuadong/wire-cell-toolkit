@@ -265,7 +265,7 @@ function(params, tools)
                 truncate:true, // result is extended by nsamples, tuncate clips that off
                 dft: wc.tn(tools.dft),
             }
-        }, nin=1, nout=1, uses[tools.dft]),
+        }, nin=1, nout=1, uses=[tools.dft]),
 
         local merge = g.pnode({
             type: "FrameMerger",

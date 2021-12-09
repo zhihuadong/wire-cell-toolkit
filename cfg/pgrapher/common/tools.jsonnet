@@ -27,8 +27,7 @@ function(params)
     // The IDFT FFT implementation 
     dft : {
         type: "FftwDFT",
-    }
-
+    },
 
     // One FR per field file.
     fields : std.mapWithIndex(function (n, fname) {
