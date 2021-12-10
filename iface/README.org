@@ -25,3 +25,62 @@ the overall WCT dependency tree.  Discussion is warranted in these cases.
 
 See the user manual for more info.  https://wirecell.bnl.gov/
 
+* Interfaces
+
+** IDFT
+
+The ~IDFT~ class provides interface to methods to perform discrete
+Fourier transforms on arrays of complex single precision floating
+point values.
+
+The interface defines a number of methods which take a general naming
+convention like:
+#+begin_example
+void <direction><domain>(...);
+#+end_example
+
+The "direction" of the transform is one of
+
+- fwd :: the DFT is from interval to frequency, no normalization.
+- inv :: the DFT is from frequency to interval, 1/n normalization.
+ 
+The "domain" determines the dimension of array and how it is transformed
+
+- 1d :: a 1D array is transformed
+- 1b :: a batch of equal-length 1D arrays are transformed
+- 2d :: a 2D array is transformed (along both dimensions)
+
+The shape of 2D arrays (~1b~ or ~2d~ methods) are given in terms of two
+numbers: ~stride~ and ~nstrides~.  The number ~stride~ counts the number of
+contiguous array elements along one dimension and ~nstrides~ counts the
+number non-contiguous elements logically along the opposite dimension.
+In the case of "row-major" aka "C" memory ordering of 2D arrays, the
+number ~stride~ counts the number of elements in one "row" and ~nstrides~
+counts the number of rows, aka, the number of elements in one column.
+
+The ~1b~ transforms operate along a contiguous array of length ~stride~.
+By default, these transforms are implemented in terms of ~nstrides~
+calls to the ~1d~ DFT interface method.  The implementation may override
+the ~1b~ default methods for example to exploit some kind of "batch
+optimization". 
+
+*** Limitations
+
+- The potential speed up when the input to a forward or output from
+  reverse is real valued is not possible to implement with ~IDFT~.  It
+  requires the caller to take particular care in array sizes and would
+  double the number of methods.
+
+- To satisfy the low-level pointer to memory interface from higher
+  level objects see the ~Waveform.h~ and ~Array.h~ headers in
+  ~WireCellUtil~.  In particular, see functions there to lift real to
+  complex or perform memory transforms.
+
+- Interface to higher order transforms, such as convolutions, are not
+  provided.  See ~Aux::DFT~ for implementations in terms of an ~IDFT~.
+
+** ...
+
+Any interfaces not listed above, please see their header file in
+[[file:inc/WireCellIface/][inc/WireCellIface/]] for more information.
+

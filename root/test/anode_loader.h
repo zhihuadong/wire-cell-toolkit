@@ -15,6 +15,7 @@
 #include "WireCellIface/IAnodePlane.h"
 #include "WireCellIface/IFieldResponse.h"
 #include "WireCellIface/IWireSchema.h"
+#include "WireCellIface/IDFT.h"
 
 #include <vector>
 #include <string>
@@ -59,6 +60,7 @@ std::vector<std::string> anode_loader(std::string detector)
         PluginManager& pm = PluginManager::instance();
         pm.add("WireCellSigProc");
         pm.add("WireCellGen");
+        pm.add("WireCellAux");
 
         const std::string fr_tn = "FieldResponse";
         const std::string ws_tn = "WireSchemaFile";
@@ -74,6 +76,11 @@ std::vector<std::string> anode_loader(std::string detector)
             auto cfg = icfg->default_configuration();
             cfg["filename"] = ws_fname;
             icfg->configure(cfg);
+        }
+        {
+            // If FftwDFT grows to be an IConfigurable, this needs to
+            // change to suit.
+            Factory::lookup<IDFT>("FftwDFT"); 
         }
 
         for (int ianode = 0; ianode < nanodes; ++ianode) {

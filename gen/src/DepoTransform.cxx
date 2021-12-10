@@ -77,6 +77,8 @@ void Gen::DepoTransform::configure(const WireCell::Configuration& cfg)
         auto rng_tn = get<string>(cfg, "rng", "");
         m_rng = Factory::find_tn<IRandom>(rng_tn);
     }
+    std::string dft_tn = get<std::string>(cfg, "dft", "FftwDFT");
+    m_dft = Factory::find_tn<IDFT>(dft_tn);
 
     m_readout_time = get<double>(cfg, "readout_time", m_readout_time);
     m_tick = get<double>(cfg, "tick", m_tick);
@@ -131,6 +133,9 @@ WireCell::Configuration Gen::DepoTransform::default_configuration() const
 
     /// Plane impact responses
     cfg["pirs"] = Json::arrayValue;
+
+    // type-name for the DFT to use
+    cfg["dft"] = "FftwDFT";
 
     return cfg;
 }
@@ -203,7 +208,7 @@ bool Gen::DepoTransform::operator()(const input_pointer& in, output_pointer& out
             auto& wires = plane->wires();
 
             auto pir = m_pirs.at(iplane);
-            Gen::ImpactTransform transform(pir, bindiff);
+            Gen::ImpactTransform transform(pir, m_dft, bindiff);
 
             const int nwires = pimpos->region_binning().nbins();
             for (int iwire = 0; iwire < nwires; ++iwire) {

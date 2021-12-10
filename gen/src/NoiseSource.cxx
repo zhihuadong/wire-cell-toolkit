@@ -1,5 +1,7 @@
 #include "WireCellGen/NoiseSource.h"
 
+#include "WireCellAux/DftTools.h"
+
 #include "WireCellIface/SimpleTrace.h"
 #include "WireCellIface/SimpleFrame.h"
 
@@ -48,6 +50,7 @@ WireCell::Configuration Gen::NoiseSource::default_configuration() const
     cfg["anode"] = m_anode_tn;
     cfg["model"] = m_model_tn;
     cfg["rng"] = m_rng_tn;
+    cfg["dft"] = "FftwDFT";     // type-name for the DFT to use
     cfg["nsamples"] = m_nsamples;
     cfg["replacement_percentage"] = m_rep_percent;
     return cfg;
@@ -60,6 +63,8 @@ void Gen::NoiseSource::configure(const WireCell::Configuration& cfg)
     if (!m_rng) {
         THROW(KeyError() << errmsg{"failed to get IRandom: " + m_rng_tn});
     }
+    std::string dft_tn = get<std::string>(cfg, "dft", "FftwDFT");
+    m_dft = Factory::find_tn<IDFT>(dft_tn);
 
     m_anode_tn = get(cfg, "anode", m_anode_tn);
     m_anode = Factory::find_tn<IAnodePlane>(m_anode_tn);
@@ -104,7 +109,10 @@ bool Gen::NoiseSource::operator()(IFrame::pointer& frame)
     for (auto chid : m_anode->channels()) {
         const auto& spec = (*m_model)(chid);
 
-        Waveform::realseq_t noise = Gen::Noise::generate_waveform(spec, m_rng, m_rep_percent);
+        //Waveform::realseq_t noise = Gen::Noise::generate_waveform(spec, m_rng, m_rep_percent);
+        auto cnoise = Gen::Noise::generate_spectrum(spec, m_rng, m_rep_percent);
+        auto noise = Aux::inv_c2r(m_dft, cnoise);
+
         //	std::cout << noise.size() << " " << nsamples << std::endl;
         noise.resize(m_nsamples, 0);
         auto trace = make_shared<SimpleTrace>(chid, tbin, noise);

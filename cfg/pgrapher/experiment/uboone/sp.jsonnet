@@ -15,6 +15,7 @@ function(params, tools) {
             // codes a slew of SP filter component names which MUST
             // correctly match what is provided in sp-filters.jsonnet.
             anode: wc.tn(tools.anode),
+            dft: wc.tn(tools.dft),
             field_response: wc.tn(tools.field),
             elecresponse: wc.tn(tools.elec_resp),
             postgain: 1,  // default 1.2
@@ -22,11 +23,13 @@ function(params, tools) {
             per_chan_resp: wc.tn(tools.perchanresp),
 	    fft_flag: 0,   // 1 is faster but higher memory, 0 is slightly slower but lower memory
         }
-    }, nin=1,nout=1, uses=[tools.anode, tools.field, tools.elec_resp, tools.perchanresp] + import "sp-filters.jsonnet"),
-local sigproc_uniform = g.pnode({
+    }, nin=1,nout=1, uses=[tools.anode, tools.dft, tools.field, tools.elec_resp, tools.perchanresp] + import "sp-filters.jsonnet"),
+
+    local sigproc_uniform = g.pnode({
         type: "OmnibusSigProc",
         data: {
             anode: wc.tn(tools.anode),
+            dft: wc.tn(tools.dft),
             field_response: wc.tn(tools.field),
             elecresponse: wc.tn(tools.elec_resp),
             postgain: 1,  // default 1.2
@@ -37,9 +40,10 @@ local sigproc_uniform = g.pnode({
 	    // r_fake_signal_low_th: 300,
 	    // r_fake_signal_high_th: 600,
         }
-    }, nin=1,nout=1,uses=[tools.anode, tools.field, tools.elec_resp] + import "sp-filters.jsonnet"),
-// ch-by-ch response correction in SP turn off by setting null input
-local sigproc = if std.type(params.files.chresp)=='null'
+    }, nin=1,nout=1,uses=[tools.anode, tools.dft, tools.field, tools.elec_resp] + import "sp-filters.jsonnet"),
+
+    // ch-by-ch response correction in SP turn off by setting null input
+    local sigproc = if std.type(params.files.chresp)=='null'
                     then sigproc_uniform
                     else sigproc_perchan,
 
@@ -72,6 +76,7 @@ local sigproc = if std.type(params.files.chresp)=='null'
     local l1spfilter = g.pnode({
         type: "L1SPFilter",
         data: {
+            dft: wc.tn(tools.dft),
             fields: wc.tn(tools.field),
             filter: [0.000305453, 0.000978027, 0.00277049, 0.00694322, 0.0153945,
                      0.0301973, 0.0524048, 0.0804588, 0.109289, 0.131334, 0.139629,
@@ -103,7 +108,7 @@ local sigproc = if std.type(params.files.chresp)=='null'
             sigtag: "gauss",                           // trace tag of input signal
             outtag: "l1sp",                            // trace tag for output signal
         }
-    }, nin=1, nout=1, uses=[tools.field]),
+    }, nin=1, nout=1, uses=[tools.dft, tools.field]),
 
     // merge the split output from NF ("raw" tag) and just the "gauss"
     // from normal SP for input to L1SP

@@ -10,6 +10,7 @@
 #include "WireCellIface/IFrameFilter.h"
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/IRandom.h"
+#include "WireCellIface/IDFT.h"
 #include "WireCellIface/IChannelSpectrum.h"
 #include "WireCellUtil/Waveform.h"
 #include "WireCellAux/Logger.h"
@@ -35,6 +36,7 @@ namespace WireCell {
 
            private:
             IRandom::pointer m_rng;
+            IDFT::pointer m_dft;
             IChannelSpectrum::pointer m_model;
 
             std::string m_model_tn, m_rng_tn;

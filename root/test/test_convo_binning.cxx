@@ -1,11 +1,18 @@
 // Test what happens with different choices of how we bin.
 
 #include "MultiPdf.h"
+
+#include "WireCellGen/RCResponse.h"
+
+#include "WireCellAux/DftTools.h"
+
+#include "WireCellUtil/NamedFactory.h"
+#include "WireCellUtil/PluginManager.h"
+
 #include "WireCellUtil/Units.h"
 #include "WireCellUtil/Waveform.h"
 #include "WireCellUtil/Binning.h"
 #include "WireCellUtil/Response.h"
-#include "WireCellGen/RCResponse.h"
 
 #include "TGraph.h"
 #include "TH1F.h"
@@ -75,6 +82,10 @@ struct Plotter {
 
 int main(int argc, char* argv[])
 {
+    PluginManager& pm = PluginManager::instance();
+    pm.add("WireCellAux");
+    auto idft = Factory::lookup_tn<IDFT>("FftwDFT");
+
     Test::MultiPdf mpdf(argv[0]);
     Plotter p(mpdf);
 
@@ -111,22 +122,22 @@ int main(int argc, char* argv[])
     p.draw(fce, fbin_short, "fce", "Fine CE");
 
     // convolve + rebin fine->coarse
-    auto fcc = linear_convolve(ffr, fce);
+    auto fcc = Aux::convolve(idft, ffr, fce);
     p.draw(fcc, fbin_long, "fcc", "Fine conv");
     auto ccc2 = rebin(fcc, rebinfactor);
     p.draw(ccc2, cbin_long, "ccc2", "Coarse rebin conv");
-    auto fccs = linear_convolve(ffrs, fce);
+    auto fccs = Aux::convolve(idft, ffrs, fce);
     p.draw(fccs, fbin_long, "fccs", "Fine conv shifted");
     auto cccs2 = rebin(fccs, rebinfactor);
     p.draw(cccs2, cbin_long, "cccs2", "Coarse rebin conv shifted");
 
     // rebin fine->coarse + convolve
-    auto ccc = linear_convolve(cfr, cce);
+    auto ccc = Aux::convolve(idft, cfr, cce);
     for (size_t ind=0; ind<ccc.size(); ++ind) {
         ccc[ind] *= rebinfactor;
     }
     p.draw(ccc, cbin_long, "ccc", "Coarse native conv");
-    auto cccs = linear_convolve(cfrs, cce);
+    auto cccs = Aux::convolve(idft, cfrs, cce);
     for (size_t ind=0; ind<ccc.size(); ++ind) {
         cccs[ind] *= rebinfactor;
     }

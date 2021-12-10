@@ -40,29 +40,6 @@ void test_mean_rms()
     cerr << us.first << " +/- " << us.second << " med=" << m << endl;
 }
 
-void test_fft()
-{
-    Waveform::realseq_t s;
-    const int nbins = 360;
-    for (int ind = 0; ind < nbins; ++ind) {
-        double phi = ind * 3.1415 / 180.0;
-        Waveform::real_t val = sin(phi) + sin(11.0 / 7.0 * phi);
-        s.push_back(val);
-    }
-
-    auto spec = Waveform::dft(s);
-    for (int ind = 0; ind < nbins; ++ind) {
-        auto c = spec[ind];
-        cerr << ind << "\ts=" << s[ind] << "\tc=" << c << "\tmag=" << std::abs(c) << "\tphi=" << std::arg(c) << endl;
-    }
-    cerr << s.size() << " " << spec.size() << endl;
-}
-
-void test_complex()
-{
-    Waveform::compseq_t cv{{1.1, 2.2}, {-3.3, 4.4}, {0, 0}, {1, 0}, {0, 1}, {-1, 0}, {0, -1}};
-    auto bogus = Waveform::idft(cv);
-}
 
 void test_arithmetic()
 {
@@ -94,8 +71,6 @@ void test_arithmetic()
 int main(int argc, char* argv[])
 {
     test_transform();
-    test_fft();
-    test_complex();
     test_mean_rms();
     test_arithmetic();
 

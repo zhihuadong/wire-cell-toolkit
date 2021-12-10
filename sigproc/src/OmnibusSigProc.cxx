@@ -1,10 +1,9 @@
+#include "ROI_formation.h"
+#include "ROI_refinement.h"
+
 #include "WireCellSigProc/OmnibusSigProc.h"
 
-#include "WireCellUtil/NamedFactory.h"
-#include "WireCellUtil/Exceptions.h"
-#include "WireCellUtil/String.h"
-#include "WireCellUtil/FFTBestLength.h"
-#include "WireCellUtil/Waveform.h"
+#include "WireCellAux/DftTools.h"
 
 #include "WireCellIface/SimpleFrame.h"
 #include "WireCellIface/SimpleTrace.h"
@@ -13,8 +12,11 @@
 #include "WireCellIface/IFilterWaveform.h"
 #include "WireCellIface/IChannelResponse.h"
 
-#include "ROI_formation.h"
-#include "ROI_refinement.h"
+#include "WireCellUtil/NamedFactory.h"
+#include "WireCellUtil/Exceptions.h"
+#include "WireCellUtil/String.h"
+#include "WireCellUtil/FFTBestLength.h"
+#include "WireCellUtil/Waveform.h"
 
 #include "WireCellUtil/NamedFactory.h"
 
@@ -121,19 +123,23 @@ void OmnibusSigProc::configure(const WireCell::Configuration& config)
     m_coarse_time_offset = get(config, "ctoffset", m_coarse_time_offset);
     m_anode_tn = get(config, "anode", m_anode_tn);
 
+    std::string dft_tn = get<std::string>(config, "dft", "FftwDFT");
+    m_dft = Factory::find_tn<IDFT>(dft_tn);
+    m_verbose = get(config, "verbose", 0);
+
     // m_nticks = get(config,"nticks",m_nticks);
     if (!config["nticks"].isNull()) {
-        log->warn("no setting \"nticks\", ignoring value {}", config["nticks"].asInt());
+        log->warn("config: no setting \"nticks\", ignoring value {}", config["nticks"].asInt());
     }
     // m_period = get(config,"period",m_period);
     if (!config["period"].isNull()) {
-        log->warn("no setting \"period\", ignoring value {}", config["period"].asDouble());
+        log->warn("config: no setting \"period\", ignoring value {}", config["period"].asDouble());
     }
 
     m_fft_flag = get(config, "fft_flag", m_fft_flag);
     if (m_fft_flag) {
       m_fft_flag = 0;
-      log->warn("fft_flag option is broken, will use native array sizes");
+      log->warn("config: fft_flag option is broken, will use native array sizes");
     }
     m_elecresponse_tn = get(config, "elecresponse", m_elecresponse_tn);
     m_gain = get(config, "gain", m_gain);
@@ -213,7 +219,7 @@ void OmnibusSigProc::configure(const WireCell::Configuration& config)
     // but we have plane-major order so make a temporary collection.
     IChannel::vector plane_channels[3];
     std::stringstream ss;
-    ss << "internal channel map for tags: gauss:\"" << m_gauss_tag << "\", wiener:\"" << m_wiener_tag
+    ss << "config: internal channel map for tags: gauss:\"" << m_gauss_tag << "\", wiener:\"" << m_wiener_tag
        << "\", frame:\"" << m_frame_tag << "\"\n";
 
     // fixme: this loop is now available as Aux::plane_channels()
@@ -262,6 +268,8 @@ WireCell::Configuration OmnibusSigProc::default_configuration() const
 {
     Configuration cfg;
     cfg["anode"] = m_anode_tn;
+    cfg["dft"] = "FftwDFT";     // type-name for the DFT to use
+    cfg["verbose"] = 0;         // larger is more more logging 
     cfg["ftoffset"] = m_fine_time_offset;
     cfg["ctoffset"] = m_coarse_time_offset;
     // cfg["nticks"] = m_nticks;
@@ -357,7 +365,8 @@ void OmnibusSigProc::load_data(const input_pointer& in, int plane)
         auto const& charges = trace->charge();
         const int ntbins = std::min((int) charges.size(), m_nticks);
         for (int qind = 0; qind < ntbins; ++qind) {
-            m_r_data[plane](och.wire + m_pad_nwires[plane], tbin + qind) = charges[qind];
+            const float q = charges[qind];
+            m_r_data[plane](och.wire + m_pad_nwires[plane], tbin + qind) = q;
         }
 
         // ensure dead channels are indeed dead ...
@@ -374,19 +383,42 @@ void OmnibusSigProc::load_data(const input_pointer& in, int plane)
             }
         }
     }
-    log->debug("plane index: {} input data identifies {} bad regions", plane, nbad);
+    log->debug("call={} load plane index: {}, ntraces={}, input bad regions: {}",
+               m_count, plane, traces->size(), nbad);
+    check_data(plane, "load data");
 }
 
 // used in sparsifying below.  Could use C++17 lambdas....
 static bool ispositive(float x) { return x > 0.0; }
 static bool isZero(float x) { return x == 0.0; }
 
-void OmnibusSigProc::save_data(ITrace::vector& itraces, IFrame::trace_list_t& indices, int plane,
-                               const std::vector<float>& perwire_rmses, IFrame::trace_summary_t& threshold)
+void OmnibusSigProc::check_data(int iplane, const std::string& loglabel)
 {
+    if (!m_verbose) { return; }
+
+    std::stringstream ss;
+    auto& arr = m_r_data[iplane];
+    
+    log->debug("data: plane={}, sum={}, mean={}, min={}, max={} \"{}\"",
+               iplane,
+               arr.sum(), arr.mean(), arr.minCoeff(), arr.maxCoeff(), 
+               loglabel);
+}
+
+void OmnibusSigProc::save_data(
+    ITrace::vector& itraces,
+    IFrame::trace_list_t& indices,
+    int plane,
+    const std::vector<float>& perwire_rmses,
+    IFrame::trace_summary_t& threshold,
+    const std::string& loglabel)
+{
+    check_data(plane, loglabel + " before save");
+
     // reuse this temporary vector to hold charge for a channel.
     ITrace::ChargeSequence charge(m_nticks, 0.0);
 
+    double qloss = 0.0;
     double qtot = 0.0;
     for (auto och : m_channel_range[plane]) {  // ordered by osp channel
 
@@ -396,10 +428,18 @@ void OmnibusSigProc::save_data(ITrace::vector& itraces, IFrame::trace_list_t& in
             const float q = m_r_data[plane](och.wire, itick);
             // charge.at(itick) = q > 0.0 ? q : 0.0;
             // charge.at(itick) = q ;
-            if (m_use_roi_debug_mode)
+            if (m_use_roi_debug_mode) {
                 charge.at(itick) = q;  // debug mode: save all decons
-            else
-                charge.at(itick) = q > 0.0 ? q : 0.0;  // default mode: only save positive
+            }
+            else {              // nominal: threshold at zero.
+                if (q > 0.0) {
+                    charge.at(itick) = q;
+                }
+                else {
+                    charge.at(itick) = 0.0;
+                    qloss += q;
+                }
+            }
         }
         {
             auto& bad = m_cmm["bad"];
@@ -407,6 +447,7 @@ void OmnibusSigProc::save_data(ITrace::vector& itraces, IFrame::trace_list_t& in
             if (badit != bad.end()) {
                 for (auto bad : badit->second) {
                     for (int itick = bad.first; itick < bad.second; ++itick) {
+                        qloss += charge.at(itick);
                         charge.at(itick) = 0.0;
                     }
                 }
@@ -454,15 +495,17 @@ void OmnibusSigProc::save_data(ITrace::vector& itraces, IFrame::trace_list_t& in
 
     // debug
     if (indices.empty()) {
-        log->debug("save_data plane index: {} empty", plane);
+        log->debug("call={} {} save plane index: {} empty",
+                   m_count, loglabel, plane);
     }
     else {
-        const int nadded = indices.back() - indices.front() + 1;
-        log->debug("save_data plane index: {}, Qtot={} "
-                   "added {} traces to total {} indices:[{},{}]",
-                   plane, qtot,
-                   nadded, indices.size(), indices.front(), indices.back());
+        log->debug("call={} save plane index: {}, Qtot={} Qloss={}, "
+                   "{} indices spanning [{},{}] \"{}\"",
+                   m_count, plane, qtot, qloss,
+                   indices.size(), indices.front(), indices.back(),
+                   loglabel);
     }
+    check_data(plane, loglabel + " after save");
 }
 
 // save ROI into the out frame
@@ -711,14 +754,14 @@ void OmnibusSigProc::init_overall_response(IFrame::pointer frame)
         int tbinmin = *mme.first;
         int tbinmax = *mme.second;
         m_nticks = tbinmax - tbinmin;
-        log->debug("OmnibusSigProc: nticks={} tbinmin={} tbinmax={}", m_nticks, tbinmin, tbinmax);
+        log->debug("call={} init nticks={} tbinmin={} tbinmax={}", m_count, m_nticks, tbinmin, tbinmax);
 
         if (m_fft_flag == 0) {
             m_fft_nticks = m_nticks;
         }
         else {
             m_fft_nticks = fft_best_length(m_nticks);
-            log->debug("OmnibusSigProc: enlarge window from {} to {}", m_nticks, m_fft_nticks);
+            log->debug("call={} init enlarge window from {} to {}", m_count, m_nticks, m_fft_nticks);
         }
         //
 
@@ -740,7 +783,8 @@ void OmnibusSigProc::init_overall_response(IFrame::pointer frame)
         }
         else {
             m_fft_nwires[i] = fft_best_length(m_nwires[i] + fravg.planes[0].paths.size() - 1, 1);
-            log->debug("OmnibusSigProc: enlarge wire number in plane {} from {} to {}", i, m_nwires[i],
+            log->debug("call={} init enlarge wire number in plane {} from {} to {}",
+                       m_count, i, m_nwires[i],
                        m_fft_nwires[i]);
         }
         m_pad_nwires[i] = (m_fft_nwires[i] - m_nwires[i]) / 2;
@@ -756,7 +800,7 @@ void OmnibusSigProc::init_overall_response(IFrame::pointer frame)
     // auto ewave = ce.generate(tbins);
     auto ewave = (*m_elecresponse).waveform_samples(tbins);
     Waveform::scale(ewave, m_inter_gain * m_ADC_mV * (-1));
-    elec = Waveform::dft(ewave);
+    elec = Aux::fwd_r2c(m_dft, ewave);
 
     std::complex<float> fine_period(fravg.period, 0);
 
@@ -782,18 +826,27 @@ void OmnibusSigProc::init_overall_response(IFrame::pointer frame)
     for (int iplane = 0; iplane < 3; ++iplane) {
         auto arr = Response::as_array(fravg.planes[iplane], fine_nwires, fine_nticks);
 
+
+        int nrows = 0;
+        int ncols = 0;
+
         // do FFT for response ...
-        Array::array_xxc c_data = Array::dft_rc(arr, 0);
-        int nrows = c_data.rows();
-        int ncols = c_data.cols();
+        {
+            Array::array_xxc c_data = arr.cast<IDFT::complex_t>();
+            c_data = Aux::fwd(m_dft, c_data, 1);
 
-        for (int irow = 0; irow < nrows; ++irow) {
-            for (int icol = 0; icol < ncols; ++icol) {
-                c_data(irow, icol) = c_data(irow, icol) * elec.at(icol) * fine_period;
+            nrows = c_data.rows();
+            ncols = c_data.cols();
+
+            for (int irow = 0; irow < nrows; ++irow) {
+                for (int icol = 0; icol < ncols; ++icol) {
+                    c_data(irow, icol) = c_data(irow, icol) * elec.at(icol) * fine_period;
+                }
             }
-        }
 
-        arr = Array::idft_cr(c_data, 0);
+            c_data = Aux::inv(m_dft, c_data, 1);
+            arr = c_data.real();
+        }
 
         // figure out how to do fine ... shift (good ...)
         int fine_time_shift = m_fine_time_offset / fravg.period;
@@ -883,39 +936,28 @@ void OmnibusSigProc::decon_2D_init(int plane)
 {
     // data part ...
     // first round of FFT on time
-    m_c_data[plane] = Array::dft_rc(m_r_data[plane], 0);
+    m_c_data[plane] = Aux::fwd(m_dft, m_r_data[plane].cast<IDFT::complex_t>(), 1);
 
     // now apply the ch-by-ch response ...
     if (!m_per_chan_resp.empty()) {
-        log->debug("OmnibusSigProc: applying ch-by-ch electronics response correction");
+        log->debug("call={} applying ch-by-ch electronics response correction", m_count);
         auto cr = Factory::find_tn<IChannelResponse>(m_per_chan_resp);
         auto cr_bins = cr->channel_response_binning();
         if (cr_bins.binsize() != m_period) {
-            log->critical("OmnibusSigProc::decon_2D_init: channel response size mismatch");
+            log->critical("call={} decon_2D_init: channel response size mismatch", m_count);
             THROW(ValueError() << errmsg{"OmnibusSigProc::decon_2D_init: channel response size mismatch"});
         }
-        // starndard electronics response ...
-        // WireCell::Binning tbins(m_nticks, 0-m_period/2., m_nticks*m_period-m_period/2.);
-        // Response::ColdElec ce(m_gain, m_shaping_time);
 
-        // temporary hack ...
-        // float scaling = 1./(1e-9*0.5/1.13312);
-        // WireCell::Binning tbins(m_nticks, (-5-0.5)*m_period, (m_nticks-5-0.5)*m_period-m_period);
-        // Response::ColdElec ce(m_gain*scaling, m_shaping_time);
-        //// this is moved into wirecell.sigproc.main production of
-        //// microboone-channel-responses-v1.json.bz2
         WireCell::Binning tbins(m_fft_nticks, cr_bins.min(), cr_bins.min() + m_fft_nticks * m_period);
-        // Response::ColdElec ce(m_gain, m_shaping_time);
 
-        // const auto ewave = ce.generate(tbins);
         auto ewave = (*m_elecresponse).waveform_samples(tbins);
-        const WireCell::Waveform::compseq_t elec = Waveform::dft(ewave);
+        const WireCell::Waveform::compseq_t elec = Aux::fwd_r2c(m_dft, ewave);
 
         for (auto och : m_channel_range[plane]) {
             // const auto& ch_resp = cr->channel_response(och.ident);
             Waveform::realseq_t tch_resp = cr->channel_response(och.ident);
             tch_resp.resize(m_fft_nticks, 0);
-            const WireCell::Waveform::compseq_t ch_elec = Waveform::dft(tch_resp);
+            const WireCell::Waveform::compseq_t ch_elec = Aux::fwd_r2c(m_dft, tch_resp);
 
             const int irow = och.wire + m_pad_nwires[plane];
             for (int icol = 0; icol != m_c_data[plane].cols(); icol++) {
@@ -931,7 +973,7 @@ void OmnibusSigProc::decon_2D_init(int plane)
     }
 
     // second round of FFT on wire
-    m_c_data[plane] = Array::dft_cc(m_c_data[plane], 1);
+    m_c_data[plane] = Aux::fwd(m_dft, m_c_data[plane], 0);
 
     // response part ...
     Array::array_xxf r_resp = Array::array_xxf::Zero(m_r_data[plane].rows(), m_fft_nticks);
@@ -942,9 +984,9 @@ void OmnibusSigProc::decon_2D_init(int plane)
     }
 
     // do first round FFT on the resposne on time
-    Array::array_xxc c_resp = Array::dft_rc(r_resp, 0);
     // do second round FFT on the response on wire
-    c_resp = Array::dft_cc(c_resp, 1);
+    Array::array_xxc c_resp = r_resp.cast<IDFT::complex_t>();
+    c_resp = Aux::fwd(m_dft, c_resp);
 
     // make ratio to the response and apply wire filter
     m_c_data[plane] = m_c_data[plane] / c_resp;
@@ -968,10 +1010,8 @@ void OmnibusSigProc::decon_2D_init(int plane)
     }
 
     // do the first round of inverse FFT on wire
-    m_c_data[plane] = Array::idft_cc(m_c_data[plane], 1);
-
     // do the second round of inverse FFT on time
-    m_r_data[plane] = Array::idft_cr(m_c_data[plane], 0);
+    m_r_data[plane] = Aux::inv(m_dft, m_c_data[plane]).real();
 
     // do the shift in wire
     const int nrows = m_r_data[plane].rows();
@@ -995,7 +1035,8 @@ void OmnibusSigProc::decon_2D_init(int plane)
         m_r_data[plane].block(0, 0, nrows, time_shift) = arr2;
         m_r_data[plane].block(0, time_shift, nrows, ncols - time_shift) = arr1;
     }
-    m_c_data[plane] = Array::dft_rc(m_r_data[plane], 0);
+    m_c_data[plane] = Aux::fwd(m_dft, m_r_data[plane].cast<IDFT::complex_t>(), 1);
+
 }
 
 void OmnibusSigProc::decon_2D_ROI_refine(int plane)
@@ -1016,7 +1057,8 @@ void OmnibusSigProc::decon_2D_ROI_refine(int plane)
     }
 
     // do the second round of inverse FFT on wire
-    Array::array_xxf tm_r_data = Array::idft_cr(c_data_afterfilter, 0);
+    Array::array_xxf tm_r_data = Aux::inv(m_dft, c_data_afterfilter, 1).real();
+
     m_r_data[plane] = tm_r_data.block(m_pad_nwires[plane], 0, m_nwires[plane], m_nticks);
     restore_baseline(m_r_data[plane]);
 }
@@ -1057,7 +1099,8 @@ void OmnibusSigProc::decon_2D_tightROI(int plane)
     }
 
     // do the second round of inverse FFT on wire
-    Array::array_xxf tm_r_data = Array::idft_cr(c_data_afterfilter, 0);
+    Array::array_xxf tm_r_data = Aux::inv(m_dft, c_data_afterfilter, 1).real();
+
     m_r_data[plane] = tm_r_data.block(m_pad_nwires[plane], 0, m_nwires[plane], m_nticks);
     restore_baseline(m_r_data[plane]);
 }
@@ -1099,7 +1142,8 @@ void OmnibusSigProc::decon_2D_tighterROI(int plane)
     }
 
     // do the second round of inverse FFT on wire
-    Array::array_xxf tm_r_data = Array::idft_cr(c_data_afterfilter, 0);
+    Array::array_xxf tm_r_data = Aux::inv(m_dft, c_data_afterfilter, 1).real();
+
     m_r_data[plane] = tm_r_data.block(m_pad_nwires[plane], 0, m_nwires[plane], m_nticks);
     restore_baseline(m_r_data[plane]);
 }
@@ -1176,7 +1220,8 @@ void OmnibusSigProc::decon_2D_looseROI(int plane)
     }
 
     // do the second round of inverse FFT on wire
-    Array::array_xxf tm_r_data = Array::idft_cr(c_data_afterfilter, 0);
+    Array::array_xxf tm_r_data = Aux::inv(m_dft, c_data_afterfilter, 1).real();
+
     m_r_data[plane] = tm_r_data.block(m_pad_nwires[plane], 0, m_nwires[plane], m_nticks);
     restore_baseline(m_r_data[plane]);
 }
@@ -1221,7 +1266,8 @@ void OmnibusSigProc::decon_2D_looseROI_debug_mode(int plane)
     }
 
     // do the second round of inverse FFT on wire
-    Array::array_xxf tm_r_data = Array::idft_cr(c_data_afterfilter, 0);
+    Array::array_xxf tm_r_data = Aux::inv(m_dft, c_data_afterfilter, 1).real();
+
     m_r_data[plane] = tm_r_data.block(m_pad_nwires[plane], 0, m_nwires[plane], m_nticks);
     restore_baseline(m_r_data[plane]);
 }
@@ -1282,7 +1328,7 @@ void OmnibusSigProc::decon_2D_hits(int plane)
     }
 
     // do the second round of inverse FFT on wire
-    Array::array_xxf tm_r_data = Array::idft_cr(c_data_afterfilter, 0);
+    Array::array_xxf tm_r_data = Aux::inv(m_dft, c_data_afterfilter, 1).real();
     m_r_data[plane] = tm_r_data.block(m_pad_nwires[plane], 0, m_nwires[plane], m_nticks);
     if (plane == 2) {
         restore_baseline(m_r_data[plane]);
@@ -1315,7 +1361,7 @@ void OmnibusSigProc::decon_2D_charge(int plane)
     }
 
     // do the second round of inverse FFT on wire
-    Array::array_xxf tm_r_data = Array::idft_cr(c_data_afterfilter, 0);
+    Array::array_xxf tm_r_data = Aux::inv(m_dft, c_data_afterfilter, 1).real();
     m_r_data[plane] = tm_r_data.block(m_pad_nwires[plane], 0, m_nwires[plane], m_nticks);
     if (plane == 2) {
         restore_baseline(m_r_data[plane]);
@@ -1357,7 +1403,7 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
 
     ITrace::vector* itraces = new ITrace::vector;  // will become shared_ptr.
     IFrame::trace_summary_t thresholds;
-    IFrame::trace_list_t wiener_traces, gauss_traces, perframe_traces[3];
+    IFrame::trace_list_t wiener_traces, gauss_traces;
     // here are some trace lists for debug mode
     IFrame::trace_list_t tight_lf_traces, loose_lf_traces, cleanup_roi_traces, break_roi_loop1_traces,
         break_roi_loop2_traces, shrink_roi_traces, extend_roi_traces;
@@ -1388,6 +1434,7 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
         load_data(in, iplane);  // load into a large matrix
         // initial decon ...
         decon_2D_init(iplane);  // decon in large matrix
+        check_data(iplane, "after 2D init");
 
         // Form tight ROIs
         if (iplane != 2) {  // induction wire planes
@@ -1403,17 +1450,20 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
             decon_2D_tightROI(iplane);
             roi_form.find_ROI_by_decon_itself(iplane, m_r_data[iplane]);
         }
+        check_data(iplane, "after 2D tight ROI");
 
         // [wgu] save decon result after tight LF
         std::vector<double> dummy;
-        if (m_use_roi_debug_mode and m_use_roi_refinement) save_data(*itraces, tight_lf_traces, iplane, perwire_rmses, dummy);
+        if (m_use_roi_debug_mode and m_use_roi_refinement) {
+            save_data(*itraces, tight_lf_traces, iplane, perwire_rmses, dummy, "tight_lf");
+        }
 
         // Form loose ROIs
         if (iplane != 2) {
             // [wgu] save decon result after loose LF
             if (m_use_roi_debug_mode) {
                 decon_2D_looseROI_debug_mode(iplane);
-                save_data(*itraces, loose_lf_traces, iplane, perwire_rmses, dummy);
+                save_data(*itraces, loose_lf_traces, iplane, perwire_rmses, dummy, "loose_lf");
             }
 
             if (m_use_roi_refinement) {
@@ -1425,7 +1475,11 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
 
         // [wgu] collection plane does not need loose LF
         // but save something to be consistent
-        if (m_use_roi_debug_mode and iplane == 2) save_data(*itraces, loose_lf_traces, iplane, perwire_rmses, dummy);
+        if (m_use_roi_debug_mode and iplane == 2) {
+            save_data(*itraces, loose_lf_traces, iplane, perwire_rmses, dummy, "loose_lf");
+        }
+
+        check_data(iplane, "after 2D ROI refine");
 
         // Refine ROIs
         if (m_use_roi_refinement) roi_refine.load_data(iplane, m_r_data[iplane], roi_form);
@@ -1436,81 +1490,103 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
     }
 
     if (m_use_roi_refinement) {
-    for (int iplane = 0; iplane != 3; ++iplane) {
-        auto it = std::find(m_process_planes.begin(), m_process_planes.end(), iplane);
-        if (it == m_process_planes.end()) continue;
+        for (int iplane = 0; iplane != 3; ++iplane) {
+            auto it = std::find(m_process_planes.begin(), m_process_planes.end(), iplane);
+            if (it == m_process_planes.end()) continue;
 
-        // roi_refine.refine_data(iplane, roi_form);
+            // roi_refine.refine_data(iplane, roi_form);
 
-        roi_refine.CleanUpROIs(iplane);
-        roi_refine.generate_merge_ROIs(iplane);
-
-        if (m_use_roi_debug_mode) {
-            save_roi(*itraces, cleanup_roi_traces, iplane, roi_refine.get_rois_by_plane(iplane));
-        }
-
-        if (m_use_multi_plane_protection) {
-            roi_refine.MultiPlaneProtection(iplane, m_anode, m_roi_ch_ch_ident, roi_form, 1000, m_anode->ident() % 2);
-            save_mproi(*itraces, mp3_roi_traces, iplane, roi_refine.get_mp3_rois());
-            roi_refine.MultiPlaneROI(iplane, m_anode, m_roi_ch_ch_ident, roi_form, 1000, m_anode->ident() % 2);
-            save_mproi(*itraces, mp2_roi_traces, iplane, roi_refine.get_mp2_rois());
-        }
-    }
-
-    for (int iplane = 0; iplane != 3; ++iplane) {
-        auto it = std::find(m_process_planes.begin(), m_process_planes.end(), iplane);
-        if (it == m_process_planes.end()) continue;
-
-        const std::vector<float>& perwire_rmses = *perplane_thresholds[iplane];
-
-        for (int qx = 0; qx != m_r_break_roi_loop; qx++) {
-            roi_refine.BreakROIs(iplane, roi_form);
-            roi_refine.CheckROIs(iplane, roi_form);
             roi_refine.CleanUpROIs(iplane);
+            roi_refine.generate_merge_ROIs(iplane);
+
             if (m_use_roi_debug_mode) {
-                if (qx == 0) save_roi(*itraces, break_roi_loop1_traces, iplane, roi_refine.get_rois_by_plane(iplane));
-                if (qx == 1) save_roi(*itraces, break_roi_loop2_traces, iplane, roi_refine.get_rois_by_plane(iplane));
+                save_roi(*itraces, cleanup_roi_traces, iplane, roi_refine.get_rois_by_plane(iplane));
+            }
+
+            if (m_use_multi_plane_protection) {
+                roi_refine.MultiPlaneProtection(iplane, m_anode, m_roi_ch_ch_ident, roi_form, 1000, m_anode->ident() % 2);
+                save_mproi(*itraces, mp3_roi_traces, iplane, roi_refine.get_mp3_rois());
+                roi_refine.MultiPlaneROI(iplane, m_anode, m_roi_ch_ch_ident, roi_form, 1000, m_anode->ident() % 2);
+                save_mproi(*itraces, mp2_roi_traces, iplane, roi_refine.get_mp2_rois());
             }
         }
 
-        roi_refine.ShrinkROIs(iplane, roi_form);
-        roi_refine.CheckROIs(iplane, roi_form);
-        roi_refine.CleanUpROIs(iplane);
-        if (m_use_roi_debug_mode) {
-            save_roi(*itraces, shrink_roi_traces, iplane, roi_refine.get_rois_by_plane(iplane));
-        }
+        for (int iplane = 0; iplane != 3; ++iplane) {
+            auto it = std::find(m_process_planes.begin(), m_process_planes.end(), iplane);
+            if (it == m_process_planes.end()) continue;
 
-        if (iplane == 2) {
-            roi_refine.CleanUpCollectionROIs();
-        }
-        else {
-            roi_refine.CleanUpInductionROIs(iplane);
-        }
-        roi_refine.ExtendROIs(iplane);
+            const std::vector<float>& perwire_rmses = *perplane_thresholds[iplane];
 
-        if (m_use_roi_debug_mode) {
-            save_ext_roi(*itraces, extend_roi_traces, iplane, roi_refine.get_rois_by_plane(iplane));
+            for (int qx = 0; qx != m_r_break_roi_loop; qx++) {
+                roi_refine.BreakROIs(iplane, roi_form);
+                roi_refine.CheckROIs(iplane, roi_form);
+                roi_refine.CleanUpROIs(iplane);
+                if (m_use_roi_debug_mode) {
+                    if (qx == 0) {
+                        save_roi(*itraces, break_roi_loop1_traces, iplane, roi_refine.get_rois_by_plane(iplane));
+                    }
+                    if (qx == 1) {
+                        save_roi(*itraces, break_roi_loop2_traces, iplane, roi_refine.get_rois_by_plane(iplane));
+                    }
+                }
+            }
+
+            roi_refine.ShrinkROIs(iplane, roi_form);
+            check_data(iplane, "after roi refine shrink");
+            roi_refine.CheckROIs(iplane, roi_form);
+            check_data(iplane, "after roi refine check");
+            roi_refine.CleanUpROIs(iplane);
+            if (m_use_roi_debug_mode) {
+                save_roi(*itraces, shrink_roi_traces, iplane, roi_refine.get_rois_by_plane(iplane));
+            }
+
+            if (iplane == 2) {
+                roi_refine.CleanUpCollectionROIs();
+            }
+            else {
+                roi_refine.CleanUpInductionROIs(iplane);
+            }
+            check_data(iplane, "after roi refine cleanup");
+
+            roi_refine.ExtendROIs(iplane);
+            check_data(iplane, "after roi refine extend");
+
+            if (m_use_roi_debug_mode) {
+                save_ext_roi(*itraces, extend_roi_traces, iplane, roi_refine.get_rois_by_plane(iplane));
+            }
+
+            // merge results ...
+            decon_2D_hits(iplane);
+            check_data(iplane, "after decon 2D hits");
+            roi_refine.apply_roi(iplane, m_r_data[iplane]);
+            check_data(iplane, "after roi refine apply");
+            // roi_form.apply_roi(iplane, m_r_data[plane],1);
+            {
+                // We only use an intermediate index list here to give
+                // some clarity to log msg about range added
+                IFrame::trace_list_t perframe;
+                save_data(*itraces, perframe, iplane, perwire_rmses, thresholds, "wiener");
+                wiener_traces.insert(wiener_traces.end(), perframe.begin(), perframe.end());
+            }
+
+            decon_2D_charge(iplane);
+            std::vector<double> dummy_thresholds;
+            if (m_use_roi_debug_mode) {
+                save_data(*itraces, decon_charge_traces, iplane, perwire_rmses, thresholds, "decon");
+            }
+            roi_refine.apply_roi(iplane, m_r_data[iplane]);
+            // roi_form.apply_roi(iplane, m_r_data[plane],1);
+            {
+                // We only use an intermediate index list here to give
+                // some clarity to log msg about range added
+                IFrame::trace_list_t perframe;
+                save_data(*itraces, perframe, iplane, perwire_rmses, dummy_thresholds, "gauss");
+                gauss_traces.insert(gauss_traces.end(), perframe.begin(), perframe.end());
+            }
+
+            m_c_data[iplane].resize(0, 0);  // clear memory
+            m_r_data[iplane].resize(0, 0);  // clear memory
         }
-
-        // merge results ...
-        decon_2D_hits(iplane);
-        roi_refine.apply_roi(iplane, m_r_data[iplane]);
-        // roi_form.apply_roi(iplane, m_r_data[plane],1);
-        save_data(*itraces, perframe_traces[iplane], iplane, perwire_rmses, thresholds);
-        wiener_traces.insert(wiener_traces.end(), perframe_traces[iplane].begin(), perframe_traces[iplane].end());
-
-        decon_2D_charge(iplane);
-        std::vector<double> dummy_thresholds;
-        if (m_use_roi_debug_mode) {
-            save_data(*itraces, decon_charge_traces, iplane, perwire_rmses, thresholds);
-        }
-        roi_refine.apply_roi(iplane, m_r_data[iplane]);
-        // roi_form.apply_roi(iplane, m_r_data[plane],1);
-        save_data(*itraces, gauss_traces, iplane, perwire_rmses, dummy_thresholds);
-
-        m_c_data[iplane].resize(0, 0);  // clear memory
-        m_r_data[iplane].resize(0, 0);  // clear memory
-    }
     }
 
     SimpleFrame* sframe = new SimpleFrame(in->ident(), in->time(), ITrace::shared_vector(itraces), in->tick(), m_cmm);
@@ -1571,5 +1647,5 @@ bool OmnibusSigProc::operator()(const input_pointer& in, output_pointer& out)
 
 // Local Variables:
 // mode: c++
-// c-basic-offset: 2
+// c-basic-offset: 4
 // End:

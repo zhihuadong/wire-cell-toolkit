@@ -4,7 +4,9 @@
 #include "WireCellUtil/Pimpos.h"
 #include "WireCellUtil/Point.h"
 #include "WireCellUtil/Units.h"
+
 #include "WireCellIface/IDepo.h"
+#include "WireCellIface/IDFT.h"
 
 #include "WireCellGen/ImpactData.h"
 
@@ -45,7 +47,8 @@ namespace WireCell {
             /// Useful to client code to mark a calculation strategy.
             enum ImpactDataCalculationStrategy { constant = 1, linear = 2 };
 
-            BinnedDiffusion(const Pimpos& pimpos, const Binning& tbins, double nsigma = 3.0,
+            BinnedDiffusion(const Pimpos& pimpos, const IDFT::pointer& dft,
+                            const Binning& tbins, double nsigma = 3.0,
                             IRandom::pointer fluctuate = nullptr, ImpactDataCalculationStrategy calcstrat = linear);
 
             const Pimpos& pimpos() const { return m_pimpos; }
@@ -95,6 +98,7 @@ namespace WireCell {
 
            private:
             const Pimpos& m_pimpos;
+            const IDFT::pointer& m_dft;
             const Binning& m_tbins;
 
             double m_nsigma;

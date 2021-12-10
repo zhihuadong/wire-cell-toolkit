@@ -2,7 +2,9 @@
 #define WIRECELL_AUX_SIMPLETENSOR
 
 #include "WireCellIface/ITensor.h"
+
 #include <boost/multi_array.hpp>
+#include <cstring>
 
 namespace WireCell {
 
@@ -13,14 +15,26 @@ namespace WireCell {
            public:
             typedef ElementType element_t;
 
-            SimpleTensor(const shape_t& shape)
+            // Create simple tensor, allocating space for data.  If
+            // data given it must have at least as many elements as
+            // implied by shape and that span will be copied into
+            // allocated memory.
+            SimpleTensor(const shape_t& shape,
+                         const element_t* data=nullptr,
+                         const Configuration& md = Configuration())
             {
                 size_t nbytes = element_size();
-                for (const auto& s : shape) {
+                m_shape = shape;
+                for (const auto& s : m_shape) {
                     nbytes *= s;
                 }
-                m_store.resize(nbytes);
-                m_shape = shape;
+                if (data) {
+                    const std::byte* bytes = reinterpret_cast<const std::byte*>(data);
+                    m_store.assign(bytes, bytes+nbytes);
+                }
+                else {
+                    m_store.resize(nbytes);
+                }
             }
             virtual ~SimpleTensor() {}
 

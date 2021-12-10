@@ -23,24 +23,30 @@ function(params, tools, chndbobj, name="")
             Window: 5,
             Nbins: 250,
             Cut: 14,
-            anode: wc.tn(tools.anode)
-        },            
+            anode: wc.tn(tools.anode),
+            dft: wc.tn(tools.dft),
+        },
+        uses: [tools.anode, tools.dft],
     },
     local single = {
         type: "mbOneChannelNoise",
         name:name,
         data: {
             noisedb: wc.tn(chndbobj),
-            anode: wc.tn(tools.anode)
-        }
+            anode: wc.tn(tools.anode),
+            dft: wc.tn(tools.dft),
+        },
+        uses: [tools.anode, tools.dft, chndbobj],
     },
     local grouped = {
         type: "mbCoherentNoiseSub",
         name:name,
         data: {
             noisedb: wc.tn(chndbobj),
-            anode: wc.tn(tools.anode)
-        }
+            anode: wc.tn(tools.anode),
+            dft: wc.tn(tools.dft),
+        },
+        uses: [tools.anode, tools.dft, chndbobj],
     },
 
     local obnf = g.pnode({

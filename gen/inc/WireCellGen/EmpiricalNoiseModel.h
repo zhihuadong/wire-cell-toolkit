@@ -14,6 +14,7 @@
 #include "WireCellIface/IChannelSpectrum.h"
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/IAnodePlane.h"
+#include "WireCellIface/IDFT.h"
 #include "WireCellIface/IChannelStatus.h"
 
 #include "WireCellUtil/Units.h"
@@ -86,6 +87,7 @@ namespace WireCell {
            private:
             IAnodePlane::pointer m_anode;
             IChannelStatus::pointer m_chanstat;
+            IDFT::pointer m_dft;
 
             std::string m_spectra_file;
             int m_nsamples;

@@ -9,7 +9,7 @@
 
 // from ductor
 #include "WireCellGen/BinnedDiffusion.h"
-#include "WireCellGen/ImpactZipper.h"
+
 #include "WireCellUtil/Units.h"
 #include "WireCellUtil/Point.h"
 #include "WireCellUtil/NamedFactory.h"

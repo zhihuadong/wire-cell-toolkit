@@ -7,9 +7,11 @@ using namespace std;
 
 using namespace WireCell;
 
-Gen::BinnedDiffusion::BinnedDiffusion(const Pimpos& pimpos, const Binning& tbins, double nsigma,
+Gen::BinnedDiffusion::BinnedDiffusion(const Pimpos& pimpos, const IDFT::pointer& dft,
+                                      const Binning& tbins, double nsigma,
                                       IRandom::pointer fluctuate, ImpactDataCalculationStrategy calcstrat)
   : m_pimpos(pimpos)
+  , m_dft(dft)
   , m_tbins(tbins)
   , m_nsigma(nsigma)
   , m_fluctuate(fluctuate)
@@ -127,7 +129,7 @@ Gen::ImpactData::pointer Gen::BinnedDiffusion::impact_data(int bin) const
         // diff->set_sampling(m_tbins, ib, m_nsigma, 0, m_calcstrat);
     }
 
-    idptr->calculate(m_tbins.nbins());
+    idptr->calculate(m_dft, m_tbins.nbins());
     return idptr;
 }
 

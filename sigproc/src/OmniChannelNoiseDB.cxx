@@ -1,4 +1,5 @@
 #include "WireCellSigProc/OmniChannelNoiseDB.h"
+#include "WireCellAux/DftTools.h"
 #include "WireCellUtil/Response.h"
 #include "WireCellUtil/NamedFactory.h"
 
@@ -63,6 +64,7 @@ WireCell::Configuration OmniChannelNoiseDB::default_configuration() const
     /// These must be provided
     cfg["groups"] = Json::arrayValue;
     cfg["channel_info"] = Json::arrayValue;
+    cfg["dft"] = "FftwDFT";     // type-name for the DFT to use
 
     return cfg;
 }
@@ -181,7 +183,8 @@ OmniChannelNoiseDB::shared_filter_t OmniChannelNoiseDB::parse_rcrc(Json::Value j
     // auto signal = rcres.generate(WireCell::Binning(m_nsamples, 0, m_nsamples*m_tick));
     auto signal = rcres.generate(WireCell::Waveform::Domain(0, m_nsamples * m_tick), m_nsamples);
 
-    Waveform::compseq_t spectrum = Waveform::dft(signal);
+    Waveform::compseq_t spectrum = Aux::fwd_r2c(m_dft, signal);
+
     // get the square of it because there are two RC filters
     Waveform::compseq_t spectrum2 = spectrum;
     // Waveform::scale(spectrum2,spectrum);
@@ -255,8 +258,8 @@ OmniChannelNoiseDB::shared_filter_t OmniChannelNoiseDB::get_reconfig(double from
     auto to_sig = to_ce.generate(WireCell::Waveform::Domain(0, m_nsamples * m_tick), m_nsamples);
     auto from_sig = from_ce.generate(WireCell::Waveform::Domain(0, m_nsamples * m_tick), m_nsamples);
 
-    auto to_filt = Waveform::dft(to_sig);
-    auto from_filt = Waveform::dft(from_sig);
+    auto to_filt = Aux::fwd_r2c(m_dft, to_sig);
+    auto from_filt = Aux::fwd_r2c(m_dft, from_sig);
 
     // auto from_filt_sum = Waveform::sum(from_filt);
     // auto to_filt_sum   = Waveform::sum(to_filt);
@@ -316,7 +319,7 @@ OmniChannelNoiseDB::shared_filter_t OmniChannelNoiseDB::parse_response(Json::Val
                 waveform[ind] += current[ind];
             }
         }
-        auto spectrum = WireCell::Waveform::dft(waveform);
+        auto spectrum = Aux::fwd_r2c(m_dft, waveform);
         auto ret = std::make_shared<filter_t>(spectrum);
         m_response_cache[wpid.ident()] = ret;
         return ret;
@@ -338,7 +341,7 @@ OmniChannelNoiseDB::shared_filter_t OmniChannelNoiseDB::parse_response(Json::Val
             waveform[ind] = jwave[ind].asFloat();
         }
 
-        auto spectrum = WireCell::Waveform::dft(waveform);
+        auto spectrum = Aux::fwd_r2c(m_dft, waveform);
         auto ret = std::make_shared<filter_t>(spectrum);
         m_waveform_cache[id] = ret;
         return ret;
@@ -578,6 +581,9 @@ void OmniChannelNoiseDB::configure(const WireCell::Configuration& cfg)
     m_anode = Factory::find_tn<IAnodePlane>(anode_tn);
     std::string fr_tn = get<std::string>(cfg, "field_response", "FieldResponse");
     m_fr = Factory::find_tn<IFieldResponse>(fr_tn);
+
+    std::string dft_tn = get<std::string>(cfg, "dft", "FftwDFT");
+    m_dft = Factory::find_tn<IDFT>(dft_tn);
 
     // WARNING: this assumes channel numbers count from 0 with no gaps!
     // int nchans = m_anode->channels().size();

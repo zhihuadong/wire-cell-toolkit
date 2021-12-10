@@ -4,6 +4,8 @@
 local wc = import "wirecell.jsonnet";
 local pg = import "pgraph.jsonnet";
 local u = import "utils.jsonnet";
+local aux = import "aux.jsonnet";
+
 
 {
     default_seeds: [0, 1, 2, 3, 4],
@@ -75,7 +77,7 @@ local u = import "utils.jsonnet";
     // fr is a field response object (see fr() above).
     // srs is list of "short response" config objects, eg cer()
     // lrs is list of "long response" config objects, eg rc()
-    pirs(fr, srs, lrs) :: [ {
+    pirs(fr, srs, lrs, dft=aux.dft) :: [ {
         type: "PlaneImpactResponse",
         name : std.toString(plane),
         data : {
@@ -87,18 +89,20 @@ local u = import "utils.jsonnet";
             long_responses: [wc.tn(r) for r in lrs],
             // this needs to be big enough to convolve RC
             long_padding: 1.5*wc.ms,
+            dft: wc.tn(dft),
         },
-        uses: [fr] + srs + lrs,
+        uses: [dft, fr] + srs + lrs,
     } for plane in [0,1,2]],
 
     // signal simulation
-    signal(anode, pirs, daq, lar, rnd=$.random()) ::
+    signal(anode, pirs, daq, lar, rnd=$.random(), dft=aux.dft) ::
         pg.pipeline([
             pg.pnode({
                 type:'DepoTransform',
                 name: u.idents(anode),
                 data: {
                     rng: wc.tn(rnd),
+                    dft: wc.tn(dft),
                     anode: wc.tn(anode),
                     pirs: [wc.tn(p) for p in pirs],
                     fluctuate: true,
@@ -109,7 +113,7 @@ local u = import "utils.jsonnet";
                     tick: daq.tick,
                     nsigma: 3,
                 },
-            }, nin=1, nout=1, uses=pirs + [anode, rnd]),
+            }, nin=1, nout=1, uses=pirs + [anode, rnd, dft]),
 
             pg.pnode({
                 type: 'Reframer',
@@ -126,7 +130,7 @@ local u = import "utils.jsonnet";
 
 
     // Return a frame filter config that will add in noise.
-    noise(anode, filename, daq, chstat=null, rnd=$.random()) ::
+    noise(anode, filename, daq, chstat=null, rnd=$.random(), dft=aux.dft) ::
         local cs = if std.type(chstat) == "null"
                    then {tn:"", uses:[]}
                    else {tn:wc.tn(chstat), uses:[chstat]};
@@ -140,8 +144,9 @@ local u = import "utils.jsonnet";
                 nsamples: daq.nticks,
                 period: daq.tick,
                 wire_length_scale: 1.0*wc.cm, // optimization binning
+                dft: wc.tn(dft),
             },
-            uses: [anode] + cs.uses,
+            uses: [anode, dft] + cs.uses,
         };
 
         pg.pnode({
@@ -152,7 +157,8 @@ local u = import "utils.jsonnet";
                 model: wc.tn(noise_model),
                 nsamples: daq.nticks,
                 replacement_percentage: 0.02, // random optimization
-            }}, nin=1, nout=1, uses=[rnd, noise_model]),
+                dft: wc.tn(dft),
+            }}, nin=1, nout=1, uses=[rnd, noise_model, dft]),
 
 
     // digitizer simulation

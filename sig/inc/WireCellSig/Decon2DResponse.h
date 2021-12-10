@@ -9,6 +9,8 @@
 #include "WireCellIface/IAnodePlane.h"
 #include "WireCellIface/IChannelResponse.h"
 #include "WireCellIface/IFieldResponse.h"
+#include "WireCellIface/IDFT.h"
+
 #include "WireCellUtil/Logging.h"
 
 namespace WireCell {
@@ -37,6 +39,8 @@ namespace WireCell {
             IChannelResponse::pointer m_cresp;
 
             IFieldResponse::pointer m_fresp;
+
+            IDFT::pointer m_dft;
         };
     }  // namespace Sig
 }  // namespace WireCell

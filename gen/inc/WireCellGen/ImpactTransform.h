@@ -1,8 +1,11 @@
 #ifndef WIRECELL_IMPACTTRANSFORM
 #define WIRECELL_IMPACTTRANSFORM
 
-#include "WireCellIface/IPlaneImpactResponse.h"
 #include "WireCellGen/BinnedDiffusion_transform.h"
+
+#include "WireCellIface/IPlaneImpactResponse.h"
+#include "WireCellIface/IDFT.h"
+
 #include "WireCellUtil/Array.h"
 
 #include <Eigen/Sparse>
@@ -15,6 +18,7 @@ namespace WireCell {
          */
         class ImpactTransform {
             IPlaneImpactResponse::pointer m_pir;
+            IDFT::pointer m_dft;
             BinnedDiffusion_transform& m_bd;
 
             int m_num_group;     // how many 2D convolution is needed
@@ -32,6 +36,7 @@ namespace WireCell {
 
            public:
             ImpactTransform(IPlaneImpactResponse::pointer pir,
+                            const IDFT::pointer& dft,
                             BinnedDiffusion_transform& bd);
 
             virtual ~ImpactTransform();

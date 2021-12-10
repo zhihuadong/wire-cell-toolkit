@@ -1,10 +1,14 @@
 #include "WireCellGen/TruthTraceID.h"
 #include "WireCellGen/BinnedDiffusion.h"
+
+#include "WireCellAux/DftTools.h"
+
+#include "WireCellIface/SimpleTrace.h"
+#include "WireCellIface/SimpleFrame.h"
+
 #include "WireCellUtil/Units.h"
 #include "WireCellUtil/Point.h"
 #include "WireCellUtil/NamedFactory.h"
-#include "WireCellIface/SimpleTrace.h"
-#include "WireCellIface/SimpleFrame.h"
 
 #include <string>
 
@@ -54,6 +58,7 @@ WireCell::Configuration Gen::TruthTraceID::default_configuration() const
     put(cfg, "first_frame_number", m_frame_count);
     put(cfg, "anode", m_anode_tn);
     put(cfg, "rng", m_rng_tn);
+    put(cfg, "dft", "FftwDFT"); // type-name for the DFT to use
     put(cfg, "truth_type", m_truth_type);
     put(cfg, "number_induction_wire", m_num_ind_wire);
     put(cfg, "number_collection_wire", m_num_col_wire);
@@ -86,6 +91,8 @@ void Gen::TruthTraceID::configure(const WireCell::Configuration& cfg)
         m_rng_tn = get(cfg, "rng", m_rng_tn);
         m_rng = Factory::find_tn<IRandom>(m_rng_tn);
     }
+    std::string dft_tn = get<std::string>(cfg, "dft", "FftwDFT");
+    m_dft = Factory::find_tn<IDFT>(dft_tn);
 
     m_readout_time = get<double>(cfg, "readout_time", m_readout_time);
     m_tick = get<double>(cfg, "tick", m_tick);
@@ -139,7 +146,7 @@ void Gen::TruthTraceID::process(output_queue& frames)
             auto timeTruth = hf_time.generate(timeBins);
 
             // ### apply diffusion at wire plane ###
-            Gen::BinnedDiffusion bindiff(*pimpos, tbins, m_nsigma, m_rng);
+            Gen::BinnedDiffusion bindiff(*pimpos, m_dft, tbins, m_nsigma, m_rng);
             for (auto depo : m_depos) {
                 bindiff.add(depo, depo->extent_long() / m_drift_speed, depo->extent_tran());
 
@@ -193,8 +200,7 @@ void Gen::TruthTraceID::process(output_queue& frames)
                     }
                     bindiff.erase(0, min_impact);
 
-                    Waveform::realseq_t wave(nsamples, 0.0);
-                    wave = Waveform::idft(total_spectrum);
+                    Waveform::realseq_t wave = Aux::inv_c2r(m_dft, total_spectrum);
                     auto mm = Waveform::edge(wave);
                     if (mm.first == (int) wave.size()) {
                         continue;

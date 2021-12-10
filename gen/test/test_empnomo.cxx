@@ -5,6 +5,7 @@
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellIface/IChannelStatus.h"
 #include "WireCellIface/IChannelSpectrum.h"
+#include "WireCellIface/IDFT.h"
 
 #include <cstdlib>
 #include <string>
@@ -16,6 +17,9 @@ using namespace WireCell;
 
 int main(int argc, char* argv[])
 {
+    PluginManager& pm = PluginManager::instance();
+    pm.add("WireCellAux");
+
     std::string detector = "uboone";
 
     // In the real WCT this is done by wire-cell and driven by user
@@ -25,6 +29,9 @@ int main(int argc, char* argv[])
     cerr << "Using AnodePlane: \"" << anode_tns[0] << "\"\n";
 
     {
+        {
+            Factory::lookup_tn<IDFT>("FftwDFT");
+        }
         {
             auto icfg = Factory::lookup<IConfigurable>("StaticChannelStatus");
             // In the real app this would be in a JSON or Jsonnet config

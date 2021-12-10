@@ -3,7 +3,6 @@
  *  Implementation in GaussianDiffusion for each charge depo
  */
 #include "WireCellGen/GaussianDiffusion.h"
-#include "WireCellGen/ImpactZipper.h"
 #include "WireCellGen/TrackDepos.h"
 #include "WireCellGen/BinnedDiffusion.h"
 #include "WireCellGen/TransportedDepo.h"

@@ -3,6 +3,7 @@
 
 local wc = import "wirecell.jsonnet";
 local pg = import "pgraph.jsonnet";
+local aux = import "aux.jsonnet";
 
 
 // Signal processing.
@@ -10,7 +11,7 @@ local pg = import "pgraph.jsonnet";
 // Note, spfilt are a list of filter objects which MUST match
 // hard-wired names in the C++, sorry.  See, eg
 // pgrapher/experiment/pdsp/sp-filters.jsonnet.
-function(anode, fieldresp, elecresp, spfilt, adcpermv, perchan=null, override={}) 
+function(anode, fieldresp, elecresp, spfilt, adcpermv, perchan=null, dft=aux.dft, override={}) 
     local apaid = anode.data.ident;
 
     // if perchan file name is given we need to add this to a
@@ -35,6 +36,7 @@ function(anode, fieldresp, elecresp, spfilt, adcpermv, perchan=null, override={}
                 *  Associated tuning in sp-filters.jsonnet
                 */
             anode: wc.tn(anode),
+            dft: wc.tn(dft),
             field_response: wc.tn(fieldresp),
             elecresponse: wc.tn(elecresp),
             ftoffset: 0.0, // default 0.0
@@ -81,4 +83,4 @@ function(anode, fieldresp, elecresp, spfilt, adcpermv, perchan=null, override={}
             isWrapped: false,
             // process_planes: [0, 2],
         } + override
-    }, nin=1, nout=1, uses=[anode, fieldresp, elecresp] + pc.uses + spfilt)
+    }, nin=1, nout=1, uses=[anode, dft, fieldresp, elecresp] + pc.uses + spfilt)

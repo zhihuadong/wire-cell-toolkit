@@ -1,9 +1,14 @@
 #include "WireCellGen/Misconfigure.h"
+
+#include "WireCellAux/DftTools.h"
+
+#include "WireCellIface/SimpleFrame.h"
+#include "WireCellIface/SimpleTrace.h"
+
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/Response.h"
 #include "WireCellUtil/Waveform.h"
-#include "WireCellIface/SimpleFrame.h"
-#include "WireCellIface/SimpleTrace.h"
+
 
 WIRECELL_FACTORY(Misconfigure, WireCell::Gen::Misconfigure, WireCell::IFrameFilter, WireCell::IConfigurable)
 
@@ -41,6 +46,8 @@ WireCell::Configuration Gen::Misconfigure::default_configuration() const
     /// needs to be handled in some way by the user.
     cfg["truncate"] = true;
 
+    cfg["dft"] = "FftwDFT";     // type-name for the DFT to use
+
     return cfg;
 }
 
@@ -54,6 +61,9 @@ void Gen::Misconfigure::configure(const WireCell::Configuration& cfg)
     m_to = Response::ColdElec(cfg["to"]["gain"].asDouble(), cfg["to"]["shaping"].asDouble()).generate(bins);
 
     m_truncate = cfg["truncate"].asBool();
+
+    std::string dft_tn = get<std::string>(cfg, "dft", "FftwDFT");
+    m_dft = Factory::find_tn<IDFT>(dft_tn);
 }
 
 bool Gen::Misconfigure::operator()(const input_pointer& in, output_pointer& out)
@@ -72,9 +82,12 @@ bool Gen::Misconfigure::operator()(const input_pointer& in, output_pointer& out)
     size_t ntraces = traces->size();
     ITrace::vector out_traces(ntraces);
     for (size_t ind = 0; ind < ntraces; ++ind) {
-        auto trace = traces->at(ind);
+        const auto& trace = traces->at(ind);
 
-        auto wave = Waveform::replace_convolve(trace->charge(), m_to, m_from, m_truncate);
+        // auto wave = Waveform::replace_convolve(trace->charge(), m_to, m_from, m_truncate);
+        const auto& charge = trace->charge();
+        auto wave = Aux::replace(m_dft, charge, m_to, m_from);
+        wave.resize(charge.size());
         out_traces[ind] = std::make_shared<SimpleTrace>(trace->channel(), trace->tbin(), wave);
     }
 

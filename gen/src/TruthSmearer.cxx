@@ -1,6 +1,6 @@
 #include "WireCellGen/TruthSmearer.h"
 #include "WireCellGen/BinnedDiffusion.h"
-#include "WireCellGen/ImpactZipper.h"
+
 #include "WireCellUtil/Units.h"
 #include "WireCellUtil/Point.h"
 #include "WireCellUtil/NamedFactory.h"
@@ -97,6 +97,9 @@ WireCell::Configuration Gen::TruthSmearer::default_configuration() const
     put(cfg, "anode", m_anode_tn);
     put(cfg, "rng", m_rng_tn);
 
+    // Name for the DFTer
+    cfg["dft"] = "FftwDFT";
+
     return cfg;
 }
 
@@ -117,6 +120,9 @@ void Gen::TruthSmearer::configure(const WireCell::Configuration& cfg)
         m_rng_tn = get(cfg, "rng", m_rng_tn);
         m_rng = Factory::find_tn<IRandom>(m_rng_tn);
     }
+
+    std::string dft_tn = get<std::string>(cfg, "dft", "FftwDFT");
+    m_dft = Factory::find_tn<IDFT>(dft_tn);
 
     m_readout_time = get<double>(cfg, "readout_time", m_readout_time);
     m_tick = get<double>(cfg, "tick", m_tick);
@@ -165,7 +171,7 @@ void Gen::TruthSmearer::process(output_queue& frames)
                 tick = tbins.binsize();
             }
 
-            Gen::BinnedDiffusion bindiff(*pimpos, tbins, m_nsigma, m_rng);
+            Gen::BinnedDiffusion bindiff(*pimpos, m_dft, tbins, m_nsigma, m_rng);
             for (auto depo : face_depos) {
                 // time filter smearing
                 double extent_time = depo->extent_long() / m_drift_speed;
@@ -193,9 +199,6 @@ void Gen::TruthSmearer::process(output_queue& frames)
             const double impact = ib.binsize();
             const int nwires = rb.nbins();
             for (int iwire = 0; iwire < nwires; ++iwire) {
-                ///  Similar to ImpactZipper::waveform
-                ///  No convolution
-                ///  m_waveform from BinnedDiffusion::impact_data()
 
                 const double wire_pos = rb.center(iwire);
 
@@ -239,7 +242,7 @@ void Gen::TruthSmearer::process(output_queue& frames)
 
                     Waveform::realseq_t charge_spectrum = id->waveform();
                     if (charge_spectrum.empty()) {
-                        std::cerr << "impactZipper: no charge spectrum for absolute impact number: " << imp << endl;
+                        std::cerr << "TruthSmearer: no charge spectrum for absolute impact number: " << imp << endl;
                         continue;
                     }
 

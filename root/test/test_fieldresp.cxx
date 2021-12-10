@@ -1,3 +1,5 @@
+#include "WireCellAux/DftTools.h"
+
 #include "WireCellUtil/Testing.h"
 #include "WireCellUtil/Logging.h"
 
@@ -34,13 +36,15 @@ int main(int argc, char* argv[])
     /// WCT internals, normally user code does not need this
     {
         PluginManager& pm = PluginManager::instance();
+        pm.add("WireCellAux");
+
         pm.add("WireCellSigProc");
         auto ifrcfg = Factory::lookup<IConfigurable>("FieldResponse");
         auto cfg = ifrcfg->default_configuration();
         cfg["filename"] = frfname;
         ifrcfg->configure(cfg);
     }
-
+    auto idft = Factory::lookup_tn<IDFT>("FftwDFT");
     auto ifr = Factory::find<IFieldResponse>("FieldResponse");
 
     // Get full, "fine-grained" field responses defined at impact
@@ -80,7 +84,7 @@ int main(int argc, char* argv[])
     Response::ColdElec ce(14.0 * units::mV / units::fC, 2.0 * units::microsecond);
     auto ewave = ce.generate(tbins);
     Waveform::scale(ewave, 1.2 * 4096 / 2000.);
-    elec = Waveform::dft(ewave);
+    elec = Aux::fwd_r2c(idft, ewave);
 
     std::complex<float> fine_period(fravg.period, 0);
 
@@ -105,7 +109,8 @@ int main(int argc, char* argv[])
         auto arr = Response::as_array(fravg.planes[ind]);
 
         // do FFT for response ...
-        Array::array_xxc c_data = Array::dft_rc(arr, 0);
+        // Array::array_xxc c_data = Array::dft_rc(arr, 0);
+        Array::array_xxc c_data = Aux::fwd(idft, arr.cast<IDFT::complex_t>(), 1);
         int nrows = c_data.rows();
         int ncols = c_data.cols();
 
@@ -115,7 +120,8 @@ int main(int argc, char* argv[])
             }
         }
 
-        arr = Array::idft_cr(c_data, 0);
+        // arr = Array::idft_cr(c_data, 0);
+        arr = Aux::inv(idft, c_data, 1).real();
 
         // figure out how to do fine ... shift (good ...)
         auto arr1 = arr.block(0, 0, nrows, 100);

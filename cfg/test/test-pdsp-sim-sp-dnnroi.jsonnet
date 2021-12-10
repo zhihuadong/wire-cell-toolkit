@@ -11,6 +11,10 @@ local hs = import "pgrapher/common/helpers.jsonnet";
 local wires = hs.aux.wires(params.files.wires);
 local anodes = hs.aux.anodes(wires, params.det.volumes);
 
+// IDFT
+//local dft = {type: 'FftwDFT'};
+local dft = {type: 'TorchDFT', data: { device: 'cpu' }};
+
 // simulation
 
 // kinematics: ideal line source
@@ -35,7 +39,7 @@ local er = hs.aux.cer(params.elec.shaping, params.elec.gain,
                       params.elec.postgain,
                       params.daq.nticks, params.daq.tick);
 local rc = hs.aux.rc(1.0*wc.ms, params.daq.nticks, params.daq.tick);
-local pirs = hs.gen.pirs(sim_fr, [er], [rc]);
+local pirs = hs.gen.pirs(sim_fr, [er], [rc], dft=dft);
 
 // sp fr may differ from sim fr (as it does from real fr)
 local sp_fr = hs.aux.fr(if std.length(params.files.fields)>1
@@ -45,7 +49,7 @@ local sp_fr = hs.aux.fr(if std.length(params.files.fields)>1
 local sp_filters = import "pgrapher/experiment/pdsp/sp-filters.jsonnet";
 local adcpermv = hs.utils.adcpermv(params.adc);
 local chndbf = import "pgrapher/experiment/pdsp/ocndb-perfect.jsonnet";
-local chndb(anode) = chndbf(anode, sp_fr, params.nf.nsamples);
+local chndb(anode) = chndbf(anode, sp_fr, params.nf.nsamples, dft=dft);
 local dnnroi_override = {
     sparse: true,
     use_roi_debug_mode: true,
@@ -79,15 +83,14 @@ local out(anode, prefix, tag_pats, digitize=false, cap=false) =
 
 local anode_pipeline(anode, prefix) = pg.pipeline([
     // sim
-    hs.gen.signal(anode, pirs, params.daq, params.lar, rnd=random),
-    hs.gen.noise(anode, params.files.noise, params.daq, rnd=random),
+    hs.gen.signal(anode, pirs, params.daq, params.lar, rnd=random, dft=dft),
+    hs.gen.noise(anode, params.files.noise, params.daq, rnd=random, dft=dft),
     hs.gen.digi(anode, params.adc),
     out(anode, prefix, ["orig"], true),
         
     // nf+sp
-    hs.nf(anode, sp_fr, chndb(anode), params.nf.nsamples, params.daq.tick),
-    hs.sp(anode, sp_fr, er, sp_filters, adcpermv,
-          override=dnnroi_override),
+    hs.nf(anode, sp_fr, chndb(anode), params.nf.nsamples, params.daq.tick, dft=dft),
+    hs.sp(anode, sp_fr, er, sp_filters, adcpermv, override=dnnroi_override, dft=dft),
     out(anode, prefix, ["wiener","gauss"]),
 
     // // dnnroi

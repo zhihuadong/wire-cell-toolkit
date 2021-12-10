@@ -4,14 +4,16 @@
 #ifndef WIRECELLSIGPROC_MICROBOONE
 #define WIRECELLSIGPROC_MICROBOONE
 
-#include "WireCellUtil/Waveform.h"
-#include "WireCellUtil/Bits.h"
+#include "WireCellSigProc/Diagnostics.h"
+
 #include "WireCellIface/IChannelFilter.h"
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/IChannelNoiseDatabase.h"
 #include "WireCellIface/IAnodePlane.h"
+#include "WireCellIface/IDFT.h"
 
-#include "WireCellSigProc/Diagnostics.h"
+#include "WireCellUtil/Waveform.h"
+#include "WireCellUtil/Bits.h"
 
 namespace WireCell {
     namespace SigProc {
@@ -26,14 +28,18 @@ namespace WireCell {
             bool NoisyFilterAlg(WireCell::Waveform::realseq_t& spec, float min_rms, float max_rms);
 
             std::vector<std::vector<int> > SignalProtection(WireCell::Waveform::realseq_t& sig,
-                                                            const WireCell::Waveform::compseq_t& respec, int res_offset,
+                                                            const WireCell::Waveform::compseq_t& respec,
+                                                            const IDFT::pointer& dft,
+                                                            int res_offset,
                                                             int pad_f, int pad_b, float upper_decon_limit = 0.02,
                                                             float decon_lf_cutoff = 0.08, float upper_adc_limit = 15,
                                                             float protection_factor = 5.0, float min_adc_limit = 50);
             bool Subtract_WScaling(WireCell::IChannelFilter::channel_signals_t& chansig,
                                    const WireCell::Waveform::realseq_t& medians,
                                    const WireCell::Waveform::compseq_t& respec, int res_offset,
-                                   std::vector<std::vector<int> >& rois, float upper_decon_limit1 = 0.08,
+                                   std::vector<std::vector<int> >& rois,
+                                   const IDFT::pointer& dft,
+                                   float upper_decon_limit1 = 0.08,
                                    float roi_min_max_ratio = 0.8, float rms_threshold = 0.);
 
             // hold common config stuff
@@ -54,6 +60,7 @@ namespace WireCell {
                 std::string m_anode_tn, m_noisedb_tn;
                 IAnodePlane::pointer m_anode;
                 IChannelNoiseDatabase::pointer m_noisedb;
+                IDFT::pointer m_dft;
             };
 
             /** Microboone style coherent noise subtraction.
@@ -135,6 +142,7 @@ namespace WireCell {
                private:
                 std::string m_anode_tn;
                 IAnodePlane::pointer m_anode;
+                IDFT::pointer m_dft;
                 double m_threshold;
                 int m_window;
                 int m_nbins;

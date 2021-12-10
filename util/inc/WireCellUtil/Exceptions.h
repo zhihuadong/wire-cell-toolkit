@@ -19,17 +19,36 @@
 #define WIRECELL_EXCEPTIONS
 
 #include <boost/exception/all.hpp>
+#include <boost/stacktrace.hpp>
 #include <exception>
 #include <string>
 
-#define THROW(e) BOOST_THROW_EXCEPTION(e)
+using stack_traced_t = boost::error_info<struct tag_stacktrace, boost::stacktrace::stacktrace>;
+// template <class E>
+// void throw_with_trace(const E& e) {
+//     BOOST_THROW_EXCEPTION(boost::enable_error_info(e) << stack_traced_t(boost::stacktrace::stacktrace()));
+// }
+// #define THROW(e) throw_with_trace(e)
+#define THROW(e) BOOST_THROW_EXCEPTION(boost::enable_error_info(e) << stack_traced_t(boost::stacktrace::stacktrace()))
+//#define THROW(e) BOOST_THROW_EXCEPTION(e)
 #define errstr(e) boost::diagnostic_information(e)
+
 
 namespace WireCell {
 
+    // Get the stacktrace as an object.  You must test for non-nullptr.
+    // Or, just rely on e.what().
+    inline
+    const boost::stacktrace::stacktrace* stacktrace(const std::exception& e) {
+        return boost::get_error_info<stack_traced_t>(e);
+    }
+
+
     /// The base wire cell exception.
     struct Exception : virtual public std::exception, virtual boost::exception {
-        char const *what() const throw() { return diagnostic_information_what(*this); }
+        char const *what() const throw() {
+            return diagnostic_information_what(*this);
+        }
     };
 
     /// Thrown when a wrong value has been encountered.

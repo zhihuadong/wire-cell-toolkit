@@ -4,6 +4,8 @@
 
 local wc = import "wirecell.jsonnet";
 
+local dft = {type:'FftwDFT'};
+
 
 // special wire-cell command line configuration just to save us typing.
 local cmdline = {
@@ -144,10 +146,12 @@ local noise_model = {
         // fixme: replace this with various models for DUNE, for now,
         // just pretend to be microboone.
         anode: wc.tn(anode_nominal),
+        dft: dft,
         spectra_file: "microboone-noise-spectra-v2.json.bz2",
         chanstat: "StaticChannelStatus",
         nsamples: params.daq.ticks_per_readout,
-    }
+    },
+    uses: [dft],
 };
 local noise_source = {
     type: "NoiseSource",

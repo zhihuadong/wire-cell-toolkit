@@ -28,15 +28,18 @@ namespace WireCell {
             int m_long_waveform_pad;
 
            public:
-            ImpactResponse(int impact, const Waveform::realseq_t& wf, int waveform_pad,
+            ImpactResponse(int impact,
+                           const Waveform::compseq_t& spectrum,
+                           const Waveform::realseq_t& wf, int waveform_pad,
                            const Waveform::realseq_t& long_wf, int long_waveform_pad)
               : m_impact(impact)
+              , m_spectrum(spectrum)
               , m_waveform(wf)
               , m_waveform_pad(waveform_pad)
               , m_long_waveform(long_wf)
               , m_long_waveform_pad(long_waveform_pad)
             {
-                m_spectrum = Waveform::dft(m_waveform);
+                // m_spectrum = Waveform::dft(m_waveform);
             }
 
             /// Frequency-domain spectrum of response
@@ -103,6 +106,7 @@ namespace WireCell {
             const std::vector<IImpactResponse::pointer>& irs() const { return m_ir; }
 
            private:
+
             std::string m_frname;
             std::vector<std::string> m_short;
             double m_overall_short_padding;
@@ -118,6 +122,7 @@ namespace WireCell {
             std::vector<IImpactResponse::pointer> m_ir;
             double m_half_extent, m_pitch, m_impact;
 
+            std::string m_dftname{"FftwDFT"};
             void build_responses();
         };
 

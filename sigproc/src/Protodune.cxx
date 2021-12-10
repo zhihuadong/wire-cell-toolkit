@@ -13,6 +13,8 @@
 #include "WireCellSigProc/Protodune.h"
 #include "WireCellSigProc/Derivations.h"
 
+#include "WireCellAux/DftTools.h"
+
 #include "WireCellUtil/NamedFactory.h"
 
 #include <cmath>
@@ -166,25 +168,6 @@ int LedgeIdentify1(WireCell::Waveform::realseq_t& signal, double baseline, int L
             }
         }
 
-        // // // find the sharp start edge
-        // if(ledge == 1&&StartOfLastLedgeCandidate>30){
-        // //   int edge = 0;
-        // //   int i = StartOfLastLedgeCandidate/UNIT-1;
-        // //   if(averaged.at(i)>averaged.at(i-1)&&averaged.at(i-1)>averaged.at(i-2)){ // find a edge
-        // //           edge = 1;
-        // //   }
-        // // if(edge == 0) ledge = 0; // if no edge, this is not ledge
-        // // if((averaged.at(i)-averaged.at(i-2)<10*UNIT)&&(averaged.at(i)-averaged.at(i-3)<10*UNIT)) // slope cut
-        // //         ledge = 0;
-        // // if(averaged.at(StartOfLastLedgeCandidate/UNIT)-baseline*UNIT>150*UNIT) ledge = 0; // ledge is close to the
-        // baseline
-
-        // // if(signal.at(tempLedgeEnd) - baseline > 100) ledge=0; // [wgu] ledge end is close to the baseline
-        //     if(averaged.at(tempLedgeEnd/UNIT)-baseline*UNIT>5.*UNIT) ledge = 0;
-        // // cout << "averaged.at(StartOfLastLedgeCandidate/UNIT) - baseline*UNIT = " <<
-        // averaged.at(StartOfLastLedgeCandidate/UNIT)-baseline*UNIT << std::endl;
-        // }
-
         if (ledge == 1) {  // ledge is close to the baseline
             if (averaged.at(tempLedgeEnd / UNIT) - baseline * UNIT > 5. * UNIT) ledge = 0;
 
@@ -273,14 +256,6 @@ bool LedgeIdentify(WireCell::Waveform::realseq_t& signal /*TH1F* h2*/, double ba
     }
     // find the sharp start edge
     if (ledge && LedgeStart > 30) {
-        // int edge = 0;
-        // int i = LedgeStart/UNIT-1;
-        // if(averaged.at(i)>averaged.at(i-1)&&averaged.at(i-1)>averaged.at(i-2)){ // find a edge
-        //         edge = 1;
-        // }
-        // if(edge == 0) ledge = false; // if no edge, this is not ledge
-        // if((averaged.at(i)-averaged.at(i-2)<10*UNIT)&&(averaged.at(i)-averaged.at(i-3)<10*UNIT)) // slope cut
-        //         ledge = false;
         if (averaged.at(LedgeStart / UNIT) - baseline * UNIT > 150 * UNIT)
             ledge = false;  // ledge is close to the baseline
     }
@@ -288,9 +263,6 @@ bool LedgeIdentify(WireCell::Waveform::realseq_t& signal /*TH1F* h2*/, double ba
     if (ledge && LedgeStart > 20) {
         double height = 0;
         if (LedgeStart < 5750) {  // calculate the height of edge
-            // double tempHeight = h2 ->GetBinContent(LedgeStart+1+200) +  h2 ->GetBinContent(LedgeStart+1+220) +  h2
-            // ->GetBinContent(LedgeStart+1+180) +  h2 ->GetBinContent(LedgeStart+1+240); height = h2
-            // ->GetBinContent(LedgeStart+1) - tempHeight/4;
             double tempHeight = signal.at(LedgeStart + 200) + signal.at(LedgeStart + 220) +
                                 signal.at(LedgeStart + 180) + signal.at(LedgeStart + 240);
             height = signal.at(LedgeStart) - tempHeight / 4;
@@ -302,11 +274,6 @@ bool LedgeIdentify(WireCell::Waveform::realseq_t& signal /*TH1F* h2*/, double ba
         if (height < 0) height = 80;             // norminal value
         if (height > 30 && LedgeStart < 5900) {  // test the decay with a relatively large height
             double height50 = 0, height100 = 0;
-            // height50 =  h2 ->GetBinContent(LedgeStart+51);
-            // height100 =  h2 ->GetBinContent(LedgeStart+101);
-            // double height50Pre =   h2 ->GetBinContent(LedgeStart+1)- height*(1-exp(-50/100.)); // minimum 100 ticks
-            // decay time double height100Pre =   h2 ->GetBinContent(LedgeStart+1) - height*(1-exp(-100./100)); //
-            // minimum 100 ticks decay time
 
             height50 = signal.at(LedgeStart + 50);
             height100 = signal.at(LedgeStart + 100);
@@ -350,43 +317,8 @@ bool LedgeIdentify(WireCell::Waveform::realseq_t& signal /*TH1F* h2*/, double ba
         }
         if (LedgeEnd == 0) LedgeEnd = 6000;
     }
-    // done, release the memory
-    // vector<int>(averaged).swap(averaged); // is it necessary?
     return ledge;
 }
-
-// adapted from WCP
-// int judgePlateau(int channel, TH1F* h2,double baseline, double & PlateauStart, double & PlateauStartEnd){
-//         int continueN = 0;
-//         int threshold = 200;
-//         int maximumF  = 50;
-//         int maxBin = h2->GetMaximumBin();
-//         for(int i=maxBin+10;i<5880&&i<maxBin+500;i++){
-//                 int plateau = 1;
-//                 int max = 0, min = 10000;
-//                 for(int j=i;j<i+20;j++){
-//                         int binC = h2->GetBinContent(j+1);
-//                         if(binC<baseline+threshold||binC>h2->GetMaximum()-500) {
-//                                 plateau = 0;
-//                                 break;
-//                         }
-//                         if(binC>max) max = binC;
-//                         if(binC<min) min = binC;
-//                 }
-//                 if(plateau==1&&max-min<maximumF){ // plateau found
-//                         PlateauStart = i;
-//                         PlateauStartEnd = i+20;
-//                         for(int k = i+20; k<6000;k++){
-//                                 if( h2->GetBinContent(k+1)<baseline+threshold){
-//                                         PlateauStartEnd = k-1;
-//                                         break;
-//                                 }
-//                         }
-//                         return 1;
-//                 }
-//         }
-//         return 0;
-// }
 
 bool Protodune::LinearInterpSticky(WireCell::Waveform::realseq_t& signal, WireCell::Waveform::BinRangeList& rng_list,
                                    float stky_sig_like_val, float stky_sig_like_rms)
@@ -459,7 +391,8 @@ bool Protodune::LinearInterpSticky(WireCell::Waveform::realseq_t& signal, WireCe
     return true;
 }
 
-bool Protodune::FftInterpSticky(WireCell::Waveform::realseq_t& signal, WireCell::Waveform::BinRangeList& rng_list)
+bool Protodune::FftInterpSticky(const IDFT::pointer& dft,
+                                WireCell::Waveform::realseq_t& signal, WireCell::Waveform::BinRangeList& rng_list)
 {
     ;
     const int nsiglen = signal.size();
@@ -476,7 +409,7 @@ bool Protodune::FftInterpSticky(WireCell::Waveform::realseq_t& signal, WireCell:
     }
 
     // dft resampling for "even", see example in test_zero_padding.cxx
-    auto tran_even = WireCell::Waveform::dft(signal_even);
+    auto tran_even = Aux::fwd_r2c(dft, signal_even);
     tran_even.resize(nsublen * 2);
     if (nsublen % 2 == 0) {
         std::rotate(tran_even.begin() + nsublen / 2, tran_even.begin() + nsublen, tran_even.end());
@@ -485,12 +418,12 @@ bool Protodune::FftInterpSticky(WireCell::Waveform::realseq_t& signal, WireCell:
         std::rotate(tran_even.begin() + (nsublen + 1) / 2, tran_even.begin() + nsublen, tran_even.end());
     }
     // inverse FFT
-    auto signal_even_fc = WireCell::Waveform::idft(tran_even);
+    auto signal_even_fc = Aux::inv_c2r(dft, tran_even);
     float scale = tran_even.size() / nsublen;
     WireCell::Waveform::scale(signal_even_fc, scale);
 
     // similar for "odd"
-    auto tran_odd = WireCell::Waveform::dft(signal_odd);
+    auto tran_odd = Aux::fwd_r2c(dft, signal_odd);
     tran_odd.resize(nsublen2 * 2);
     if (nsublen2 % 2 == 0) {
         std::rotate(tran_odd.begin() + nsublen2 / 2, tran_odd.begin() + nsublen2, tran_odd.end());
@@ -498,7 +431,7 @@ bool Protodune::FftInterpSticky(WireCell::Waveform::realseq_t& signal, WireCell:
     else {
         std::rotate(tran_odd.begin() + (nsublen2 + 1) / 2, tran_odd.begin() + nsublen2, tran_odd.end());
     }
-    auto signal_odd_fc = WireCell::Waveform::idft(tran_odd);
+    auto signal_odd_fc = Aux::inv_c2r(dft, tran_odd);
     float scale2 = tran_odd.size() / nsublen2;
     WireCell::Waveform::scale(signal_odd_fc, scale2);
 
@@ -521,7 +454,8 @@ bool Protodune::FftInterpSticky(WireCell::Waveform::realseq_t& signal, WireCell:
     return true;
 }
 
-bool Protodune::FftShiftSticky(WireCell::Waveform::realseq_t& signal, double toffset,
+bool Protodune::FftShiftSticky(const IDFT::pointer& dft,
+                               WireCell::Waveform::realseq_t& signal, double toffset,
                                std::vector<std::pair<int, int> >& st_ranges)
 {
     const int nsiglen = signal.size();
@@ -538,7 +472,7 @@ bool Protodune::FftShiftSticky(WireCell::Waveform::realseq_t& signal, double tof
     }
 
     // dft shift for "even"
-    auto tran_even = WireCell::Waveform::dft(signal_even);
+    auto tran_even = Aux::fwd_r2c(dft, signal_even);
     double f0 = 1. / nsublen;
     const double PI = std::atan(1.0) * 4;
     for (size_t i = 0; i < tran_even.size(); i++) {
@@ -550,12 +484,10 @@ bool Protodune::FftShiftSticky(WireCell::Waveform::realseq_t& signal, double tof
         tran_even.at(i) = z * std::exp(z1);
     }
     // inverse FFT
-    auto signal_even_fc = WireCell::Waveform::idft(tran_even);
-    // float scale = 1./tran_even.size();
-    // WireCell::Waveform::scale(signal_even_fc, 1./nsublen);
+    auto signal_even_fc = Aux::inv_c2r(dft, tran_even);
 
     // similar to "odd"
-    auto tran_odd = WireCell::Waveform::dft(signal_odd);
+    auto tran_odd = Aux::fwd_r2c(dft, signal_odd);
     f0 = 1. / nsublen2;
     for (size_t i = 0; i < tran_odd.size(); i++) {
         double fi = i * f0;
@@ -566,7 +498,8 @@ bool Protodune::FftShiftSticky(WireCell::Waveform::realseq_t& signal, double tof
         tran_odd.at(i) = z * std::exp(z1);
     }
     //
-    auto signal_odd_fc = WireCell::Waveform::idft(tran_odd);
+    auto signal_odd_fc = Aux::inv_c2r(dft, tran_odd);
+    
     // float scale = 1./tran_odd.size();
     // WireCell::Waveform::scale(signal_odd_fc, 1./nsublen2);
 
@@ -593,10 +526,11 @@ bool Protodune::FftShiftSticky(WireCell::Waveform::realseq_t& signal, double tof
     return true;
 }
 
-bool Protodune::FftScaling(WireCell::Waveform::realseq_t& signal, int nsamples)
+bool Protodune::FftScaling(const IDFT::pointer& dft,
+                           WireCell::Waveform::realseq_t& signal, int nsamples)
 {
     const int nsiglen = signal.size();
-    auto tran = WireCell::Waveform::dft(signal);
+    auto tran = Aux::fwd_r2c(dft, signal);
     tran.resize(nsamples);
     if (nsiglen % 2 == 0) {  // ref test_zero_padding.cxx
         std::rotate(tran.begin() + nsiglen / 2, tran.begin() + nsiglen, tran.end());
@@ -605,7 +539,8 @@ bool Protodune::FftScaling(WireCell::Waveform::realseq_t& signal, int nsamples)
         std::rotate(tran.begin() + (nsiglen + 1) / 2, tran.begin() + nsiglen, tran.end());
     }
     // inverse FFT
-    auto signal_fc = WireCell::Waveform::idft(tran);
+    auto signal_fc = Aux::inv_c2r(dft, tran);
+
     WireCell::Waveform::scale(signal_fc, nsamples / nsiglen);
     signal = signal_fc;
 
@@ -615,31 +550,6 @@ bool Protodune::FftScaling(WireCell::Waveform::realseq_t& signal, int nsamples)
 /*
  * Classes
  */
-
-/*
- * Configuration base class used for a couple filters
- */
-Protodune::ConfigFilterBase::ConfigFilterBase(const std::string& anode, const std::string& noisedb)
-  : m_anode_tn(anode)
-  , m_noisedb_tn(noisedb)
-{
-}
-Protodune::ConfigFilterBase::~ConfigFilterBase() {}
-void Protodune::ConfigFilterBase::configure(const WireCell::Configuration& cfg)
-{
-    m_anode_tn = get(cfg, "anode", m_anode_tn);
-    m_anode = Factory::find_tn<IAnodePlane>(m_anode_tn);
-    m_noisedb_tn = get(cfg, "noisedb", m_noisedb_tn);
-    m_noisedb = Factory::find_tn<IChannelNoiseDatabase>(m_noisedb_tn);
-    // std::cerr << "ConfigFilterBase: \n" << cfg << "\n";
-}
-WireCell::Configuration Protodune::ConfigFilterBase::default_configuration() const
-{
-    Configuration cfg;
-    cfg["anode"] = m_anode_tn;
-    cfg["noisedb"] = m_noisedb_tn;
-    return cfg;
-}
 
 Protodune::StickyCodeMitig::StickyCodeMitig(const std::string& anode, const std::string& noisedb,
                                             float stky_sig_like_val, float stky_sig_like_rms, int stky_max_len)
@@ -663,6 +573,9 @@ void Protodune::StickyCodeMitig::configure(const WireCell::Configuration& cfg)
 
     m_noisedb_tn = get(cfg, "noisedb", m_noisedb_tn);
     m_noisedb = Factory::find_tn<IChannelNoiseDatabase>(m_noisedb_tn);
+
+    std::string dft_tn = get<std::string>(cfg, "dft", "FftwDFT");
+    m_dft = Factory::find_tn<IDFT>(dft_tn);
 
     m_extra_stky.clear();
     auto jext = cfg["extra_stky"];
@@ -701,6 +614,7 @@ WireCell::Configuration Protodune::StickyCodeMitig::default_configuration() cons
     cfg["stky_sig_like_val"] = m_stky_sig_like_val;
     cfg["stky_sig_like_rms"] = m_stky_sig_like_rms;
     cfg["stky_max_len"] = m_stky_max_len;
+    cfg["dft"] = "FftwDFT";     // type-name for the DFT to use
     return cfg;
 }
 
@@ -745,11 +659,8 @@ WireCell::Waveform::ChannelMaskMap Protodune::StickyCodeMitig::apply(int ch, sig
     }
     // std::cerr << "[wgu] ch: " << ch << " long_stkylen: " << long_stkylen << std::endl;
 
-    // auto signal_lc = signal; // copy, need to keep original signal
     LinearInterpSticky(signal, sticky_rng_list, m_stky_sig_like_val, m_stky_sig_like_rms);
-    FftInterpSticky(signal, sticky_rng_list);
-    // FftShiftSticky(signal_lc, 0.5, st_ranges); // alternative approach, shift by 0.5 tick
-    // signal = signal_lc;
+    FftInterpSticky(m_dft, signal, sticky_rng_list);
 
     // Now calculate the baseline ...
     std::pair<double, double> temp = WireCell::Waveform::mean_rms(signal);
@@ -794,8 +705,10 @@ WireCell::Waveform::ChannelMaskMap Protodune::StickyCodeMitig::apply(channel_sig
     return WireCell::Waveform::ChannelMaskMap();
 }
 
+
 Protodune::OneChannelNoise::OneChannelNoise(const std::string& anode, const std::string& noisedb)
-  : ConfigFilterBase(anode, noisedb)
+  : m_anode_tn(anode)
+  , m_noisedb_tn(noisedb)
   , m_check_partial()  // fixme, here too.
   , m_resmp()
 {
@@ -806,12 +719,11 @@ void Protodune::OneChannelNoise::configure(const WireCell::Configuration& cfg)
 {
     m_anode_tn = get(cfg, "anode", m_anode_tn);
     m_anode = Factory::find_tn<IAnodePlane>(m_anode_tn);
-    if (!m_anode) {
-        THROW(KeyError() << errmsg{"failed to get IAnodePlane: " + m_anode_tn});
-    }
-
     m_noisedb_tn = get(cfg, "noisedb", m_noisedb_tn);
     m_noisedb = Factory::find_tn<IChannelNoiseDatabase>(m_noisedb_tn);
+
+    std::string dft_tn = get<std::string>(cfg, "dft", "FftwDFT");
+    m_dft = Factory::find_tn<IDFT>(dft_tn);
 
     m_resmp.clear();
     auto jext = cfg["resmp"];
@@ -830,6 +742,7 @@ WireCell::Configuration Protodune::OneChannelNoise::default_configuration() cons
     Configuration cfg;
     cfg["anode"] = m_anode_tn;
     cfg["noisedb"] = m_noisedb_tn;
+    cfg["dft"] = "FftwDFT";     // type-name for the DFT to use
     return cfg;
 }
 
@@ -846,19 +759,12 @@ WireCell::Waveform::ChannelMaskMap Protodune::OneChannelNoise::apply(int ch, sig
         int smpin = m_resmp.at(ch);
         int smpout = signal.size();
         signal.resize(smpin);
-        FftScaling(signal, smpout);
+        FftScaling(m_dft, signal, smpout);
         // std::cerr << "[wgu] ch: " << ch << " smpin: " << smpin << " smpout: " << smpout << std::endl;
     }
-    // if( (ch>=2128 && ch<=2175) // W plane
-    // ||  (ch>=1520 && ch<=1559) // V plane
-    // ||  (ch>=440  && ch<=479)  // U plane
-    // ){
-    // 	signal.resize(5996);
-    // 	FftScaling(signal, 6000);
-    // }
 
     // correct rc undershoot
-    auto spectrum = WireCell::Waveform::dft(signal);
+    auto spectrum = Aux::fwd_r2c(m_dft, signal);
     bool is_partial = m_check_partial(spectrum);  // Xin's "IS_RC()"
 
     if (!is_partial) {
@@ -876,12 +782,6 @@ WireCell::Waveform::ChannelMaskMap Protodune::OneChannelNoise::apply(int ch, sig
         Microboone::RawAdapativeBaselineAlg(mag);  // subtract "linear" background in spectrum
 
         auto const& spec = m_noisedb->noise(ch);
-        // std::cout << "[wgu] " << spec.at(10).real() << std::endl;
-        // std::cout << "[wgu] " << spec.at(148).real() << std::endl;
-        // std::cout << "[wgu] " << spec.at(149).real() << std::endl;
-        // std::cout << "[wgu] " << spec.at(160).real() << std::endl;
-        // std::cout << "[wgu] " << spec.at(161).real() << std::endl;
-        // WireCell::Waveform::scale(spectrum, spec);
 
         // spec -> freqBins;
         std::vector<std::pair<int, int> > freqBins;
@@ -916,12 +816,6 @@ WireCell::Waveform::ChannelMaskMap Protodune::OneChannelNoise::apply(int ch, sig
                 int nslice = iend - istart;
                 // std::cout << "hibin: " << iend << " lobin: " << istart << std::endl;
 
-                // }
-
-                // for(int i=0; i<57; i++){ // 150 - 3000th freq bin
-                //     int nslice = 50;
-                //     int istart = 150 + nslice*i;
-                //     int iend = istart + nslice;
                 // std::cerr << istart << " " << iend << std::endl;
                 WireCell::Waveform::realseq_t mag_slice(nslice);  // slice of magnitude spectrum
                 std::copy(mag.begin() + istart, mag.begin() + iend, mag_slice.begin());
@@ -931,9 +825,7 @@ WireCell::Waveform::ChannelMaskMap Protodune::OneChannelNoise::apply(int ch, sig
                 if (istart > 1050) {  // if(i>17){
                     cut = stat.first + 3 * stat.second;
                 }
-                // if(stat.second>1300){
-                //     cut = stat.first + stat.second;
-                // }
+
                 for (int j = istart; j < iend; j++) {
                     float content = mag.at(j);
                     if (content > cut) {
@@ -946,28 +838,6 @@ WireCell::Waveform::ChannelMaskMap Protodune::OneChannelNoise::apply(int ch, sig
                         n_harmonic++;
                     }
                 }
-
-                // for(int j=0; j<nslice; j++){
-                //     float content = mag_slice.at(j) - stat.first;
-
-                //     if(iend<1000){
-                //         if(content>2000 && content>5.*stat.second){
-                //         int tbin = istart + j;
-                //         spectrum.at(tbin).real(0);
-                //         spectrum.at(tbin).imag(0);
-                //         spectrum.at(6000+1-tbin).real(0); // FIXME: assuming 6000 ticks
-                //         spectrum.at(6000+1-tbin).imag(0);
-                //         // std::cerr << "[wgu] chan: " << ch << " , freq tick: " << tbin << " , amp: " << content <<
-                //         std::endl;
-                //         }
-                //     }
-                //     else if(content>250 && content>10.*stat.second){
-                //         spectrum.at(j).real(0);
-                //         spectrum.at(j).imag(0);
-                //         spectrum.at(6000+1-j).real(0); // FIXME: assuming 6000 ticks
-                //         spectrum.at(6000+1-j).imag(0);
-                //     }
-                // }
             }
         }
 
@@ -981,7 +851,7 @@ WireCell::Waveform::ChannelMaskMap Protodune::OneChannelNoise::apply(int ch, sig
 
     // remove the DC component
     spectrum.front() = 0;
-    signal = WireCell::Waveform::idft(spectrum);
+    signal = Aux::inv_c2r(m_dft, spectrum);
 
     // Now calculate the baseline ...
     std::pair<double, double> temp = WireCell::Waveform::mean_rms(signal);

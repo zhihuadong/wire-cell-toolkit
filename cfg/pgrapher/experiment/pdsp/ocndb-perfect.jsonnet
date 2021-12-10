@@ -3,18 +3,21 @@
 
 local wc = import "wirecell.jsonnet";
 
+local default_dft = { type: 'FftwDFT' };
+
 // The "perfect noise" database is one that is free of any
 // "special" considerations such as per channel variability.  The
 // "official" perfect chndb depends on the official "chndb-base"
 // and that seems to be adulterated with specific settings.  We
 // try to start fresh here.
-function(anode, fr, nsamples, tick=0.5*wc.us) {
+function(anode, fr, nsamples, tick=0.5*wc.us, dft=default_dft) {
     local apaid = anode.data.ident,
     type:'OmniChannelNoiseDB',
     name: std.toString(apaid),
-    uses: [anode, fr],
+    uses: [anode, fr, dft],
     data: {
         anode: wc.tn(anode),
+        dft: wc.tn(dft),
         field_response: wc.tn(fr),
         tick: tick,
         nsamples: nsamples,

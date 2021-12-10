@@ -1,4 +1,5 @@
 #include "WireCellSigProc/SimpleChannelNoiseDB.h"
+#include "WireCellAux/DftTools.h"
 #include "WireCellUtil/Response.h"
 #include "WireCellUtil/Binning.h"
 
@@ -30,6 +31,20 @@ SimpleChannelNoiseDB::SimpleChannelNoiseDB(double tick, int nsamples)
     set_sampling(tick, nsamples);
 }
 SimpleChannelNoiseDB::~SimpleChannelNoiseDB() {}
+
+void SimpleChannelNoiseDB::configure(const WireCell::Configuration& cfg)
+{
+    std::string dft_tn = get<std::string>(cfg, "dft", "FftwDFT");
+    m_dft = Factory::find_tn<IDFT>(dft_tn);
+}
+
+WireCell::Configuration SimpleChannelNoiseDB::default_configuration() const
+{
+    Configuration cfg;
+    cfg["dft"] = "FftwDFT";     // type-name for the DFT to use
+    return cfg;
+}
+
 
 double SimpleChannelNoiseDB::nominal_baseline(int channel) const
 {
@@ -240,7 +255,7 @@ void SimpleChannelNoiseDB::set_rcrc_constant(const std::vector<int>& channels, d
     //    auto signal = rcres.generate(WireCell::Binning(m_nsamples, 0, m_nsamples*m_tick));
     auto signal = rcres.generate(WireCell::Waveform::Domain(0, m_nsamples * m_tick), m_nsamples);
 
-    Waveform::compseq_t spectrum = Waveform::dft(signal);
+    Waveform::compseq_t spectrum = Aux::fwd_r2c(m_dft, signal);
 
     // std::cout << rcrc << " " << m_tick << " " << m_nsamples << " " << signal.front() << " " << signal.at(1) << " " <<
     // signal.at(2) << std::endl;
@@ -295,8 +310,9 @@ void SimpleChannelNoiseDB::set_gains_shapings(const std::vector<int>& channels, 
     auto to_sig = to_ce.generate(WireCell::Waveform::Domain(0, m_nsamples * m_tick), m_nsamples);
     auto from_sig = from_ce.generate(WireCell::Waveform::Domain(0, m_nsamples * m_tick), m_nsamples);
 
-    auto to_filt = Waveform::dft(to_sig);
-    auto from_filt = Waveform::dft(from_sig);
+    auto to_filt = Aux::fwd_r2c(m_dft, to_sig);
+
+    auto from_filt = Aux::fwd_r2c(m_dft, from_sig);
 
     // auto from_filt_sum = Waveform::sum(from_filt);
     // auto to_filt_sum   = Waveform::sum(to_filt);

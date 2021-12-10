@@ -1,3 +1,9 @@
+#include "WireCellAux/DftTools.h"
+
+#include "WireCellIface/IConfigurable.h"
+#include "WireCellIface/IFieldResponse.h"
+#include "WireCellIface/IPlaneImpactResponse.h"
+
 #include "WireCellUtil/PluginManager.h"
 #include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/Logging.h"
@@ -5,10 +11,6 @@
 #include "WireCellUtil/ExecMon.h"
 #include "WireCellUtil/Testing.h"
 #include "WireCellUtil/Response.h"
-
-#include "WireCellIface/IConfigurable.h"
-#include "WireCellIface/IFieldResponse.h"
-#include "WireCellIface/IPlaneImpactResponse.h"
 
 #include "MultiPdf.h"  // local helper shared by a few tests
 #include "TH2F.h"
@@ -28,7 +30,8 @@ using namespace std;
 using spdlog::debug;
 using spdlog::error;
 
-void plot_time(MultiPdf& mpdf, IPlaneImpactResponse::pointer pir, int iplane, Binning tbins, const std::string& name,
+void plot_time(MultiPdf& mpdf, const IDFT::pointer& idft,
+               IPlaneImpactResponse::pointer pir, int iplane, Binning tbins, const std::string& name,
                const std::string& title)
 {
     // only show bins where we think the response is
@@ -103,7 +106,8 @@ void plot_time(MultiPdf& mpdf, IPlaneImpactResponse::pointer pir, int iplane, Bi
         //     continue;
         // }
         auto spec = ir->spectrum();
-        auto wave = Waveform::idft(spec);
+        // auto wave = Waveform::idft(spec);
+        auto wave = Aux::inv_c2r(idft, spec);
         pitch += 0.001 * impact_dist;
         for (int ind = 0; ind < ntbins; ++ind) {
             const double time = tbins.center(ind);
@@ -146,8 +150,10 @@ int main(int argc, const char* argv[])
     Log::set_level("debug");
 
     PluginManager& pm = PluginManager::instance();
+    pm.add("WireCellAux");
     pm.add("WireCellGen");
     pm.add("WireCellSigProc");
+    auto idft = Factory::lookup_tn<IDFT>("FftwDFT");
 
     const int nticks = 9595;
     const double tick = 0.5 * units::us;
@@ -234,10 +240,10 @@ int main(int argc, const char* argv[])
     MultiPdf mpdf(out_basename.c_str());
     for (int iplane = 0; iplane < 3; ++iplane) {
         auto pir = Factory::find_tn<IPlaneImpactResponse>(pir_tns[iplane]);
-        plot_time(mpdf, pir, iplane, tbins, "fr", "Field Response");
+        plot_time(mpdf, idft, pir, iplane, tbins, "fr", "Field Response");
 
         auto pir_ele = Factory::find_tn<IPlaneImpactResponse>(pir_ele_tns[iplane]);
-        plot_time(mpdf, pir_ele, iplane, tbins, "dr", "Detector Response");
+        plot_time(mpdf, idft, pir_ele, iplane, tbins, "dr", "Detector Response");
     }
 
     mpdf.close();

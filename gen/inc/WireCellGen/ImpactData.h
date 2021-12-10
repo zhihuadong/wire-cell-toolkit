@@ -4,6 +4,9 @@
  */
 
 #include "WireCellUtil/Waveform.h"
+
+#include "WireCellIface/IDFT.h"
+
 #include "WireCellGen/GaussianDiffusion.h"
 
 #include <memory>
@@ -56,7 +59,7 @@ namespace WireCell {
              * linear or constant (all = 0.5),
              * and honoring the Gaussian distribution (diffusion).
              */
-            void calculate(int nticks) const;
+            void calculate(const IDFT::pointer& dft, int nticks) const;
 
             /**  Return the time domain waveform of drifted/diffused
              *  charge at this impact position. See `calculate()`. */

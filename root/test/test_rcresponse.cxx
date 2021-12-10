@@ -1,5 +1,10 @@
 // Test RCResponse
+
 #include "MultiPdf.h"  // local helper shared by a few tests
+
+#include "WireCellAux/DftTools.h"
+#include "WireCellUtil/NamedFactory.h"
+#include "WireCellUtil/PluginManager.h"
 
 #include "WireCellUtil/Units.h"
 #include "WireCellUtil/Waveform.h"
@@ -12,6 +17,9 @@ using namespace WireCell;
 
 int main(int argc, char* argv[])
 {
+    PluginManager& pm = PluginManager::instance();
+    pm.add("WireCellAux");
+    auto idft = Factory::lookup_tn<IDFT>("FftwDFT");
     Test::MultiPdf mpdf(argv[0]);
 
     const double tick = 0.5*units::us;
@@ -28,7 +36,7 @@ int main(int argc, char* argv[])
     const auto& wavep1 = rcr.waveform_samples();
     // skip first which holds delta
     Waveform::realseq_t wave(wavep1.begin()+1, wavep1.end());
-    auto spec = Waveform::dft(wave);
+    auto spec = Aux::fwd_r2c(idft, wave);
     auto mag = Waveform::magnitude(spec);
 
     TGraph* g = new TGraph(wave.size());

@@ -8,8 +8,8 @@ function(params, tools) {
     perfect(anode) :: {
         type:'OmniChannelNoiseDB',
         name: 'ocndbperfect-' + anode.name,
-        data: base(params, anode, tools.field, anode.data.ident),
-        uses: [anode, tools.field],
+        data: base(params, anode, tools.field, anode.data.ident){dft:wc.tn(tools.dft)},
+        uses: [anode, tools.field, tools.dft],
     },
 
 }
