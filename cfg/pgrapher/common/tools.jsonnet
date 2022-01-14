@@ -80,6 +80,9 @@ function(params)
             shaping: params.elec.shaping,
             gain: params.elec.gain,
             postgain: params.elec.postgain,
+            filename: if std.objectHas(params.elec, "filename")
+                      then params.elec.filename
+                      else ""
         },
     },
 
