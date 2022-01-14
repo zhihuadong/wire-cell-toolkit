@@ -49,8 +49,10 @@ local tracklist = [
 
   {
     time: 0 * wc.us, 
-    charge: -5000, // 5000 e/mm
-    ray: params.det.bounds,
+    // charge: -5000, // 5000 e/mm
+    // ray: params.det.bounds,
+    charge: -10000, // 5000 e/mm
+    ray: parallel,
   },
 
 ];
@@ -123,12 +125,12 @@ local parallel_pipes = [
   g.pipeline([
                sn_pipes[n],
                magnify_pipes[n],
-               nf_pipes[n],
-               magnify_pipes2[n],
-               sp_pipes[n],
-               magnify_pipes3[n],
-               magnify_pipes4[n],
-               magnify_pipes5[n],
+               // nf_pipes[n],
+               // magnify_pipes2[n],
+               // sp_pipes[n],
+               // magnify_pipes3[n],
+               // magnify_pipes4[n],
+               // magnify_pipes5[n],
              ],
              'parallel_pipe_%d' % n)
   for n in std.range(0, std.length(tools.anodes) - 1)

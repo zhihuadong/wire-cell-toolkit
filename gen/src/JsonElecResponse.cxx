@@ -68,8 +68,8 @@ void Gen::JsonElecResponse::configure(const WireCell::Configuration& cfg)
     }
     const double tick = waveform_period();
     for (int i=0; i<nsamp; i++) {
-        m_times.at(i) = jtimes[i].asFloat() * units::us;
-        m_amps.at(i) = jamps[i].asFloat() * units::mV / units::fC;
+        m_times.at(i) = jtimes[i].asFloat();
+        m_amps.at(i) = jamps[i].asFloat();
     }
 
     const int nbins = m_cfg["nticks"].asInt();
